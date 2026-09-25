@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-26
 created: 2026-09-26
+archived_at: 2026-09-26
 ---
 
 # Plan: Editor toolbar — one icon per key, Arrow and Pen split, approve marks removed
@@ -41,11 +42,11 @@ None.
 
 ## Order of work
 
-- [ ] 1. `tools.ts` new groups and removals; `editor.ts` type and drawing removals — proof: `npm run typecheck` exits 0
-- [ ] 2. `renderToolbar()`: one button per group, `data-group` = key, icon of the current tool, `aria-pressed` on the active group, tooltip "<Name> (<key>)" plus "press again for <next>"; CSS tint `rgb(127 127 127 / 0.22)` and no `kbd` (F1–F4) — proof: smoke checks 8 buttons in order V1234567, no text, the tint, the tooltip, and the icon changing after pressing 2 twice
-- [ ] 3. Smoke keys: arrow 3, pen 4, crosses 5; tick and thumbs up drags and the "approve drawn green" check removed; the F6 check that no tool is `tick` or `thumb` and the prompt has neither (F5, F6) — proof: `npm run smoke` passes
-- [ ] 4. README — proof: `grep -n "Thumbs" README.md` finds nothing
-- [ ] 5. Verify, PR, auto-merge, archive, close `snap-uvp`, rebuild and install the signed app — proof: CI `check` passes
+- [x] 1. `tools.ts` new groups and removals; `editor.ts` type and drawing removals — proof: `npm run typecheck` exits 0
+- [x] 2. `renderToolbar()`: one button per group, `data-group` = key, icon of the current tool, `aria-pressed` on the active group, tooltip "<Name> (<key>)" plus "press again for <next>"; CSS tint `rgb(127 127 127 / 0.22)` and no `kbd` (F1–F4) — proof: smoke checks 8 buttons in order V1234567, no text, the tint, the tooltip, and the icon changing after pressing 2 twice
+- [x] 3. Smoke keys: arrow 3, pen 4, crosses 5; tick and thumbs up drags and the "approve drawn green" check removed; the F6 check that no tool is `tick` or `thumb` and the prompt has neither (F5, F6) — proof: `npm run smoke` passes
+- [x] 4. README — proof: `grep -n "Thumbs" README.md` finds nothing
+- [x] 5. Verify, PR, auto-merge, archive, close `snap-uvp`, rebuild and install the signed app — proof: CI `check` passes
 
 ## Risks
 
@@ -88,3 +89,6 @@ Done:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-09-26 — Clicking a toolbar button now works like its key (a second click steps to the next tool), since each key has one button.
+- 2026-09-26 — The smoke test picks tools with a `pick(id)` helper instead of clicking per-tool buttons, which no longer exist; its old "keys step through a group" check (Pen/Arrow on 3) became "pressing the key again swaps the icon" on 2.

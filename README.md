@@ -13,7 +13,7 @@ When you review a UI with an AI agent (Claude Code, Cursor, Codex), you spend a 
 Snapmark is a macOS menu bar app for exactly that loop:
 
 1. Press `⌘⇧1`, drag over the part of the screen you mean.
-2. Mark it: a box, an arrow, a cross for "remove this", a green tick for "keep this", references ① ② with a note each.
+2. Mark it: a box, an arrow, a cross for "remove this", a freehand pen, references ① ② with a note each.
 3. Press `⌘↵`. The annotated image and your notes are appended to the current session's `session.md`.
 4. Point your agent at the session folder: _"Work through `~/Documents/Snapmark/2026-09-25 14.02/session.md`"_.
 
@@ -57,16 +57,16 @@ Snapmark lives in the menu bar as the corner-and-dot icon. It shows a Dock icon 
 
 In the editor, press a key to pick a tool. Press the same key again to cycle its tools; the top bar shows which one is active.
 
-The toolbar shows every tool as an icon, grouped by key; hover an icon for its name. Press a key to pick its group, and press it again for the group's next tool.
+The toolbar shows one icon per key: the tool that is on. Press a key to pick it, and press it again for the next tool on that key; the icon changes with it. Hover an icon for its name and key.
 
 | Key   | Tools                                                                                    |
 | ----- | ---------------------------------------------------------------------------------------- |
 | `V`   | Select: move, resize or delete (`⌫`) any mark                                            |
 | `1`   | Reference: click, then type its note in the panel → Card: a sticky note you type on      |
 | `2`   | Box → Ellipse                                                                            |
-| `3`   | Arrow → Pen (freehand)                                                                   |
-| `4`   | Cross → Crossed box → Remove area (hatched), always red                                  |
-| `5`   | Tick → Thumbs up, always green                                                           |
+| `3`   | Arrow                                                                                    |
+| `4`   | Pen (freehand)                                                                           |
+| `5`   | Cross → Crossed box → Remove area (hatched), always red                                  |
 | `6`   | Highlighter → Spotlight (dims the rest)                                                  |
 | `7`   | Cut & move: drag around an element, then drag it where it should go → Redact (pixelates) |
 | `Esc` | Step back: out of the text, then deselect, then back to Select                           |

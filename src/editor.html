@@ -59,34 +59,21 @@
       }
       #tools {
         display: flex;
-        gap: 10px;
-      }
-      #tools .group {
-        --tool: var(--accent);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-      }
-      #tools .icons {
-        display: flex;
-        gap: 2px;
+        gap: 4px;
       }
       #tools button {
         display: grid;
         place-items: center;
-        width: 30px;
-        height: 28px;
+        width: 32px;
+        height: 30px;
         padding: 0;
         border-color: transparent;
       }
       #tools button:hover {
-        border-color: var(--line);
+        background: rgb(127 127 127 / 0.12);
       }
       #tools button[aria-pressed='true'] {
-        background: var(--tool);
-        border-color: var(--tool);
-        color: #fff;
+        background: rgb(127 127 127 / 0.22);
       }
       #tools svg {
         width: 18px;
@@ -96,13 +83,6 @@
         stroke-width: 1.8;
         stroke-linecap: round;
         stroke-linejoin: round;
-      }
-      #tools kbd {
-        font:
-          600 10px ui-monospace,
-          monospace;
-        color: var(--muted);
-        margin: 0;
       }
       header kbd {
         opacity: 0.6;

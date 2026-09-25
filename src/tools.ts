@@ -12,8 +12,6 @@ type ToolId =
   | 'cross'
   | 'xbox'
   | 'hatch'
-  | 'tick'
-  | 'thumb'
   | 'highlight'
   | 'spotlight'
   | 'cut'
@@ -33,7 +31,6 @@ interface ToolGroup {
 }
 
 const RED = '#e11d48';
-const GREEN = '#16a34a';
 const YELLOW = '#facc15';
 
 // A key selects its group; pressing it again steps to the group's next tool.
@@ -78,9 +75,13 @@ const GROUPS: ToolGroup[] = [
   },
   {
     key: '3',
-    label: 'Draw',
+    label: 'Arrow',
+    tools: [{ id: 'arrow', label: 'Arrow', icon: '<path d="M5 19L19 5M10 5h9v9"/>', means: 'points at the element a note is about' }],
+  },
+  {
+    key: '4',
+    label: 'Pen',
     tools: [
-      { id: 'arrow', label: 'Arrow', icon: '<path d="M5 19L19 5M10 5h9v9"/>', means: 'points at the element a note is about' },
       {
         id: 'pen',
         label: 'Pen',
@@ -90,7 +91,7 @@ const GROUPS: ToolGroup[] = [
     ],
   },
   {
-    key: '4',
+    key: '5',
     label: 'Remove',
     color: RED,
     tools: [
@@ -106,20 +107,6 @@ const GROUPS: ToolGroup[] = [
         label: 'Remove area',
         icon: '<rect x="4" y="4" width="16" height="16"/><path d="M4 11l7-7M4 18L18 4M11 20l9-9"/>',
         means: 'remove everything in the hatched area',
-      },
-    ],
-  },
-  {
-    key: '5',
-    label: 'Approve',
-    color: GREEN,
-    tools: [
-      { id: 'tick', label: 'Tick', icon: '<path d="M5 12.5l4.5 4.5L19 7"/>', means: 'approved, keep as is' },
-      {
-        id: 'thumb',
-        label: 'Thumbs up',
-        icon: '<path d="M7 11v9H4v-9zM7 11l4-7c1.4 0 2.4 1.1 2 2.6L12.3 10H18a2 2 0 0 1 2 2.4l-1.3 5.8A2 2 0 0 1 16.7 20H7"/>',
-        means: 'approved, keep as is',
       },
     ],
   },
