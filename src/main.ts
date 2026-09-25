@@ -124,9 +124,14 @@ function checkForUpdates() {
 }
 
 // Pasted into an agent's chat: points it at the session and explains the marks, so the notes need no preamble.
+// The one place the Markdown path is built, so "Copy session.md path" and the AI prompt never disagree.
+export function sessionMdPath(dir: string): string {
+  return path.resolve(dir, 'session.md');
+}
+
 export function promptFor(dir: string): string {
   return [
-    `Work through the visual feedback in "${path.join(dir, 'session.md')}".`,
+    `Work through the visual feedback in "${sessionMdPath(dir)}".`,
     'Each entry is an annotated screenshot. The numbered notes below it refer to the numbered markers on the image.',
     'Red crosses and hatched areas mean remove. Green ticks and thumbs-up mean keep as is. Boxes, ellipses and arrows point at what a note is about.',
   ].join('\n');
@@ -155,7 +160,8 @@ function refreshTray() {
         submenu: list.slice(0, 20).map((s) => ({ label: s, type: 'radio', checked: s === active, click: () => setActive(s) })),
       },
       { type: 'separator' },
-      { label: 'Open session.md', enabled: !!dir, click: () => dir && shell.openPath(path.join(dir, 'session.md')) },
+      { label: 'Open session.md', enabled: !!dir, click: () => dir && shell.openPath(sessionMdPath(dir)) },
+      { label: 'Copy session.md path', enabled: !!dir, click: () => dir && clipboard.writeText(sessionMdPath(dir)) },
       { label: 'Show session folder', enabled: !!dir, click: () => dir && shell.openPath(dir) },
       { label: 'Copy prompt for AI', enabled: !!dir, click: () => dir && clipboard.writeText(promptFor(dir)) },
       {

@@ -25,7 +25,7 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, setActive, fitForAI, promptFor } = require('../src/main') as typeof import('../src/main');
+const { openEditor, setActive, fitForAI, promptFor, sessionMdPath } = require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -144,6 +144,8 @@ app
         JSON.stringify(nativeImage.createFromBuffer(fitForAI(big(3000, 1000))).getSize()) === JSON.stringify({ width: 1568, height: 523 }),
       'marker drawn red': r1 > 180 && g1 < 90 && b1 < 120,
       'approve drawn green': g2 > 120 && r2 < 90,
+      'session.md path is absolute':
+        sessionMdPath(path.join(root, 'smoke')) === path.resolve(root, 'smoke', 'session.md') && path.isAbsolute(sessionMdPath('rel')),
       'prompt points at session.md': promptFor(path.join(root, 'smoke')).includes(`"${path.join(root, 'smoke', 'session.md')}"`),
       'markdown has card': md.includes('- Card: Make this bigger'),
       'markdown has move': md.includes('- Moved an element'),

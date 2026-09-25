@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-25
 created: 2026-09-25
+archived_at: 2026-09-25
 ---
 
 # Plan: Copy the current session's Markdown path from the menu bar
@@ -42,11 +43,11 @@ None.
 
 ## Order of work
 
-- [ ] 1. Add `sessionMdPath(dir)` and make `promptFor` use it — proof: `npm run typecheck` exits 0
-- [ ] 2. Add `{ label: 'Copy session.md path', enabled: !!dir, click: () => dir && clipboard.writeText(sessionMdPath(dir)) }` directly below "Open session.md" — proof: `grep -A1 "Open session.md" src/main.ts` shows it
-- [ ] 3. Smoke check for F1 — proof: `npm run smoke` prints `✓ session.md path is absolute`
-- [ ] 4. README sentence — proof: `grep "Copy session.md path" README.md`
-- [ ] 5. Verify, open the PR, arm auto-merge, archive the folder, close `snap-jpx` after merge — proof: CI `check` passes
+- [x] 1. Add `sessionMdPath(dir)` and make `promptFor` use it — proof: `npm run typecheck` exits 0
+- [x] 2. Add `{ label: 'Copy session.md path', enabled: !!dir, click: () => dir && clipboard.writeText(sessionMdPath(dir)) }` directly below "Open session.md" — proof: `grep -A1 "Open session.md" src/main.ts` shows it
+- [x] 3. Smoke check for F1 — proof: `npm run smoke` prints `✓ session.md path is absolute`
+- [x] 4. README sentence — proof: `grep "Copy session.md path" README.md`
+- [x] 5. Verify, open the PR, arm auto-merge, archive the folder, close `snap-jpx` after merge — proof: CI `check` passes
 
 ## Risks
 
@@ -90,3 +91,5 @@ Done:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-09-25 — "Open session.md" also uses `sessionMdPath`, so all three places build the path one way. Same file, no behaviour change.
