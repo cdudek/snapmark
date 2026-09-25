@@ -146,6 +146,28 @@ app
     key('Escape');
     r['Esc: deselect, then back to Select'] = hadCard && deselected && tool() === 'select';
 
+    // Ghost (F1-F5): a faint copy of the next shape follows the pointer, on the top layer only
+    const top = (x, y) => canvas.contextTop.getImageData(Math.round(x), Math.round(y), 1, 1).data[3];
+    const objs = canvas.getObjects().length, undos = undoStack.length;
+    let adds = 0; const count = () => adds++; canvas.on('object:added', count);
+    document.querySelector('[data-tool=box]').click();
+    ev('mousemove', .5, .5);
+    const [cx, cy, d] = [canvas.width * .5, canvas.height * .5, unit * 8];
+    r['ghost: box follows the pointer'] = top(cx - d, cy) > 0 && top(cx - d, cy - d) > 0;
+    key('2'); // Box -> Ellipse without moving
+    r['ghost: pressing the key again shows the next shape'] = tool() === 'ellipse' && top(cx - d, cy - d) === 0 && top(cx - d, cy) > 0;
+    up.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+    r['ghost: gone when the pointer leaves'] = top(cx - d, cy) === 0;
+    ev('mousemove', .5, .5); key('v');
+    r['ghost: gone on Select'] = top(cx - d, cy) === 0;
+    canvas.off('object:added', count);
+    r['ghost: never in the scene, undo or unsaved work'] = adds === 0 && canvas.getObjects().length === objs && undoStack.length === undos;
+    document.querySelector('[data-tool=pen]').click();
+    const penCursor = canvas.freeDrawingCursor;
+    document.querySelector('[data-tool=box]').click();
+    r['icon cursor for Pen, crosshair for Box'] = penCursor.startsWith('url(') && canvas.defaultCursor === 'crosshair';
+    key('v');
+
     document.getElementById('caption').value = 'Smoke test caption';
     return r;
   })()`;
