@@ -37,6 +37,8 @@ jobs:
           if [ -n "$CSC_LINK" ]; then
             npx electron-builder --mac --publish never
           else
+            # Missing secrets arrive as empty strings, which electron-builder reads as "set".
+            unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
             npx electron-builder --mac --publish never -c.mac.identity=-
           fi
       - name: Publish GitHub release
