@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-25
 created: 2026-09-25
+archived_at: 2026-09-25
 ---
 
 # Facts: UX audit of Snapmark v0.2.0

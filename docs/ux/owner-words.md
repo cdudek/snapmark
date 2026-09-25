@@ -70,6 +70,12 @@ topic when it covers both.
 
 > "I added the app icon with a gradient and also added another icon for the menu bar so we have a nice icon there" — 2026-09-25
 
+## Handing a session to the AI
+
+> "One thing, actually, from the menu item: I want to be able to copy and paste the path to the Markdown from the current session. I just paste it and then I can point the AI to it."
+>
+> — 2026-09-25
+
 ## Distribution
 
 > "I want to have:

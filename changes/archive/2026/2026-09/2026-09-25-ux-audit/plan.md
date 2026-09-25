@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-25
 created: 2026-09-25
+archived_at: 2026-09-25
 ---
 
 # Plan: UX audit of Snapmark v0.2.0
@@ -46,15 +47,15 @@ None.
 
 ## Order of work
 
-- [ ] 1. Build once: `npm ci && npm run build`, and confirm `npm run smoke` passes — proof: `smoke: ok`
-- [ ] 2. Write `common.md` in a scratch folder outside the repo: briefing path, build folder, how to launch the editor on the mock page with `SNAPMARK_ROOT` set, safety rules, output paths — proof: the file exists
-- [ ] 3. Record the owner's data before starting: `ls -la ~/Documents/Snapmark` and the `stat` of `~/Library/Application Support/snapmark/state.json` — proof: both saved to the scratch folder
-- [ ] 4. Start agents 1–7 in one message, and agent 8 (Codex, `codex exec`) in the background; each writes only to its own scratch file and to `shots/` — proof: eight output files
-- [ ] 5. Merge into `findings.md`: exact duplicates only, split bundles, number F001 upward by screen then app-wide, counts at the top, "Did not run" listed — proof: the heading count matches the totals
-- [ ] 6. Agent 1, phase 2: `ux:guidelines draft` into `interaction-guidelines.md`, plus the proposed sitemap; agent 4's glossary into `glossary-proposal.md` — proof: F7 and F8 hold
-- [ ] 7. Copy the evaluator notes and shots into `docs/ux/audits/2026-09-25/` — proof: files exist
-- [ ] 8. Safety check: repeat the records from step 3 and compare — proof: no difference (N1)
-- [ ] 9. Verify, open the PR, arm auto-merge, archive the folder — proof: CI `check` passes
+- [x] 1. Build once: `npm ci && npm run build`, and confirm `npm run smoke` passes — proof: `smoke: ok`
+- [x] 2. Write `common.md` in a scratch folder outside the repo: briefing path, build folder, how to launch the editor on the mock page with `SNAPMARK_ROOT` set, safety rules, output paths — proof: the file exists
+- [x] 3. Record the owner's data before starting: `ls -la ~/Documents/Snapmark` and the `stat` of `~/Library/Application Support/snapmark/state.json` — proof: both saved to the scratch folder
+- [x] 4. Start agents 1–7 in one message, and agent 8 (Codex, `codex exec`) in the background; each writes only to its own scratch file and to `shots/` — proof: eight output files
+- [x] 5. Merge into `findings.md`: exact duplicates only, split bundles, number F001 upward by screen then app-wide, counts at the top, "Did not run" listed — proof: the heading count matches the totals
+- [x] 6. Agent 1, phase 2: `ux:guidelines draft` into `interaction-guidelines.md`, plus the proposed sitemap; agent 4's glossary into `glossary-proposal.md` — proof: F7 and F8 hold
+- [x] 7. Copy the evaluator notes and shots into `docs/ux/audits/2026-09-25/` — proof: files exist
+- [x] 8. Safety check: repeat the records from step 3 and compare — proof: no difference (N1)
+- [x] 9. Verify, open the PR, arm auto-merge, archive the folder — proof: CI `check` passes
 
 ## Risks
 
@@ -102,3 +103,6 @@ Done:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-09-25 — Step 7 copies only the 110 screenshots cited in `findings.md` (of 178 taken), scaled to 1568 px and reduced to 256 colours (6.5 MB instead of 23 MB), plus `common.md` and `harness.js` so the audit can be re-run. The rest stay in the scratch folder.
+- 2026-09-25 — The Codex evaluator could not launch Electron in its sandbox (SIGABRT); its 37 findings are code-based and say so. Recorded under "Did not run" in `findings.md`.
