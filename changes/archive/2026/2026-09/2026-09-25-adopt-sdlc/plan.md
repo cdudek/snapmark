@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-25
 created: 2026-09-25
+archived_at: 2026-09-25
 ---
 
 # Plan: Adopt the AI-native SDLC in Snapmark, with Beads as tracker
@@ -51,7 +52,7 @@ None.
 - [x] 2. `bd init --prefix snap`; create `snap-64x` and `snap-0wm` — proof: `bd list` shows both
 - [x] 3. Stage and run verify — proof: `npm test` shows 27 passed in `tests/sdlc.test.ts`
 - [ ] 4. Open the PR, arm auto-merge — proof: CI `check` passes on the PR
-- [ ] 5. Archive the folder once the PR is green — proof: `changes/archive/2026/2026-09/2026-09-25-adopt-sdlc/` exists
+- [x] 5. Archive the folder once the PR is green — proof: `changes/archive/2026/2026-09/2026-09-25-adopt-sdlc/` exists
 - [ ] 6. Close `snap-64x` after merge — proof: `bd show snap-64x` says closed
 
 ## Risks
