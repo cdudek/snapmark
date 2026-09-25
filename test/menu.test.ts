@@ -73,6 +73,7 @@ assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
   'Open at login',
   'Sessions are saved in ~/Documents/Snapmark',
   'Change where sessions are saved…',
+  'Keyboard shortcuts…',
   'Check for updates…',
   'Version 0.2.0',
 ]);

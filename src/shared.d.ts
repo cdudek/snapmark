@@ -7,7 +7,7 @@ interface EditorInit {
 interface EditorSave {
   png: string; // base64, no data: prefix
   caption: string;
-  notes: string[]; // numbered marker notes, in marker order
+  notes: string[]; // reference notes, in reference order
   cards: string[]; // text of the cards placed on the image
   moves: number; // cut-and-move pieces
 }

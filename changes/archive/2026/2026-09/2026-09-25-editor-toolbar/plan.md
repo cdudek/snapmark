@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-25
 created: 2026-09-25
+archived_at: 2026-09-25
 ---
 
 # Plan: Editor — icon toolbar, Reference, Esc, Dock icon, sidebar
@@ -49,16 +50,16 @@ None.
 
 ## Order of work
 
-- [ ] 1. `src/tools.ts` + `shared.d.ts`; `editor.html` loads `tools.js` before `editor.js`; `editor.ts` uses the shared `GROUPS` — proof: `npm run typecheck` exits 0 and `npm run smoke` passes with its keys moved to the new order (Box on 2, Arrow on 3, Cross on 4, Tick on 5, Reference on 1, Highlight on 6, Cut & move on 7, Redact on 7 again)
-- [ ] 2. Icon toolbar: a group per key with its tools as icon buttons and the key under them; the active tool pressed; clicking an icon selects that tool; tooltip "<Name> (<key>)", with the Select and Redact extras (F1–F4) — proof: smoke checks every tool has a button with an `<svg>` and no visible text, the group order, one tooltip, and a click
-- [ ] 3. "Reference" wording in the editor hint, README and prompt; no "Numbered" left (F5) — proof: smoke checks the editor page and `promptFor` contain no "Numbered"
-- [ ] 4. Esc: in a text field → blur; else a selection → deselect; else → Select (F6) — proof: smoke presses Esc with Card active and checks the tool is Select
-- [ ] 5. Sidebar: body scrolls, footer holds Discard and "Add to session"; notes and comment use `field-sizing: content`; the comment is one line with "Add a comment…"; References heading and list only once a reference exists (F7–F10) — proof: smoke types a five-line note and checks `scrollHeight <= clientHeight + 1`, checks the footer's buttons stay inside the window with ten references, and checks References is hidden before the first reference
-- [ ] 6. Dock: `app.dock.show()` when an editor opens; `app.dock.hide()` when the last one closes (F11) — proof: read in the code; manual
-- [ ] 7. "Keyboard shortcuts…" in Settings opens `shortcuts.html` in a 520×640 window (F12) — proof: `test/menu.test.ts` for the item; the window by hand
-- [ ] 8. `promptFor` writes one line per tool with a meaning, from `GROUPS` (F13) — proof: smoke checks every tool label except Select appears in `promptFor`
-- [ ] 9. README key table and wording — proof: `grep -n "Reference" README.md`
-- [ ] 10. Verify, PR, auto-merge, archive, close `snap-8p1`, rebuild and install the app — proof: CI `check` passes; the installed app shows the icon toolbar
+- [x] 1. `src/tools.ts` + `shared.d.ts`; `editor.html` loads `tools.js` before `editor.js`; `editor.ts` uses the shared `GROUPS` — proof: `npm run typecheck` exits 0 and `npm run smoke` passes with its keys moved to the new order (Box on 2, Arrow on 3, Cross on 4, Tick on 5, Reference on 1, Highlight on 6, Cut & move on 7, Redact on 7 again)
+- [x] 2. Icon toolbar: a group per key with its tools as icon buttons and the key under them; the active tool pressed; clicking an icon selects that tool; tooltip "<Name> (<key>)", with the Select and Redact extras (F1–F4) — proof: smoke checks every tool has a button with an `<svg>` and no visible text, the group order, one tooltip, and a click
+- [x] 3. "Reference" wording in the editor hint, README and prompt; no "Numbered" left (F5) — proof: smoke checks the editor page and `promptFor` contain no "Numbered"
+- [x] 4. Esc: in a text field → blur; else a selection → deselect; else → Select (F6) — proof: smoke presses Esc with Card active and checks the tool is Select
+- [x] 5. Sidebar: body scrolls, footer holds Discard and "Add to session"; notes and comment use `field-sizing: content`; the comment is one line with "Add a comment…"; References heading and list only once a reference exists (F7–F10) — proof: smoke types a five-line note and checks `scrollHeight <= clientHeight + 1`, checks the footer's buttons stay inside the window with ten references, and checks References is hidden before the first reference
+- [x] 6. Dock: `app.dock.show()` when an editor opens; `app.dock.hide()` when the last one closes (F11) — proof: read in the code; manual
+- [x] 7. "Keyboard shortcuts…" in Settings opens `shortcuts.html` in a 520×640 window (F12) — proof: `test/menu.test.ts` for the item; the window by hand
+- [x] 8. `promptFor` writes one line per tool with a meaning, from `GROUPS` (F13) — proof: smoke checks every tool label except Select appears in `promptFor`
+- [x] 9. README key table and wording — proof: `grep -n "Reference" README.md`
+- [x] 10. Verify, PR, auto-merge, archive, close `snap-8p1`, rebuild and install the app — proof: CI `check` passes; the installed app shows the icon toolbar
 
 ## Risks
 
@@ -105,3 +106,9 @@ Done:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-09-25 — The shortcuts window is built in `src/main.ts` from the tool list and loaded as a `data:` page with no script, so `src/shortcuts.html` and the `package.json` copy step were not needed.
+- 2026-09-25 — `ToolGroup` and `GROUPS` are declared in `src/tools.ts` itself (a classic script is global to the type checker), so `src/shared.d.ts` only had a comment updated.
+- 2026-09-25 — The empty-sidebar hint ("Press 5 and click…") is gone rather than reworded: with References hidden until the first one (F9) there is nowhere to show it; tooltips and the shortcuts window explain the tools.
+- 2026-09-25 — The Redact icon was redrawn as a pixel checkerboard after the first screenshot showed it looked like the ⌘ key next to "Undo ⌘Z".
+- 2026-09-25 — The smoke test's key presses were moved to the new key order (the owner's decision); no check was removed or loosened.

@@ -4,71 +4,9 @@ type FObject = import('fabric').FabricObject;
 type Point = { x: number; y: number };
 type Rect = Point & { w: number; h: number };
 type GlyphKind = 'box' | 'ellipse' | 'cross' | 'xbox' | 'hatch' | 'tick' | 'thumb' | 'highlight' | 'spotlight';
-type Tool = GlyphKind | 'select' | 'arrow' | 'pen' | 'marker' | 'card' | 'redact' | 'cut';
+type Tool = ToolId; // GROUPS, RED, GREEN and YELLOW come from tools.ts, loaded first
 
-const RED = '#e11d48';
-const GREEN = '#16a34a';
-const YELLOW = '#facc15';
 const CARD_BG = '#fef9c3';
-// A key selects its group; pressing it again cycles through the group's tools.
-// Groups with a fixed color ignore the color picker, so "remove" is always red and "approve" always green.
-const GROUPS: { key: string; label: string; color?: string; tools: { id: Tool; label: string }[] }[] = [
-  {
-    key: '1',
-    label: 'Mark',
-    tools: [
-      { id: 'box', label: 'Box' },
-      { id: 'ellipse', label: 'Ellipse' },
-    ],
-  },
-  {
-    key: '2',
-    label: 'Draw',
-    tools: [
-      { id: 'arrow', label: 'Arrow' },
-      { id: 'pen', label: 'Pen' },
-    ],
-  },
-  {
-    key: '3',
-    label: 'Remove',
-    color: RED,
-    tools: [
-      { id: 'cross', label: 'Cross' },
-      { id: 'xbox', label: 'Crossed box' },
-      { id: 'hatch', label: 'Remove area' },
-    ],
-  },
-  {
-    key: '4',
-    label: 'Approve',
-    color: GREEN,
-    tools: [
-      { id: 'tick', label: 'Tick' },
-      { id: 'thumb', label: 'Thumbs up' },
-    ],
-  },
-  {
-    key: '5',
-    label: 'Note',
-    tools: [
-      { id: 'marker', label: 'Numbered' },
-      { id: 'card', label: 'Card' },
-    ],
-  },
-  {
-    key: '6',
-    label: 'Highlight',
-    color: YELLOW,
-    tools: [
-      { id: 'highlight', label: 'Highlighter' },
-      { id: 'spotlight', label: 'Spotlight' },
-      { id: 'redact', label: 'Redact' },
-    ],
-  },
-  { key: '7', label: 'Move', tools: [{ id: 'cut', label: 'Cut & move' }] },
-  { key: 'v', label: 'Select', tools: [{ id: 'select', label: 'Select' }] },
-];
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const refsEl = $<HTMLDivElement>('refs');
@@ -77,7 +15,7 @@ const captionEl = $<HTMLTextAreaElement>('caption');
 const saveBtn = $<HTMLButtonElement>('save');
 const toolsEl = $<HTMLSpanElement>('tools');
 const mainEl = document.querySelector('main')!;
-const HINT = 'Press 5 and click the image to add a numbered marker with a note.';
+const refsLabel = $<HTMLLabelElement>('refs-label');
 
 const canvas = new fabric.Canvas($<HTMLCanvasElement>('canvas'), {
   enableRetinaScaling: false, // the screenshot is already at device resolution
@@ -88,7 +26,7 @@ const canvas = new fabric.Canvas($<HTMLCanvasElement>('canvas'), {
 const undoStack: (() => void)[] = [];
 const links = new WeakMap<FObject, FObject[]>(); // cut piece -> its ghost and arrow
 const variant = GROUPS.map(() => 0); // last-used tool per group
-let group = 0;
+let group = GROUPS.findIndex((g) => g.key === '2'); // start on Box
 let unit = 2; // stroke width in image pixels, scaled to the screenshot size
 let background: import('fabric').FabricImage | null = null;
 let drag: { start: Point; obj: FObject | null } | null = null;
@@ -223,7 +161,7 @@ class Arrow extends fabric.Line {
   }
 }
 
-// Numbered circle. The number is its position among markers, so it renumbers after deletes and undo.
+// Reference: a numbered circle. The number is its position among markers, so it renumbers after deletes and undo.
 class Marker extends fabric.Circle {
   n = 0;
   note = '';
@@ -322,23 +260,33 @@ function applyTool() {
   renderToolbar();
 }
 
+// One icon button per tool, grouped by key with the key under the group; the name is in the tooltip.
 function renderToolbar() {
   toolsEl.replaceChildren(
     ...GROUPS.map((g, i) => {
-      const b = document.createElement('button');
-      b.setAttribute('aria-pressed', String(i === group));
-      if (g.color) b.style.setProperty('--tool', g.color === YELLOW ? '#ca8a04' : g.color);
+      const wrap = document.createElement('div');
+      wrap.className = 'group';
+      if (g.color) wrap.style.setProperty('--tool', g.color === YELLOW ? '#ca8a04' : g.color);
+      const row = document.createElement('div');
+      row.className = 'icons';
+      g.tools.forEach((t, v) => {
+        const b = document.createElement('button');
+        b.dataset.tool = t.id;
+        b.setAttribute('aria-label', t.label);
+        b.setAttribute('aria-pressed', String(i === group && v === variant[i]));
+        b.title = `${t.label} (${g.key.toUpperCase()})${t.tip ? `: ${t.tip}` : ''}`;
+        b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>`; // static markup from tools.ts
+        b.onclick = () => {
+          group = i;
+          variant[i] = v;
+          applyTool();
+        };
+        row.append(b);
+      });
       const kbd = document.createElement('kbd');
       kbd.textContent = g.key.toUpperCase();
-      const name = document.createElement('span');
-      name.textContent = g.tools[variant[i]].label;
-      const dots = document.createElement('span');
-      dots.className = 'dots';
-      dots.textContent = g.tools.length > 1 ? g.tools.map((_, v) => (v === variant[i] ? '●' : '○')).join('') : '';
-      b.append(kbd, name, dots);
-      b.title = `${g.label}: ${g.tools.map((t) => t.label).join(' → ')}`;
-      b.onclick = () => pickGroup(i);
-      return b;
+      wrap.append(row, kbd);
+      return wrap;
     }),
   );
 }
@@ -564,12 +512,10 @@ let shownRefs: Marker[] = [];
 
 function renderRefs() {
   const list = markers();
+  refsLabel.hidden = !list.length; // References appear with the first reference
   if (!list.length) {
     shownRefs = [];
-    const p = document.createElement('p');
-    p.className = 'hint';
-    p.textContent = HINT;
-    refsEl.replaceChildren(p);
+    refsEl.replaceChildren();
     return;
   }
   // Same markers in the same order: keep the rows, so a note being typed keeps focus.
@@ -583,7 +529,7 @@ function renderRefs() {
       badge.textContent = String(m.n);
       badge.style.background = String(m.fill);
       const ta = document.createElement('textarea');
-      ta.rows = 2;
+      ta.rows = 1; // grows with its text (field-sizing: content)
       ta.value = m.note;
       ta.placeholder = `Note for ${m.n}`;
       ta.oninput = () => {
@@ -621,7 +567,15 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.metaKey && e.key === 'z') return undo();
   const active = canvas.getActiveObject();
-  if (e.key === 'Escape') return void (canvas.discardActiveObject(), canvas.requestRenderAll());
+  // Esc steps back one level: a text field (above), then the selection, then the tool itself.
+  if (e.key === 'Escape') {
+    if (active) return void (canvas.discardActiveObject(), canvas.requestRenderAll());
+    if (tool() !== 'select') {
+      group = GROUPS.findIndex((x) => x.key === 'v');
+      applyTool();
+    }
+    return;
+  }
   if ((e.key === 'Backspace' || e.key === 'Delete') && active) return remove(active);
   const g = GROUPS.findIndex((x) => x.key === e.key.toLowerCase());
   if (!e.metaKey && g >= 0) pickGroup(g);

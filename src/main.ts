@@ -7,6 +7,9 @@ import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, MenuActions, MenuState, SessionInfo } from './menu';
+// tools.ts is a classic script shared with the editor page, so it has no ES export to import.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
 
 const DEFAULT_ROOT = path.join(os.homedir(), 'Documents', 'Snapmark');
 const SHORTCUT_CAPTURE = 'CommandOrControl+Shift+1';
@@ -100,8 +103,10 @@ export function openEditor(image: string): BrowserWindow {
   });
   const id = win.webContents.id;
   editors.set(id, { image, root, session, win, dirty: false });
+  void app.dock?.show(); // an open editor is visible in the Dock
   win.on('closed', () => {
     editors.delete(id);
+    if (!editors.size) app.dock?.hide();
     fs.rmSync(image, { force: true });
   });
   win.loadFile(path.join(__dirname, 'editor.html'));
@@ -173,8 +178,11 @@ export function sessionMdPath(dir: string): string {
 export function promptFor(dir: string): string {
   return [
     `Work through the visual feedback in "${sessionMdPath(dir)}".`,
-    'Each entry is an annotated screenshot. The numbered notes below it refer to the numbered markers on the image.',
-    'Red crosses and hatched areas mean remove. Green ticks and thumbs-up mean keep as is. Boxes, ellipses and arrows point at what a note is about.',
+    'Each entry is an annotated screenshot. The numbered list below it holds the notes for the references (numbered circles) on the image.',
+    'What the marks mean:',
+    ...TOOLS.flatMap((g) => g.tools)
+      .filter((t) => t.means)
+      .map((t) => `- ${t.label}: ${t.means}.`),
   ].join('\n');
 }
 
@@ -253,6 +261,39 @@ async function otherSession() {
   setActive(path.basename(dir));
 }
 
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+let shortcutsWin: BrowserWindow | null = null;
+
+// Built from the same tool list as the toolbar, so the two never disagree. No script, so the page needs no CSP exception.
+function showShortcuts() {
+  if (shortcutsWin && !shortcutsWin.isDestroyed()) return shortcutsWin.focus();
+  const row = (keys: string, icon: string, name: string, what: string) =>
+    `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
+  const tools = TOOLS.flatMap((g) =>
+    g.tools.map((t, v) => row(v ? `${g.key.toUpperCase()} again` : g.key.toUpperCase(), t.icon, t.label, t.tip ?? t.means ?? '')),
+  ).join('');
+  const other = [
+    ['⇧⌘1', 'Capture region', 'anywhere'],
+    ['⇧⌘2', 'New session', 'anywhere'],
+    ['Esc', 'Step back', 'out of the text, then deselect, then back to Select'],
+    ['⌫', 'Delete', 'the selected mark'],
+    ['⌘Z', 'Undo', ''],
+    ['⌘↵', 'Add to session', ''],
+    ['⌘W', 'Discard', 'the screenshot'],
+  ]
+    .map(([k, n, w]) => row(k, '', n, w))
+    .join('');
+  const html = `<!doctype html><meta charset="utf-8"><title>Keyboard shortcuts</title><style>
+    :root{color-scheme:light dark;font:13px -apple-system,system-ui,sans-serif}body{margin:16px}
+    h2{font-size:13px;margin:16px 0 6px}table{border-collapse:collapse;width:100%}td{padding:4px 6px;vertical-align:middle}
+    kbd{font:600 11px ui-monospace,monospace;white-space:nowrap}
+    svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    </style><h2>Editor tools</h2><table>${tools}</table><h2>Other keys</h2><table>${other}</table>`;
+  shortcutsWin = new BrowserWindow({ width: 520, height: 640, title: 'Keyboard shortcuts' });
+  void shortcutsWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  app.focus({ steal: true });
+}
+
 const actions: MenuActions = {
   capture,
   newSession,
@@ -276,6 +317,7 @@ const actions: MenuActions = {
   },
   chooseRoot: () => void chooseRoot(),
   setLogin: (checked) => app.setLoginItemSettings({ openAtLogin: checked }),
+  keyboardShortcuts: showShortcuts,
   checkUpdates: () => void checkForUpdatesNow(),
   installUpdate: () => autoUpdater.quitAndInstall(),
   quit: () => app.quit(),
