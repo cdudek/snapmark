@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, dialog, globalShortcut, ipcMain, nativeImage, shell, Notification } from 'electron';
+import { app, BrowserWindow, Tray, Menu, clipboard, dialog, globalShortcut, ipcMain, nativeImage, shell, Notification } from 'electron';
 import { execFile } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -122,6 +122,15 @@ function checkForUpdates() {
   autoUpdater.checkForUpdatesAndNotify().catch((e: unknown) => console.error('Update check failed:', e));
 }
 
+// Pasted into an agent's chat: points it at the session and explains the marks, so the notes need no preamble.
+export function promptFor(dir: string): string {
+  return [
+    `Work through the visual feedback in "${path.join(dir, 'session.md')}".`,
+    'Each entry is an annotated screenshot. The numbered notes below it refer to the numbered markers on the image.',
+    'Red crosses and hatched areas mean remove. Green ticks and thumbs-up mean keep as is. Boxes, ellipses and arrows point at what a note is about.',
+  ].join('\n');
+}
+
 async function runExport(kind: 'ZIP' | 'PDF', dir: string) {
   try {
     shell.showItemInFolder(await (kind === 'ZIP' ? exportZip(dir) : exportPdf(dir)));
@@ -147,6 +156,7 @@ function refreshTray() {
       { type: 'separator' },
       { label: 'Open session.md', enabled: !!dir, click: () => dir && shell.openPath(path.join(dir, 'session.md')) },
       { label: 'Show session folder', enabled: !!dir, click: () => dir && shell.openPath(dir) },
+      { label: 'Copy prompt for AI', enabled: !!dir, click: () => dir && clipboard.writeText(promptFor(dir)) },
       {
         label: 'Export session',
         enabled: !!dir,
