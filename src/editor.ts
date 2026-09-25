@@ -439,7 +439,8 @@ canvas.on('mouse:down', ({ scenePoint: p }) => {
     const m = new Marker(p, color());
     canvas.add(m);
     added(m);
-    refsEl.querySelector<HTMLTextAreaElement>('.ref:last-child textarea')?.focus();
+    // After the event: the browser's own mousedown handling would otherwise move focus off the note again.
+    setTimeout(() => refsEl.querySelector<HTMLTextAreaElement>('.ref:last-child textarea')?.focus());
     return;
   }
   let obj: FObject | null = null;
