@@ -1,85 +1,85 @@
 ---
 linear: none
+bead: snap-64x
 type: plan
 change: 2026-09-25-adopt-sdlc
 design: null
 author: calvindudek@googlemail.com
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: calvindudek@googlemail.com (Plannotator gate)
+approved_at: 2026-09-25
 created: 2026-09-25
 ---
 
-# Plan: Adopt the AI-native SDLC in kingfish
+# Plan: Adopt the AI-native SDLC in Snapmark, with Beads as tracker
 
-> One sentence. What this change does.
+> Install the change chain, its hooks and its guardrail test, and track work in Beads.
 
-A person with no context builds from this file alone. [intent](intent.md) and
-[facts](facts.md) are for the gate, not for the build.
+A person with no context builds from this file alone. [facts](facts.md) are for the gate, not for
+the build.
 
 ## Approach
 
-- **What changes:** <one sentence>
-- **What stays the same:** <one sentence>
-- **Why this way:** <one sentence>
-- **Rejected:** <option> — <why not, one clause>
+- **What changes:** the repo gains `sdlc.json`, seven Claude Code hooks, the change template, `docs/sdlc.md` and a guardrail test in `npm test`. Beads becomes the tracker.
+- **What stays the same:** the app, CI, the release workflow, and the `main` ruleset that requires the `check` job.
+- **Why this way:** one owner, so no tiers and no Claude review. Beads, because Snapmark is personal and lives outside the OMR Linear workspace.
+- **Write first, and say so:** `adopt.py` generates every file, so the artifact exists before the gate. The gate approves the diff as it stands.
+- **Rejected:**
+  - Linear — personal project in a work workspace.
+  - Claude PR review — needs an API key secret and costs tokens on every PR.
 
 ## Design changes
 
-<Which sections of `design:` this change edits, or "none". Edit them in the same PR.>
+None.
 
 ## Files that change
 
-| File   | Change     |
-| ------ | ---------- |
-| `path` | <one line> |
+| File                                                           | Change                                                                                     |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `sdlc.json`                                                    | new: npm commands, `main`, `tiers: false`, `claude: false`, only the dependency block rule |
+| `.claude/settings.json`, `.claude/hooks/*.sh`                  | new: the seven SDLC hooks, plus the `bd prime` hook from `bd init`                         |
+| `.gitignore`                                                   | tracks `.claude/settings.json` and the hooks                                               |
+| `docs/sdlc.md`, `CLAUDE.md`, `REVIEW.md`, `AGENTS.md`          | new: how the chain and Beads work here                                                     |
+| `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE.md` | new templates                                                                              |
+| `tests/sdlc.test.ts`                                           | new guardrail test                                                                         |
+| `package.json`, `package-lock.json`                            | `vitest` dev dependency; `npm test` runs the guardrail; `sdlc:tools` script                |
+| `changes/2026-09-25-adopt-sdlc/`                               | this change                                                                                |
 
 ## Order of work
 
-Each step has a proof. The proof is a command, a file, or a fact.
-
-- [ ] 1. <step> — proof: `<command>` exits 0
-- [ ] 2. <step> — proof: `<file>` exists
-- [ ] 3. <step> — proof: F<n> passes
+- [x] 1. Write `sdlc.json` for this repo, then run `adopt.py --preset node` — proof: the files above exist
+- [x] 2. `bd init --prefix snap`; create `snap-64x` and `snap-0wm` — proof: `bd list` shows both
+- [x] 3. Stage and run verify — proof: `npm test` shows 27 passed in `tests/sdlc.test.ts`
+- [ ] 4. Open the PR, arm auto-merge — proof: CI `check` passes on the PR
+- [ ] 5. Archive the folder once the PR is green — proof: `changes/archive/2026/2026-09/2026-09-25-adopt-sdlc/` exists
+- [ ] 6. Close `snap-64x` after merge — proof: `bd show snap-64x` says closed
 
 ## Risks
 
-| Risk               | What we do   | Where it lands                          |
-| ------------------ | ------------ | --------------------------------------- |
-| <what could break> | <the action> | <step number, test name, or "accepted"> |
+| Risk                                                                       | What we do                                                       | Where it lands |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------- |
+| CI has no `vitest` run for the guardrail beyond `npm test`                 | `npm test` runs it, and CI runs `npm test`                       | step 3         |
+| The Beads database is local only, so it's lost with the laptop             | Accepted for a personal project; Dolt remotes can sync it later  | accepted       |
+| Hooks block dependency installs, so later changes that need a package stop | That is the rule: a human adds the package and says so in the PR | accepted       |
 
 ## Out of scope
 
-- <what this change does not do, on purpose>
+- Claude PR review and Ship/Show/Ask tiers.
+- Syncing Beads anywhere.
+- The UX audit (`snap-0wm`), which is its own change.
 
 ## Done
 
-The `/goal` condition. Every line is something the transcript can show.
-
 - `npm run format && npm run lint && npm run typecheck && npm test` exits 0.
-- <file> exists / contains `<string>`.
-- F1 to F<n> pass by their named check.
+- `sdlc.json` contains `"tiers": false` and `"claude": false`.
+- F1 to F6 hold by their named checks.
 - Nothing outside `## Files that change` is edited.
 - Stop and report as soon as a step cannot proceed. Never work around a blocker.
-- Stop after 40 turns if not met. Report what is missing.
 
 ## Goal handover
 
-The `/goal` given to the user at step 6, verbatim, so the handover is committed
-rather than living in one chat message. Fill it when the gate returns approved.
-
-The guardrail test fails an approved plan whose section is empty. Write `none —
-<why>` rather than leaving it blank: an empty section is a skip, a section that
-names itself empty is a decision. The usual reason is a document-shaped change,
-where the artifact is this PR's diff and there was never a build to hand over.
-
-```
-/goal Build 2026-09-25-adopt-sdlc/plan.md in its order of work; every outcome in facts.md
-must hold; tick tasks as they land; log departures under ## Revisions.
-
-Done:
-<the Done section above, verbatim>
-```
+none — the artifact is this PR's diff. `adopt.py` wrote every file before the gate, so there is no
+build left to hand over.
 
 ## Revisions
 
