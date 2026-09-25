@@ -6,6 +6,7 @@ import path from 'path';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
+import { menuTemplate, MenuActions, MenuState, SessionInfo } from './menu';
 
 const DEFAULT_ROOT = path.join(os.homedir(), 'Documents', 'Snapmark');
 const SHORTCUT_CAPTURE = 'CommandOrControl+Shift+1';
@@ -15,13 +16,19 @@ const statePath = () => path.join(app.getPath('userData'), 'state.json');
 // SNAPMARK_ROOT (tests, dev) wins over the folder chosen in the menu.
 let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
+let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
 let tray: Tray | null = null;
-const editors = new Map<number, { image: string; root: string; session: string }>(); // keyed by webContents.id
+let updateWaiting: string | null = null;
+let quitting = false; // set by "Quit anyway" so the quit guard lets go
+const registered = new Set<string>(); // global shortcuts macOS let us have
+// keyed by webContents.id; dirty = marks or text not saved yet
+const editors = new Map<number, { image: string; root: string; session: string; win: BrowserWindow; dirty: boolean }>();
 
 function loadState() {
   try {
     const state = JSON.parse(fs.readFileSync(statePath(), 'utf8'));
     active = state.active;
+    used = state.used ?? {};
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -31,12 +38,12 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root }));
-  refreshTray();
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used }));
 }
 
 export function setActive(name: string) {
   active = name;
+  used[name] = Date.now();
   saveState();
 }
 
@@ -56,9 +63,20 @@ async function chooseRoot() {
 
 const tilde = (p: string) => (p.startsWith(os.homedir()) ? `~${p.slice(os.homedir().length)}` : p);
 
+function notify(body: string, onClick?: () => void) {
+  const n = new Notification({ title: 'Snapmark', body });
+  if (onClick) n.on('click', onClick);
+  n.show();
+}
+
+const dirOf = (name: string) => path.join(root, name);
+
 function newSession() {
+  // Pressing ⇧⌘2 twice must not leave empty sessions behind.
+  if (active && fs.existsSync(dirOf(active)) && sessions.count(root, active) === 0)
+    return notify(`${sessions.shortName(active)} is still empty, so new captures keep going there.`);
   setActive(sessions.create(root));
-  new Notification({ title: 'Snapmark', body: `New session: ${active}` }).show();
+  notify(`New session: ${active}`);
 }
 
 function capture() {
@@ -80,8 +98,12 @@ export function openEditor(image: string): BrowserWindow {
     title: `Snapmark — ${session}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
-  editors.set(win.webContents.id, { image, root, session });
-  win.on('closed', () => fs.rmSync(image, { force: true }));
+  const id = win.webContents.id;
+  editors.set(id, { image, root, session, win, dirty: false });
+  win.on('closed', () => {
+    editors.delete(id);
+    fs.rmSync(image, { force: true });
+  });
   win.loadFile(path.join(__dirname, 'editor.html'));
   app.focus({ steal: true });
   return win;
@@ -114,14 +136,33 @@ export function fitForAI(png: Buffer): Buffer {
 ipcMain.handle('editor:save', (e, { png, caption, notes, cards, moves }: EditorSave): number => {
   const { root: into, session } = editorFor(e.sender.id);
   const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes, cards, moves });
+  used[session] = Date.now();
+  saveState();
   BrowserWindow.fromWebContents(e.sender)?.close();
   return n;
 });
 
-// Downloads in the background and notifies; the update installs on next quit. Offline or no release: log only.
+ipcMain.on('editor:dirty', (e, value: boolean) => {
+  const ed = editors.get(e.sender.id);
+  if (ed) ed.dirty = value;
+});
+
+// Background check: downloads and notifies once; the update installs on next quit. Offline or no release: log only.
 function checkForUpdates() {
   autoUpdater.checkForUpdatesAndNotify().catch((e: unknown) => console.error('Update check failed:', e));
 }
+
+// The owner asked, so always answer.
+async function checkForUpdatesNow() {
+  try {
+    const r = await autoUpdater.checkForUpdates();
+    if (!r) return notify("Couldn't check for updates: this build has no update feed.");
+    notify(r.isUpdateAvailable ? `Downloading Snapmark ${r.updateInfo.version}…` : `Snapmark ${app.getVersion()} is up to date.`);
+  } catch (e) {
+    notify(`Couldn't check for updates: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+autoUpdater.on('update-downloaded', (info) => (updateWaiting = info.version));
 
 // Pasted into an agent's chat: points it at the session and explains the marks, so the notes need no preamble.
 // The one place the Markdown path is built, so "Copy session.md path" and the AI prompt never disagree.
@@ -145,48 +186,100 @@ async function runExport(kind: 'ZIP' | 'PDF', dir: string) {
   }
 }
 
-function refreshTray() {
-  if (!tray) return;
+const info = (name: string): SessionInfo => ({ name, label: sessions.shortName(name), count: sessions.count(root, name) });
+
+function menuState(): MenuState {
   const list = sessions.list(root);
-  const dir = active ? path.join(root, active) : null;
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: `Session: ${active || '—'}`, enabled: false },
-      { label: 'Capture region', accelerator: SHORTCUT_CAPTURE, click: capture },
-      { label: 'New session', accelerator: SHORTCUT_NEW, click: newSession },
-      {
-        label: 'Switch session',
-        enabled: list.length > 0,
-        submenu: list.slice(0, 20).map((s) => ({ label: s, type: 'radio', checked: s === active, click: () => setActive(s) })),
-      },
-      { type: 'separator' },
-      { label: 'Open session.md', enabled: !!dir, click: () => dir && shell.openPath(sessionMdPath(dir)) },
-      { label: 'Copy session.md path', enabled: !!dir, click: () => dir && clipboard.writeText(sessionMdPath(dir)) },
-      { label: 'Show session folder', enabled: !!dir, click: () => dir && shell.openPath(dir) },
-      { label: 'Copy prompt for AI', enabled: !!dir, click: () => dir && clipboard.writeText(promptFor(dir)) },
-      {
-        label: 'Export session',
-        enabled: !!dir,
-        submenu: (['ZIP', 'PDF'] as const).map((kind) => ({ label: kind, click: () => dir && void runExport(kind, dir) })),
-      },
-      { type: 'separator' },
-      { label: `Sessions folder: ${tilde(root)}`, enabled: false },
-      { label: 'Change sessions folder…', enabled: !process.env.SNAPMARK_ROOT, click: () => void chooseRoot() },
-      { type: 'separator' },
-      {
-        label: 'Open at login',
-        type: 'checkbox',
-        // Only for the installed app: in development it would register the bare Electron binary.
-        enabled: app.isPackaged,
-        checked: app.isPackaged && app.getLoginItemSettings().openAtLogin,
-        click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }),
-      },
-      { label: `Snapmark ${app.getVersion()}`, enabled: false },
-      { label: 'Check for updates…', enabled: app.isPackaged, click: checkForUpdates },
-      { label: 'Quit', role: 'quit' },
-    ]),
-  );
+  return {
+    current: active && list.includes(active) ? info(active) : null,
+    sessions: sessions.byLastUse(list, used).map(info),
+    root: tilde(root),
+    canChangeRoot: !process.env.SNAPMARK_ROOT,
+    // Only for the installed app: in development it would register the bare Electron binary.
+    login: { enabled: app.isPackaged, checked: app.isPackaged && app.getLoginItemSettings().openAtLogin },
+    version: app.getVersion(),
+    canUpdate: app.isPackaged,
+    updateWaiting,
+    shortcuts: {
+      capture: registered.has(SHORTCUT_CAPTURE) ? SHORTCUT_CAPTURE : null,
+      newSession: registered.has(SHORTCUT_NEW) ? SHORTCUT_NEW : null,
+    },
+  };
 }
+
+// Built on every open, so counts and sessions changed in Finder are never stale.
+function popMenu() {
+  tray?.popUpContextMenu(Menu.buildFromTemplate(menuTemplate(menuState(), actions)));
+}
+
+// A session moved or deleted outside Snapmark: say so instead of doing nothing.
+function exists(name: string, file = ''): boolean {
+  if (fs.existsSync(path.join(dirOf(name), file))) return true;
+  notify(`${sessions.shortName(name)} is no longer in ${tilde(root)}`, popMenu);
+  return false;
+}
+
+// Native text prompt; Cancel makes osascript exit non-zero, which changes nothing.
+function renameSession(name: string) {
+  const script = [
+    'on run argv',
+    'text returned of (display dialog "Rename session" default answer (item 1 of argv) buttons {"Cancel", "Rename"} default button "Rename")',
+    'end run',
+  ];
+  execFile('osascript', [...script.flatMap((l) => ['-e', l]), name], (err, stdout) => {
+    const wanted = stdout?.trim();
+    if (err || !wanted || wanted === name) return;
+    const to = sessions.rename(root, name, wanted);
+    if (!to) return notify(`A session named ${wanted} already exists.`);
+    if (active === name) active = to;
+    used[to] = used[name] ?? Date.now();
+    delete used[name];
+    for (const ed of editors.values()) if (ed.root === root && ed.session === name) ed.session = to;
+    saveState();
+  });
+}
+
+async function otherSession() {
+  app.focus({ steal: true });
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Choose a session',
+    defaultPath: root,
+    properties: ['openDirectory'],
+  });
+  const dir = filePaths[0];
+  if (canceled || !dir) return;
+  if (path.dirname(dir) !== path.resolve(root) || !fs.existsSync(path.join(dir, 'session.md')))
+    return notify(`That folder is not a session in ${tilde(root)}.`);
+  setActive(path.basename(dir));
+}
+
+const actions: MenuActions = {
+  capture,
+  newSession,
+  copyPrompt: (name) => {
+    clipboard.writeText(promptFor(dirOf(name)));
+    notify(`Prompt for ${sessions.shortName(name)} copied. Paste it into your AI agent.`);
+  },
+  copyPath: (name) => {
+    clipboard.writeText(sessionMdPath(dirOf(name)));
+    notify(`Path to ${sessions.shortName(name)} copied.`);
+  },
+  openFile: (name) => exists(name, 'session.md') && void shell.openPath(sessionMdPath(dirOf(name))),
+  showInFinder: (name) => exists(name) && void shell.openPath(dirOf(name)),
+  rename: renameSession,
+  exportAs: (name, kind) => void runExport(kind, dirOf(name)),
+  makeCurrent: setActive,
+  otherSession: () => void otherSession(),
+  openRoot: () => {
+    fs.mkdirSync(root, { recursive: true });
+    void shell.openPath(root);
+  },
+  chooseRoot: () => void chooseRoot(),
+  setLogin: (checked) => app.setLoginItemSettings({ openAtLogin: checked }),
+  checkUpdates: () => void checkForUpdatesNow(),
+  installUpdate: () => autoUpdater.quitAndInstall(),
+  quit: () => app.quit(),
+};
 
 app.whenReady().then(() => {
   if (process.env.SNAPMARK_NO_UI) return; // test harness drives the app itself
@@ -195,15 +288,42 @@ app.whenReady().then(() => {
   // "Template" in the file name makes macOS tint the icon for light and dark menu bars; @2x is picked up automatically.
   tray = new Tray(path.join(__dirname, '../../assets/trayTemplate.png'));
   tray.setToolTip('Snapmark');
-  refreshTray();
+  tray.on('click', popMenu);
+  tray.on('right-click', popMenu);
   if (app.isPackaged) checkForUpdates();
   for (const [key, fn] of [
     [SHORTCUT_CAPTURE, capture],
     [SHORTCUT_NEW, newSession],
   ] as const) {
-    if (!globalShortcut.register(key, fn)) new Notification({ title: 'Snapmark', body: `${key} is taken by another app` }).show();
+    if (globalShortcut.register(key, fn)) registered.add(key);
+    else notify(`${key} is taken by another app`);
   }
 });
 
 app.on('window-all-closed', () => {}); // menu bar app: keep running
+
+// Quit (menu, ⌘Q, restart, update) must not silently throw away screenshots that are not in a session yet.
+app.on('before-quit', (e) => {
+  const open = [...editors.values()].filter((ed) => ed.dirty && !ed.win.isDestroyed());
+  if (quitting || !open.length) return;
+  e.preventDefault();
+  const first = open[0].win;
+  first.show();
+  first.focus();
+  app.focus({ steal: true });
+  const n = open.length;
+  void dialog
+    .showMessageBox(first, {
+      type: 'warning',
+      message: `${n} screenshot${n === 1 ? ' is' : 's are'} not in a session yet.`,
+      buttons: ['Review', 'Quit anyway'],
+      defaultId: 0,
+      cancelId: 0,
+    })
+    .then(({ response }) => {
+      if (response !== 1) return;
+      quitting = true;
+      app.quit();
+    });
+});
 app.on('will-quit', () => globalShortcut.unregisterAll());

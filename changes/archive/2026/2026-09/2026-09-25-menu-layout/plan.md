@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-25
 created: 2026-09-25
+archived_at: 2026-09-25
 ---
 
 # Plan: Menu bar menu — new layout, labels and behaviour
@@ -49,17 +50,17 @@ None.
 
 ## Order of work
 
-- [ ] 1. `sessions.ts`: `count`, `shortName` ("2026-09-25 12.03" → "25 Sep 12.03", "2026-09-25 12.03 (2)" → "25 Sep 12.03 (2)", any other name unchanged), `rename`, `byLastUse` — proof: `npm test` passes the new asserts in `test/sessions.test.ts`
-- [ ] 2. `menu.ts` with the exact labels of facts F1–F5, F10, F11, F16, F17 — proof: `node dist/test/menu.test.js` passes
-- [ ] 3. `main.ts`: `tray.on('click')` and `tray.on('right-click')` call `tray.popUpContextMenu(Menu.buildFromTemplate(menuTemplate(...)))`; remove `setContextMenu` — proof: `npm run typecheck` exits 0
-- [ ] 4. `main.ts`: copy notifications (F7, F8); "Rename session…" via `osascript` (F9; cancel or empty name changes nothing); state.json gains `used: {name: epochMs}`, set on make-current and on save (F10); "Other session…" opens `dialog.showOpenDialog` at the sessions folder and accepts only a folder with session.md (F10); per-session submenu actions take the session's folder, not `active` (F11) — proof: typecheck; F9 and F10 order by the tests in step 1
-- [ ] 5. `newSession` keeps the current session when `count === 0` and notifies "<name> is still empty, so new captures keep going there." (F12) — proof: `test/sessions.test.ts` covers `count`; the branch is read in the code
-- [ ] 6. Missing folder or session.md → notification "<name> is no longer in <folder>"; its `click` pops up the menu (F13) — proof: manual
-- [ ] 7. Quit guard: preload `dirty`, editor calls it; `before-quit` finds dirty editors, shows the first, asks with `dialog.showMessageBox` "Review" / "Quit anyway"; "Quit anyway" sets a flag and quits (F14). Quit item becomes `{ label: 'Quit Snapmark', accelerator: 'Command+Q', click: () => app.quit() }` — proof: the smoke test still passes (the editor's `dirty` call must not break it); quit by hand
-- [ ] 8. Updates: the manual check calls `autoUpdater.checkForUpdates()` and always notifies — up to date / downloading / "Couldn't check for updates: <message>"; background checks stay quiet; `update-downloaded` sets the waiting version, and "Restart to install <version>" calls `autoUpdater.quitAndInstall()` (F15, F16) — proof: `test/menu.test.ts` for the item; notifications by hand
-- [ ] 9. Registered shortcuts kept in a `Set`; the menu shows the accelerator only when registered, else appends " (shortcut unavailable)" (F17) — proof: `test/menu.test.ts`
-- [ ] 10. README menu section — proof: `grep -n "Copy file path" README.md`
-- [ ] 11. Verify, PR, auto-merge, archive, close `snap-om3` — proof: CI `check` passes
+- [x] 1. `sessions.ts`: `count`, `shortName` ("2026-09-25 12.03" → "25 Sep 12.03", "2026-09-25 12.03 (2)" → "25 Sep 12.03 (2)", any other name unchanged), `rename`, `byLastUse` — proof: `npm test` passes the new asserts in `test/sessions.test.ts`
+- [x] 2. `menu.ts` with the exact labels of facts F1–F5, F10, F11, F16, F17 — proof: `node dist/test/menu.test.js` passes
+- [x] 3. `main.ts`: `tray.on('click')` and `tray.on('right-click')` call `tray.popUpContextMenu(Menu.buildFromTemplate(menuTemplate(...)))`; remove `setContextMenu` — proof: `npm run typecheck` exits 0
+- [x] 4. `main.ts`: copy notifications (F7, F8); "Rename session…" via `osascript` (F9; cancel or empty name changes nothing); state.json gains `used: {name: epochMs}`, set on make-current and on save (F10); "Other session…" opens `dialog.showOpenDialog` at the sessions folder and accepts only a folder with session.md (F10); per-session submenu actions take the session's folder, not `active` (F11) — proof: typecheck; F9 and F10 order by the tests in step 1
+- [x] 5. `newSession` keeps the current session when `count === 0` and notifies "<name> is still empty, so new captures keep going there." (F12) — proof: `test/sessions.test.ts` covers `count`; the branch is read in the code
+- [x] 6. Missing folder or session.md → notification "<name> is no longer in <folder>"; its `click` pops up the menu (F13) — proof: manual
+- [x] 7. Quit guard: preload `dirty`, editor calls it; `before-quit` finds dirty editors, shows the first, asks with `dialog.showMessageBox` "Review" / "Quit anyway"; "Quit anyway" sets a flag and quits (F14). Quit item becomes `{ label: 'Quit Snapmark', accelerator: 'Command+Q', click: () => app.quit() }` — proof: the smoke test still passes (the editor's `dirty` call must not break it); quit by hand
+- [x] 8. Updates: the manual check calls `autoUpdater.checkForUpdates()` and always notifies — up to date / downloading / "Couldn't check for updates: <message>"; background checks stay quiet; `update-downloaded` sets the waiting version, and "Restart to install <version>" calls `autoUpdater.quitAndInstall()` (F15, F16) — proof: `test/menu.test.ts` for the item; notifications by hand
+- [x] 9. Registered shortcuts kept in a `Set`; the menu shows the accelerator only when registered, else appends " (shortcut unavailable)" (F17) — proof: `test/menu.test.ts`
+- [x] 10. README menu section — proof: `grep -n "Copy file path" README.md`
+- [x] 11. Verify, PR, auto-merge, archive, close `snap-om3` — proof: CI `check` passes
 
 ## Risks
 
@@ -107,3 +108,7 @@ Done:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-09-25 — `src/main.ts` now removes an editor from its map when the window closes (before, entries were never removed), so the quit guard only sees open windows.
+- 2026-09-25 — Menu actions are wrapped in arrow functions in `src/menu.ts`, so no action receives Electron's click arguments; `test/menu.test.ts` caught it.
+- 2026-09-25 — A manual update check in a build without an update feed answers "Couldn't check for updates: this build has no update feed." (F15's third case).

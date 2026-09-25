@@ -74,11 +74,22 @@ In the editor, press a key to pick a tool. Press the same key again to cycle its
 
 **Cards:** click to place one and start typing. To point at something, press on it and release where the card should sit; a line then follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 
-The menu bar menu switches sessions, opens `session.md`, shows the session folder, checks for updates, and has an **Open at login** toggle.
+Click the menu bar icon for the menu. It is built fresh each time it opens:
 
-**Copy session.md path** puts just the full path of the current session's `session.md` on the clipboard, to paste into any agent. **Copy prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
+- **Capture region** (⇧⌘1) and **New session** (⇧⌘2). A shortcut another app already owns shows as "(shortcut unavailable)". While the current session has no screenshots, ⇧⌘2 keeps using it instead of making another empty one.
+- **Current session: <name> · <n> screenshots**, then what you can do with it:
+  - **Copy prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
+  - **Copy file path** puts just the full path of `session.md` on the clipboard.
+  - **Open feedback file** opens `session.md` in your Markdown app. **Show in Finder** opens the session folder.
+  - **Rename session…** gives a session a name, like "Checkout review".
+  - **Export** ▸ ZIP or PDF (see below).
+- **Switch session** lists sessions by last use. Each has its own submenu (Make current, Copy prompt for AI, Export, Show in Finder), so you can export an old session without sending new captures there. **Other session…** reaches any session beyond the 20 shown.
+- **Settings**: Open at login, the sessions folder (click to open it), Change where sessions are saved…, Check for updates…, and the version.
+- **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
 
-**Export session → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export session → PDF** renders the session into `<session>.pdf`, for people who just want to read it. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`. **Change sessions folder…** moves new sessions elsewhere; pick a folder inside iCloud Drive or Google Drive and your sessions sync and can be shared from there. The `SNAPMARK_ROOT` environment variable overrides the choice (used by the tests).
+Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.
+
+**Export → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export → PDF** renders the session into `<session>.pdf`, for people who just want to read it. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`. **Settings → Change where sessions are saved…** moves new sessions elsewhere; pick a folder inside iCloud Drive or Google Drive and your sessions sync and can be shared from there. The `SNAPMARK_ROOT` environment variable overrides the choice (used by the tests).
 
 ## Develop
 
@@ -98,6 +109,7 @@ npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 | Path                  | What                                                  |
 | --------------------- | ----------------------------------------------------- |
 | `src/main.ts`         | Menu bar, global shortcuts, capture, auto-update, IPC |
+| `src/menu.ts`         | The menu bar menu as data, tested without Electron    |
 | `src/editor.ts/.html` | Annotation editor window                              |
 | `src/sessions.ts`     | Session folders and `session.md` writing              |
 | `assets/`             | App icon, menu bar template icon                      |
@@ -122,7 +134,7 @@ When it merges, `.github/workflows/release.yml` sees a version without a release
 
 ### Auto-update
 
-The app checks GitHub Releases on start and from **Check for updates…** in the menu, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
+The app checks GitHub Releases on start and from **Settings → Check for updates…** in the menu, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
 
 1. **The app must be signed with a Developer ID.** macOS refuses to apply updates to ad-hoc signed apps. Add these repository secrets and the release workflow signs and notarizes automatically: `MAC_CERT_P12_BASE64`, `MAC_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`.
 2. **The app must be able to read the releases.** Releases of a private repository return 404 without a token, so updates only work once releases are public.
