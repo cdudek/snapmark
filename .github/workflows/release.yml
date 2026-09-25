@@ -46,21 +46,46 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run smoke
+      # electron-builder's own temporary keychain fails to unlock on the macOS 26 runner
+      # ("SecKeychainUnlock: The user name or passphrase you entered is not correct"),
+      # so the certificate goes into a keychain made here and electron-builder finds it by name.
+      - name: Import Developer ID certificate
+        id: cert
+        env:
+          P12: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+        run: |
+          if [ -z "$P12" ]; then echo "signed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          kc="$RUNNER_TEMP/signing.keychain-db"
+          kcp="$(openssl rand -hex 24)"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$kcp" "$kc"
+          security set-keychain-settings -lut 21600 "$kc"
+          security unlock-keychain -p "$kcp" "$kc"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$kc"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$kcp" "$kc" >/dev/null
+          security list-keychains -d user -s "$kc" "$HOME/Library/Keychains/login.keychain-db"
+          rm "$RUNNER_TEMP/cert.p12"
+          id="$(security find-identity -v -p codesigning "$kc" | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')"
+          if [ -z "$id" ]; then echo "No Developer ID Application identity in the certificate" >&2; exit 1; fi
+          # electron-builder wants the name without the "Developer ID Application: " prefix.
+          echo "name=${id#Developer ID Application: }" >> "$GITHUB_OUTPUT"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
       - name: Build DMG and ZIP
         env:
-          # Optional. With these secrets set, the app is signed with a Developer ID and notarized,
-          # which auto-update on macOS requires. Without them the build is ad-hoc signed.
-          CSC_LINK: ${{ secrets.MAC_CERT_P12_BASE64 }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          # With the certificate imported, the app is signed with the Developer ID and notarized,
+          # which auto-update on macOS requires. Without it the build is ad-hoc signed.
+          SIGNED: ${{ steps.cert.outputs.signed }}
+          CERT_NAME: ${{ steps.cert.outputs.name }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          if [ -n "$CSC_LINK" ]; then
-            npx electron-builder --mac --publish never
+          if [ "$SIGNED" = true ]; then
+            CSC_NAME="$CERT_NAME" npx electron-builder --mac --publish never
           else
             # Missing secrets arrive as empty strings, which electron-builder reads as "set".
-            unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+            unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
             npx electron-builder --mac --publish never -c.mac.identity=-
           fi
       - name: Publish GitHub release
