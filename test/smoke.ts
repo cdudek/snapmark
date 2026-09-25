@@ -23,6 +23,7 @@ process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
 const { openEditor, setActive } = require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
+const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
 // Headless Linux (xvfb) has no GPU; capturePage fails with UnknownVizError unless compositing runs on the CPU.
 if (process.platform === 'linux') app.disableHardwareAcceleration();
@@ -78,7 +79,9 @@ app
     const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6); // left side of marker 1, beside its digit
     const thumbR = Math.min(0.1 * shotSize.width, 0.18 * shotSize.height) / 2; // thumbs-up dragged over 10% x 18% of the image
     const [r2, g2, b2] = pixel(out, 0.9, 0.79, 0, thumbR * 0.85); // bottom of the green disc, below the emoji
+    const pdf = await exportPdf(path.join(root, 'smoke'));
     const checks: Record<string, boolean> = {
+      'pdf exported': fs.readFileSync(pdf).subarray(0, 5).toString() === '%PDF-' && fs.statSync(pdf).size > 20_000,
       'image saved': fs.existsSync(out),
       'mock is not blank': pixel(shotCopy, 0.02, 0.02).join() !== pixel(shotCopy, 0.5, 0.5).join(),
       'same size as capture': JSON.stringify(nativeImage.createFromPath(out).getSize()) === JSON.stringify(shotSize),

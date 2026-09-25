@@ -5,6 +5,7 @@ import os from 'os';
 import path from 'path';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
+import { exportPdf, exportZip } from './exporter';
 
 export const ROOT = process.env.SNAPMARK_ROOT || path.join(os.homedir(), 'Documents', 'Snapmark');
 const SHORTCUT_CAPTURE = 'CommandOrControl+Shift+1';
@@ -84,6 +85,14 @@ function checkForUpdates() {
   autoUpdater.checkForUpdatesAndNotify().catch((e: unknown) => console.error('Update check failed:', e));
 }
 
+async function runExport(kind: 'ZIP' | 'PDF', dir: string) {
+  try {
+    shell.showItemInFolder(await (kind === 'ZIP' ? exportZip(dir) : exportPdf(dir)));
+  } catch (e) {
+    new Notification({ title: `Snapmark: ${kind} export failed`, body: String(e) }).show();
+  }
+}
+
 function refreshTray() {
   if (!tray) return;
   const list = sessions.list(ROOT);
@@ -101,6 +110,11 @@ function refreshTray() {
       { type: 'separator' },
       { label: 'Open session.md', enabled: !!dir, click: () => dir && shell.openPath(path.join(dir, 'session.md')) },
       { label: 'Show session folder', enabled: !!dir, click: () => dir && shell.openPath(dir) },
+      {
+        label: 'Export session',
+        enabled: !!dir,
+        submenu: (['ZIP', 'PDF'] as const).map((kind) => ({ label: kind, click: () => dir && void runExport(kind, dir) })),
+      },
       { type: 'separator' },
       { label: `Snapmark ${app.getVersion()}`, enabled: false },
       { label: 'Check for updates…', enabled: app.isPackaged, click: checkForUpdates },
