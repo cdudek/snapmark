@@ -28,6 +28,8 @@ Snapmark v0.2.0 does its core loop: capture with ⌘⇧1, mark up with number ke
 | App-wide               |        0 |      1 |      5 |      5 |             0 |      11 |
 | **Total**              |    **5** | **24** | **82** | **69** |        **10** | **190** |
 
+Added after the audit, 2026-09-25: three menu bar menu findings from the owner's comment on the menu (F191–F193, all Medium). The counts above are the audit's.
+
 When agents gave the same merged problem different impacts, the merge keeps the highest one given. The supporting notes list every impact given.
 
 ## Counts by verified status
@@ -2621,6 +2623,8 @@ Contradictions between agents' verdicts, settled from the evidence:
 
 ### F120 · There is no way to copy the path to the current session's Markdown
 
+- **Built:** 2026-09-25 as "Copy session.md path", below "Open session.md" (the owner's request, before any decision round). Its label is part of the menu layout decision.
+
 - **Impact:** Medium — the owner wants to paste the file's path into an agent and point it there; today the only route is the full prompt, which carries the path inside three sentences, or Finder.
 - **Current experience:** The menu has "Open session.md", "Show session folder" and "Copy prompt for AI". None copies just the path. "Copy prompt for AI" puts on the clipboard: 'Work through the visual feedback in "…/session.md".' followed by two more lines.
 - **Visual:** Proposal: a menu item "Copy path to session.md" directly under "Copy prompt for AI", confirmed like the prompt copy.
@@ -2990,6 +2994,63 @@ Contradictions between agents' verdicts, settled from the evidence:
 - Broken: Zeigarnik effect; token cost
 - Code: `src/main.ts:127-133`
 - Seen by: 6-42 — seen by 1 of 3 independent evaluators
+
+</details>
+
+### F191 · The menu never says what it is: no app name at the top, only a grey session line
+
+- **Impact:** Medium — opening the menu, the first thing shown is a greyed "Session: 2026-09-25 12.03 (2)"; the word Snapmark appears only near the bottom, greyed, as "Snapmark 0.2.0".
+- **Current experience:** First line "Session: 2026-09-25 12.03 (2)" (disabled). No title, no sign of which app the menu belongs to among the other menu bar icons.
+- **Visual:** Before: "Session: 2026-09-25 12.03 (2)" as the first line. After: a section header "Snapmark" at the top, with the session in its own labelled section below.
+- **Recommendation:** Open the menu with the app's name as a section header, and group the rest under labelled headers.
+- **Tradeoff:** One more line.
+- **Decision needed:** Part of the menu layout decision.
+- **Verified:** seen on screen (owner's screenshot, 2026-09-25).
+- **Owner's words:** "Can you optimise this dropdown? It looks terrible. The Open Session, Copy Session: what does "Open Session" even mean? The whole thing doesn't even say what it is. The order of the menu just doesn't make sense." — 2026-09-25
+
+<details><summary>Supporting notes</summary>
+
+- Where: menu bar menu
+- Found by: the owner, 2026-09-25, after the audit
+- Code: `src/main.ts` `refreshTray` menu template; Electron 44 supports `type: 'header'` and `sublabel` on macOS 14+
+
+</details>
+
+### F192 · The menu's order does not follow the work: capture, look at the session, hand it to the AI, manage
+
+- **Impact:** Medium — the hand-off items sit between "Open session.md" and "Export session", "New session" sits between capturing and the session's own items, and settings, version and quit share one group.
+- **Current experience:** Order: Session label · Capture region ⇧⌘1 · New session ⇧⌘2 · Switch session ▸ · — · Open session.md · Copy session.md path · Show session folder · Copy prompt for AI · Export session ▸ · — · Sessions folder: ~/Documents/Snapmark · Change sessions folder… · — · Open at login · Snapmark 0.2.0 · Check for updates… · Quit.
+- **Visual:** Proposal in the menu layout decision.
+- **Recommendation:** Order by the review loop: capture first, then the hand-off to the AI, then the current session, then other sessions, then settings and quit.
+- **Tradeoff:** People who learned the current positions relearn them once.
+- **Decision needed:** Part of the menu layout decision.
+- **Verified:** seen on screen (owner's screenshot, 2026-09-25).
+- **Owner's words:** "Can you optimise this dropdown? It looks terrible. The Open Session, Copy Session: what does "Open Session" even mean? The whole thing doesn't even say what it is. The order of the menu just doesn't make sense." — 2026-09-25
+
+<details><summary>Supporting notes</summary>
+
+- Where: menu bar menu
+- Found by: the owner, 2026-09-25, after the audit
+- Related: F134 (Copy prompt sits mid-menu), F122
+
+</details>
+
+### F193 · Menu labels name a file ("session.md") instead of what the reviewer gets
+
+- **Impact:** Medium — "Open session.md" and "Copy session.md path" make the reviewer know the file's name to understand the item; the owner asked what "Open session" even means.
+- **Current experience:** "Open session.md", "Copy session.md path", "Show session folder" — three items built around file and folder names.
+- **Visual:** Before → after: "Open session.md" → "Open feedback file"; "Copy session.md path" → "Copy file path"; "Show session folder" → "Show in Finder" — all under a "Current session" header, so each label needs no "session".
+- **Recommendation:** Name each item by what happens, and let the section header carry "session".
+- **Tradeoff:** The file name disappears from the menu; the README and the copied prompt still name it.
+- **Decision needed:** Part of the menu layout decision.
+- **Verified:** seen on screen (owner's screenshot, 2026-09-25).
+- **Owner's words:** "Can you optimise this dropdown? It looks terrible. The Open Session, Copy Session: what does "Open Session" even mean? The whole thing doesn't even say what it is. The order of the menu just doesn't make sense." — 2026-09-25
+
+<details><summary>Supporting notes</summary>
+
+- Where: menu bar menu
+- Found by: the owner, 2026-09-25, after the audit
+- Related: F122, F137; glossary-proposal.md
 
 </details>
 

@@ -2,5 +2,18 @@
 
 Every answer the owner gives, appended in order. Quote the answer; never paraphrase it.
 
-| Date | Decision | Answer (quoted) | By whom |
-| ---- | -------- | --------------- | ------- |
+| Date       | Decision                                                                                                                                         | Answer (quoted)           | By whom   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- | --------- |
+| 2026-09-25 | Menu: layout, order and labels (app-name header, capture first, current session section with the hand-off on top, settings submenu, new labels)  | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: confirm "Copy prompt for AI" and "Copy file path" with a notification naming the session                                                   | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: no global shortcut for "Copy prompt for AI"                                                                                                | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: add "Rename session…", keep ⇧⌘2 instant                                                                                                    | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: Quit asks before closing editors with marks or text                                                                                        | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: Switch session ordered by last use, ends with "Other session…"                                                                             | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: each listed session has its own submenu (Make current · Copy prompt for AI · Export · Show in Finder)                                      | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: ⇧⌘2 reuses the current session while it is empty                                                                                           | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: "Restart to install <version>" under the header while an update waits                                                                      | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: "Keyboard shortcuts…" in Settings opens an in-app sheet                                                                                    | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: a missing session file or folder is reported, with "Choose another session"                                                                | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: "Open feedback file" keeps opening session.md in the Markdown app                                                                          | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Menu: routine fixes (prompt explains every mark; "Check for updates…" always answers; shortcut shown only when registered; menu rebuilt on open) | "Apply all (Recommended)" | the owner |
