@@ -28,3 +28,5 @@ Every answer the owner gives, appended in order. Quote the answer; never paraphr
 | 2026-09-25 | Editor: a ghost of the shape follows the pointer and changes as the key is pressed again; tools without a fixed shape show their icon by the crosshair | "Ghost shape (Recommended)" | the owner |
 | 2026-09-25 | Discard keeps the screenshot and its marks for 7 days; menu "Reopen discarded…" and "Reopen last discarded"; no "are you sure" on discard. The option was labelled "Menu + Esc in editor" but described no Esc behaviour; what Esc should do is an open question | "Menu + Esc in editor (Recommended)" | the owner |
 | 2026-09-25 | Menu "Browse screenshots…": a window, ←/→ to flip, "Edit again" with editable marks, "Remove from session", discarded screenshots in their own tab | "Session window (Recommended)" | the owner |
+| 2026-09-25 | Esc on Select closes the editor as a recoverable discard | "Esc on Select closes (Recommended)" | the owner |
+| 2026-09-25 | Build as two changes (tool preview; discard recovery + session window), Beads issues, no intent step, no design file | "Yes (Recommended)" | the owner |

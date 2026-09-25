@@ -150,3 +150,7 @@ topic when it covers both.
 > Also it appears in the current session. I guess in the menu item it would be nice to see the current session screenshots and be able to flip through them, recover them, or just card them."
 >
 > — 2026-09-25 (written while the icon build was being installed; see the decision log)
+
+## Viewing and editing the whole session
+
+> "Also a full markdown view would be nice. including ideally editable like notion with markdown wyiwyg" — 2026-09-25
