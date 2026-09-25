@@ -154,3 +154,13 @@ topic when it covers both.
 ## Viewing and editing the whole session
 
 > "Also a full markdown view would be nice. including ideally editable like notion with markdown wyiwyg" — 2026-09-25
+
+## Editor toolbar, second look
+
+> "Yeah the interface looks quite busy now. Instead of having 1, 2, whatever, and then the icons above, and then having the red box around it, I would just change the icon. I would just, for instance, in the case of Do, switch between a circle and a square and just show the icon that's currently on, and do the same with 3.
+>
+> I also think Arrow should be its own thing, like an arrow, and Free Form Painting should be its own item. I think we can get rid of 5. We don't need to tick and Thumbs Up.
+>
+> Also when I set a mark like a reference, I want to immediately jump into the text field and start typing. Again it would be nice to have what-you-see-is-what-you-get Markdown so I can use hashes and so on for formatting. I'm continuously getting asked to open my screen and system audio recording stuff to add Snapmark; however Snapmark already is activated so I think that's most likely a bug"
+>
+> — 2026-09-25, with a screenshot of the icon toolbar (v0.3.0). "Do" is read as "2" (Box and Ellipse).
