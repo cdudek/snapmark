@@ -140,3 +140,17 @@ topic when it covers both.
 > - I also wonder: commenting and references only exist if I actually add them so I think they may or may not be like a Like something."
 >
 > — 2026-09-25, with a screenshot of the sidebar: Comment box, References 1–3, note 1 cut off after two and a half lines
+
+## Editor window: tool preview, recovering discards, flipping through a session
+
+> "I'm still not seeing icons. Also when I press the buttons 1, 2, 3, or whatever, I would like to see the shape. Can I drag it around or just move it around with the cursor? While I'm pressing 1 multiple times, 2, or whatever, I see the different versions of it.
+>
+> Again I still don't see icons. There's still the text. I think another thing is, if I took a screenshot, annotated it, and discarded it, it is gone. I just wonder if we should introduce a shortcut with Escape and be able to recover it so nothing ever gets lost. I think that would be nice.
+>
+> Also it appears in the current session. I guess in the menu item it would be nice to see the current session screenshots and be able to flip through them, recover them, or just card them."
+>
+> — 2026-09-25 (written while the icon build was being installed; see the decision log)
+
+## Viewing and editing the whole session
+
+> "Also a full markdown view would be nice. including ideally editable like notion with markdown wyiwyg" — 2026-09-25
