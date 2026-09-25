@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, shell, Notification } from 'electron';
+import { app, BrowserWindow, Tray, Menu, dialog, globalShortcut, ipcMain, nativeImage, shell, Notification } from 'electron';
 import { execFile } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -7,33 +7,57 @@ import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 
-export const ROOT = process.env.SNAPMARK_ROOT || path.join(os.homedir(), 'Documents', 'Snapmark');
+const DEFAULT_ROOT = path.join(os.homedir(), 'Documents', 'Snapmark');
 const SHORTCUT_CAPTURE = 'CommandOrControl+Shift+1';
 const SHORTCUT_NEW = 'CommandOrControl+Shift+2';
 
 const statePath = () => path.join(app.getPath('userData'), 'state.json');
+// SNAPMARK_ROOT (tests, dev) wins over the folder chosen in the menu.
+let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
 let tray: Tray | null = null;
-const editors = new Map<number, { image: string; session: string }>(); // keyed by webContents.id
+const editors = new Map<number, { image: string; root: string; session: string }>(); // keyed by webContents.id
 
-function loadActive() {
+function loadState() {
   try {
-    active = JSON.parse(fs.readFileSync(statePath(), 'utf8')).active;
+    const state = JSON.parse(fs.readFileSync(statePath(), 'utf8'));
+    active = state.active;
+    if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
   }
-  if (!active || !sessions.list(ROOT).includes(active)) active = sessions.list(ROOT)[0] || null;
+  if (!active || !sessions.list(root).includes(active)) active = sessions.list(root)[0] || null;
+}
+
+function saveState() {
+  fs.mkdirSync(path.dirname(statePath()), { recursive: true });
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root }));
+  refreshTray();
 }
 
 export function setActive(name: string) {
   active = name;
-  fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active }));
-  refreshTray();
+  saveState();
 }
 
+// Point Snapmark at another folder, e.g. inside iCloud Drive or Google Drive, so sessions sync.
+async function chooseRoot() {
+  app.focus({ steal: true });
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Choose where Snapmark keeps sessions',
+    defaultPath: root,
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (canceled || !filePaths[0]) return;
+  root = filePaths[0];
+  active = sessions.list(root)[0] || null;
+  saveState();
+}
+
+const tilde = (p: string) => (p.startsWith(os.homedir()) ? `~${p.slice(os.homedir().length)}` : p);
+
 function newSession() {
-  setActive(sessions.create(ROOT));
+  setActive(sessions.create(root));
   new Notification({ title: 'Snapmark', body: `New session: ${active}` }).show();
 }
 
@@ -46,7 +70,7 @@ function capture() {
 }
 
 export function openEditor(image: string): BrowserWindow {
-  const session = active ?? sessions.create(ROOT);
+  const session = active ?? sessions.create(root);
   setActive(session);
   const { width, height } = nativeImage.createFromPath(image).getSize();
   const win = new BrowserWindow({
@@ -55,7 +79,7 @@ export function openEditor(image: string): BrowserWindow {
     title: `Snapmark — ${session}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
-  editors.set(win.webContents.id, { image, session });
+  editors.set(win.webContents.id, { image, root, session });
   win.on('closed', () => fs.rmSync(image, { force: true }));
   win.loadFile(path.join(__dirname, 'editor.html'));
   app.focus({ steal: true });
@@ -74,8 +98,8 @@ ipcMain.handle('editor:init', (e): EditorInit => {
 });
 
 ipcMain.handle('editor:save', (e, { png, caption, notes }: EditorSave): number => {
-  const { session } = editorFor(e.sender.id);
-  const n = sessions.addShot(ROOT, session, Buffer.from(png, 'base64'), { caption, notes });
+  const { root: into, session } = editorFor(e.sender.id);
+  const n = sessions.addShot(into, session, Buffer.from(png, 'base64'), { caption, notes });
   BrowserWindow.fromWebContents(e.sender)?.close();
   return n;
 });
@@ -95,8 +119,8 @@ async function runExport(kind: 'ZIP' | 'PDF', dir: string) {
 
 function refreshTray() {
   if (!tray) return;
-  const list = sessions.list(ROOT);
-  const dir = active ? path.join(ROOT, active) : null;
+  const list = sessions.list(root);
+  const dir = active ? path.join(root, active) : null;
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: `Session: ${active || '—'}`, enabled: false },
@@ -116,6 +140,9 @@ function refreshTray() {
         submenu: (['ZIP', 'PDF'] as const).map((kind) => ({ label: kind, click: () => dir && void runExport(kind, dir) })),
       },
       { type: 'separator' },
+      { label: `Sessions folder: ${tilde(root)}`, enabled: false },
+      { label: 'Change sessions folder…', enabled: !process.env.SNAPMARK_ROOT, click: () => void chooseRoot() },
+      { type: 'separator' },
       { label: `Snapmark ${app.getVersion()}`, enabled: false },
       { label: 'Check for updates…', enabled: app.isPackaged, click: checkForUpdates },
       { label: 'Quit', role: 'quit' },
@@ -126,7 +153,7 @@ function refreshTray() {
 app.whenReady().then(() => {
   if (process.env.SNAPMARK_NO_UI) return; // test harness drives the app itself
   app.dock?.hide();
-  loadActive();
+  loadState();
   // "Template" in the file name makes macOS tint the icon for light and dark menu bars; @2x is picked up automatically.
   tray = new Tray(path.join(__dirname, '../../assets/trayTemplate.png'));
   tray.setToolTip('Snapmark');

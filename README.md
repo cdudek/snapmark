@@ -69,7 +69,7 @@ In the editor, press a number to pick a tool. Press the same number again to cyc
 
 The menu bar menu switches sessions, opens `session.md`, shows the session folder and checks for updates.
 
-**Export session → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export session → PDF** renders the session into `<session>.pdf`, for people who just want to read it. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`; set `SNAPMARK_ROOT` to use another folder.
+**Export session → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export session → PDF** renders the session into `<session>.pdf`, for people who just want to read it. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`. **Change sessions folder…** moves new sessions elsewhere; pick a folder inside iCloud Drive or Google Drive and your sessions sync and can be shared from there. The `SNAPMARK_ROOT` environment variable overrides the choice (used by the tests).
 
 ## Develop
 
