@@ -1,0 +1,81 @@
+{
+  "name": "snapmark",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capture, annotate and collect screenshots into Markdown sessions",
+  "main": "dist/src/main.js",
+  "scripts": {
+    "build": "tsc && cp src/editor.html dist/src/",
+    "start": "npm run build && electron .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node dist/test/sessions.test.js",
+    "smoke": "npm run build && electron dist/test/smoke.js",
+    "dist": "npm run build && electron-builder --mac --publish never -c.mac.identity=-"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^20.19.43",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "eslint": "^10.11.0",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0",
+    "typescript-eslint": "^8.70.1"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "author": "Calvin Dudek",
+  "repository": "github:cdudek/snapmark",
+  "build": {
+    "appId": "com.cdudek.snapmark",
+    "productName": "Snapmark",
+    "copyright": "© 2026 Calvin Dudek",
+    "files": [
+      "dist/src/**",
+      "assets/*.png",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "extendInfo": {
+        "LSUIElement": true
+      },
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "Snapmark ${version}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "cdudek",
+      "repo": "snapmark"
+    }
+  }
+}
