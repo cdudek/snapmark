@@ -2,20 +2,7 @@
 // Classic script (no import/export): editor.html and shortcuts.html load it before their own scripts, and main.ts
 // require()s it through the module.exports line at the end.
 type ToolId =
-  | 'select'
-  | 'marker'
-  | 'card'
-  | 'box'
-  | 'ellipse'
-  | 'arrow'
-  | 'pen'
-  | 'cross'
-  | 'xbox'
-  | 'hatch'
-  | 'highlight'
-  | 'spotlight'
-  | 'cut'
-  | 'redact';
+  'select' | 'marker' | 'card' | 'box' | 'ellipse' | 'arrow' | 'pen' | 'cross' | 'hatch' | 'highlight' | 'spotlight' | 'cut' | 'redact';
 interface ToolDef {
   id: ToolId;
   label: string;
@@ -36,7 +23,7 @@ const YELLOW = '#facc15';
 // A key selects its group; pressing it again steps to the group's next tool.
 const GROUPS: ToolGroup[] = [
   {
-    key: 'v',
+    key: 'c',
     label: 'Select',
     tools: [
       {
@@ -96,12 +83,6 @@ const GROUPS: ToolGroup[] = [
     color: RED,
     tools: [
       { id: 'cross', label: 'Cross', icon: '<path d="M6 6l12 12M18 6L6 18"/>', means: 'remove this' },
-      {
-        id: 'xbox',
-        label: 'Crossed box',
-        icon: '<rect x="4" y="4" width="16" height="16"/><path d="M4 4l16 16M20 4L4 20"/>',
-        means: 'remove this',
-      },
       {
         id: 'hatch',
         label: 'Remove area',

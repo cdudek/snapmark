@@ -76,7 +76,6 @@ app
     drag('3', [[.4,.1],[.5,.2]]);                     // arrow
     drag('4', [[.05,.85],[.15,.9],[.25,.85],[.3,.9]]); // pen
     drag('5', [[.55,.05],[.62,.15]]);                 // cross
-    drag('5', [[.64,.05],[.72,.15]]);                 // crossed box
     drag('5', [[.05,.3],[.2,.45]]);                   // remove area
     drag('1', [[.5,.5]]); await note('Button is misaligned'); // reference 1
     drag(null, [[.6,.45]]); await note('Typo here');          // reference 2
@@ -95,7 +94,7 @@ app
     key('7'); drag('7', [[.28,.2],[.45,.28]]);        // 7 twice -> redact the 'Revenue' line
     r.redacted = canvas.getObjects().some((o) => o.filters?.length === 1);
 
-    key('v');
+    key('c');
     drag(null, [[.12,.12]]);                          // click the box
     r.selectsBox = canvas.getActiveObject()?.kind === 'box';
     const before = canvas.getObjects().length;
@@ -114,7 +113,8 @@ app
     // Toolbar (F1-F6): one icon per key showing the current tool, soft tint, no text
     const pick = (id) => { group = GROUPS.findIndex((g) => g.tools.some((t) => t.id === id)); variant[group] = GROUPS[group].tools.findIndex((t) => t.id === id); applyTool(); };
     const btns = [...document.querySelectorAll('#tools button')];
-    r['toolbar: one icon button per key, V 1-7, no text'] = btns.map((b) => b.dataset.group).join('') === 'v1234567' && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '') && !document.querySelector('#tools kbd');
+    r['toolbar: one icon button per key, C 1-7, no text in the buttons'] = btns.map((b) => b.dataset.group).join('') === 'c1234567' && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '');
+    r['toolbar: key under each button, dots where a key has more tools'] = [...document.querySelectorAll('#tools .cap')].every((c, i) => { const g = GROUPS[i], d = c.querySelector('.dots')?.textContent ?? ''; return c.querySelector('kbd').textContent === g.key.toUpperCase() && (g.tools.length > 1 ? d.length === g.tools.length && d.split('●').length === 2 : d === ''); });
     pick('box');
     const tb = () => document.querySelector('#tools [data-group="2"]');
     r['toolbar: active button has a soft grey tint'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(127, 127, 127');
@@ -124,7 +124,7 @@ app
     document.querySelector('#tools [data-group="4"]').click();
     r['toolbar: click picks the tool'] = tool() === 'pen';
     r['keys: Arrow on 3, Pen on 4, crosses on 5'] = ['3:arrow', '4:pen', '5:cross'].every((k) => { const [key, id] = k.split(':'); return GROUPS.find((g) => g.key === key).tools[0].id === id; });
-    r['no Tick or Thumbs up anywhere'] = !GROUPS.flatMap((g) => g.tools).some((t) => t.id === 'tick' || t.id === 'thumb');
+    r['no Tick, Thumbs up or Crossed box anywhere'] = !GROUPS.flatMap((g) => g.tools).some((t) => ['tick', 'thumb', 'xbox'].includes(t.id));
     r['no "Numbered" in the editor'] = !/numbered marker|Numbered/.test(document.body.innerText + GROUPS.flatMap((g) => g.tools.map((t) => t.label + (t.tip ?? ''))).join(' '));
     // Sidebar (F7-F10): fields grow with their text; the buttons stay in view while the body scrolls
     const cap = document.getElementById('caption');
@@ -161,7 +161,7 @@ app
     r['ghost: pressing the key again shows the next shape'] = tool() === 'ellipse' && top(cx - d, cy - d) === 0 && top(cx - d, cy) > 0;
     up.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
     r['ghost: gone when the pointer leaves'] = top(cx - d, cy) === 0;
-    ev('mousemove', .5, .5); key('v');
+    ev('mousemove', .5, .5); key('c');
     r['ghost: gone on Select'] = top(cx - d, cy) === 0;
     canvas.off('object:added', count);
     r['ghost: never in the scene, undo or unsaved work'] = adds === 0 && canvas.getObjects().length === objs && undoStack.length === undos;
@@ -169,7 +169,7 @@ app
     const penCursor = canvas.freeDrawingCursor;
     pick('box');
     r['icon cursor for Pen, crosshair for Box'] = penCursor.startsWith('url(') && canvas.defaultCursor === 'crosshair';
-    key('v');
+    key('c');
 
     document.getElementById('caption').value = 'Smoke test caption';
     return r;

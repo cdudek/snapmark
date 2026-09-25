@@ -57,16 +57,16 @@ Snapmark lives in the menu bar as the corner-and-dot icon. It shows a Dock icon 
 
 In the editor, press a key to pick a tool. Press the same key again to cycle its tools; the top bar shows which one is active.
 
-The toolbar shows one icon per key: the tool that is on. Press a key to pick it, and press it again for the next tool on that key; the icon changes with it. Hover an icon for its name and key.
+The toolbar shows one icon per key: the tool that is on, with its key underneath. Dots under a key mean it holds more than one tool (the filled dot is the one that is on): press the key again for the next, and the icon changes with it. Hover an icon for its name.
 
 | Key   | Tools                                                                                    |
 | ----- | ---------------------------------------------------------------------------------------- |
-| `V`   | Select: move, resize or delete (`⌫`) any mark                                            |
+| `C`   | Select: move, resize or delete (`⌫`) any mark                                            |
 | `1`   | Reference: click, then type its note in the panel → Card: a sticky note you type on      |
 | `2`   | Box → Ellipse                                                                            |
 | `3`   | Arrow                                                                                    |
 | `4`   | Pen (freehand)                                                                           |
-| `5`   | Cross → Crossed box → Remove area (hatched), always red                                  |
+| `5`   | Cross → Remove area (hatched), always red                                                |
 | `6`   | Highlighter → Spotlight (dims the rest)                                                  |
 | `7`   | Cut & move: drag around an element, then drag it where it should go → Redact (pixelates) |
 | `Esc` | Step back: out of the text, then deselect, then back to Select                           |
