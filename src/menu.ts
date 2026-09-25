@@ -33,6 +33,7 @@ export interface MenuActions {
   openRoot(): void;
   chooseRoot(): void;
   setLogin(checked: boolean): void;
+  keyboardShortcuts(): void;
   checkUpdates(): void;
   installUpdate(): void;
   quit(): void;
@@ -103,6 +104,7 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
         },
         { label: `Sessions are saved in ${st.root}`, click: () => a.openRoot() },
         { label: 'Change where sessions are saved…', enabled: st.canChangeRoot, click: () => a.chooseRoot() },
+        { label: 'Keyboard shortcuts…', click: () => a.keyboardShortcuts() },
         { label: 'Check for updates…', enabled: st.canUpdate, click: () => a.checkUpdates() },
         { label: `Version ${st.version}`, enabled: false },
       ],

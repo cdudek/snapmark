@@ -69,19 +69,20 @@ app
     const px = (fx, fy) => { canvas.renderAll(); return Array.from(canvas.lowerCanvasEl.getContext('2d').getImageData(Math.round(canvas.width * fx), Math.round(canvas.height * fy), 1, 1).data); };
     const note = (text) => { document.activeElement.value = text; document.activeElement.dispatchEvent(new Event('input')); document.activeElement.blur(); };
     const r = {};
+    r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs textarea');
 
     drag(null, [[.05,.05],[.2,.2]]);                  // box (the starting tool)
-    drag('1', [[.22,.05],[.35,.2]]);                  // 1 again -> ellipse
-    drag('2', [[.4,.1],[.5,.2]]);                     // arrow
-    drag('2', [[.05,.85],[.15,.9],[.25,.85],[.3,.9]]); // pen
-    drag('3', [[.55,.05],[.62,.15]]);                 // cross
-    drag('3', [[.64,.05],[.72,.15]]);                 // crossed box
-    drag('3', [[.05,.3],[.2,.45]]);                   // remove area
-    drag('4', [[.75,.05],[.8,.15]]);                  // tick
-    drag('4', [[.85,.7],[.95,.88]]);                  // thumbs up
-    drag('5', [[.5,.5]]); note('Button is misaligned'); // marker 1
-    drag(null, [[.6,.45]]); note('Typo here');          // marker 2
-    drag('5', [[.3,.62],[.36,.7]]);                   // 5 again -> card, pointing from where the press started
+    drag('2', [[.22,.05],[.35,.2]]);                  // 2 again -> ellipse
+    drag('3', [[.4,.1],[.5,.2]]);                     // arrow
+    drag('3', [[.05,.85],[.15,.9],[.25,.85],[.3,.9]]); // pen
+    drag('4', [[.55,.05],[.62,.15]]);                 // cross
+    drag('4', [[.64,.05],[.72,.15]]);                 // crossed box
+    drag('4', [[.05,.3],[.2,.45]]);                   // remove area
+    drag('5', [[.75,.05],[.8,.15]]);                  // tick
+    drag('5', [[.85,.7],[.95,.88]]);                  // thumbs up
+    drag('1', [[.5,.5]]); note('Button is misaligned'); // reference 1
+    drag(null, [[.6,.45]]); note('Typo here');          // reference 2
+    drag('1', [[.3,.62],[.36,.7]]);                   // 1 again -> card, pointing from where the press started
     const card = canvas.getActiveObject();
     card.set({ text: 'Make this bigger' });
     card.exitEditing();
@@ -93,7 +94,7 @@ app
     r.spotlightDims = px(.02, .98)[0] < corner[0] * 0.7;
     key('z', { metaKey: true });
     r.undoRemovesSpotlight = px(.02, .98).join() === corner.join();
-    drag('6', [[.28,.2],[.45,.28]]);                  // 6 again -> redact the 'Revenue' line
+    key('7'); drag('7', [[.28,.2],[.45,.28]]);        // 7 twice -> redact the 'Revenue' line
     r.redacted = canvas.getObjects().some((o) => o.filters?.length === 1);
 
     key('v');
@@ -105,12 +106,45 @@ app
     key('z', { metaKey: true });
     r.undoRestoresDelete = canvas.getObjects().length === before;
 
-    drag('7', [[.05,.55],[.15,.65]]);                 // cut: lifts the piece and switches to Select
+    key('7'); drag('7', [[.05,.55],[.15,.65]]);       // 7 was left on Redact, so twice -> cut; lifts the piece and switches to Select
     drag(null, [[.1,.6],[.2,.62],[.27,.52]]);         // drag the piece away
     const piece = canvas.getObjects().find((o) => links.has(o));
     const [ghost, arrow] = links.get(piece) ?? [];
     r.pieceMoved = !!piece && Math.abs(piece.left - ghost.left) > 50;
     r.moveArrowFollows = !!arrow && arrow.visible && Math.hypot(arrow.x2 - arrow.x1, arrow.y2 - arrow.y1) > 20;
+
+    // Icon toolbar (F1-F4)
+    const btns = [...document.querySelectorAll('#tools button')];
+    r['toolbar: one icon button per tool, no text'] = btns.length === GROUPS.flatMap((g) => g.tools).length && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '');
+    r['toolbar: groups V 1-7 in order'] = [...document.querySelectorAll('#tools .group > kbd')].map((k) => k.textContent).join('') === 'V1234567';
+    r['toolbar: tooltip names tool and key'] = document.querySelector('[data-tool=pen]').title === 'Pen (3)' && document.querySelector('[data-tool=redact]').title === 'Redact (7): pixelate to hide private details' && document.querySelector('[data-tool=select]').title.startsWith('Select (V): click a mark');
+    document.querySelector('[data-tool=ellipse]').click();
+    r['toolbar: click picks the tool'] = tool() === 'ellipse' && document.querySelector('[data-tool=ellipse]').getAttribute('aria-pressed') === 'true';
+    key('3'); const t1 = tool(); key('3');
+    r['no "Numbered" in the editor'] = !/numbered marker|Numbered/.test(document.body.innerText + GROUPS.flatMap((g) => g.tools.map((t) => t.label + (t.tip ?? ''))).join(' '));
+    r['keys step through a group'] = t1 === 'pen' && tool() === 'arrow';
+    // Sidebar (F7-F10): fields grow with their text; the buttons stay in view while the body scrolls
+    const cap = document.getElementById('caption');
+    const oneLine = cap.clientHeight;
+    r['comment is one line, "Add a comment…"'] = cap.rows === 1 && cap.placeholder === 'Add a comment…';
+    cap.value = 'a\\nb\\nc\\nd\\ne'; cap.dispatchEvent(new Event('input'));
+    r['comment grows as you type'] = cap.clientHeight > oneLine * 2 && cap.scrollHeight <= cap.clientHeight + 1;
+    const ta = document.querySelector('#refs textarea');
+    const kept = ta.value;
+    ta.value = 'line\\n'.repeat(5) + 'a long reference note that wraps inside the sidebar more than once';
+    r['reference note shows all its text'] = ta.scrollHeight <= ta.clientHeight + 1 && ta.clientHeight > oneLine * 3;
+    r['References shown once one exists'] = !document.getElementById('refs-label').hidden;
+    ta.value = 'x\\n'.repeat(60);
+    const sb = document.getElementById('save').getBoundingClientRect();
+    r['buttons stay in view while notes scroll'] = sb.bottom <= window.innerHeight && sb.top > 0 && document.querySelector('aside .body').scrollHeight > document.querySelector('aside .body').clientHeight;
+    ta.value = kept;
+    // Esc steps back one level (F6): with Card active and a card selected, Esc deselects, then goes to Select
+    key('1'); if (tool() !== 'card') key('1');
+    drag(null, [[.7,.75]]); const c = canvas.getActiveObject(); c?.set({ text: 'Esc test' }); c?.exitEditing?.(); // an empty card deletes itself
+    const hadCard = canvas.getActiveObject() instanceof Card;
+    key('Escape'); const deselected = !canvas.getActiveObject() && tool() === 'card';
+    key('Escape');
+    r['Esc: deselect, then back to Select'] = hadCard && deselected && tool() === 'select';
 
     document.getElementById('caption').value = 'Smoke test caption';
     return r;
@@ -137,6 +171,13 @@ app
       'pdf exported': fs.readFileSync(pdf).subarray(0, 5).toString() === '%PDF-' && fs.statSync(pdf).size > 20_000,
       'image saved': fs.existsSync(out),
       'mock is not blank': pixel(shotCopy, 0.02, 0.02).join() !== pixel(shotCopy, 0.5, 0.5).join(),
+      'prompt explains every mark': (() => {
+        const p = promptFor(root);
+        const { GROUPS: all } = require('../src/tools') as { GROUPS: ToolGroup[] };
+        return all.flatMap((g) => g.tools).every((t) => t.id === 'select' || p.includes(`- ${t.label}: `));
+      })(),
+      'prompt says Reference, not Numbered':
+        promptFor(root).includes('references (numbered circles)') && !/Numbered|numbered marker/.test(promptFor(root)),
       'fits AI limits': Math.max(outSize.width, outSize.height) <= 1568 && outSize.width * outSize.height <= 1_150_000,
       'aspect kept': Math.abs(outSize.width / outSize.height - shotSize.width / shotSize.height) < 0.01,
       'small image untouched': fitForAI(big(800, 600)).equals(big(800, 600)),
