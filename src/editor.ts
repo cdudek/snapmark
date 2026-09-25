@@ -3,8 +3,8 @@
 type FObject = import('fabric').FabricObject;
 type Point = { x: number; y: number };
 type Rect = Point & { w: number; h: number };
-type GlyphKind = 'box' | 'ellipse' | 'cross' | 'xbox' | 'hatch' | 'tick' | 'thumb' | 'highlight' | 'spotlight';
-type Tool = ToolId; // GROUPS, RED, GREEN and YELLOW come from tools.ts, loaded first
+type GlyphKind = 'box' | 'ellipse' | 'cross' | 'xbox' | 'hatch' | 'highlight' | 'spotlight';
+type Tool = ToolId; // GROUPS, RED and YELLOW come from tools.ts, loaded first
 
 const CARD_BG = '#fef9c3';
 
@@ -80,24 +80,6 @@ function drawGlyph(ctx: CanvasRenderingContext2D, kind: GlyphKind, c: string, x:
         line(ctx, { x: x + d + h, y }, { x: x + d, y: y + h });
       }
       ctx.stroke();
-      break;
-    }
-    case 'tick':
-      ctx.lineWidth = unit * 2;
-      ctx.moveTo(x + w * 0.1, y + h * 0.55);
-      ctx.lineTo(x + w * 0.4, y + h * 0.85);
-      ctx.lineTo(x + w * 0.9, y + h * 0.15);
-      ctx.stroke();
-      break;
-    case 'thumb': {
-      // Green disc with a 👍 so it reads as "approved" on any background.
-      const r = Math.min(w, h) / 2;
-      ctx.arc(x + w / 2, y + h / 2, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.font = `${r * 1.1}px "Apple Color Emoji", sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('👍', x + w / 2, y + h / 2 + r * 0.08);
       break;
     }
     case 'highlight':
@@ -263,7 +245,7 @@ function applyTool() {
 
 // ---------- ghost: what the next click will draw ----------
 
-const GHOSTS: Tool[] = ['box', 'ellipse', 'cross', 'xbox', 'hatch', 'tick', 'thumb', 'marker', 'card'];
+const GHOSTS: Tool[] = ['box', 'ellipse', 'cross', 'xbox', 'hatch', 'marker', 'card'];
 let pointer: Point | null = null; // last pointer position over the image, in image pixels
 let ghostShown = false; // Pen paints its stroke on the same layer, so clear it only when a ghost is there
 
@@ -315,33 +297,22 @@ function cursorFor(t: Tool): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 8 8, crosshair`;
 }
 
-// One icon button per tool, grouped by key with the key under the group; the name is in the tooltip.
+// One icon button per key, showing the group's current tool; pressing the key again swaps the icon.
 function renderToolbar() {
   toolsEl.replaceChildren(
     ...GROUPS.map((g, i) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'group';
-      if (g.color) wrap.style.setProperty('--tool', g.color === YELLOW ? '#ca8a04' : g.color);
-      const row = document.createElement('div');
-      row.className = 'icons';
-      g.tools.forEach((t, v) => {
-        const b = document.createElement('button');
-        b.dataset.tool = t.id;
-        b.setAttribute('aria-label', t.label);
-        b.setAttribute('aria-pressed', String(i === group && v === variant[i]));
-        b.title = `${t.label} (${g.key.toUpperCase()})${t.tip ? `: ${t.tip}` : ''}`;
-        b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>`; // static markup from tools.ts
-        b.onclick = () => {
-          group = i;
-          variant[i] = v;
-          applyTool();
-        };
-        row.append(b);
-      });
-      const kbd = document.createElement('kbd');
-      kbd.textContent = g.key.toUpperCase();
-      wrap.append(row, kbd);
-      return wrap;
+      const t = g.tools[variant[i]];
+      const next = g.tools[(variant[i] + 1) % g.tools.length];
+      const b = document.createElement('button');
+      b.dataset.group = g.key;
+      b.dataset.tool = t.id;
+      b.setAttribute('aria-label', t.label);
+      b.setAttribute('aria-pressed', String(i === group));
+      b.title =
+        `${t.label} (${g.key.toUpperCase()})${t.tip ? `: ${t.tip}` : ''}` + (g.tools.length > 1 ? ` · press again for ${next.label}` : '');
+      b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>`; // static markup from tools.ts
+      b.onclick = () => pickGroup(i);
+      return b;
     }),
   );
 }

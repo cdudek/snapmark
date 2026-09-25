@@ -74,12 +74,10 @@ app
     drag(null, [[.05,.05],[.2,.2]]);                  // box (the starting tool)
     drag('2', [[.22,.05],[.35,.2]]);                  // 2 again -> ellipse
     drag('3', [[.4,.1],[.5,.2]]);                     // arrow
-    drag('3', [[.05,.85],[.15,.9],[.25,.85],[.3,.9]]); // pen
-    drag('4', [[.55,.05],[.62,.15]]);                 // cross
-    drag('4', [[.64,.05],[.72,.15]]);                 // crossed box
-    drag('4', [[.05,.3],[.2,.45]]);                   // remove area
-    drag('5', [[.75,.05],[.8,.15]]);                  // tick
-    drag('5', [[.85,.7],[.95,.88]]);                  // thumbs up
+    drag('4', [[.05,.85],[.15,.9],[.25,.85],[.3,.9]]); // pen
+    drag('5', [[.55,.05],[.62,.15]]);                 // cross
+    drag('5', [[.64,.05],[.72,.15]]);                 // crossed box
+    drag('5', [[.05,.3],[.2,.45]]);                   // remove area
     drag('1', [[.5,.5]]); await note('Button is misaligned'); // reference 1
     drag(null, [[.6,.45]]); await note('Typo here');          // reference 2
     drag('1', [[.3,.62],[.36,.7]]);                   // 1 again -> card, pointing from where the press started
@@ -113,16 +111,21 @@ app
     r.pieceMoved = !!piece && Math.abs(piece.left - ghost.left) > 50;
     r.moveArrowFollows = !!arrow && arrow.visible && Math.hypot(arrow.x2 - arrow.x1, arrow.y2 - arrow.y1) > 20;
 
-    // Icon toolbar (F1-F4)
+    // Toolbar (F1-F6): one icon per key showing the current tool, soft tint, no text
+    const pick = (id) => { group = GROUPS.findIndex((g) => g.tools.some((t) => t.id === id)); variant[group] = GROUPS[group].tools.findIndex((t) => t.id === id); applyTool(); };
     const btns = [...document.querySelectorAll('#tools button')];
-    r['toolbar: one icon button per tool, no text'] = btns.length === GROUPS.flatMap((g) => g.tools).length && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '');
-    r['toolbar: groups V 1-7 in order'] = [...document.querySelectorAll('#tools .group > kbd')].map((k) => k.textContent).join('') === 'V1234567';
-    r['toolbar: tooltip names tool and key'] = document.querySelector('[data-tool=pen]').title === 'Pen (3)' && document.querySelector('[data-tool=redact]').title === 'Redact (7): pixelate to hide private details' && document.querySelector('[data-tool=select]').title.startsWith('Select (V): click a mark');
-    document.querySelector('[data-tool=ellipse]').click();
-    r['toolbar: click picks the tool'] = tool() === 'ellipse' && document.querySelector('[data-tool=ellipse]').getAttribute('aria-pressed') === 'true';
-    key('3'); const t1 = tool(); key('3');
+    r['toolbar: one icon button per key, V 1-7, no text'] = btns.map((b) => b.dataset.group).join('') === 'v1234567' && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '') && !document.querySelector('#tools kbd');
+    pick('box');
+    const tb = () => document.querySelector('#tools [data-group="2"]');
+    r['toolbar: active button has a soft grey tint'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(127, 127, 127');
+    r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3)';
+    key('2');
+    r['toolbar: pressing the key again swaps the icon'] = tool() === 'ellipse' && tb().dataset.tool === 'ellipse';
+    document.querySelector('#tools [data-group="4"]').click();
+    r['toolbar: click picks the tool'] = tool() === 'pen';
+    r['keys: Arrow on 3, Pen on 4, crosses on 5'] = ['3:arrow', '4:pen', '5:cross'].every((k) => { const [key, id] = k.split(':'); return GROUPS.find((g) => g.key === key).tools[0].id === id; });
+    r['no Tick or Thumbs up anywhere'] = !GROUPS.flatMap((g) => g.tools).some((t) => t.id === 'tick' || t.id === 'thumb');
     r['no "Numbered" in the editor'] = !/numbered marker|Numbered/.test(document.body.innerText + GROUPS.flatMap((g) => g.tools.map((t) => t.label + (t.tip ?? ''))).join(' '));
-    r['keys step through a group'] = t1 === 'pen' && tool() === 'arrow';
     // Sidebar (F7-F10): fields grow with their text; the buttons stay in view while the body scrolls
     const cap = document.getElementById('caption');
     const oneLine = cap.clientHeight;
@@ -150,7 +153,7 @@ app
     const top = (x, y) => canvas.contextTop.getImageData(Math.round(x), Math.round(y), 1, 1).data[3];
     const objs = canvas.getObjects().length, undos = undoStack.length;
     let adds = 0; const count = () => adds++; canvas.on('object:added', count);
-    document.querySelector('[data-tool=box]').click();
+    pick('box');
     ev('mousemove', .5, .5);
     const [cx, cy, d] = [canvas.width * .5, canvas.height * .5, unit * 8];
     r['ghost: box follows the pointer'] = top(cx - d, cy) > 0 && top(cx - d, cy - d) > 0;
@@ -162,9 +165,9 @@ app
     r['ghost: gone on Select'] = top(cx - d, cy) === 0;
     canvas.off('object:added', count);
     r['ghost: never in the scene, undo or unsaved work'] = adds === 0 && canvas.getObjects().length === objs && undoStack.length === undos;
-    document.querySelector('[data-tool=pen]').click();
+    pick('pen');
     const penCursor = canvas.freeDrawingCursor;
-    document.querySelector('[data-tool=box]').click();
+    pick('box');
     r['icon cursor for Pen, crosshair for Box'] = penCursor.startsWith('url(') && canvas.defaultCursor === 'crosshair';
     key('v');
 
@@ -196,8 +199,6 @@ app
     const outSize = nativeImage.createFromPath(out).getSize();
     const k = outSize.width / shotSize.width; // saved image may be downscaled for AI
     const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6 * k); // left side of marker 1, beside its digit
-    const thumbR = Math.min(0.1 * shotSize.width, 0.18 * shotSize.height) / 2; // thumbs-up dragged over 10% x 18% of the image
-    const [r2, g2, b2] = pixel(out, 0.9, 0.79, 0, thumbR * 0.85 * k); // bottom of the green disc, below the emoji
     const pdf = await exportPdf(path.join(root, 'smoke'));
     const [r3, g3, b3] = pixel(out, 0.36, 0.7, unit * 2 * k, -unit * 2 * k); // card padding, above its text
     const checks: Record<string, boolean> = {
@@ -211,6 +212,7 @@ app
         const { GROUPS: all } = require('../src/tools') as { GROUPS: ToolGroup[] };
         return all.flatMap((g) => g.tools).every((t) => t.id === 'select' || p.includes(`- ${t.label}: `));
       })(),
+      'prompt has no Tick or Thumbs up': !/Tick|Thumbs/.test(promptFor(root)),
       'prompt says Reference, not Numbered':
         promptFor(root).includes('references (numbered circles)') && !/Numbered|numbered marker/.test(promptFor(root)),
       'fits AI limits': Math.max(outSize.width, outSize.height) <= 1568 && outSize.width * outSize.height <= 1_150_000,
@@ -219,7 +221,6 @@ app
       'large image shrunk':
         JSON.stringify(nativeImage.createFromBuffer(fitForAI(big(3000, 1000))).getSize()) === JSON.stringify({ width: 1568, height: 523 }),
       'marker drawn red': r1 > 180 && g1 < 90 && b1 < 120,
-      'approve drawn green': g2 > 120 && r2 < 90,
       'session.md path is absolute':
         sessionMdPath(path.join(root, 'smoke')) === path.resolve(root, 'smoke', 'session.md') && path.isAbsolute(sessionMdPath('rel')),
       'prompt points at session.md': promptFor(path.join(root, 'smoke')).includes(`"${path.join(root, 'smoke', 'session.md')}"`),
@@ -233,7 +234,7 @@ app
     console.log(`root: ${root}`);
     for (const [name, pass] of Object.entries(checks)) console.log(`${pass ? '✓' : '✗'} ${name}`);
     const ok = Object.values(checks).every(Boolean);
-    console.log(ok ? 'smoke: ok' : `smoke: FAILED (${[r1, g1, b1]} / ${[r2, g2, b2]})`);
+    console.log(ok ? 'smoke: ok' : `smoke: FAILED (${[r1, g1, b1]})`);
     app.exit(ok ? 0 : 1);
   })
   .catch((e: unknown) => {
