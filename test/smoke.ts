@@ -58,9 +58,12 @@ app
     for (let i = 0; i < 50 && !background; i++) await sleep(100);
     await sleep(200);
     const up = document.querySelector('.upper-canvas');
-    const b = up.getBoundingClientRect();
     // Fabric listens for mouse events (enablePointerEvents is off by default).
-    const ev = (type, fx, fy) => up.dispatchEvent(new MouseEvent(type, { clientX: b.left + b.width * fx, clientY: b.top + b.height * fy, button: 0, buttons: type === 'mouseup' ? 0 : 1, bubbles: true }));
+    // Measured per event: the canvas may be refitted between steps.
+    const ev = (type, fx, fy) => {
+      const b = up.getBoundingClientRect();
+      up.dispatchEvent(new MouseEvent(type, { clientX: b.left + b.width * fx, clientY: b.top + b.height * fy, button: 0, buttons: type === 'mouseup' ? 0 : 1, bubbles: true }));
+    };
     const key = (k, opts = {}) => document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
     const drag = (k, pts) => { if (k) key(k); ev('mousedown', ...pts[0]); pts.slice(1).forEach((p) => ev('mousemove', ...p)); ev('mouseup', ...pts.at(-1)); };
     const px = (fx, fy) => { canvas.renderAll(); return Array.from(canvas.lowerCanvasEl.getContext('2d').getImageData(Math.round(canvas.width * fx), Math.round(canvas.height * fy), 1, 1).data); };

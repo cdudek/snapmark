@@ -73,8 +73,9 @@ export function openEditor(image: string): BrowserWindow {
   const session = active ?? sessions.create(root);
   setActive(session);
   const { width, height } = nativeImage.createFromPath(image).getSize();
+  // 1180 px minimum fits the whole toolbar on one line.
   const win = new BrowserWindow({
-    width: Math.min(Math.max(width / 2 + 340, 900), 1600),
+    width: Math.min(Math.max(width / 2 + 340, 1180), 1600),
     height: Math.min(Math.max(height / 2 + 120, 600), 1000),
     title: `Snapmark — ${session}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },

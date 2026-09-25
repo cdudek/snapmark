@@ -635,8 +635,10 @@ function fit() {
   const [w, h] = [background.width, background.height];
   const k = Math.min(1, (mainEl.clientWidth - 32) / w, (mainEl.clientHeight - 32) / h);
   canvas.setDimensions({ width: `${w * k}px`, height: `${h * k}px` }, { cssOnly: true });
+  canvas.calcOffset(); // Fabric caches the canvas position; without this, clicks land offset after a resize
 }
-window.addEventListener('resize', fit);
+// Refit whenever the canvas area changes size: window resizes, and the toolbar wrapping onto a second line.
+new ResizeObserver(fit).observe(mainEl);
 
 window.snapmark.init().then(async ({ src, session }) => {
   $('session').textContent = `→ ${session}`;
