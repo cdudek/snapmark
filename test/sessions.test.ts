@@ -17,4 +17,9 @@ const md = fs.readFileSync(path.join(root, a, 'session.md'), 'utf8');
 assert.match(md, /^# demo\n/);
 assert.match(md, /!\[Screenshot 1\]\(img\/001\.png\)\n\nLogin page\n\n1\. Wrong label\n2\. _\(no note\)_\n/);
 assert.match(md, /img\/002\.png/);
+
+sessions.addShot(root, a, Buffer.from('z'), { cards: ['Make this\nbigger', '  '], moves: 2 });
+const md3 = fs.readFileSync(path.join(root, a, 'session.md'), 'utf8');
+assert.match(md3, /- Card: Make this \/ bigger\n- Moved 2 elements: the dashed outline/);
+assert.ok(!md3.includes('- Card: \n'), 'blank cards are skipped');
 console.log('sessions: ok');

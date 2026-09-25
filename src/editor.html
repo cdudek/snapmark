@@ -39,6 +39,7 @@
       }
       header {
         grid-column: 1 / -1;
+        flex-wrap: wrap;
         display: flex;
         gap: 6px;
         align-items: center;
@@ -57,6 +58,7 @@
       }
       #tools {
         display: flex;
+        flex-wrap: wrap;
         gap: 6px;
       }
       #tools button {
@@ -64,7 +66,7 @@
         display: flex;
         gap: 6px;
         align-items: center;
-        min-width: 96px;
+        white-space: nowrap;
       }
       #tools button[aria-pressed='true'] {
         background: var(--tool);
@@ -102,16 +104,13 @@
         background: none;
       }
       main {
-        overflow: auto;
+        overflow: hidden;
         display: grid;
         place-items: center;
         padding: 16px;
       }
-      canvas {
-        max-width: 100%;
-        max-height: calc(100vh - 90px);
+      .canvas-container {
         box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
-        cursor: crosshair;
       }
       aside {
         border-left: 1px solid var(--line);
@@ -192,10 +191,11 @@
       <label>References</label>
       <div id="refs"><p class="hint">Press 5 and click the image to add a numbered marker with a note.</p></div>
       <div class="actions">
-        <button id="cancel">Discard<kbd> Esc</kbd></button>
+        <button id="cancel">Discard<kbd> ⌘W</kbd></button>
         <button id="save" class="primary">Add to session ⌘↵</button>
       </div>
     </aside>
+    <script src="../../node_modules/fabric/dist/index.min.js"></script>
     <script src="editor.js"></script>
   </body>
 </html>

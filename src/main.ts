@@ -110,9 +110,9 @@ export function fitForAI(png: Buffer): Buffer {
   return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
 }
 
-ipcMain.handle('editor:save', (e, { png, caption, notes }: EditorSave): number => {
+ipcMain.handle('editor:save', (e, { png, caption, notes, cards, moves }: EditorSave): number => {
   const { root: into, session } = editorFor(e.sender.id);
-  const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes });
+  const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes, cards, moves });
   BrowserWindow.fromWebContents(e.sender)?.close();
   return n;
 });

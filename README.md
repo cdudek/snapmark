@@ -55,18 +55,24 @@ Snapmark has no Dock icon. It lives in the menu bar as the corner-and-dot icon.
 | `⌘⇧1`    | Capture a region into the current session |
 | `⌘⇧2`    | Start a new session                       |
 
-In the editor, press a number to pick a tool. Press the same number again to cycle its shapes; the top bar shows which one is active.
+In the editor, press a key to pick a tool. Press the same key again to cycle its tools; the top bar shows which one is active.
 
-| Key   | Tool                                       | Press again for                     |
-| ----- | ------------------------------------------ | ----------------------------------- |
-| `1`   | Box                                        | Ellipse                             |
-| `2`   | Arrow                                      | Pen (freehand)                      |
-| `3`   | Cross (always red)                         | Crossed box → Remove area (hatched) |
-| `4`   | Tick (always green)                        | Thumbs up                           |
-| `5`   | Numbered marker: click, then type its note | —                                   |
-| `⌘Z`  | Undo                                       |                                     |
-| `⌘↵`  | Add to session                             |                                     |
-| `Esc` | Discard                                    |                                     |
+| Key   | Tool                                                                | Press again for                                |
+| ----- | ------------------------------------------------------------------- | ---------------------------------------------- |
+| `1`   | Box                                                                 | Ellipse                                        |
+| `2`   | Arrow                                                               | Pen (freehand)                                 |
+| `3`   | Cross (always red)                                                  | Crossed box → Remove area (hatched)            |
+| `4`   | Tick (always green)                                                 | Thumbs up                                      |
+| `5`   | Numbered marker: click, then type its note in the panel             | Card: a sticky note you type on                |
+| `6`   | Highlighter                                                         | Spotlight (dims the rest) → Redact (pixelates) |
+| `7`   | Cut & move: drag around an element, then drag it where it should go | —                                              |
+| `V`   | Select: move, resize or delete (`⌫`) any mark                       | —                                              |
+| `⌘Z`  | Undo                                                                |                                                |
+| `⌘↵`  | Add to session                                                      |                                                |
+| `Esc` | Deselect                                                            |                                                |
+| `⌘W`  | Discard the screenshot                                              |                                                |
+
+**Cards:** click to place one and start typing. To point at something, press on it and release where the card should sit; a line then follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 
 The menu bar menu switches sessions, opens `session.md`, shows the session folder, checks for updates, and has an **Open at login** toggle.
 
