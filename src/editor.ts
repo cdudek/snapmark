@@ -3,7 +3,7 @@
 type FObject = import('fabric').FabricObject;
 type Point = { x: number; y: number };
 type Rect = Point & { w: number; h: number };
-type GlyphKind = 'box' | 'ellipse' | 'cross' | 'xbox' | 'hatch' | 'highlight' | 'spotlight';
+type GlyphKind = 'box' | 'ellipse' | 'cross' | 'hatch' | 'highlight' | 'spotlight';
 type Tool = ToolId; // GROUPS, RED and YELLOW come from tools.ts, loaded first
 
 const CARD_BG = '#fef9c3';
@@ -55,9 +55,6 @@ function drawGlyph(ctx: CanvasRenderingContext2D, kind: GlyphKind, c: string, x:
       ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
       ctx.stroke();
       break;
-    case 'xbox':
-      ctx.strokeRect(x, y, w, h);
-    // falls through: a crossed box is a box plus a cross
     case 'cross':
       ctx.lineWidth = unit * 1.5;
       line(ctx, { x, y }, { x: x + w, y: y + h });
@@ -245,7 +242,7 @@ function applyTool() {
 
 // ---------- ghost: what the next click will draw ----------
 
-const GHOSTS: Tool[] = ['box', 'ellipse', 'cross', 'xbox', 'hatch', 'marker', 'card'];
+const GHOSTS: Tool[] = ['box', 'ellipse', 'cross', 'hatch', 'marker', 'card'];
 let pointer: Point | null = null; // last pointer position over the image, in image pixels
 let ghostShown = false; // Pen paints its stroke on the same layer, so clear it only when a ghost is there
 
@@ -298,11 +295,14 @@ function cursorFor(t: Tool): string {
 }
 
 // One icon button per key, showing the group's current tool; pressing the key again swaps the icon.
+// Under it: the key, and one dot per tool when the key holds more than one (the filled dot is the current tool).
 function renderToolbar() {
   toolsEl.replaceChildren(
     ...GROUPS.map((g, i) => {
       const t = g.tools[variant[i]];
       const next = g.tools[(variant[i] + 1) % g.tools.length];
+      const wrap = document.createElement('div');
+      wrap.className = 'group';
       const b = document.createElement('button');
       b.dataset.group = g.key;
       b.dataset.tool = t.id;
@@ -312,7 +312,19 @@ function renderToolbar() {
         `${t.label} (${g.key.toUpperCase()})${t.tip ? `: ${t.tip}` : ''}` + (g.tools.length > 1 ? ` · press again for ${next.label}` : '');
       b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>`; // static markup from tools.ts
       b.onclick = () => pickGroup(i);
-      return b;
+      const cap = document.createElement('div');
+      cap.className = 'cap';
+      const kbd = document.createElement('kbd');
+      kbd.textContent = g.key.toUpperCase();
+      cap.append(kbd);
+      if (g.tools.length > 1) {
+        const dots = document.createElement('span');
+        dots.className = 'dots';
+        dots.textContent = g.tools.map((_, v) => (v === variant[i] ? '●' : '○')).join('');
+        cap.append(dots);
+      }
+      wrap.append(b, cap);
+      return wrap;
     }),
   );
 }
@@ -399,7 +411,7 @@ function cut(r: Rect) {
   canvas.add(ghost, arrow, piece);
   added(ghost, arrow, piece);
   // Lifted pieces are for moving: switch to Select with the piece picked up.
-  pickGroup(GROUPS.findIndex((g) => g.key === 'v'));
+  pickGroup(GROUPS.findIndex((g) => g.key === 'c'));
   canvas.setActiveObject(piece);
 }
 
@@ -617,7 +629,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (active) return void (canvas.discardActiveObject(), canvas.requestRenderAll());
     if (tool() !== 'select') {
-      group = GROUPS.findIndex((x) => x.key === 'v');
+      group = GROUPS.findIndex((x) => x.key === 'c');
       applyTool();
     }
     return;

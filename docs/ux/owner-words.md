@@ -164,3 +164,7 @@ topic when it covers both.
 > Also when I set a mark like a reference, I want to immediately jump into the text field and start typing. Again it would be nice to have what-you-see-is-what-you-get Markdown so I can use hashes and so on for formatting. I'm continuously getting asked to open my screen and system audio recording stuff to add Snapmark; however Snapmark already is activated so I think that's most likely a bug"
 >
 > — 2026-09-25, with a screenshot of the icon toolbar (v0.3.0). "Do" is read as "2" (Box and Ellipse).
+
+## Editor toolbar, third look
+
+> "ok can you show the shortcut keys again. also for cursor can we use c? for cursor? on 5 remove the second icon => rectangle with x. also i want the indicator that there are more then one option back again." — 2026-09-26, with a screenshot of the one-icon-per-key toolbar
