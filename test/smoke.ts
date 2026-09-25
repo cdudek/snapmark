@@ -28,19 +28,21 @@ setTimeout(() => {
   console.log('smoke: TIMEOUT');
   app.exit(1);
 }, 30000);
-app.whenReady().then(async () => {
-  const mock = new BrowserWindow({ width: 1200, height: 700, show: false });
-  await mock.loadURL(`data:text/html,${encodeURIComponent(MOCK)}`);
-  const shot = path.join(root, 'mock.png');
-  fs.writeFileSync(shot, (await mock.webContents.capturePage()).toPNG());
-  mock.destroy();
-  const shotSize = nativeImage.createFromPath(shot).getSize();
-  const shotCopy = path.join(root, 'mock-copy.png'); // openEditor deletes its input on close
-  fs.copyFileSync(shot, shotCopy);
-  setActive(sessions.create(root, 'smoke'));
-  const win = openEditor(shot);
-  await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
-  const js = `(async () => {
+app
+  .whenReady()
+  .then(async () => {
+    const mock = new BrowserWindow({ width: 1200, height: 700 }); // must be visible: Linux cannot capture hidden windows
+    await mock.loadURL(`data:text/html,${encodeURIComponent(MOCK)}`);
+    const shot = path.join(root, 'mock.png');
+    fs.writeFileSync(shot, (await mock.webContents.capturePage()).toPNG());
+    mock.destroy();
+    const shotSize = nativeImage.createFromPath(shot).getSize();
+    const shotCopy = path.join(root, 'mock-copy.png'); // openEditor deletes its input on close
+    fs.copyFileSync(shot, shotCopy);
+    setActive(sessions.create(root, 'smoke'));
+    const win = openEditor(shot);
+    await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
+    const js = `(async () => {
     await new Promise((r) => setTimeout(r, 300));
     const c = document.getElementById('canvas');
     const b = c.getBoundingClientRect();
@@ -61,31 +63,36 @@ app.whenReady().then(async () => {
     drag('5', [[.6,.45]]); document.activeElement.value = 'Typo here'; document.activeElement.dispatchEvent(new Event('input'));
     document.getElementById('caption').value = 'Smoke test caption';
   })()`;
-  await win.webContents.executeJavaScript(js);
-  await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
-  fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
-  await win.webContents.executeJavaScript(`document.getElementById('save').click()`);
-  await new Promise((r) => setTimeout(r, 800));
-  const md = fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8');
-  const out = path.join(root, 'smoke', 'img', '001.png');
-  const unit = Math.max(2, Math.round(Math.max(shotSize.width, shotSize.height) / 400));
-  const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6); // left side of marker 1, beside its digit
-  const thumbR = Math.min(0.1 * shotSize.width, 0.18 * shotSize.height) / 2; // thumbs-up dragged over 10% x 18% of the image
-  const [r2, g2, b2] = pixel(out, 0.9, 0.79, 0, thumbR * 0.85); // bottom of the green disc, below the emoji
-  const checks: Record<string, boolean> = {
-    'image saved': fs.existsSync(out),
-    'mock is not blank': pixel(shotCopy, 0.02, 0.02).join() !== pixel(shotCopy, 0.5, 0.5).join(),
-    'same size as capture': JSON.stringify(nativeImage.createFromPath(out).getSize()) === JSON.stringify(shotSize),
-    'marker drawn red': r1 > 180 && g1 < 90 && b1 < 120,
-    'approve drawn green': g2 > 120 && r2 < 90,
-    'markdown has image': md.includes('img/001.png'),
-    'markdown has caption': md.includes('Smoke test caption'),
-    'markdown has numbered notes': md.includes('1. Button is misaligned\n2. Typo here'),
-  };
-  console.log(md);
-  console.log(`root: ${root}`);
-  for (const [name, pass] of Object.entries(checks)) console.log(`${pass ? '✓' : '✗'} ${name}`);
-  const ok = Object.values(checks).every(Boolean);
-  console.log(ok ? 'smoke: ok' : `smoke: FAILED (${[r1, g1, b1]} / ${[r2, g2, b2]})`);
-  app.exit(ok ? 0 : 1);
-});
+    await win.webContents.executeJavaScript(js);
+    await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
+    fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
+    await win.webContents.executeJavaScript(`document.getElementById('save').click()`);
+    await new Promise((r) => setTimeout(r, 800));
+    const md = fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8');
+    const out = path.join(root, 'smoke', 'img', '001.png');
+    const unit = Math.max(2, Math.round(Math.max(shotSize.width, shotSize.height) / 400));
+    const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6); // left side of marker 1, beside its digit
+    const thumbR = Math.min(0.1 * shotSize.width, 0.18 * shotSize.height) / 2; // thumbs-up dragged over 10% x 18% of the image
+    const [r2, g2, b2] = pixel(out, 0.9, 0.79, 0, thumbR * 0.85); // bottom of the green disc, below the emoji
+    const checks: Record<string, boolean> = {
+      'image saved': fs.existsSync(out),
+      'mock is not blank': pixel(shotCopy, 0.02, 0.02).join() !== pixel(shotCopy, 0.5, 0.5).join(),
+      'same size as capture': JSON.stringify(nativeImage.createFromPath(out).getSize()) === JSON.stringify(shotSize),
+      'marker drawn red': r1 > 180 && g1 < 90 && b1 < 120,
+      'approve drawn green': g2 > 120 && r2 < 90,
+      'markdown has image': md.includes('img/001.png'),
+      'markdown has caption': md.includes('Smoke test caption'),
+      'markdown has numbered notes': md.includes('1. Button is misaligned\n2. Typo here'),
+    };
+    console.log(md);
+    console.log(`root: ${root}`);
+    for (const [name, pass] of Object.entries(checks)) console.log(`${pass ? '✓' : '✗'} ${name}`);
+    const ok = Object.values(checks).every(Boolean);
+    console.log(ok ? 'smoke: ok' : `smoke: FAILED (${[r1, g1, b1]} / ${[r2, g2, b2]})`);
+    app.exit(ok ? 0 : 1);
+  })
+  .catch((e: unknown) => {
+    console.error(e);
+    console.log('smoke: FAILED');
+    app.exit(1);
+  });
