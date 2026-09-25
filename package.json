@@ -1,6 +1,6 @@
 {
   "name": "snapmark",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Capture, annotate and collect screenshots into Markdown sessions",
   "main": "dist/src/main.js",
