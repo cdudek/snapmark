@@ -11,9 +11,10 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node dist/test/sessions.test.js && node dist/test/exporter.test.js",
+    "test": "npm run build && node dist/test/sessions.test.js && node dist/test/exporter.test.js && vitest run tests/sdlc.test.ts",
     "smoke": "npm run build && electron dist/test/smoke.js",
-    "dist": "npm run build && electron-builder --mac --publish never -c.mac.identity=-"
+    "dist": "npm run build && electron-builder --mac --publish never -c.mac.identity=-",
+    "sdlc:tools": "curl -fsSL https://plannotator.ai/install.sh | bash && claude plugin marketplace add backnotprop/plannotator && claude plugin install plannotator@plannotator && npx skills add backnotprop/plannotator/apps/skills/extra --global --skill plannotator-setup-goal --agent claude-code --yes"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -23,7 +24,8 @@
     "eslint": "^10.11.0",
     "prettier": "^3.9.9",
     "typescript": "~6.0",
-    "typescript-eslint": "^8.70.1"
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",

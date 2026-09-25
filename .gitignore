@@ -4,3 +4,9 @@ node_modules/
 .DS_Store
 dist/
 release/
+
+# the SDLC hooks are the repo's, not the laptop's
+!.claude/
+!.claude/settings.json
+!.claude/hooks/
+!.claude/hooks/*.sh
