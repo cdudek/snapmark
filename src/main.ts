@@ -166,6 +166,14 @@ function refreshTray() {
       { label: `Sessions folder: ${tilde(root)}`, enabled: false },
       { label: 'Change sessions folder…', enabled: !process.env.SNAPMARK_ROOT, click: () => void chooseRoot() },
       { type: 'separator' },
+      {
+        label: 'Open at login',
+        type: 'checkbox',
+        // Only for the installed app: in development it would register the bare Electron binary.
+        enabled: app.isPackaged,
+        checked: app.isPackaged && app.getLoginItemSettings().openAtLogin,
+        click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }),
+      },
       { label: `Snapmark ${app.getVersion()}`, enabled: false },
       { label: 'Check for updates…', enabled: app.isPackaged, click: checkForUpdates },
       { label: 'Quit', role: 'quit' },
