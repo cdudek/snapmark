@@ -113,3 +113,7 @@ topic when it covers both.
 > "MacOsScreenshot, Figma, Ocra, Xnapper"
 >
 > — 2026-09-25
+
+## Menu bar menu
+
+> "Can you optimise this dropdown? It looks terrible. The Open Session, Copy Session: what does "Open Session" even mean? The whole thing doesn't even say what it is. The order of the menu just doesn't make sense." — 2026-09-25, with a screenshot of the menu as installed (v0.2.0 plus "Copy session.md path")
