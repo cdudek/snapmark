@@ -50,29 +50,73 @@ app
     fs.copyFileSync(shot, shotCopy);
     setActive(sessions.create(root, 'smoke'));
     const win = openEditor(shot);
+    win.webContents.on('console-message', (e) => console.log('[page]', (e as unknown as { message: string }).message));
     await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
+    // Runs inside the editor page; its top-level bindings (canvas, Card, links, background) are in scope.
     const js = `(async () => {
-    await new Promise((r) => setTimeout(r, 300));
-    const c = document.getElementById('canvas');
-    const b = c.getBoundingClientRect();
-    const ev = (type, fx, fy) => c.dispatchEvent(new PointerEvent(type, { clientX: b.left + b.width * fx, clientY: b.top + b.height * fy, pointerId: 1, bubbles: true }));
-    const drag = (key, pts) => { document.dispatchEvent(new KeyboardEvent('keydown', { key })); ev('pointerdown', ...pts[0]); pts.slice(1).forEach((p) => ev('pointermove', ...p)); ev('pointerup', ...pts.at(-1)); };
-    drag('1', [[.05,.05],[.25,.25]]);                 // box
-    drag('1', [[.3,.05],[.45,.25]]);                  // 1 again -> ellipse
-    drag('2', [[.5,.1],[.65,.2]]);                    // arrow
-    drag('2', [[.1,.7],[.2,.8],[.3,.7],[.4,.8]]);     // 2 again -> pen
-    drag('3', [[.7,.05],[.8,.2]]);                    // cross
-    drag('3', [[.82,.05],[.95,.2]]);                  // crossed box
-    drag('3', [[.05,.35],[.3,.6]]);                   // remove area
-    drag('4', [[.7,.7],[.8,.85]]);                    // tick
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let i = 0; i < 50 && !background; i++) await sleep(100);
+    await sleep(200);
+    const up = document.querySelector('.upper-canvas');
+    // Fabric listens for mouse events (enablePointerEvents is off by default).
+    // Measured per event: the canvas may be refitted between steps.
+    const ev = (type, fx, fy) => {
+      const b = up.getBoundingClientRect();
+      up.dispatchEvent(new MouseEvent(type, { clientX: b.left + b.width * fx, clientY: b.top + b.height * fy, button: 0, buttons: type === 'mouseup' ? 0 : 1, bubbles: true }));
+    };
+    const key = (k, opts = {}) => document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
+    const drag = (k, pts) => { if (k) key(k); ev('mousedown', ...pts[0]); pts.slice(1).forEach((p) => ev('mousemove', ...p)); ev('mouseup', ...pts.at(-1)); };
+    const px = (fx, fy) => { canvas.renderAll(); return Array.from(canvas.lowerCanvasEl.getContext('2d').getImageData(Math.round(canvas.width * fx), Math.round(canvas.height * fy), 1, 1).data); };
+    const note = (text) => { document.activeElement.value = text; document.activeElement.dispatchEvent(new Event('input')); document.activeElement.blur(); };
+    const r = {};
+
+    drag(null, [[.05,.05],[.2,.2]]);                  // box (the starting tool)
+    drag('1', [[.22,.05],[.35,.2]]);                  // 1 again -> ellipse
+    drag('2', [[.4,.1],[.5,.2]]);                     // arrow
+    drag('2', [[.05,.85],[.15,.9],[.25,.85],[.3,.9]]); // pen
+    drag('3', [[.55,.05],[.62,.15]]);                 // cross
+    drag('3', [[.64,.05],[.72,.15]]);                 // crossed box
+    drag('3', [[.05,.3],[.2,.45]]);                   // remove area
+    drag('4', [[.75,.05],[.8,.15]]);                  // tick
     drag('4', [[.85,.7],[.95,.88]]);                  // thumbs up
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: '5' }));
-    drag('5', [[.5,.5]]); document.activeElement.value = 'Button is misaligned'; document.activeElement.dispatchEvent(new Event('input'));
-    document.activeElement.blur();
-    drag('5', [[.6,.45]]); document.activeElement.value = 'Typo here'; document.activeElement.dispatchEvent(new Event('input'));
+    drag('5', [[.5,.5]]); note('Button is misaligned'); // marker 1
+    drag(null, [[.6,.45]]); note('Typo here');          // marker 2
+    drag('5', [[.3,.62],[.36,.7]]);                   // 5 again -> card, pointing from where the press started
+    const card = canvas.getActiveObject();
+    card.set({ text: 'Make this bigger' });
+    card.exitEditing();
+    r.cardWithPointer = card instanceof Card && card.text === 'Make this bigger' && !!card.pointAt;
+
+    drag('6', [[.25,.3],[.4,.35]]);                   // highlighter
+    const corner = px(.02, .98);
+    drag('6', [[.45,.25],[.55,.35]]);                 // spotlight
+    r.spotlightDims = px(.02, .98)[0] < corner[0] * 0.7;
+    key('z', { metaKey: true });
+    r.undoRemovesSpotlight = px(.02, .98).join() === corner.join();
+    drag('6', [[.28,.2],[.45,.28]]);                  // 6 again -> redact the 'Revenue' line
+    r.redacted = canvas.getObjects().some((o) => o.filters?.length === 1);
+
+    key('v');
+    drag(null, [[.12,.12]]);                          // click the box
+    r.selectsBox = canvas.getActiveObject()?.kind === 'box';
+    const before = canvas.getObjects().length;
+    key('Backspace');
+    r.deleteRemoves = canvas.getObjects().length === before - 1;
+    key('z', { metaKey: true });
+    r.undoRestoresDelete = canvas.getObjects().length === before;
+
+    drag('7', [[.05,.55],[.15,.65]]);                 // cut: lifts the piece and switches to Select
+    drag(null, [[.1,.6],[.2,.62],[.27,.52]]);         // drag the piece away
+    const piece = canvas.getObjects().find((o) => links.has(o));
+    const [ghost, arrow] = links.get(piece) ?? [];
+    r.pieceMoved = !!piece && Math.abs(piece.left - ghost.left) > 50;
+    r.moveArrowFollows = !!arrow && arrow.visible && Math.hypot(arrow.x2 - arrow.x1, arrow.y2 - arrow.y1) > 20;
+
     document.getElementById('caption').value = 'Smoke test caption';
+    return r;
   })()`;
-    await win.webContents.executeJavaScript(js);
+    const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
+    win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
     fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`document.getElementById('save').click()`);
@@ -86,7 +130,10 @@ app
     const thumbR = Math.min(0.1 * shotSize.width, 0.18 * shotSize.height) / 2; // thumbs-up dragged over 10% x 18% of the image
     const [r2, g2, b2] = pixel(out, 0.9, 0.79, 0, thumbR * 0.85 * k); // bottom of the green disc, below the emoji
     const pdf = await exportPdf(path.join(root, 'smoke'));
+    const [r3, g3, b3] = pixel(out, 0.36, 0.7, unit * 2 * k, -unit * 2 * k); // card padding, above its text
     const checks: Record<string, boolean> = {
+      ...inPage,
+      'card drawn yellow': r3 > 235 && g3 > 225 && b3 > 150 && b3 < 225,
       'pdf exported': fs.readFileSync(pdf).subarray(0, 5).toString() === '%PDF-' && fs.statSync(pdf).size > 20_000,
       'image saved': fs.existsSync(out),
       'mock is not blank': pixel(shotCopy, 0.02, 0.02).join() !== pixel(shotCopy, 0.5, 0.5).join(),
@@ -98,6 +145,8 @@ app
       'marker drawn red': r1 > 180 && g1 < 90 && b1 < 120,
       'approve drawn green': g2 > 120 && r2 < 90,
       'prompt points at session.md': promptFor(path.join(root, 'smoke')).includes(`"${path.join(root, 'smoke', 'session.md')}"`),
+      'markdown has card': md.includes('- Card: Make this bigger'),
+      'markdown has move': md.includes('- Moved an element'),
       'markdown has image': md.includes('img/001.png'),
       'markdown has caption': md.includes('Smoke test caption'),
       'markdown has numbered notes': md.includes('1. Button is misaligned\n2. Typo here'),

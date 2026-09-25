@@ -7,7 +7,9 @@ interface EditorInit {
 interface EditorSave {
   png: string; // base64, no data: prefix
   caption: string;
-  notes: string[];
+  notes: string[]; // numbered marker notes, in marker order
+  cards: string[]; // text of the cards placed on the image
+  moves: number; // cut-and-move pieces
 }
 
 interface Window {
@@ -16,3 +18,6 @@ interface Window {
     save(data: EditorSave): Promise<number>;
   };
 }
+
+// Fabric's UMD build, loaded by editor.html before editor.js.
+declare const fabric: typeof import('fabric');

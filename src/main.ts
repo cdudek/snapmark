@@ -73,8 +73,9 @@ export function openEditor(image: string): BrowserWindow {
   const session = active ?? sessions.create(root);
   setActive(session);
   const { width, height } = nativeImage.createFromPath(image).getSize();
+  // 1180 px minimum fits the whole toolbar on one line.
   const win = new BrowserWindow({
-    width: Math.min(Math.max(width / 2 + 340, 900), 1600),
+    width: Math.min(Math.max(width / 2 + 340, 1180), 1600),
     height: Math.min(Math.max(height / 2 + 120, 600), 1000),
     title: `Snapmark — ${session}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
@@ -110,9 +111,9 @@ export function fitForAI(png: Buffer): Buffer {
   return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
 }
 
-ipcMain.handle('editor:save', (e, { png, caption, notes }: EditorSave): number => {
+ipcMain.handle('editor:save', (e, { png, caption, notes, cards, moves }: EditorSave): number => {
   const { root: into, session } = editorFor(e.sender.id);
-  const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes });
+  const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes, cards, moves });
   BrowserWindow.fromWebContents(e.sender)?.close();
   return n;
 });

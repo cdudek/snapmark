@@ -4,7 +4,9 @@ import path from 'path';
 
 export interface ShotText {
   caption?: string;
-  notes?: string[];
+  notes?: string[]; // numbered marker notes
+  cards?: string[]; // text written on cards on the image
+  moves?: number; // cut-and-move pieces
 }
 
 const pad = (n: number) => String(n).padStart(3, '0');
@@ -31,7 +33,12 @@ export function create(root: string, name = stamp()): string {
 }
 
 // Writes the flattened PNG and appends an entry to session.md. Returns the entry number.
-export function addShot(root: string, name: string, png: Buffer, { caption = '', notes = [] }: ShotText = {}): number {
+export function addShot(
+  root: string,
+  name: string,
+  png: Buffer,
+  { caption = '', notes = [], cards = [], moves = 0 }: ShotText = {},
+): number {
   const dir = path.join(root, name);
   const img = path.join(dir, 'img');
   fs.mkdirSync(img, { recursive: true });
@@ -46,6 +53,12 @@ export function addShot(root: string, name: string, png: Buffer, { caption = '',
   if (caption.trim()) md += `\n${caption.trim()}\n`;
   const refs = notes.map((t, i) => `${i + 1}. ${t.trim() || '_(no note)_'}`);
   if (refs.length) md += `\n${refs.join('\n')}\n`;
+  const extra = cards.filter((c) => c.trim()).map((c) => `- Card: ${c.trim().replace(/\s*\n\s*/g, ' / ')}`);
+  if (moves)
+    extra.push(
+      `- Moved ${moves === 1 ? 'an element' : `${moves} elements`}: the dashed outline is where it is now, the arrow shows where it should go.`,
+    );
+  if (extra.length) md += `\n${extra.join('\n')}\n`;
   fs.appendFileSync(path.join(dir, 'session.md'), md);
   return n;
 }
