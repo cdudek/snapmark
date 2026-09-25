@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data:; style-src 'self' 'unsafe-inline'" />
+    <title>Snapmark</title>
+    <style>
+      :root {
+        --bg: #f4f4f5;
+        --panel: #fff;
+        --ink: #18181b;
+        --muted: #71717a;
+        --line: #e4e4e7;
+        --accent: #e11d48;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #18181b;
+          --panel: #232327;
+          --ink: #f4f4f5;
+          --muted: #a1a1aa;
+          --line: #3f3f46;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        height: 100vh;
+        display: grid;
+        grid-template: auto 1fr / 1fr 320px;
+        font:
+          13px -apple-system,
+          system-ui,
+          sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      header {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      header button {
+        font: inherit;
+        padding: 5px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      #tools {
+        display: flex;
+        gap: 6px;
+      }
+      #tools button {
+        --tool: var(--accent);
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        min-width: 96px;
+      }
+      #tools button[aria-pressed='true'] {
+        background: var(--tool);
+        border-color: var(--tool);
+        color: #fff;
+      }
+      #tools kbd {
+        font:
+          600 11px ui-monospace,
+          monospace;
+        opacity: 0.7;
+        margin: 0;
+      }
+      #tools .dots {
+        margin-left: auto;
+        font-size: 8px;
+        letter-spacing: 1px;
+        opacity: 0.8;
+      }
+      header kbd {
+        opacity: 0.6;
+        font-size: 11px;
+        margin-left: 4px;
+      }
+      header .session {
+        margin-left: auto;
+        color: var(--muted);
+      }
+      input[type='color'] {
+        width: 30px;
+        height: 28px;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: none;
+      }
+      main {
+        overflow: auto;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+      canvas {
+        max-width: 100%;
+        max-height: calc(100vh - 90px);
+        box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+        cursor: crosshair;
+      }
+      aside {
+        border-left: 1px solid var(--line);
+        background: var(--panel);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: auto;
+      }
+      label {
+        font-weight: 600;
+      }
+      textarea {
+        font: inherit;
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: inherit;
+        resize: vertical;
+      }
+      .ref {
+        display: grid;
+        grid-template-columns: 24px 1fr;
+        gap: 6px;
+        align-items: start;
+      }
+      .ref b {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      .hint {
+        color: var(--muted);
+      }
+      .actions {
+        margin-top: auto;
+        display: flex;
+        gap: 8px;
+      }
+      .actions button {
+        flex: 1;
+        font: inherit;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      .actions .primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span id="tools"></span>
+      <input type="color" id="color" value="#e11d48" title="Color" />
+      <button id="undo">Undo<kbd>⌘Z</kbd></button>
+      <span class="session" id="session"></span>
+    </header>
+    <main><canvas id="canvas"></canvas></main>
+    <aside>
+      <label for="caption">Comment</label>
+      <textarea id="caption" rows="4" placeholder="What is this screenshot about?"></textarea>
+      <label>References</label>
+      <div id="refs"><p class="hint">Press 5 and click the image to add a numbered marker with a note.</p></div>
+      <div class="actions">
+        <button id="cancel">Discard<kbd> Esc</kbd></button>
+        <button id="save" class="primary">Add to session ⌘↵</button>
+      </div>
+    </aside>
+    <script src="editor.js"></script>
+  </body>
+</html>

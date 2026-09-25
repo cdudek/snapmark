@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 16 16" role="img" aria-labelledby="electric-gradient-title">
+  <title id="electric-gradient-title">Electric — corner and dot</title>
+  <defs>
+    <linearGradient id="electric-corner" x1="0" y1="0" x2="0.65" y2="1">
+      <stop stop-color="#06D9EF"/>
+      <stop offset="0.46" stop-color="#3478FF"/>
+      <stop offset="1" stop-color="#7828F5"/>
+    </linearGradient>
+    <linearGradient id="electric-dot" x1="0" y1="0" x2="0.8" y2="1">
+      <stop stop-color="#FF3AC8"/>
+      <stop offset="1" stop-color="#FF5C87"/>
+    </linearGradient>
+  </defs>
+  <path d="M11.5 4H4V11.5" fill="none" stroke="url(#electric-corner)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="11.5" cy="11.5" r="1.75" fill="url(#electric-dot)"/>
+</svg>
