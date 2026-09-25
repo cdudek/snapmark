@@ -1,0 +1,39 @@
+{
+  "_comment": "Read by the run-sdlc skill, the hooks in .claude/hooks/ and the guardrail test. Commands run from the repo root; {file} is the edited file. docs/sdlc.md explains every key. Tracker: Beads (bd), not Linear -- linear.team is empty on purpose.",
+  "linear": {
+    "team": "",
+    "project": ""
+  },
+  "defaultBranch": "main",
+  "changesDir": "changes",
+  "designsDir": "docs/designs",
+  "docs": "docs/sdlc.md",
+  "verify": "npm run format && npm run lint && npm run typecheck && npm test",
+  "verifyDirty": ["*.ts", "*.tsx", "*.js", "*.mjs", "*.vue", "*.json"],
+  "lintOnEdit": {
+    "*.ts *.tsx *.js *.mjs *.css *.json *.md *.html": "npx prettier --write {file}"
+  },
+  "blocked": [
+    {
+      "match": "(^|[[:space:];&|(])(pnpm|yarn)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(add|remove)([[:space:]]|$)|(^|[[:space:];&|(])npm([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(i|install|uninstall)[[:space:]]+[^-[:space:]]",
+      "message": "dependency changes are Ask-tier: a human adds the package in a branch and commits package.json + the lockfile; the PR gets the ask label. Say which package and why, then stop.",
+      "samples": [
+        "pnpm add x",
+        "yarn add y",
+        "npm install left-pad",
+        "cd a && pnpm remove x",
+        "pnpm --filter web add x",
+        "npm --prefix ./app install left-pad"
+      ]
+    }
+  ],
+  "toolsCommand": "npm run sdlc:tools",
+  "tests": "vitest",
+  "codeowners": [],
+  "claude": false,
+  "claudeAllow": ["Bash(npm *)", "Bash(git:*)", "Bash(gh pr:*)"],
+  "showChannel": "",
+  "keep": [],
+  "tiers": false,
+  "kitTemplates": "0decda699258"
+}
