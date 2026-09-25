@@ -96,14 +96,18 @@ CI (`.github/workflows/ci.yml`) runs format check, lint, typecheck, unit test an
 
 ## Release
 
-Versions follow [semver](https://semver.org). To release:
+Versions follow [semver](https://semver.org). A release is a pull request that bumps the version:
 
 ```sh
-npm version minor          # or patch / major: bumps package.json, commits, tags vX.Y.Z
-git push --follow-tags
+git fetch origin && git checkout -b release/next origin/main
+npm version minor --no-git-tag-version     # or patch / major
+git commit -am "chore: release v$(node -p "require('./package.json').version")"
+gh pr create --fill
 ```
 
-The tag triggers `.github/workflows/release.yml` on macOS. It runs all checks, builds `arm64` and `x64` DMGs and ZIPs, and publishes a GitHub release with generated notes.
+When it merges, `.github/workflows/release.yml` sees a version without a release, builds `arm64` and `x64` DMGs and ZIPs on macOS, and publishes the GitHub release and its `vX.Y.Z` tag with generated notes. Merges that do not change the version skip the macOS build.
+
+`main` requires the `check` job from CI to pass, so nothing merges untested.
 
 ### Auto-update
 
