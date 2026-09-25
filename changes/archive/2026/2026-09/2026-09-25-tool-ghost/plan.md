@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-25
 created: 2026-09-25
+archived_at: 2026-09-25
 ---
 
 # Plan: Editor — a ghost of the shape follows the pointer
@@ -38,11 +39,11 @@ None.
 
 ## Order of work
 
-- [ ] 1. `drawGhost()`: remember the last pointer point; clear `contextTop`; while no drag and the tool is one of F1's, draw at 45% opacity: glyphs with `drawGlyph` at the click size (`unit * 16` square), Reference as a circle of radius `unit * 6` with the next number, Card as a yellow rounded rectangle — proof: smoke reads a non-transparent `contextTop` pixel under the pointer with Box active
-- [ ] 2. Call it from `mouse:move` (not dragging), clear it on `mouse:out` and `mouse:down`, redraw it in `applyTool()` so a second key press changes it without moving (F2, F4) — proof: smoke presses 2 again and the pixel under the pointer changes (box edge → ellipse); `mouse:out` clears it
-- [ ] 3. `cursorFor()`: for Arrow, Pen, Highlighter, Spotlight, Cut & move, Redact, a 32×32 SVG cursor (crosshair + icon) with the hotspot on the crosshair; others keep `crosshair`; Select keeps `default` (F3) — proof: smoke checks `canvas.defaultCursor` starts with `url(` for Pen and is `crosshair` for Box
-- [ ] 4. F5 checks — proof: smoke checks the object count and the dirty flag do not change while the ghost is drawn, and the saved image pixel checks still pass
-- [ ] 5. Verify, PR, auto-merge, archive, close `snap-7po`, rebuild and install the app — proof: CI `check` passes
+- [x] 1. `drawGhost()`: remember the last pointer point; clear `contextTop`; while no drag and the tool is one of F1's, draw at 45% opacity: glyphs with `drawGlyph` at the click size (`unit * 16` square), Reference as a circle of radius `unit * 6` with the next number, Card as a yellow rounded rectangle — proof: smoke reads a non-transparent `contextTop` pixel under the pointer with Box active
+- [x] 2. Call it from `mouse:move` (not dragging), clear it on `mouse:out` and `mouse:down`, redraw it in `applyTool()` so a second key press changes it without moving (F2, F4) — proof: smoke presses 2 again and the pixel under the pointer changes (box edge → ellipse); `mouse:out` clears it
+- [x] 3. `cursorFor()`: for Arrow, Pen, Highlighter, Spotlight, Cut & move, Redact, a 32×32 SVG cursor (crosshair + icon) with the hotspot on the crosshair; others keep `crosshair`; Select keeps `default` (F3) — proof: smoke checks `canvas.defaultCursor` starts with `url(` for Pen and is `crosshair` for Box
+- [x] 4. F5 checks — proof: smoke checks the object count and the dirty flag do not change while the ghost is drawn, and the saved image pixel checks still pass
+- [x] 5. Verify, PR, auto-merge, archive, close `snap-7po`, rebuild and install the app — proof: CI `check` passes
 
 ## Risks
 
@@ -86,3 +87,6 @@ Done:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-09-25 — The top layer is cleared only when a ghost was drawn: Pen paints its live stroke on the same layer, and clearing it on every move would erase the stroke.
+- 2026-09-25 — The Pen cursor is set through `canvas.freeDrawingCursor` as well as `defaultCursor`, because Fabric uses its own cursor in drawing mode.

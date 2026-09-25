@@ -254,10 +254,65 @@ function applyTool() {
     canvas.freeDrawingBrush.width = unit;
   }
   canvas.skipTargetFind = t !== 'select'; // drawing tools always draw, even on top of other marks
-  canvas.defaultCursor = t === 'select' ? 'default' : 'crosshair';
+  canvas.defaultCursor = canvas.freeDrawingCursor = cursorFor(t);
   if (t !== 'select') canvas.discardActiveObject();
   canvas.requestRenderAll();
   renderToolbar();
+  drawGhost(); // a second key press shows the next shape without moving the pointer
+}
+
+// ---------- ghost: what the next click will draw ----------
+
+const GHOSTS: Tool[] = ['box', 'ellipse', 'cross', 'xbox', 'hatch', 'tick', 'thumb', 'marker', 'card'];
+let pointer: Point | null = null; // last pointer position over the image, in image pixels
+let ghostShown = false; // Pen paints its stroke on the same layer, so clear it only when a ghost is there
+
+// Drawn on Fabric's top layer, which is not part of the scene: it never reaches the saved image, undo or references.
+function drawGhost() {
+  const ctx = canvas.contextTop;
+  if (ghostShown) canvas.clearContext(ctx);
+  ghostShown = false;
+  const t = tool();
+  if (!pointer || drag || !background || !GHOSTS.includes(t)) return;
+  ghostShown = true;
+  const { x, y } = pointer;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 0.45;
+  if (t === 'marker') {
+    const r = unit * 6;
+    ctx.fillStyle = color();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${r * 1.1}px -apple-system, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(markers().length + 1), x, y + r * 0.05);
+  } else if (t === 'card') {
+    ctx.fillStyle = CARD_BG;
+    ctx.beginPath();
+    ctx.roundRect(x, y, unit * 70, unit * 15, unit * 2); // a new card's size, placed from its top left
+    ctx.fill();
+  } else {
+    const d = unit * 8; // rect()'s click size
+    drawGlyph(ctx, t as GlyphKind, color(), x - d, y - d, d * 2, d * 2);
+  }
+  ctx.restore();
+}
+
+// Tools without a fixed shape show their icon beside the crosshair; the hotspot is the crosshair's centre.
+function cursorFor(t: Tool): string {
+  if (t === 'select') return 'default';
+  if (GHOSTS.includes(t)) return 'crosshair';
+  const icon = GROUPS.flatMap((g) => g.tools).find((x) => x.id === t)!.icon;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <path d="M8 1v14M1 8h14" stroke="#fff" stroke-width="3"/><path d="M8 1v14M1 8h14" stroke="#111" stroke-width="1"/>
+    <rect x="13" y="13" width="18" height="18" rx="4" fill="#fff" stroke="#111" stroke-width="0.5"/>
+    <g transform="translate(15 15) scale(0.583)" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${icon}</g>
+  </svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 8 8, crosshair`;
 }
 
 // One icon button per tool, grouped by key with the key under the group; the name is in the tooltip.
@@ -438,6 +493,25 @@ canvas.on('mouse:up', ({ scenePoint: p }) => {
 });
 
 canvas.on('path:created', ({ path }) => added(path));
+
+// Registered after the drawing handlers, so they see the drag state those handlers just set.
+canvas.on('mouse:move', ({ scenePoint: p }) => {
+  if (drag) return;
+  pointer = { x: p.x, y: p.y };
+  drawGhost();
+});
+canvas.on('mouse:down', () => {
+  pointer = null;
+  drawGhost();
+});
+canvas.on('mouse:up', ({ scenePoint: p }) => {
+  pointer = { x: p.x, y: p.y };
+  drawGhost(); // the next reference shows its new number
+});
+canvas.on('mouse:out', () => {
+  pointer = null;
+  drawGhost();
+});
 
 // ---------- history ----------
 
