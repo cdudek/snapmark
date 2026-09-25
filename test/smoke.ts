@@ -67,7 +67,7 @@ app
     const key = (k, opts = {}) => document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
     const drag = (k, pts) => { if (k) key(k); ev('mousedown', ...pts[0]); pts.slice(1).forEach((p) => ev('mousemove', ...p)); ev('mouseup', ...pts.at(-1)); };
     const px = (fx, fy) => { canvas.renderAll(); return Array.from(canvas.lowerCanvasEl.getContext('2d').getImageData(Math.round(canvas.width * fx), Math.round(canvas.height * fy), 1, 1).data); };
-    const note = (text) => { document.activeElement.value = text; document.activeElement.dispatchEvent(new Event('input')); document.activeElement.blur(); };
+    const note = async (text) => { await sleep(10); document.activeElement.value = text; document.activeElement.dispatchEvent(new Event('input')); document.activeElement.blur(); };
     const r = {};
     r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs textarea');
 
@@ -80,8 +80,8 @@ app
     drag('4', [[.05,.3],[.2,.45]]);                   // remove area
     drag('5', [[.75,.05],[.8,.15]]);                  // tick
     drag('5', [[.85,.7],[.95,.88]]);                  // thumbs up
-    drag('1', [[.5,.5]]); note('Button is misaligned'); // reference 1
-    drag(null, [[.6,.45]]); note('Typo here');          // reference 2
+    drag('1', [[.5,.5]]); await note('Button is misaligned'); // reference 1
+    drag(null, [[.6,.45]]); await note('Typo here');          // reference 2
     drag('1', [[.3,.62],[.36,.7]]);                   // 1 again -> card, pointing from where the press started
     const card = canvas.getActiveObject();
     card.set({ text: 'Make this bigger' });
@@ -172,6 +172,19 @@ app
     return r;
   })()`;
     const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
+    // Real input events (not synthetic DOM ones) include the browser's default mousedown handling, which moved focus.
+    const at = await win.webContents.executeJavaScript(`(() => {
+      group = GROUPS.findIndex((g) => g.key === '1'); variant[group] = 0; applyTool();
+      const b = document.querySelector('.upper-canvas').getBoundingClientRect();
+      return { x: Math.round(b.left + b.width * .8), y: Math.round(b.top + b.height * .3) };
+    })()`);
+    win.focus();
+    win.webContents.sendInputEvent({ type: 'mouseDown', x: at.x, y: at.y, button: 'left', clickCount: 1 });
+    win.webContents.sendInputEvent({ type: 'mouseUp', x: at.x, y: at.y, button: 'left', clickCount: 1 });
+    await new Promise((r) => setTimeout(r, 300));
+    inPage['a new reference is ready to type into'] = await win.webContents.executeJavaScript(
+      `(() => { const t = document.activeElement; const ok = t?.tagName === 'TEXTAREA' && !!t.closest('#refs'); if (ok) { t.value = 'Typed right away'; t.dispatchEvent(new Event('input')); } return ok; })()`,
+    );
     win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
     fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
