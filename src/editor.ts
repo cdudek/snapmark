@@ -586,7 +586,10 @@ function renderRefs() {
       ta.rows = 2;
       ta.value = m.note;
       ta.placeholder = `Note for ${m.n}`;
-      ta.oninput = () => (m.note = ta.value);
+      ta.oninput = () => {
+        m.note = ta.value;
+        markDirty();
+      };
       row.append(badge, ta);
       return row;
     }),
@@ -624,6 +627,10 @@ document.addEventListener('keydown', (e) => {
   if (!e.metaKey && g >= 0) pickGroup(g);
 });
 
+// Tells the main process there is work to lose, so Quit asks first. The screenshot is the background, not an object.
+const markDirty = () => window.snapmark.dirty(true);
+canvas.on('object:added', markDirty);
+captionEl.addEventListener('input', markDirty);
 colorEl.oninput = () => applyTool();
 $<HTMLButtonElement>('undo').onclick = undo;
 saveBtn.onclick = () => void save();

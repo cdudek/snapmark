@@ -22,4 +22,16 @@ sessions.addShot(root, a, Buffer.from('z'), { cards: ['Make this\nbigger', '  ']
 const md3 = fs.readFileSync(path.join(root, a, 'session.md'), 'utf8');
 assert.match(md3, /- Card: Make this \/ bigger\n- Moved 2 elements: the dashed outline/);
 assert.ok(!md3.includes('- Card: \n'), 'blank cards are skipped');
+
+// Menu helpers
+assert.strictEqual(sessions.count(root, a), 2); // 001.png was deleted; 002 and 003 remain
+assert.strictEqual(sessions.count(root, 'nope'), 0);
+assert.strictEqual(sessions.shortName('2026-09-25 12.03'), '25 Sep 12.03');
+assert.strictEqual(sessions.shortName('2026-01-05 09.14 (2)'), '5 Jan 09.14 (2)');
+assert.strictEqual(sessions.shortName('Checkout review'), 'Checkout review');
+assert.strictEqual(sessions.rename(root, 'demo (2)', '  '), null);
+assert.strictEqual(sessions.rename(root, 'demo (2)', 'demo'), null); // taken
+assert.strictEqual(sessions.rename(root, 'demo (2)', 'Checkout/review'), 'Checkout-review');
+assert.match(fs.readFileSync(path.join(root, 'Checkout-review', 'session.md'), 'utf8'), /^# Checkout-review\n/);
+assert.deepStrictEqual(sessions.byLastUse(['c', 'b', 'a'], { a: 2, b: 1 }), ['a', 'b', 'c']);
 console.log('sessions: ok');

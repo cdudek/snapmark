@@ -11,7 +11,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node dist/test/sessions.test.js && node dist/test/exporter.test.js && vitest run tests/sdlc.test.ts",
+    "test": "npm run build && node dist/test/sessions.test.js && node dist/test/menu.test.js && node dist/test/exporter.test.js && vitest run tests/sdlc.test.ts",
     "smoke": "npm run build && electron dist/test/smoke.js",
     "dist": "npm run build && electron-builder --mac --publish never -c.mac.identity=-",
     "sdlc:tools": "curl -fsSL https://plannotator.ai/install.sh | bash && claude plugin marketplace add backnotprop/plannotator && claude plugin install plannotator@plannotator && npx skills add backnotprop/plannotator/apps/skills/extra --global --skill plannotator-setup-goal --agent claude-code --yes"

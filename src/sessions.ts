@@ -62,3 +62,32 @@ export function addShot(
   fs.appendFileSync(path.join(dir, 'session.md'), md);
   return n;
 }
+
+// Screenshots in a session = PNGs in its img/ folder.
+export function count(root: string, name: string): number {
+  const img = path.join(root, name, 'img');
+  return fs.existsSync(img) ? fs.readdirSync(img).filter((f) => f.endsWith('.png')).length : 0;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// "2026-09-25 12.03 (2)" → "25 Sep 12.03 (2)"; a name the owner gave stays as it is.
+export function shortName(name: string): string {
+  const m = /^\d{4}-(\d{2})-(\d{2}) (\d{2}\.\d{2})( \(\d+\))?$/.exec(name);
+  return m ? `${Number(m[2])} ${MONTHS[Number(m[1]) - 1]} ${m[3]}${m[4] ?? ''}` : name;
+}
+
+// Renames the folder and the session.md title. Returns the new name, or null if it is empty, unchanged or taken.
+export function rename(root: string, from: string, to: string): string | null {
+  const name = to.trim().replace(/[/:]/g, '-');
+  if (!name || name === from || fs.existsSync(path.join(root, name))) return null;
+  fs.renameSync(path.join(root, from), path.join(root, name));
+  const md = path.join(root, name, 'session.md');
+  fs.writeFileSync(md, fs.readFileSync(md, 'utf8').replace(/^# .*$/m, `# ${name}`));
+  return name;
+}
+
+// Most recently used first; sessions never used keep list()'s newest-first order after them.
+export function byLastUse(names: string[], used: Record<string, number>): string[] {
+  return [...names].sort((a, b) => (used[b] ?? 0) - (used[a] ?? 0));
+}

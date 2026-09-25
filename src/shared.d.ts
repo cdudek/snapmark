@@ -16,6 +16,7 @@ interface Window {
   snapmark: {
     init(): Promise<EditorInit>;
     save(data: EditorSave): Promise<number>;
+    dirty(value: boolean): void; // the editor has marks or text that are not saved yet
   };
 }
 
