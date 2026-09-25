@@ -17,3 +17,11 @@ Every answer the owner gives, appended in order. Quote the answer; never paraphr
 | 2026-09-25 | Menu: a missing session file or folder is reported, with "Choose another session"                                                                | "Accept (Recommended)"    | the owner |
 | 2026-09-25 | Menu: "Open feedback file" keeps opening session.md in the Markdown app                                                                          | "Accept (Recommended)"    | the owner |
 | 2026-09-25 | Menu: routine fixes (prompt explains every mark; "Check for updates…" always answers; shortcut shown only when registered; menu rebuilt on open) | "Apply all (Recommended)" | the owner |
+| 2026-09-25 | Editor: icon toolbar, every tool visible, grouped by key, pen and Select with their own icons                                                    | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Editor: "Reference" replaces "Numbered" everywhere (the owner's own request, confirmed)                                                          | "Confirm (Recommended)"   | the owner |
+| 2026-09-25 | Editor: references and cards move to key 1; others shift down one                                                                                | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Editor: Esc steps back one level (text, selection, then Select)                                                                                  | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Editor: Redact moves next to Cut & move under 7 "Edit image", with a tooltip                                                                     | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Editor: Dock icon while any editor is open                                                                                                       | "Accept (Recommended)"    | the owner |
+| 2026-09-25 | Editor: reference notes grow with their text; buttons in a footer (the owner's own request, confirmed)                                           | "Confirm (Recommended)"   | the owner |
+| 2026-09-25 | Editor: References shown once one exists; comment is one growing line                                                                            | "Accept (Recommended)"    | the owner |

@@ -28,7 +28,7 @@ Snapmark v0.2.0 does its core loop: capture with ⌘⇧1, mark up with number ke
 | App-wide               |        0 |      1 |      5 |      5 |             0 |      11 |
 | **Total**              |    **5** | **24** | **82** | **69** |        **10** | **190** |
 
-Added after the audit, 2026-09-25: three menu bar menu findings from the owner's comment on the menu (F191–F193, all Medium). The counts above are the audit's.
+Added after the audit, 2026-09-25: three menu bar menu findings from the owner's comment on the menu (F191–F193, all Medium), and four editor findings from the owner's comments on the editor (F194–F197: two Medium, two Low). The counts above are the audit's.
 
 When agents gave the same merged problem different impacts, the merge keeps the highest one given. The supporting notes list every impact given.
 
@@ -2513,6 +2513,74 @@ Contradictions between agents' verdicts, settled from the evidence:
 - Broken: law of proximity; Fitts's law
 - Other products: Figma comments open next to the pin; macOS Screenshot markup text sits on the image.
 - Seen by: 7-17 — seen by 1 of 3 independent evaluators
+
+</details>
+
+### F194 · The numbered marker, the most used note, sits fifth in the toolbar
+
+- **Impact:** Low — the tool for pointing at an element and writing about it is the fifth of eight buttons.
+- **Current experience:** Order: 1 Mark · 2 Draw · 3 Remove · 4 Approve · 5 Note (Numbered → Card) · 6 Highlight · 7 Move · V Select.
+- **Recommendation:** Put the note group first.
+- **Decision needed:** Should the note group move to key 1?
+- **Verified:** read in the code; reported by the owner.
+- **Owner's words:** "I think Numbered should be further in the front." — 2026-09-25
+
+<details><summary>Supporting notes</summary>
+
+- Where: editor window
+- Found by: the owner, 2026-09-25, after the audit
+- Code: `src/editor.ts:15-71` (GROUPS)
+
+</details>
+
+### F195 · Esc never leaves a tool, so Card keeps making cards
+
+- **Impact:** Medium — with Card active every click makes a new card; Esc only stops typing or deselects, and the only way out is V or another key.
+- **Current experience:** Esc leaves a text field, or deselects. It never changes the tool. Pressing 5 again only cycles Numbered ↔ Card.
+- **Recommendation:** Esc, when nothing is being typed or selected, goes back to Select.
+- **Decision needed:** Should Esc go back to Select?
+- **Verified:** read in the code; reported by the owner.
+- **Owner's words:** "When I'm at a card and then I'm adding cards, if I press 5 again I can't actually get out. With any other thing I'm not getting out either. I'm not sure if it works but I should be getting out of this mode by pressing Escape or something." — 2026-09-25
+
+<details><summary>Supporting notes</summary>
+
+- Where: editor window
+- Found by: the owner, 2026-09-25, after the audit
+- Code: `src/editor.ts:611-625` (Esc), `:305-309` (cycle), `:466-473` (card on click)
+
+</details>
+
+### F196 · Reference note fields stay two lines high and cut off longer notes
+
+- **Impact:** Medium — a note longer than two lines is clipped mid-line; the reviewer must drag the corner handle to read it.
+- **Current experience:** Each note field is created with two rows and never grows; the sidebar scrolls as a whole.
+- **Recommendation:** Each note field grows to fit its text; the sidebar scrolls; the buttons stay in a footer.
+- **Decision needed:** Routine fix, confirmed with the owner.
+- **Verified:** read in the code; reported by the owner.
+- **Owner's words:** "Our footer notes in the sidebar should actually take as much space as they need. At the moment the text box is kind of shrunk, like it's ellipsing. Why? Technically the sidebar can also be scrollable." — 2026-09-25
+
+<details><summary>Supporting notes</summary>
+
+- Where: editor window
+- Found by: the owner, 2026-09-25, after the audit
+- Code: `src/editor.ts:586` (`rows = 2`), `src/editor.html:122,135`
+
+</details>
+
+### F197 · The Comment field and References heading take space before anything is added
+
+- **Impact:** Low — an empty four-line Comment box and a References heading with a hint fill the sidebar before the reviewer writes anything.
+- **Current experience:** "Comment" and a 4-row field, then "References" with "Press 5 and click the image to add a numbered marker with a note." are always shown.
+- **Recommendation:** Show References only once a reference exists; make the comment a one-line field that grows.
+- **Decision needed:** Should the sidebar show sections only when they are used?
+- **Verified:** read in the code; reported by the owner.
+- **Owner's words:** "I also wonder: commenting and references only exist if I actually add them" — 2026-09-25
+
+<details><summary>Supporting notes</summary>
+
+- Where: editor window
+- Found by: the owner, 2026-09-25, after the audit
+- Code: `src/editor.html:189-192`, `src/editor.ts:567-573`
 
 </details>
 
