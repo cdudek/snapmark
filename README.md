@@ -68,7 +68,7 @@ In the editor, press a number to pick a tool. Press the same number again to cyc
 | `⌘↵`  | Add to session                             |                                     |
 | `Esc` | Discard                                    |                                     |
 
-The menu bar menu switches sessions, opens `session.md`, shows the session folder and checks for updates.
+The menu bar menu switches sessions, opens `session.md`, shows the session folder, checks for updates, and has an **Open at login** toggle.
 
 **Copy prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
 
