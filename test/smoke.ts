@@ -24,6 +24,9 @@ process.env.SNAPMARK_ROOT = root;
 const { openEditor, setActive } = require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 
+// Headless Linux (xvfb) has no GPU; capturePage fails with UnknownVizError unless compositing runs on the CPU.
+if (process.platform === 'linux') app.disableHardwareAcceleration();
+
 setTimeout(() => {
   console.log('smoke: TIMEOUT');
   app.exit(1);
@@ -33,6 +36,7 @@ app
   .then(async () => {
     const mock = new BrowserWindow({ width: 1200, height: 700 }); // must be visible: Linux cannot capture hidden windows
     await mock.loadURL(`data:text/html,${encodeURIComponent(MOCK)}`);
+    await new Promise((r) => setTimeout(r, 300)); // first paint
     const shot = path.join(root, 'mock.png');
     fs.writeFileSync(shot, (await mock.webContents.capturePage()).toPNG());
     mock.destroy();
