@@ -9,6 +9,10 @@ const MOCK = `<body style="margin:0;font:16px system-ui;background:#fff;color:#1
   <div style="display:flex"><nav style="width:220px;height:644px;background:#f4f4f5;padding:24px">Overview<br><br>Reports<br><br>Settings</nav>
   <main style="padding:32px"><h1>Welcome back</h1><p>Revenue is up 12% this month.</p><button style="padding:10px 18px">Export</button></main></div></body>`;
 
+// A solid PNG of the given size, for fitForAI checks.
+const big = (width: number, height: number) =>
+  nativeImage.createFromBitmap(Buffer.alloc(width * height * 4, 128), { width, height }).toPNG();
+
 // Samples one pixel and returns [r, g, b].
 function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
   const img = nativeImage.createFromPath(file);
@@ -21,7 +25,7 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, setActive } = require('../src/main') as typeof import('../src/main');
+const { openEditor, setActive, fitForAI } = require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -76,15 +80,21 @@ app
     const md = fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8');
     const out = path.join(root, 'smoke', 'img', '001.png');
     const unit = Math.max(2, Math.round(Math.max(shotSize.width, shotSize.height) / 400));
-    const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6); // left side of marker 1, beside its digit
+    const outSize = nativeImage.createFromPath(out).getSize();
+    const k = outSize.width / shotSize.width; // saved image may be downscaled for AI
+    const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6 * k); // left side of marker 1, beside its digit
     const thumbR = Math.min(0.1 * shotSize.width, 0.18 * shotSize.height) / 2; // thumbs-up dragged over 10% x 18% of the image
-    const [r2, g2, b2] = pixel(out, 0.9, 0.79, 0, thumbR * 0.85); // bottom of the green disc, below the emoji
+    const [r2, g2, b2] = pixel(out, 0.9, 0.79, 0, thumbR * 0.85 * k); // bottom of the green disc, below the emoji
     const pdf = await exportPdf(path.join(root, 'smoke'));
     const checks: Record<string, boolean> = {
       'pdf exported': fs.readFileSync(pdf).subarray(0, 5).toString() === '%PDF-' && fs.statSync(pdf).size > 20_000,
       'image saved': fs.existsSync(out),
       'mock is not blank': pixel(shotCopy, 0.02, 0.02).join() !== pixel(shotCopy, 0.5, 0.5).join(),
-      'same size as capture': JSON.stringify(nativeImage.createFromPath(out).getSize()) === JSON.stringify(shotSize),
+      'fits AI limits': Math.max(outSize.width, outSize.height) <= 1568 && outSize.width * outSize.height <= 1_150_000,
+      'aspect kept': Math.abs(outSize.width / outSize.height - shotSize.width / shotSize.height) < 0.01,
+      'small image untouched': fitForAI(big(800, 600)).equals(big(800, 600)),
+      'large image shrunk':
+        JSON.stringify(nativeImage.createFromBuffer(fitForAI(big(3000, 1000))).getSize()) === JSON.stringify({ width: 1568, height: 523 }),
       'marker drawn red': r1 > 180 && g1 < 90 && b1 < 120,
       'approve drawn green': g2 > 120 && r2 < 90,
       'markdown has image': md.includes('img/001.png'),
