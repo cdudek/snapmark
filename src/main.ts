@@ -97,9 +97,22 @@ ipcMain.handle('editor:init', (e): EditorInit => {
   return { src: `data:image/png;base64,${fs.readFileSync(image, 'base64')}`, session };
 });
 
+// Claude resizes images above 1568 px on the long edge or ~1.15 megapixels, so anything larger only
+// costs upload time and disk. Retina captures are 2x, so most crops land here.
+const MAX_EDGE = 1568;
+const MAX_PIXELS = 1_150_000;
+
+export function fitForAI(png: Buffer): Buffer {
+  const img = nativeImage.createFromBuffer(png);
+  const { width, height } = img.getSize();
+  const scale = Math.min(1, MAX_EDGE / Math.max(width, height), Math.sqrt(MAX_PIXELS / (width * height)));
+  if (scale === 1) return png;
+  return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
+}
+
 ipcMain.handle('editor:save', (e, { png, caption, notes }: EditorSave): number => {
   const { root: into, session } = editorFor(e.sender.id);
-  const n = sessions.addShot(into, session, Buffer.from(png, 'base64'), { caption, notes });
+  const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes });
   BrowserWindow.fromWebContents(e.sender)?.close();
   return n;
 });
