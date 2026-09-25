@@ -5,9 +5,9 @@ type: plan
 change: 2026-09-25-menu-layout
 design: null
 author: calvindudek@googlemail.com
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: calvindudek@googlemail.com (Plannotator gate)
+approved_at: 2026-09-25
 created: 2026-09-25
 ---
 
