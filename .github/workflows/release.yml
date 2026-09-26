@@ -1,7 +1,6 @@
 name: Release
 
-# Every merge to main that changes the app releases a patch (see the version job).
-# A PR that bumps package.json to a new minor or major releases exactly that version.
+# Every merge to main is checked by semantic-release; the commit messages decide the version (see the version job).
 on:
   push:
     branches: [main]
@@ -14,55 +13,49 @@ concurrency: release
 
 jobs:
   version:
-    # Cheap Ubuntu gate so the macOS job (10x minutes) only runs when something ships.
-    #   package.json version has no release yet  -> release exactly that (a deliberate minor/major bump)
-    #   otherwise, the merge changed the app      -> next patch on that line (0.4.0 -> 0.4.1 -> 0.4.2)
-    #   otherwise (docs, change folders, CI only) -> no release
+    # semantic-release reads the Conventional Commit messages since the last release tag:
+    #   fix: / perf:                  -> patch  (0.4.0 -> 0.4.1)
+    #   feat:                         -> minor  (0.4.1 -> 0.5.0)
+    #   feat!: or "BREAKING CHANGE:"  -> major  (-> 1.0.0)
+    #   docs: chore: ci: test: ...    -> no release
+    # This cheap Ubuntu job only asks for the next version (dry run), so the macOS job runs only when one exists.
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.v.outputs.tag }}
       version: ${{ steps.v.outputs.version }}
-      new: ${{ steps.v.outputs.new }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - id: v
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BEFORE: ${{ github.event.before }}
-        run: |
-          base="$(node -p 'require("./package.json").version')"
-          if ! gh release view "v$base" >/dev/null 2>&1; then
-            version="$base"
-          else
-            if git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-              changed="$(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- src assets build package.json package-lock.json)"
-            else
-              changed=unknown # first push or rewritten history: release to be safe
-            fi
-            if [ -z "$changed" ]; then echo "new=false" >> "$GITHUB_OUTPUT"; exit 0; fi
-            line="${base%.*}"
-            last="$(gh release list --limit 200 --json tagName --jq '.[].tagName' | sed -n "s/^v${line//./\\.}\.\([0-9][0-9]*\)$/\1/p" | sort -n | tail -1)"
-            version="$line.$(( ${last:-0} + 1 ))"
-          fi
-          { echo "version=$version"; echo "tag=v$version"; echo "new=true"; } >> "$GITHUB_OUTPUT"
-
-  release:
-    needs: version
-    if: needs.version.outputs.new == 'true'
-    runs-on: macos-latest
-    env:
-      TAG: ${{ needs.version.outputs.tag }}
-      VERSION: ${{ needs.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      # The patch number lives in the release tag, not in git: main cannot take a bot commit (the ruleset requires a PR).
+      - id: v
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          out="$(npx semantic-release --dry-run)"
+          echo "$out"
+          version="$(printf '%s\n' "$out" | sed -n 's/.*The next release version is \([0-9][0-9.]*\).*/\1/p' | tail -1)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: version
+    if: needs.version.outputs.version != ''
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # semantic-release needs the tags and commits
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The version lives in the release tag, not in git: main takes only PRs, so no bot commit bumps package.json.
       - run: npm version "$VERSION" --no-git-tag-version --allow-same-version
       - run: npm run lint
       - run: npm run typecheck
@@ -110,8 +103,8 @@ jobs:
             unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
             npx electron-builder --mac --publish never -c.mac.identity=-
           fi
+      # Same commits as the dry run, so the same version: creates the tag, the release notes and uploads the builds.
       - name: Publish GitHub release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # latest-mac.yml, the zips and the blockmaps are what electron-updater downloads.
-        run: gh release create "$TAG" --target "$GITHUB_SHA" --generate-notes release/*.dmg release/*.zip release/*.blockmap release/latest-mac.yml
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
