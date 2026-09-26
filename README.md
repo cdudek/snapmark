@@ -78,18 +78,17 @@ The side panel starts with a one-line comment field. References appear there onc
 
 **Cards:** click to place one and start typing. To point at something, press on it and release where the card should sit; a line then follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 
-Click the menu bar icon for the menu. It is built fresh each time it opens:
+Click the menu bar icon for the menu. It is built fresh each time it opens, and every item has an icon:
 
-- **Capture** (⇧⌘1). A shortcut another app already owns shows as "(shortcut unavailable)".
-- The current session's name, with its screenshot count once it has any, then what you do with it:
-  - **Copy for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
-  - **Copy Path** puts just the full path of `session.md` on the clipboard.
-  - **Open** opens `session.md` in your Markdown app.
-  - **Export** ▸ PDF or ZIP (see below), shown once the session has a screenshot.
-- **Sessions** ▸ lists sessions by last use; click one to switch to it. Below the list: **New Session** (⇧⌘2; keeps an empty current session instead of making another), **Rename…**, **Show in Finder**, and **Other…** for sessions beyond the 20 shown.
-- **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Check for Updates….
-- **Help** ▸ Keyboard Shortcuts, and the version.
-- **Quit** asks first if an editor still has marks or text that are not in a session.
+- **Capture Screenshot** (⇧⌘1). A shortcut another app already owns shows as "(shortcut unavailable)".
+- **Current Session: <name> · <n> screenshots**, and what you can do with that session:
+  - **Open Session** opens `session.md`.
+  - **Copy Prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
+  - **Copy session.md Path** puts just the full path on the clipboard.
+  - **Rename Session…**, **Show Session in Finder**, and **Export Session** ▸ PDF or ZIP (see below; shown once the session has a screenshot).
+- **Switch Session** ▸ lists sessions by last use; click one to make it current. **Other Session…** reaches any beyond the 20 shown.
+- **New Session** (⇧⌘2) starts a new session; while the current one is still empty, it keeps using that one.
+- **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Check for Updates…. **Help** ▸ Keyboard Shortcuts and the version. **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
 
 Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.
 
@@ -136,7 +135,7 @@ The version lives in the release tag; `package.json` is not bumped in git.
 
 `.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, and publishes the GitHub release and its `vX.Y.Z` tag with generated notes, at the version semantic-release chose for that commit.
 
-The app checks GitHub Releases on start and from **Settings → Check for Updates…** in the menu, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
+The app checks GitHub Releases on start, then once a day, and from **Settings → Check for Updates…** in the menu, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
 
 1. **The app must be signed with a Developer ID.** macOS refuses to apply updates to ad-hoc signed apps. Add these repository secrets and the release workflow signs and notarizes automatically: `MAC_CERT_P12_BASE64`, `MAC_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`.
 2. **The app must be able to read the releases.** Releases of a private repository return 404 without a token, so updates only work once releases are public.
