@@ -172,3 +172,13 @@ topic when it covers both.
 ## Menu bar menu, second look
 
 > "Also the menu is still fucking the bows, and there are so many submenus and everything, and the language is shit. Can you fucking audit this and implement the recommendations? I want easy language and it to follow the laws of ux. also the menu is fucking verbose" — 2026-09-26, with a screenshot of the v0.3.0 menu
+
+## Menu bar menu, third look
+
+> "The interface doesn't make sense. "Copy for AI," "Copy Paste," "Copy what?" It's not clear what's getting copied.
+>
+> Also opening opens it with what default MD file reader? I said to add that we have our own Markdown reader and editor. It's like, okay, it's the next session, but still the menu doesn't make sense. I want you to use the fucking new X, your X thing, to make it clear what's currently on.
+>
+> Also it's not clear that you can only rename the current session and show the current session in Finder but it's not clear what's happening. A user doesn't understand: he clicks on buttons and he doesn't know what they mean" — 2026-09-26, with a screenshot of the v0.5.1 menu. "X" confirmed by the owner as icons in the menu.
+
+> "check once a day." — 2026-09-26, answering how auto-update should behave

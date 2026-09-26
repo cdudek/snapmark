@@ -1,4 +1,6 @@
 import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
 import type { MenuItemConstructorOptions as Item } from 'electron';
 import { menuTemplate, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
 
@@ -22,6 +24,7 @@ const base: MenuState = {
   canUpdate: true,
   updateWaiting: null,
   shortcuts: { capture: 'CommandOrControl+Shift+1', newSession: 'CommandOrControl+Shift+2' },
+  iconDir: '',
 };
 const menu = (over: Partial<MenuState> = {}) => menuTemplate({ ...base, ...over }, a);
 const labels = (items: Item[]) => items.map((i) => (i.type === 'separator' ? '—' : i.label));
@@ -32,64 +35,74 @@ const find = (items: Item[], label: string) => {
 };
 const sub = (i: Item) => i.submenu as Item[];
 
-// Order and labels (audit 2026-09-26): short, title case, one header, two levels at most
+// Order and labels: every label names what it acts on (owner, 2026-09-26); two levels at most
 assert.deepStrictEqual(labels(menu()), [
-  'Capture',
+  'Capture Screenshot',
   '—',
-  '25 Sep 12.03 · 2',
-  'Copy for AI',
-  'Copy Path',
-  'Open',
-  'Export',
+  'Current Session: 25 Sep 12.03 · 2 screenshots',
+  'Open Session',
+  'Copy Prompt for AI',
+  'Copy session.md Path',
+  'Rename Session…',
+  'Show Session in Finder',
+  'Export Session',
   '—',
-  'Sessions',
+  'Switch Session',
+  'New Session',
+  '—',
   'Settings',
   'Help',
-  'Quit',
+  'Quit Snapmark',
 ]);
 assert.strictEqual(menu()[2].type, 'header');
-assert.strictEqual(find(menu(), 'Quit').accelerator, 'Command+Q');
+assert.strictEqual(find(menu(), 'Quit Snapmark').accelerator, 'Command+Q');
 const depth = (items: Item[]): number => Math.max(1, ...items.map((i) => (Array.isArray(i.submenu) ? 1 + depth(i.submenu) : 1)));
 assert.strictEqual(depth(menu()), 2, 'no submenu inside a submenu');
 
-// Header: no count on an empty session; no session at all disables the session items
-assert.strictEqual(menu({ current: { name: 'e', label: 'e', count: 0 } })[2].label, 'e');
+// Header: singular, no count when empty; without a session the session items are disabled
+assert.strictEqual(menu({ current: { name: 'x', label: 'x', count: 1 } })[2].label, 'Current Session: x · 1 screenshot');
+assert.strictEqual(menu({ current: { name: 'e', label: 'e', count: 0 } })[2].label, 'Current Session: e');
 const none = menu({ current: null, sessions: [] });
-assert.strictEqual(none[2].label, 'No session yet');
-for (const l of ['Copy for AI', 'Copy Path', 'Open']) assert.strictEqual(find(none, l).enabled, false, l);
+assert.strictEqual(none[2].label, 'No Session Yet');
+for (const l of ['Open Session', 'Copy Prompt for AI', 'Copy session.md Path', 'Rename Session…', 'Show Session in Finder'])
+  assert.strictEqual(find(none, l).enabled, false, l);
 
 // Export is hidden, not disabled, while there is nothing to export
-assert.strictEqual(find(menu({ current: { name: 'e', label: 'e', count: 0 } }), 'Export').visible, false);
-assert.strictEqual(find(menu(), 'Export').visible, true);
-find(sub(find(menu(), 'Export')), 'PDF').click!({} as never, undefined, {} as never);
+assert.strictEqual(find(menu({ current: { name: 'e', label: 'e', count: 0 } }), 'Export Session').visible, false);
+find(sub(find(menu(), 'Export Session')), 'PDF').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'exportAs:2026-09-25 12.03:PDF');
 
-// Sessions: the list (current checked, click switches), capped, then the session actions
+// Switch Session: the list (current ticked, click switches), capped, then Other Session…
 const many = Array.from({ length: 25 }, (_, i) => ({ name: `s${i}`, label: `s${i}`, count: 1 }));
-const ss = sub(find(menu({ sessions: many }), 'Sessions'));
+const ss = sub(find(menu({ sessions: many }), 'Switch Session'));
 assert.strictEqual(ss.filter((i) => i.type === 'checkbox').length, MAX_LISTED);
-assert.deepStrictEqual(labels(ss).slice(-5), ['—', 'New Session', 'Rename…', 'Show in Finder', 'Other…']);
-const listed = sub(find(menu(), 'Sessions'));
+assert.deepStrictEqual(labels(ss).slice(-2), ['—', 'Other Session…']);
+const listed = sub(find(menu(), 'Switch Session'));
 assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'makeCurrent:Old');
-assert.strictEqual(find(listed, 'New Session').accelerator, 'CommandOrControl+Shift+2');
+assert.strictEqual(find(menu(), 'New Session').accelerator, 'CommandOrControl+Shift+2');
 
 // Settings and Help
 assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), ['Open at Login', 'Sessions Folder…', 'Check for Updates…']);
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Sessions Folder…').sublabel, '~/Documents/Snapmark');
 assert.deepStrictEqual(labels(sub(find(menu(), 'Help'))), ['Keyboard Shortcuts', 'Snapmark 0.2.0']);
 
-// A waiting update comes first
+// A waiting update comes first; a shortcut is shown only when registered
 const upd = menu({ updateWaiting: '0.4.2' });
 assert.strictEqual(upd[0].label, 'Restart to Update to 0.4.2');
 upd[0].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'installUpdate');
-
-// A shortcut is shown only when registered
 const off = menu({ shortcuts: { capture: null, newSession: 'CommandOrControl+Shift+2' } });
-assert.strictEqual(off[0].label, 'Capture (shortcut unavailable)');
+assert.strictEqual(off[0].label, 'Capture Screenshot (shortcut unavailable)');
 assert.strictEqual(off[0].accelerator, undefined);
+
+// Icons: every top-level item except the header has one, and every icon file exists at 1x and 2x
+const withIcons = menu({ iconDir: path.join(__dirname, '../../assets'), updateWaiting: '1.0.0' });
+for (const i of withIcons.filter((x) => x.type !== 'separator' && x.type !== 'header')) {
+  assert.ok(typeof i.icon === 'string', `no icon for ${i.label}`);
+  assert.ok(fs.existsSync(i.icon as string) && fs.existsSync((i.icon as string).replace('.png', '@2x.png')), `missing ${i.icon}`);
+}
 
 // Open at Login is ticked when macOS reports it on either way, and says when it waits for approval
 assert.deepStrictEqual(loginState(true, { openAtLogin: false, status: 'enabled' }), { enabled: true, checked: true, needsApproval: false });

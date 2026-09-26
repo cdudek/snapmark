@@ -17,6 +17,7 @@ export interface MenuState {
   canUpdate: boolean;
   updateWaiting: string | null; // version downloaded and ready to install
   shortcuts: { capture: string | null; newSession: string | null }; // null = not registered
+  iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
 }
 
 export interface MenuActions {
@@ -54,40 +55,51 @@ function shortcut(label: string, accelerator: string | null, click: () => void):
   return accelerator ? { label, accelerator, click } : { label: `${label} (shortcut unavailable)`, click };
 }
 
-// Short labels in macOS title case, one header, at most two levels (audit of 2026-09-26).
+const plural = (n: number) => `${n} screenshot${n === 1 ? '' : 's'}`;
+
+// Every label names what it acts on; the current session's actions sit under its header (owner, 2026-09-26).
+// Icons are template images, so macOS tints them for light and dark menus.
 export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
+  const icon = (n: string) => (st.iconDir ? { icon: `${st.iconDir}/menu-${n}Template.png` } : {});
   const cur = st.current;
   const on = !!cur;
   const name = cur?.name ?? '';
   return [
-    ...(st.updateWaiting ? [{ label: `Restart to Update to ${st.updateWaiting}`, click: () => a.installUpdate() }] : []),
-    shortcut('Capture', st.shortcuts.capture, () => a.capture()),
+    ...(st.updateWaiting ? [{ label: `Restart to Update to ${st.updateWaiting}`, ...icon('update'), click: () => a.installUpdate() }] : []),
+    { ...shortcut('Capture Screenshot', st.shortcuts.capture, () => a.capture()), ...icon('capture') },
     { type: 'separator' },
-    { label: cur ? `${cur.label}${cur.count ? ` · ${cur.count}` : ''}` : 'No session yet', type: 'header' },
-    { label: 'Copy for AI', enabled: on, click: () => a.copyPrompt(name) },
-    { label: 'Copy Path', enabled: on, click: () => a.copyPath(name) },
-    { label: 'Open', enabled: on, click: () => a.openFile(name) },
     {
-      label: 'Export',
+      label: cur ? `Current Session: ${cur.label}${cur.count ? ` · ${plural(cur.count)}` : ''}` : 'No Session Yet',
+      type: 'header',
+    },
+    { label: 'Open Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
+    { label: 'Copy Prompt for AI', enabled: on, ...icon('prompt'), click: () => a.copyPrompt(name) },
+    { label: 'Copy session.md Path', enabled: on, ...icon('path'), click: () => a.copyPath(name) },
+    { label: 'Rename Session…', enabled: on, ...icon('rename'), click: () => a.rename(name) },
+    { label: 'Show Session in Finder', enabled: on, ...icon('finder'), click: () => a.showInFinder(name) },
+    {
+      label: 'Export Session',
       visible: !!cur?.count, // nothing to export from an empty session
+      ...icon('export'),
       submenu: (['PDF', 'ZIP'] as const).map((kind) => ({ label: kind, click: () => a.exportAs(name, kind) })),
     },
     { type: 'separator' },
     {
-      label: 'Sessions',
+      label: 'Switch Session',
+      ...icon('switch'),
       submenu: [
         ...st.sessions
           .slice(0, MAX_LISTED)
           .map((s): Item => ({ label: s.label, type: 'checkbox', checked: s.name === cur?.name, click: () => a.makeCurrent(s.name) })),
         ...(st.sessions.length ? [{ type: 'separator' } as Item] : []),
-        shortcut('New Session', st.shortcuts.newSession, () => a.newSession()),
-        { label: 'Rename…', enabled: on, click: () => a.rename(name) },
-        { label: 'Show in Finder', enabled: on, click: () => a.showInFinder(name) },
-        { label: 'Other…', click: () => a.otherSession() },
+        { label: 'Other Session…', click: () => a.otherSession() },
       ],
     },
+    { ...shortcut('New Session', st.shortcuts.newSession, () => a.newSession()), ...icon('new') },
+    { type: 'separator' },
     {
       label: 'Settings',
+      ...icon('settings'),
       submenu: [
         {
           label: 'Open at Login',
@@ -103,11 +115,12 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
     },
     {
       label: 'Help',
+      ...icon('help'),
       submenu: [
         { label: 'Keyboard Shortcuts', click: () => a.keyboardShortcuts() },
         { label: `Snapmark ${st.version}`, enabled: false },
       ],
     },
-    { label: 'Quit', accelerator: 'Command+Q', click: () => a.quit() },
+    { label: 'Quit Snapmark', accelerator: 'Command+Q', ...icon('quit'), click: () => a.quit() },
   ];
 }

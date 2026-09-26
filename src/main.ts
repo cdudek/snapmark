@@ -211,6 +211,7 @@ function menuState(): MenuState {
       capture: registered.has(SHORTCUT_CAPTURE) ? SHORTCUT_CAPTURE : null,
       newSession: registered.has(SHORTCUT_NEW) ? SHORTCUT_NEW : null,
     },
+    iconDir: path.join(__dirname, '../../assets'),
   };
 }
 
@@ -327,7 +328,10 @@ app.whenReady().then(() => {
   tray.setToolTip('Snapmark');
   tray.on('click', popMenu);
   tray.on('right-click', popMenu);
-  if (app.isPackaged) checkForUpdates();
+  if (app.isPackaged) {
+    checkForUpdates();
+    setInterval(checkForUpdates, 24 * 60 * 60 * 1000); // a menu bar app runs for days: check once a day, not only at start
+  }
   for (const [key, fn] of [
     [SHORTCUT_CAPTURE, capture],
     [SHORTCUT_NEW, newSession],
