@@ -123,11 +123,16 @@ CI (`.github/workflows/ci.yml`) runs format check, lint, typecheck, unit test an
 
 ## Release
 
-Versions follow [semver](https://semver.org), and releasing is automatic:
+Versions follow [semver](https://semver.org) and are chosen automatically by [semantic-release](https://semantic-release.gitbook.io) from the commit messages on `main`. Every pull request is squash-merged with its title as the commit, and CI rejects titles that are not [Conventional Commits](https://www.conventionalcommits.org):
 
-- **Every merge to `main` that changes the app** (`src/`, `assets/`, `build/`, `package.json`, `package-lock.json`) releases the next **patch**: 0.4.0 → 0.4.1 → 0.4.2. The patch number lives in the release tag; `package.json` keeps the `0.4.0` line.
-- **A new minor or major** is a deliberate pull request that bumps `package.json` (`npm version minor --no-git-tag-version`); when it merges, that exact version is released and the next patches count from it.
-- **Merges that change only docs, change folders or CI** release nothing.
+| PR title starts with                              | Release              |
+| ------------------------------------------------- | -------------------- |
+| `fix:` or `perf:`                                 | patch: 0.4.0 → 0.4.1 |
+| `feat:`                                           | minor: 0.4.1 → 0.5.0 |
+| `feat!:`, `fix!:`, or a `BREAKING CHANGE:` footer | major: → 1.0.0       |
+| `docs:`, `chore:`, `ci:`, `test:`, `refactor:`    | no release           |
+
+The version lives in the release tag; `package.json` is not bumped in git.
 
 `.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, and publishes the GitHub release and its `vX.Y.Z` tag with generated notes.
 
