@@ -1,16 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 16 16" role="img" aria-labelledby="electric-gradient-title">
-  <title id="electric-gradient-title">Electric — corner and dot</title>
-  <defs>
-    <linearGradient id="electric-corner" x1="0" y1="0" x2="0.65" y2="1">
-      <stop stop-color="#06D9EF"/>
-      <stop offset="0.46" stop-color="#3478FF"/>
-      <stop offset="1" stop-color="#7828F5"/>
-    </linearGradient>
-    <linearGradient id="electric-dot" x1="0" y1="0" x2="0.8" y2="1">
-      <stop stop-color="#FF3AC8"/>
-      <stop offset="1" stop-color="#FF5C87"/>
-    </linearGradient>
-  </defs>
-  <path d="M11.5 4H4V11.5" fill="none" stroke="url(#electric-corner)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="11.5" cy="11.5" r="1.75" fill="url(#electric-dot)"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100" role="img" aria-label="Beacon logo" color="#FFFFFF"><defs>
+      <linearGradient id="04-beacon-gradient-cool" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#20F4EC"/><stop offset=".45" stop-color="#2492FF"/><stop offset="1" stop-color="#8B3DFF"/></linearGradient>
+      <linearGradient id="04-beacon-gradient-pink" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#FA6CFF"/><stop offset="1" stop-color="#EF28A7"/></linearGradient>
+      <linearGradient id="04-beacon-gradient-violet" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#A055FF"/><stop offset="1" stop-color="#444CFF"/></linearGradient>
+      <linearGradient id="04-beacon-gradient-cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#72FFF0"/><stop offset="1" stop-color="#08BCEB"/></linearGradient>
+    </defs><path d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63" fill="none" stroke="url(#04-beacon-gradient-cool)" stroke-width="12" stroke-linecap="round"/><rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#04-beacon-gradient-pink)"/></svg>
