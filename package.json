@@ -5,7 +5,7 @@
   "description": "Capture, annotate and collect screenshots into Markdown sessions",
   "main": "dist/src/main.js",
   "scripts": {
-    "build": "tsc && cp src/editor.html dist/src/ && esbuild src/md-notes.ts --bundle --format=iife --global-name=MdNotes --minify --log-level=warning --outfile=dist/src/md-notes.js",
+    "build": "tsc && cp src/editor.html src/viewer.html dist/src/ && esbuild src/md-notes.ts --bundle --format=iife --global-name=MdNotes --minify --log-level=warning --outfile=dist/src/md-notes.js",
     "start": "npm run build && electron .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

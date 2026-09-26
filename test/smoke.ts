@@ -25,7 +25,7 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, setActive, fitForAI, promptFor, sessionMdPath } = require('../src/main') as typeof import('../src/main');
+const { openEditor, openViewer, setActive, fitForAI, promptFor, sessionMdPath } = require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -226,8 +226,42 @@ app
     const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6 * k); // left side of marker 1, beside its digit
     const pdf = await exportPdf(path.join(root, 'smoke'));
     const [r3, g3, b3] = pixel(out, 0.36, 0.7, unit * 2 * k, -unit * 2 * k); // card padding, above its text
+    // The session viewer: session.md rendered with its image, editable, and screenshots one at a time
+    const view = openViewer('smoke', root);
+    await new Promise<void>((r) => view.webContents.once('did-finish-load', () => r()));
+    const inView = (js: string) => view.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    const waitFor = (cond: string) =>
+      inView(`for (let i = 0; i < 50 && !(${cond}); i++) await new Promise((r) => setTimeout(r, 100)); return !!(${cond});`);
+    const viewer: Record<string, boolean> = {};
+    viewer['viewer shows the screenshot inline'] = await waitFor(`document.querySelector('#doc img[src^="img/"]')?.naturalWidth > 0`);
+    viewer['viewer shows the caption'] = await waitFor(`document.getElementById('doc').textContent.includes('Smoke test caption')`);
+    await inView(
+      `const p = [...document.querySelectorAll('#doc p')].pop(); const r = document.createRange(); r.selectNodeContents(p); r.collapse(false); getSelection().removeAllRanges(); getSelection().addRange(r); p.closest('[contenteditable]').focus();`,
+    );
+    for (const ch of ' viewer edit') view.webContents.sendInputEvent({ type: 'char', keyCode: ch });
+    const smokeMd = () => fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8');
+    for (let i = 0; i < 30 && !smokeMd().includes('viewer edit'); i++) await new Promise((r) => setTimeout(r, 100));
+    viewer['typing in the viewer saves session.md'] = smokeMd().includes('viewer edit');
+    viewer['a viewer edit keeps the screenshot link'] = smokeMd().includes('![Screenshot 1](img/001.png)');
+    viewer['viewer keeps the entry headings'] = JSON.stringify(sessions.shots(root, 'smoke')) === '[1]';
+    sessions.addShot(root, 'smoke', fs.readFileSync(out), { caption: 'Second shot' });
+    viewer['viewer reloads when a screenshot is added'] = await waitFor(
+      `document.getElementById('doc').textContent.includes('Second shot')`,
+    );
+    viewer['the viewer edit survives the new screenshot'] = smokeMd().includes('viewer edit') && smokeMd().includes('Second shot');
+    await inView(`document.getElementById('tab-shots').click(); document.activeElement.blur();`);
+    view.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Right' });
+    viewer['→ flips to the next screenshot'] = await waitFor(
+      `document.getElementById('count').textContent === '2 of 2' && document.getElementById('shot').src.endsWith('img/002.png')`,
+    );
+    await inView(`document.getElementById('remove').click();`);
+    viewer['Remove from Session takes it out'] = await waitFor(`document.getElementById('count').textContent === '1 of 1'`);
+    viewer['the removed screenshot is kept in .discarded'] =
+      !smokeMd().includes('Second shot') && fs.readdirSync(path.join(root, '.discarded')).some((d) => d.endsWith('-smoke-002'));
+    view.close();
     const checks: Record<string, boolean> = {
       ...inPage,
+      ...viewer,
       'card drawn yellow': r3 > 235 && g3 > 225 && b3 > 150 && b3 < 225,
       'pdf exported': fs.readFileSync(pdf).subarray(0, 5).toString() === '%PDF-' && fs.statSync(pdf).size > 20_000,
       'image saved': fs.existsSync(out),

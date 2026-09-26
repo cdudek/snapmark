@@ -97,3 +97,28 @@ export function rename(root: string, from: string, to: string): string | null {
 export function byLastUse(names: string[], used: Record<string, number>): string[] {
   return [...names].sort((a, b) => (used[b] ?? 0) - (used[a] ?? 0));
 }
+
+// Entry numbers in session.md, in order ("## 003 · 14:02" → 3).
+export function shots(root: string, name: string): number[] {
+  const md = fs.readFileSync(path.join(root, name, 'session.md'), 'utf8');
+  return [...md.matchAll(/^## (\d+) · /gm)].map((m) => parseInt(m[1], 10));
+}
+
+// Takes entry n out of session.md and moves its image to <root>/.discarded/, so it can come back.
+// Returns the folder it went to, or null if there is no such entry.
+export function removeShot(root: string, name: string, n: number): string | null {
+  const dir = path.join(root, name);
+  const mdPath = path.join(dir, 'session.md');
+  const md = fs.readFileSync(mdPath, 'utf8');
+  const start = md.search(new RegExp(`^## ${pad(n)} · `, 'm'));
+  if (start < 0) return null;
+  const next = md.slice(start + 1).search(/^## \d+ · /m);
+  const end = next < 0 ? md.length : start + 1 + next;
+  const to = path.join(root, '.discarded', `${Date.now()}-${name}-${pad(n)}`);
+  fs.mkdirSync(to, { recursive: true });
+  fs.writeFileSync(path.join(to, 'entry.md'), md.slice(start, end).trim() + '\n');
+  const img = path.join(dir, 'img', `${pad(n)}.png`);
+  if (fs.existsSync(img)) fs.renameSync(img, path.join(to, 'image.png'));
+  fs.writeFileSync(mdPath, (md.slice(0, start).trimEnd() + '\n' + md.slice(end).replace(/^\n+/, '\n')).replace(/\n{3,}/g, '\n\n'));
+  return to;
+}

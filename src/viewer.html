@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data: file:; style-src 'self' 'unsafe-inline'" />
+    <title>Snapmark</title>
+    <style>
+      :root {
+        --bg: #f4f4f5;
+        --panel: #fff;
+        --ink: #18181b;
+        --muted: #71717a;
+        --line: #e4e4e7;
+        --accent: #e11d48;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #18181b;
+          --panel: #232327;
+          --ink: #f4f4f5;
+          --muted: #a1a1aa;
+          --line: #3f3f46;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        font:
+          14px -apple-system,
+          system-ui,
+          sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      header {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      header h1 {
+        font-size: 13px;
+        margin: 0 auto 0 0;
+        font-weight: 600;
+      }
+      button {
+        font: inherit;
+        font-size: 13px;
+        padding: 5px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .tabs {
+        display: flex;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        overflow: hidden;
+      }
+      .tabs button {
+        border: 0;
+        border-radius: 0;
+      }
+      .tabs button[aria-pressed='true'] {
+        background: rgb(127 127 127 / 0.22);
+      }
+      main {
+        overflow: auto;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      /* Document: session.md, rendered and editable (md-notes.js) */
+      #doc {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 28px 32px 80px;
+        line-height: 1.55;
+      }
+      #doc.md[data-empty='true']::before {
+        content: attr(data-placeholder);
+        color: var(--muted);
+      }
+      #doc .ProseMirror {
+        outline: none;
+      }
+      #doc img {
+        max-width: 100%;
+        border-radius: 6px;
+        box-shadow: 0 1px 6px rgb(0 0 0 / 0.25);
+      }
+      #doc h1 {
+        font-size: 1.6em;
+      }
+      #doc h2 {
+        font-size: 1.15em;
+        margin-top: 2em;
+        color: var(--muted);
+      }
+      #doc code {
+        font:
+          0.92em ui-monospace,
+          monospace;
+        background: rgb(127 127 127 / 0.18);
+        padding: 0 3px;
+        border-radius: 3px;
+      }
+      #doc blockquote {
+        margin-left: 0;
+        padding-left: 12px;
+        border-left: 3px solid var(--line);
+        color: var(--muted);
+      }
+      /* Screenshots: one at a time */
+      #shots {
+        height: 100%;
+        display: grid;
+        grid-template-rows: 1fr auto;
+      }
+      #shots .stage {
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        min-height: 0;
+      }
+      #shot {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 6px;
+        box-shadow: 0 2px 12px rgb(0 0 0 / 0.3);
+      }
+      #shots .bar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+      }
+      #count {
+        min-width: 110px;
+        text-align: center;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 id="title"></h1>
+      <div class="tabs">
+        <button id="tab-doc" aria-pressed="true">Document</button>
+        <button id="tab-shots" aria-pressed="false">Screenshots</button>
+      </div>
+      <button id="external" title="Open session.md in your Markdown app">Open in Markdown App</button>
+    </header>
+    <main>
+      <div id="doc"></div>
+      <section id="shots" hidden>
+        <div class="stage"><img id="shot" alt="" /></div>
+        <div class="bar">
+          <button id="prev" title="Previous (←)">←</button>
+          <span id="count"></span>
+          <button id="next" title="Next (→)">→</button>
+          <button id="remove">Remove from Session</button>
+        </div>
+      </section>
+    </main>
+    <script src="md-notes.js"></script>
+    <script src="viewer.js"></script>
+  </body>
+</html>
