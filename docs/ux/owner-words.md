@@ -168,3 +168,7 @@ topic when it covers both.
 ## Editor toolbar, third look
 
 > "ok can you show the shortcut keys again. also for cursor can we use c? for cursor? on 5 remove the second icon => rectangle with x. also i want the indicator that there are more then one option back again." — 2026-09-26, with a screenshot of the one-icon-per-key toolbar
+
+## Menu bar menu, second look
+
+> "Also the menu is still fucking the bows, and there are so many submenus and everything, and the language is shit. Can you fucking audit this and implement the recommendations? I want easy language and it to follow the laws of ux. also the menu is fucking verbose" — 2026-09-26, with a screenshot of the v0.3.0 menu
