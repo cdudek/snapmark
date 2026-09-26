@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Corner + dot — dock"><defs>
-    <linearGradient id="main-a-dock-electric" x1="0" y1="0" x2="0.65" y2="1"><stop stop-color="#06D9EF"/><stop offset=".46" stop-color="#3478FF"/><stop offset="1" stop-color="#7828F5"/></linearGradient>
-    <linearGradient id="accent-a-dock-electric" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#FF3AC8"/><stop offset="1" stop-color="#FF5C87"/></linearGradient>
-    <linearGradient id="tile-a-dock-electric" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EFFB"/></linearGradient>
-    </defs>
-    <rect x="64" y="64" width="896" height="896" rx="202" fill="url(#tile-a-dock-electric)"/>
-    <rect x="65.5" y="65.5" width="893" height="893" rx="201" fill="none" stroke="#DBD8EB" stroke-width="3"/>
-    <g transform="translate(96 96) scale(52)"><path d="M11.5 4H4V11.5" fill="none" stroke="url(#main-a-dock-electric)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11.5" cy="11.5" r="1.75" fill="url(#accent-a-dock-electric)"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Snapmark beacon — app icon"><defs>
+    <linearGradient id="tile" x1="0" y1="0" x2=".6" y2="1"><stop stop-color="#2C2C31"/><stop offset="1" stop-color="#0D0D10"/></linearGradient>
+    <linearGradient id="cool" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#20F4EC"/><stop offset=".45" stop-color="#2492FF"/><stop offset="1" stop-color="#8B3DFF"/></linearGradient>
+    <linearGradient id="pink" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#FA6CFF"/><stop offset="1" stop-color="#EF28A7"/></linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="202" fill="url(#tile)"/>
+  <rect x="65.5" y="65.5" width="893" height="893" rx="201" fill="none" stroke="#3B3B42" stroke-width="3"/>
+  <g transform="translate(162 162) scale(7)">
+    <path d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63" fill="none" stroke="url(#cool)" stroke-width="12" stroke-linecap="round"/>
+    <rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#pink)"/>
+  </g>
+</svg>
