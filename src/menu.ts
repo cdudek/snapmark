@@ -18,10 +18,13 @@ export interface MenuState {
   updateWaiting: string | null; // version downloaded and ready to install
   shortcuts: { capture: string | null; newSession: string | null }; // null = not registered
   iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
+  hasDiscarded: boolean; // something closed without saving, or removed, in the last 7 days
 }
 
 export interface MenuActions {
   capture(): void;
+  reopenLast(): void;
+  reopenDiscarded(): void;
   newSession(): void;
   copyPrompt(name: string): void;
   copyPath(name: string): void;
@@ -67,6 +70,9 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
   return [
     ...(st.updateWaiting ? [{ label: `Restart to Update to ${st.updateWaiting}`, ...icon('update'), click: () => a.installUpdate() }] : []),
     { ...shortcut('Capture Screenshot', st.shortcuts.capture, () => a.capture()), ...icon('capture') },
+    // Shown only when there is something to bring back.
+    { label: 'Reopen Last Discarded', visible: st.hasDiscarded, click: () => a.reopenLast(), ...icon('reopen') },
+    { label: 'Reopen Discarded…', visible: st.hasDiscarded, click: () => a.reopenDiscarded(), ...icon('finder') },
     { type: 'separator' },
     {
       label: cur ? `Current Session: ${cur.label}${cur.count ? ` · ${plural(cur.count)}` : ''}` : 'No Session Yet',

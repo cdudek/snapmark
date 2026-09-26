@@ -53,4 +53,53 @@ assert.ok(fs.existsSync(path.join(gone, 'image.png')) && fs.readFileSync(path.jo
 assert.ok(!fs.existsSync(path.join(root, rm, 'img', '002.png')));
 assert.strictEqual(sessions.removeShot(root, rm, 9), null);
 assert.ok(!sessions.list(root).includes('.discarded'), 'the discarded folder is not a session');
+
+// Discarded folders are readable, carry their meta, and a removed entry comes back
+const [gd] = sessions.discarded(root);
+assert.strictEqual(gd.dir, gone);
+assert.deepStrictEqual([gd.kind, gd.session, gd.n], ['shot', rm, 2]);
+assert.ok(path.basename(gone).endsWith(` · ${rm} · screenshot 2`), gone);
+assert.strictEqual(sessions.restoreShot(root, gd), 2);
+assert.deepStrictEqual(sessions.shots(root, rm), [1, 3, 2]);
+assert.ok(fs.existsSync(path.join(root, rm, 'img', '002.png')) && !fs.existsSync(gone));
+assert.ok(fs.readFileSync(path.join(root, rm, 'session.md'), 'utf8').includes('Shot 2'));
+
+// A number taken in the meantime: the entry comes back under the next free number
+sessions.removeShot(root, rm, 3);
+assert.strictEqual(sessions.addShot(root, rm, Buffer.from('4'), { caption: 'Shot 4' }), 3); // the freed number
+const back = sessions.restoreShot(root, sessions.discarded(root)[0]);
+assert.strictEqual(back, 4);
+const restored = fs.readFileSync(path.join(root, rm, 'session.md'), 'utf8');
+assert.ok(
+  restored.includes('## 004 · ') &&
+    restored.includes('![Screenshot 4](img/004.png)') &&
+    fs.existsSync(path.join(root, rm, 'img', '004.png')),
+);
+
+// Edit again: the clean screenshot and state travel with the entry through remove and restore
+sessions.saveEdit(root, rm, 1, Buffer.from('clean'), '{"items":[]}');
+const moved = sessions.removeShot(root, rm, 1)!;
+assert.ok(fs.existsSync(path.join(moved, 'original.png')) && fs.existsSync(path.join(moved, 'state.json')));
+assert.strictEqual(sessions.restoreShot(root, sessions.discarded(root)[0]), 1);
+assert.strictEqual(fs.readFileSync(sessions.editFiles(root, rm, 1).json, 'utf8'), '{"items":[]}');
+
+// replaceShot keeps the number, the time and the other entries
+const before = fs.readFileSync(path.join(root, rm, 'session.md'), 'utf8');
+const time = /^## 002 · (.*)$/m.exec(before)![1];
+assert.ok(sessions.replaceShot(root, rm, 2, Buffer.from('new'), { caption: 'Shot 2 again', notes: ['a'] }));
+const after = fs.readFileSync(path.join(root, rm, 'session.md'), 'utf8');
+assert.ok(after.includes(`## 002 · ${time}\n`) && after.includes('Shot 2 again') && after.includes('1. a') && !after.includes('Shot 2\n'));
+assert.ok(after.includes('Shot 4') && after.includes('Shot 1') && !after.includes('\n\n\n'), after);
+assert.strictEqual(fs.readFileSync(path.join(root, rm, 'img', '002.png'), 'utf8'), 'new');
+assert.strictEqual(sessions.replaceShot(root, rm, 42, Buffer.from(''), {}), false);
+
+// A capture closed without saving is kept with its marks; after 7 days it is gone
+const cap = path.join(root, 'cap.png');
+fs.writeFileSync(cap, 'png');
+const kept = sessions.discardCapture(root, rm, cap, '{"caption":"c"}');
+assert.deepStrictEqual(sessions.discarded(root)[0].kind, 'capture');
+assert.ok(fs.existsSync(path.join(kept, 'image.png')) && fs.existsSync(path.join(kept, 'state.json')));
+fs.mkdirSync(path.join(root, '.discarded', 'stray'));
+assert.strictEqual(sessions.discarded(root, Date.now() + 8 * 86_400_000).length, 0);
+assert.deepStrictEqual(fs.readdirSync(path.join(root, '.discarded')), [], 'old and stray folders are deleted');
 console.log('sessions: ok');

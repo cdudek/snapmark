@@ -340,6 +340,12 @@ function rect(a: Point, b: Point, clickSize = true): Rect | null {
 
 // Pixelated copy of the screenshot region, pinned in place: moving it would uncover what it hides.
 function redact(r: Rect) {
+  const img = makeRedact(r);
+  canvas.add(img);
+  added(img);
+}
+
+function makeRedact(r: Rect) {
   const img = new fabric.FabricImage(background!.getElement(), {
     left: r.x,
     top: r.y,
@@ -355,8 +361,7 @@ function redact(r: Rect) {
   });
   img.filters = [new fabric.filters.Pixelate({ blocksize: Math.max(8, unit * 5) })];
   img.applyFilters();
-  canvas.add(img);
-  added(img);
+  return img;
 }
 
 // The point where the line from a box's centre towards `to` leaves the box.
@@ -378,7 +383,15 @@ function relink(piece: FObject) {
 
 // Lifts a region off the screenshot: the origin gets a dashed ghost, and an arrow follows the piece.
 function cut(r: Rect) {
-  const c = colorEl.value;
+  const [ghost, arrow, piece] = makeCut(r, colorEl.value);
+  canvas.add(ghost, arrow, piece);
+  added(ghost, arrow, piece);
+  // Lifted pieces are for moving: switch to Select with the piece picked up.
+  pickGroup(GROUPS.findIndex((g) => g.key === 'c'));
+  canvas.setActiveObject(piece);
+}
+
+function makeCut(r: Rect, c: string): [FObject, FObject, FObject] {
   const ghost = new fabric.Rect({ left: r.x, top: r.y, width: r.w, height: r.h, originX: 'left', originY: 'top' });
   ghost.set({
     fill: 'rgba(255, 255, 255, 0.6)',
@@ -407,11 +420,7 @@ function cut(r: Rect) {
   });
   links.set(piece, [ghost, arrow]);
   for (const ev of ['moving', 'scaling'] as const) piece.on(ev, () => relink(piece));
-  canvas.add(ghost, arrow, piece);
-  added(ghost, arrow, piece);
-  // Lifted pieces are for moving: switch to Select with the piece picked up.
-  pickGroup(GROUPS.findIndex((g) => g.key === 'c'));
-  canvas.setActiveObject(piece);
+  return [ghost, arrow, piece];
 }
 
 canvas.on('mouse:down', ({ scenePoint: p }) => {
@@ -560,6 +569,92 @@ function undo() {
   after();
 }
 
+// ---------- state: the marks as plain data, for Discarded and Edit Again ----------
+
+type Item =
+  | { t: 'glyph'; kind: GlyphKind; c: string; left: number; top: number; width: number; height: number; angle: number }
+  | { t: 'arrow'; c: string; a: Point; b: Point }
+  | { t: 'marker'; c: string; x: number; y: number; note: string }
+  | {
+      t: 'card';
+      c: string;
+      left: number;
+      top: number;
+      width: number;
+      angle: number;
+      scaleX: number;
+      scaleY: number;
+      text: string;
+      pointAt: Point | null;
+    }
+  | { t: 'path'; obj: object }
+  | { t: 'redact'; r: Rect }
+  | { t: 'cut'; c: string; r: Rect; left: number; top: number; scaleX: number; scaleY: number; angle: number };
+
+function itemOf(o: FObject): Item | null {
+  if (o instanceof Glyph)
+    return {
+      t: 'glyph',
+      kind: o.kind,
+      c: String(o.stroke),
+      left: o.left,
+      top: o.top,
+      width: o.width * o.scaleX,
+      height: o.height * o.scaleY,
+      angle: o.angle,
+    };
+  if (o instanceof Arrow) {
+    const p = o.calcLinePoints();
+    const m = o.calcTransformMatrix();
+    const [a, b] = [new fabric.Point(p.x1, p.y1), new fabric.Point(p.x2, p.y2)].map((q) => fabric.util.transformPoint(q, m));
+    return { t: 'arrow', c: String(o.stroke), a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y } };
+  }
+  if (o instanceof Marker) return { t: 'marker', c: String(o.fill), x: o.left, y: o.top, note: noteOf(o) };
+  if (o instanceof Card) {
+    const { left, top, width, angle, scaleX, scaleY, text, pointAt, accent } = o;
+    return { t: 'card', c: accent, left, top, width, angle, scaleX, scaleY, text, pointAt };
+  }
+  if (o instanceof fabric.Path) return { t: 'path', obj: o.toObject() };
+  if (o instanceof fabric.FabricImage) {
+    const r = { x: o.cropX, y: o.cropY, w: o.width, h: o.height };
+    if (!links.has(o)) return { t: 'redact', r };
+    const { left, top, scaleX, scaleY, angle } = o;
+    return { t: 'cut', c: String(o.stroke), r, left, top, scaleX, scaleY, angle };
+  }
+  return null;
+}
+
+function stateOf(): EditState {
+  const extras = new Set(canvas.getObjects().flatMap((o) => links.get(o) ?? [])); // a cut's outline and arrow
+  const items = canvas
+    .getObjects()
+    .filter((o) => !extras.has(o))
+    .map(itemOf)
+    .filter(Boolean);
+  return { caption: captionField?.value() ?? '', items };
+}
+
+async function restore(items: Item[]) {
+  for (const i of items) {
+    if (i.t === 'glyph') canvas.add(new Glyph(i.kind, { x: i.left, y: i.top, w: i.width, h: i.height }, i.c).set({ angle: i.angle }));
+    else if (i.t === 'arrow') canvas.add(new Arrow(i.a, i.b, i.c));
+    else if (i.t === 'marker') canvas.add(Object.assign(new Marker({ x: i.x, y: i.y }, i.c), { note: i.note }));
+    else if (i.t === 'card') {
+      const card = new Card({ x: i.left, y: i.top }, i.pointAt, i.c);
+      card.set({ text: i.text, width: i.width, angle: i.angle, scaleX: i.scaleX, scaleY: i.scaleY });
+      canvas.add(card);
+    } else if (i.t === 'path') canvas.add(await fabric.Path.fromObject(i.obj as never));
+    else if (i.t === 'redact') canvas.add(makeRedact(i.r));
+    else if (i.t === 'cut') {
+      const [ghost, arrow, piece] = makeCut(i.r, i.c);
+      piece.set({ left: i.left, top: i.top, scaleX: i.scaleX, scaleY: i.scaleY, angle: i.angle });
+      canvas.add(ghost, arrow, piece);
+      relink(piece);
+    }
+  }
+  after();
+}
+
 // ---------- side panel, save, keys ----------
 
 const markers = () => canvas.getObjects().filter((o): o is Marker => o instanceof Marker);
@@ -608,20 +703,36 @@ function renderRefs() {
   );
 }
 
+let saving = false; // closing after a save is not a discard
+
 async function save() {
   saveBtn.disabled = true;
+  saving = true;
   const active = canvas.getActiveObject();
   if (active instanceof fabric.Textbox && active.isEditing) active.exitEditing();
   canvas.discardActiveObject();
   canvas.renderAll();
-  await window.snapmark.save({
-    png: canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1],
-    caption: (await captionField).value(),
-    notes: markers().map(noteOf),
-    cards: cards().map((c) => c.text.trim()),
-    moves: canvas.getObjects().filter((o) => links.has(o)).length,
-  });
+  const state = stateOf();
+  await window.snapmark
+    .save({
+      png: canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1],
+      caption: state.caption,
+      notes: markers().map(noteOf),
+      cards: cards().map((c) => c.text.trim()),
+      moves: canvas.getObjects().filter((o) => links.has(o)).length,
+      state,
+    })
+    .catch((e: unknown) => {
+      saving = false;
+      saveBtn.disabled = false;
+      throw e;
+    });
 }
+
+// Discard, ⌘W, Esc and the close button all end here: the screenshot and its marks go to Discarded for 7 days.
+window.addEventListener('beforeunload', () => {
+  if (!saving && background) window.snapmark.stash(stateOf());
+});
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && e.key === 'Enter') return void save();
@@ -639,8 +750,9 @@ document.addEventListener('keydown', (e) => {
     if (tool() !== 'select') {
       group = GROUPS.findIndex((x) => x.key === 'c');
       applyTool();
+      return;
     }
-    return;
+    return window.close(); // one step past Select: close, recoverable from Discarded
   }
   if ((e.key === 'Backspace' || e.key === 'Delete') && active) return remove(active);
   const g = GROUPS.findIndex((x) => x.key === e.key.toLowerCase());
@@ -650,7 +762,7 @@ document.addEventListener('keydown', (e) => {
 // Tells the main process there is work to lose, so Quit asks first. The screenshot is the background, not an object.
 const markDirty = () => window.snapmark.dirty(true);
 canvas.on('object:added', markDirty);
-const captionField = MdNotes.mount($('caption'), '', { placeholder: 'Add a comment…', onChange: markDirty });
+let captionField: import('./md-notes').MdField | null = null; // mounted once init says what it holds
 colorEl.oninput = () => applyTool();
 $<HTMLButtonElement>('undo').onclick = undo;
 saveBtn.onclick = () => void save();
@@ -667,8 +779,10 @@ function fit() {
 // Refit whenever the canvas area changes size: window resizes, and the toolbar wrapping onto a second line.
 new ResizeObserver(fit).observe(mainEl);
 
-window.snapmark.init().then(async ({ src, session }) => {
+window.snapmark.init().then(async ({ src, session, state, replacing }) => {
   $('session').textContent = `→ ${session}`;
+  if (replacing) saveBtn.textContent = `Save changes ⌘↵`;
+  captionField = await MdNotes.mount($('caption'), state?.caption ?? '', { placeholder: 'Add a comment…', onChange: markDirty });
   background = await fabric.FabricImage.fromURL(src);
   background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });
   unit = Math.max(2, Math.round(Math.max(background.width, background.height) / 400));
@@ -676,6 +790,7 @@ window.snapmark.init().then(async ({ src, session }) => {
   canvas.backgroundImage = background;
   canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
   fit();
+  if (state) await restore(state.items as Item[]);
   applyTool();
 });
 renderToolbar();

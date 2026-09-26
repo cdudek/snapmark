@@ -25,15 +25,17 @@ const base: MenuState = {
   updateWaiting: null,
   shortcuts: { capture: 'CommandOrControl+Shift+1', newSession: 'CommandOrControl+Shift+2' },
   iconDir: '',
+  hasDiscarded: false,
 };
 const menu = (over: Partial<MenuState> = {}) => menuTemplate({ ...base, ...over }, a);
-const labels = (items: Item[]) => items.map((i) => (i.type === 'separator' ? '—' : i.label));
+const labels = (items: Item[]) => items.filter((i) => i.visible !== false).map((i) => (i.type === 'separator' ? '—' : i.label));
 const find = (items: Item[], label: string) => {
   const i = items.find((x) => x.label === label);
   assert.ok(i, `no item "${label}"`);
   return i;
 };
 const sub = (i: Item) => i.submenu as Item[];
+const head = (items: Item[]) => items.find((i) => i.type === 'header')!;
 
 // Order and labels: every label names what it acts on (owner, 2026-09-26); two levels at most
 assert.deepStrictEqual(labels(menu()), [
@@ -54,16 +56,32 @@ assert.deepStrictEqual(labels(menu()), [
   'Help',
   'Quit Snapmark',
 ]);
-assert.strictEqual(menu()[2].type, 'header');
+assert.strictEqual(
+  menu().findIndex((i) => i.type === 'header'),
+  4,
+  'the header follows Capture and the two hidden Reopen items',
+);
 assert.strictEqual(find(menu(), 'Quit Snapmark').accelerator, 'Command+Q');
 const depth = (items: Item[]): number => Math.max(1, ...items.map((i) => (Array.isArray(i.submenu) ? 1 + depth(i.submenu) : 1)));
 assert.strictEqual(depth(menu()), 2, 'no submenu inside a submenu');
 
+// Discarded screenshots: two items under Capture, only when there is something to reopen
+assert.deepStrictEqual(labels(menu({ hasDiscarded: true })).slice(0, 4), [
+  'Capture Screenshot',
+  'Reopen Last Discarded',
+  'Reopen Discarded…',
+  '—',
+]);
+find(menu({ hasDiscarded: true }), 'Reopen Last Discarded').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'reopenLast');
+find(menu({ hasDiscarded: true }), 'Reopen Discarded…').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'reopenDiscarded');
+
 // Header: singular, no count when empty; without a session the session items are disabled
-assert.strictEqual(menu({ current: { name: 'x', label: 'x', count: 1 } })[2].label, 'Current Session: x · 1 screenshot');
-assert.strictEqual(menu({ current: { name: 'e', label: 'e', count: 0 } })[2].label, 'Current Session: e');
+assert.strictEqual(head(menu({ current: { name: 'x', label: 'x', count: 1 } })).label, 'Current Session: x · 1 screenshot');
+assert.strictEqual(head(menu({ current: { name: 'e', label: 'e', count: 0 } })).label, 'Current Session: e');
 const none = menu({ current: null, sessions: [] });
-assert.strictEqual(none[2].label, 'No Session Yet');
+assert.strictEqual(head(none).label, 'No Session Yet');
 for (const l of ['Open Session', 'Copy Prompt for AI', 'Copy session.md Path', 'Rename Session…', 'Show Session in Finder'])
   assert.strictEqual(find(none, l).enabled, false, l);
 

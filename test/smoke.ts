@@ -25,7 +25,8 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, openViewer, setActive, fitForAI, promptFor, sessionMdPath } = require('../src/main') as typeof import('../src/main');
+const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath } =
+  require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -257,8 +258,67 @@ app
     await inView(`document.getElementById('remove').click();`);
     viewer['Remove from Session takes it out'] = await waitFor(`document.getElementById('count').textContent === '1 of 1'`);
     viewer['the removed screenshot is kept in .discarded'] =
-      !smokeMd().includes('Second shot') && fs.readdirSync(path.join(root, '.discarded')).some((d) => d.endsWith('-smoke-002'));
+      !smokeMd().includes('Second shot') &&
+      fs.readdirSync(path.join(root, '.discarded')).some((d) => d.endsWith(' · smoke · screenshot 2'));
+    // Edit Again: the saved screenshot reopens with its marks, and saving replaces the entry
+    const nextWindow = async (before: BrowserWindow[]) => {
+      for (let i = 0; i < 50; i++) {
+        const w = BrowserWindow.getAllWindows().find((x) => !before.includes(x));
+        if (w) return w;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error('no new window');
+    };
+    const inWin = (w: BrowserWindow, js: string) => w.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    const loaded = (w: BrowserWindow) =>
+      inWin(
+        w,
+        `for (let i = 0; i < 50 && !(background && captionField); i++) await new Promise((r) => setTimeout(r, 100)); await new Promise((r) => setTimeout(r, 300));`,
+      );
+    const counts = `return JSON.stringify([markers().length, cards().length, canvas.getObjects().filter((o) => links.has(o)).length, captionField.value(), markers().map(noteOf)[0]])`;
+    viewer['Edit Again is offered for a saved screenshot'] = await waitFor(`!document.getElementById('edit').disabled`);
+    let windows = BrowserWindow.getAllWindows();
+    await inView(`document.getElementById('edit').click();`);
+    const again = await nextWindow(windows);
+    await new Promise<void>((r) => again.webContents.once('did-finish-load', () => r()));
+    await loaded(again);
+    const restored = JSON.parse(await inWin(again, counts));
+    viewer['Edit Again restores references, cards, moves, comment and notes'] =
+      JSON.stringify(restored) === JSON.stringify([3, 2, 1, 'Smoke test caption', 'Button is misaligned']);
+    viewer['Edit Again says it saves changes'] = (await inWin(again, `return document.getElementById('save').textContent`)).startsWith(
+      'Save changes',
+    );
+    await inWin(again, `captionField.focus();`);
+    for (const ch of 'Edited ') again.webContents.sendInputEvent({ type: 'char', keyCode: ch });
+    await new Promise((r) => setTimeout(r, 300));
+    await inWin(again, `document.getElementById('save').click();`);
+    for (let i = 0; i < 30 && !smokeMd().includes('Edited Smoke test caption'); i++) await new Promise((r) => setTimeout(r, 100));
+    viewer['saving Edit Again replaces the entry in place'] =
+      smokeMd().includes('Edited Smoke test caption') && JSON.stringify(sessions.shots(root, 'smoke')) === '[1]';
     view.close();
+
+    // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks
+    fs.copyFileSync(shotCopy, path.join(root, 'discard.png'));
+    const gone = openEditor(path.join(root, 'discard.png'));
+    await new Promise<void>((r) => gone.webContents.once('did-finish-load', () => r()));
+    await loaded(gone);
+    await inWin(gone, `canvas.add(new Marker({ x: 50, y: 50 }, '#e11d48')); after();`);
+    for (const key of ['Escape', 'Escape']) {
+      gone.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    for (let i = 0; i < 30 && !gone.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
+    const [kept] = sessions.discarded(root);
+    viewer['Esc, Esc closes the editor'] = gone.isDestroyed();
+    viewer['the closed screenshot is kept in Discarded'] =
+      kept?.kind === 'capture' && JSON.parse(fs.readFileSync(path.join(kept.dir, 'state.json'), 'utf8')).items.length === 1;
+    windows = BrowserWindow.getAllWindows();
+    reopen(kept);
+    const back = await nextWindow(windows);
+    await new Promise<void>((r) => back.webContents.once('did-finish-load', () => r()));
+    await loaded(back);
+    viewer['Reopen brings it back with its marks'] = JSON.parse(await inWin(back, counts))[0] === 1 && !fs.existsSync(kept.dir);
+    back.destroy();
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,
