@@ -103,8 +103,10 @@ jobs:
             unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
             npx electron-builder --mac --publish never -c.mac.identity=-
           fi
-      # Same commits as the dry run, so the same version: creates the tag, the release notes and uploads the builds.
+      # Publish the version the dry run chose, at the commit that was built. Not `semantic-release` itself:
+      # it refuses to publish once main has moved on, which a merge during this ~8 minute build does,
+      # and it then exits 0, so a release silently went missing.
       - name: Publish GitHub release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "v$VERSION" --target "$GITHUB_SHA" --generate-notes release/*.dmg release/*.zip release/*.blockmap release/latest-mac.yml
