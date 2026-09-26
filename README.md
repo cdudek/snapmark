@@ -74,7 +74,7 @@ The toolbar shows one icon per key: the tool that is on, with its key underneath
 | `⌘↵`  | Add to session                                                                           |
 | `⌘W`  | Discard the screenshot                                                                   |
 
-The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. **Settings → Keyboard shortcuts…** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
+The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Settings → Keyboard shortcuts…** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
 
 **Cards:** click to place one and start typing. To point at something, press on it and release where the card should sit; a line then follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 

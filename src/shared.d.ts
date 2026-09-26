@@ -22,3 +22,6 @@ interface Window {
 
 // Fabric's UMD build, loaded by editor.html before editor.js.
 declare const fabric: typeof import('fabric');
+
+// md-notes.ts, bundled by esbuild and loaded by editor.html before editor.js.
+declare const MdNotes: typeof import('./md-notes');
