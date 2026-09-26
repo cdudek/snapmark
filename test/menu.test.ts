@@ -1,6 +1,6 @@
 import assert from 'assert';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { menuTemplate, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
+import { menuTemplate, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
 
 const calls: string[] = [];
 const a = new Proxy({} as MenuActions, {
@@ -17,7 +17,7 @@ const base: MenuState = {
   ],
   root: '~/Documents/Snapmark',
   canChangeRoot: true,
-  login: { enabled: true, checked: false },
+  login: { enabled: true, checked: false, needsApproval: false },
   version: '0.2.0',
   canUpdate: true,
   updateWaiting: null,
@@ -90,5 +90,23 @@ assert.strictEqual(calls.pop(), 'installUpdate');
 const off = menu({ shortcuts: { capture: null, newSession: 'CommandOrControl+Shift+2' } });
 assert.strictEqual(off[0].label, 'Capture (shortcut unavailable)');
 assert.strictEqual(off[0].accelerator, undefined);
+
+// Open at Login is ticked when macOS reports it on either way, and says when it waits for approval
+assert.deepStrictEqual(loginState(true, { openAtLogin: false, status: 'enabled' }), { enabled: true, checked: true, needsApproval: false });
+assert.deepStrictEqual(loginState(true, { openAtLogin: true, status: 'not-registered' }).checked, true);
+assert.deepStrictEqual(loginState(true, { openAtLogin: false, status: 'not-registered' }).checked, false);
+assert.deepStrictEqual(loginState(false, { openAtLogin: true, status: 'enabled' }), {
+  enabled: false,
+  checked: false,
+  needsApproval: false,
+});
+const wait = find(
+  sub(find(menu({ login: loginState(true, { openAtLogin: false, status: 'requires-approval' }) }), 'Settings')),
+  'Open at Login',
+);
+assert.strictEqual(wait.checked, false);
+assert.strictEqual(wait.sublabel, 'Allow in System Settings → Login Items');
+const ticked = find(sub(find(menu({ login: loginState(true, { openAtLogin: false, status: 'enabled' }) }), 'Settings')), 'Open at Login');
+assert.strictEqual(ticked.checked, true);
 
 console.log('menu: ok');

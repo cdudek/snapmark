@@ -6,7 +6,7 @@ import path from 'path';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
-import { menuTemplate, MenuActions, MenuState, SessionInfo } from './menu';
+import { menuTemplate, loginState, MenuActions, MenuState, SessionInfo } from './menu';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
@@ -203,8 +203,7 @@ function menuState(): MenuState {
     sessions: sessions.byLastUse(list, used).map(info),
     root: tilde(root),
     canChangeRoot: !process.env.SNAPMARK_ROOT,
-    // Only for the installed app: in development it would register the bare Electron binary.
-    login: { enabled: app.isPackaged, checked: app.isPackaged && app.getLoginItemSettings().openAtLogin },
+    login: loginState(app.isPackaged, app.getLoginItemSettings()),
     version: app.getVersion(),
     canUpdate: app.isPackaged,
     updateWaiting,

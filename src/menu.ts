@@ -12,7 +12,7 @@ export interface MenuState {
   sessions: SessionInfo[]; // by last use, current included
   root: string; // sessions folder, ~-shortened
   canChangeRoot: boolean;
-  login: { enabled: boolean; checked: boolean };
+  login: { enabled: boolean; checked: boolean; needsApproval: boolean };
   version: string;
   canUpdate: boolean;
   updateWaiting: string | null; // version downloaded and ready to install
@@ -39,6 +39,16 @@ export interface MenuActions {
 }
 
 export const MAX_LISTED = 20;
+
+// macOS 13+ registers login items with SMAppService; Electron's openAtLogin can read false there while
+// status is 'enabled', so either one counts. 'requires-approval' means the owner must allow it in System Settings.
+export function loginState(packaged: boolean, s: { openAtLogin: boolean; status?: string }): MenuState['login'] {
+  return {
+    enabled: packaged, // in development it would register the bare Electron binary
+    checked: packaged && (s.openAtLogin || s.status === 'enabled'),
+    needsApproval: packaged && s.status === 'requires-approval',
+  };
+}
 
 function shortcut(label: string, accelerator: string | null, click: () => void): Item {
   return accelerator ? { label, accelerator, click } : { label: `${label} (shortcut unavailable)`, click };
@@ -84,6 +94,7 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
           type: 'checkbox',
           enabled: st.login.enabled,
           checked: st.login.checked,
+          ...(st.login.needsApproval ? { sublabel: 'Allow in System Settings → Login Items' } : {}),
           click: (item) => a.setLogin(item.checked),
         },
         { label: 'Sessions Folder…', sublabel: st.root, enabled: st.canChangeRoot, click: () => a.chooseRoot() },
