@@ -74,26 +74,26 @@ The toolbar shows one icon per key: the tool that is on, with its key underneath
 | `⌘↵`  | Add to session                                                                           |
 | `⌘W`  | Discard the screenshot                                                                   |
 
-The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Settings → Keyboard shortcuts…** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
+The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Help → Keyboard Shortcuts** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
 
 **Cards:** click to place one and start typing. To point at something, press on it and release where the card should sit; a line then follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 
 Click the menu bar icon for the menu. It is built fresh each time it opens:
 
-- **Capture region** (⇧⌘1) and **New session** (⇧⌘2). A shortcut another app already owns shows as "(shortcut unavailable)". While the current session has no screenshots, ⇧⌘2 keeps using it instead of making another empty one.
-- **Current session: <name> · <n> screenshots**, then what you can do with it:
-  - **Copy prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
-  - **Copy file path** puts just the full path of `session.md` on the clipboard.
-  - **Open feedback file** opens `session.md` in your Markdown app. **Show in Finder** opens the session folder.
-  - **Rename session…** gives a session a name, like "Checkout review".
-  - **Export** ▸ ZIP or PDF (see below).
-- **Switch session** lists sessions by last use. Each has its own submenu (Make current, Copy prompt for AI, Export, Show in Finder), so you can export an old session without sending new captures there. **Other session…** reaches any session beyond the 20 shown.
-- **Settings**: Open at login, the sessions folder (click to open it), Change where sessions are saved…, Keyboard shortcuts…, Check for updates…, and the version.
-- **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
+- **Capture** (⇧⌘1). A shortcut another app already owns shows as "(shortcut unavailable)".
+- The current session's name, with its screenshot count once it has any, then what you do with it:
+  - **Copy for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
+  - **Copy Path** puts just the full path of `session.md` on the clipboard.
+  - **Open** opens `session.md` in your Markdown app.
+  - **Export** ▸ PDF or ZIP (see below), shown once the session has a screenshot.
+- **Sessions** ▸ lists sessions by last use; click one to switch to it. Below the list: **New Session** (⇧⌘2; keeps an empty current session instead of making another), **Rename…**, **Show in Finder**, and **Other…** for sessions beyond the 20 shown.
+- **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Check for Updates….
+- **Help** ▸ Keyboard Shortcuts, and the version.
+- **Quit** asks first if an editor still has marks or text that are not in a session.
 
 Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.
 
-**Export → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export → PDF** renders the session into `<session>.pdf`, for people who just want to read it. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`. **Settings → Change where sessions are saved…** moves new sessions elsewhere; pick a folder inside iCloud Drive or Google Drive and your sessions sync and can be shared from there. The `SNAPMARK_ROOT` environment variable overrides the choice (used by the tests).
+**Export → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export → PDF** renders the session into `<session>.pdf`, for people who just want to read it. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`. **Settings → Sessions Folder…** moves new sessions elsewhere; pick a folder inside iCloud Drive or Google Drive and your sessions sync and can be shared from there. The `SNAPMARK_ROOT` environment variable overrides the choice (used by the tests).
 
 ## Develop
 
@@ -136,7 +136,7 @@ The version lives in the release tag; `package.json` is not bumped in git.
 
 `.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, and publishes the GitHub release and its `vX.Y.Z` tag with generated notes.
 
-The app checks GitHub Releases on start and from **Settings → Check for updates…** in the menu, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
+The app checks GitHub Releases on start and from **Settings → Check for Updates…** in the menu, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
 
 1. **The app must be signed with a Developer ID.** macOS refuses to apply updates to ad-hoc signed apps. Add these repository secrets and the release workflow signs and notarizes automatically: `MAC_CERT_P12_BASE64`, `MAC_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`.
 2. **The app must be able to read the releases.** Releases of a private repository return 404 without a token, so updates only work once releases are public.

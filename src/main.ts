@@ -311,10 +311,6 @@ const actions: MenuActions = {
   exportAs: (name, kind) => void runExport(kind, dirOf(name)),
   makeCurrent: setActive,
   otherSession: () => void otherSession(),
-  openRoot: () => {
-    fs.mkdirSync(root, { recursive: true });
-    void shell.openPath(root);
-  },
   chooseRoot: () => void chooseRoot(),
   setLogin: (checked) => app.setLoginItemSettings({ openAtLogin: checked }),
   keyboardShortcuts: showShortcuts,

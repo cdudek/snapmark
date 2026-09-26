@@ -32,81 +32,63 @@ const find = (items: Item[], label: string) => {
 };
 const sub = (i: Item) => i.submenu as Item[];
 
-// F1 order and labels
+// Order and labels (audit 2026-09-26): short, title case, one header, two levels at most
 assert.deepStrictEqual(labels(menu()), [
-  'Snapmark',
-  'Capture region',
-  'New session',
+  'Capture',
   '—',
-  'Current session: 25 Sep 12.03 · 2 screenshots',
-  'Copy prompt for AI',
-  'Copy file path',
-  'Open feedback file',
-  'Show in Finder',
-  'Rename session…',
+  '25 Sep 12.03 · 2',
+  'Copy for AI',
+  'Copy Path',
+  'Open',
   'Export',
   '—',
-  'Switch session',
+  'Sessions',
   'Settings',
-  'Quit Snapmark',
+  'Help',
+  'Quit',
 ]);
-assert.strictEqual(menu()[0].type, 'header');
-assert.strictEqual(find(menu(), 'Quit Snapmark').accelerator, 'Command+Q');
+assert.strictEqual(menu()[2].type, 'header');
+assert.strictEqual(find(menu(), 'Quit').accelerator, 'Command+Q');
+const depth = (items: Item[]): number => Math.max(1, ...items.map((i) => (Array.isArray(i.submenu) ? 1 + depth(i.submenu) : 1)));
+assert.strictEqual(depth(menu()), 2, 'no submenu inside a submenu');
 
-// F2 singular count
-const one = { name: 'x', label: 'x', count: 1 };
-assert.strictEqual(menu({ current: one })[4].label, 'Current session: x · 1 screenshot');
-assert.strictEqual(menu()[4].type, 'header');
-
-// F3 no session: header text and disabled session items
+// Header: no count on an empty session; no session at all disables the session items
+assert.strictEqual(menu({ current: { name: 'e', label: 'e', count: 0 } })[2].label, 'e');
 const none = menu({ current: null, sessions: [] });
-assert.strictEqual(none[4].label, 'No session yet: press ⇧⌘1 to start one');
-for (const l of ['Copy prompt for AI', 'Copy file path', 'Open feedback file', 'Show in Finder', 'Rename session…', 'Export'])
-  assert.strictEqual(find(none, l).enabled, false, l);
+assert.strictEqual(none[2].label, 'No session yet');
+for (const l of ['Copy for AI', 'Copy Path', 'Open']) assert.strictEqual(find(none, l).enabled, false, l);
 
-// F4 export disabled while empty, enabled with screenshots
-assert.strictEqual(find(menu({ current: { name: 'e', label: 'e', count: 0 } }), 'Export').enabled, false);
-assert.strictEqual(find(menu(), 'Export').enabled, true);
+// Export is hidden, not disabled, while there is nothing to export
+assert.strictEqual(find(menu({ current: { name: 'e', label: 'e', count: 0 } }), 'Export').visible, false);
+assert.strictEqual(find(menu(), 'Export').visible, true);
+find(sub(find(menu(), 'Export')), 'PDF').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'exportAs:2026-09-25 12.03:PDF');
 
-// F5 settings
-assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
-  'Open at login',
-  'Sessions are saved in ~/Documents/Snapmark',
-  'Change where sessions are saved…',
-  'Keyboard shortcuts…',
-  'Check for updates…',
-  'Version 0.2.0',
-]);
-find(sub(find(menu(), 'Settings')), 'Sessions are saved in ~/Documents/Snapmark').click!({} as never, undefined, {} as never);
-assert.strictEqual(calls.pop(), 'openRoot');
-
-// F10 order kept, capped at MAX_LISTED, ends with "Other session…"
+// Sessions: the list (current checked, click switches), capped, then the session actions
 const many = Array.from({ length: 25 }, (_, i) => ({ name: `s${i}`, label: `s${i}`, count: 1 }));
-const sw = labels(sub(find(menu({ sessions: many }), 'Switch session')));
-assert.strictEqual(sw.length, MAX_LISTED + 2);
-assert.deepStrictEqual(sw.slice(0, 2), ['s0', 's1']);
-assert.deepStrictEqual(sw.slice(-2), ['—', 'Other session…']);
-assert.deepStrictEqual(labels(sub(find(menu({ sessions: [] }), 'Switch session'))), ['Other session…']);
+const ss = sub(find(menu({ sessions: many }), 'Sessions'));
+assert.strictEqual(ss.filter((i) => i.type === 'checkbox').length, MAX_LISTED);
+assert.deepStrictEqual(labels(ss).slice(-5), ['—', 'New Session', 'Rename…', 'Show in Finder', 'Other…']);
+const listed = sub(find(menu(), 'Sessions'));
+assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
+find(listed, 'Old').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'makeCurrent:Old');
+assert.strictEqual(find(listed, 'New Session').accelerator, 'CommandOrControl+Shift+2');
 
-// F11 per-session submenu acts on that session, not the current one
-const old = find(sub(find(menu(), 'Switch session')), 'Old');
-assert.deepStrictEqual(labels(sub(old)), ['Make current', 'Copy prompt for AI', 'Export', 'Show in Finder']);
-find(sub(old), 'Copy prompt for AI').click!({} as never, undefined, {} as never);
-assert.strictEqual(calls.pop(), 'copyPrompt:Old');
-assert.strictEqual(find(sub(old), 'Export').enabled, false); // Old has no screenshots
-const cur = find(sub(find(menu(), 'Switch session')), '25 Sep 12.03 (current)');
-assert.strictEqual(find(sub(cur), 'Make current').enabled, false);
+// Settings and Help
+assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), ['Open at Login', 'Sessions Folder…', 'Check for Updates…']);
+assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Sessions Folder…').sublabel, '~/Documents/Snapmark');
+assert.deepStrictEqual(labels(sub(find(menu(), 'Help'))), ['Keyboard Shortcuts', 'Snapmark 0.2.0']);
 
-// F16 waiting update right under the header
-const upd = menu({ updateWaiting: '0.3.0' });
-assert.strictEqual(upd[1].label, 'Restart to install 0.3.0');
-upd[1].click!({} as never, undefined, {} as never);
+// A waiting update comes first
+const upd = menu({ updateWaiting: '0.4.2' });
+assert.strictEqual(upd[0].label, 'Restart to Update to 0.4.2');
+upd[0].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'installUpdate');
 
-// F17 shortcut shown only when registered
+// A shortcut is shown only when registered
 const off = menu({ shortcuts: { capture: null, newSession: 'CommandOrControl+Shift+2' } });
-assert.strictEqual(off[1].label, 'Capture region (shortcut unavailable)');
-assert.strictEqual(off[1].accelerator, undefined);
-assert.strictEqual(off[2].accelerator, 'CommandOrControl+Shift+2');
+assert.strictEqual(off[0].label, 'Capture (shortcut unavailable)');
+assert.strictEqual(off[0].accelerator, undefined);
 
 console.log('menu: ok');
