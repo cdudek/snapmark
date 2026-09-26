@@ -5,7 +5,7 @@
   "description": "Capture, annotate and collect screenshots into Markdown sessions",
   "main": "dist/src/main.js",
   "scripts": {
-    "build": "tsc && cp src/editor.html dist/src/",
+    "build": "tsc && cp src/editor.html dist/src/ && esbuild src/md-notes.ts --bundle --format=iife --global-name=MdNotes --minify --log-level=warning --outfile=dist/src/md-notes.js",
     "start": "npm run build && electron .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -18,9 +18,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@milkdown/kit": "^7.22.2",
     "@types/node": "^24.13.6",
     "electron": "^44.4.5",
     "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
     "eslint": "^10.11.0",
     "prettier": "^3.9.9",
     "typescript": "~6.0",
@@ -37,7 +39,7 @@
   "build": {
     "appId": "com.cdudek.snapmark",
     "productName": "Snapmark",
-    "copyright": "© 2026 Calvin Dudek",
+    "copyright": "\u00a9 2026 Calvin Dudek",
     "files": [
       "dist/src/**",
       "assets/*.png",

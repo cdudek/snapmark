@@ -11,7 +11,6 @@ const CARD_BG = '#fef9c3';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const refsEl = $<HTMLDivElement>('refs');
 const colorEl = $<HTMLInputElement>('color');
-const captionEl = $<HTMLTextAreaElement>('caption');
 const saveBtn = $<HTMLButtonElement>('save');
 const toolsEl = $<HTMLSpanElement>('tools');
 const mainEl = document.querySelector('main')!;
@@ -423,7 +422,7 @@ canvas.on('mouse:down', ({ scenePoint: p }) => {
     canvas.add(m);
     added(m);
     // After the event: the browser's own mousedown handling would otherwise move focus off the note again.
-    setTimeout(() => refsEl.querySelector<HTMLTextAreaElement>('.ref:last-child textarea')?.focus());
+    setTimeout(async () => (await fields.get(m))?.focus());
     return;
   }
   let obj: FObject | null = null;
@@ -568,6 +567,12 @@ const cards = () => canvas.getObjects().filter((o): o is Card => o instanceof Ca
 
 let shownRefs: Marker[] = [];
 
+// Each reference's Markdown field, so a new reference can be focused once its field exists.
+const fields = new WeakMap<Marker, Promise<import('./md-notes').MdField>>();
+const ready = new WeakMap<Marker, import('./md-notes').MdField>(); // mounted fields, read synchronously
+// A marker's note as typed right now (the fields' change events lag 200 ms behind typing).
+const noteOf = (m: Marker) => ready.get(m)?.value() ?? m.note;
+
 function renderRefs() {
   const list = markers();
   refsLabel.hidden = !list.length; // References appear with the first reference
@@ -578,6 +583,7 @@ function renderRefs() {
   }
   // Same markers in the same order: keep the rows, so a note being typed keeps focus.
   if (list.length === shownRefs.length && list.every((m, i) => m === shownRefs[i])) return;
+  for (const m of shownRefs) m.note = noteOf(m); // rows are rebuilt below: keep what was just typed
   shownRefs = list;
   refsEl.replaceChildren(
     ...list.map((m) => {
@@ -586,15 +592,17 @@ function renderRefs() {
       const badge = document.createElement('b');
       badge.textContent = String(m.n);
       badge.style.background = String(m.fill);
-      const ta = document.createElement('textarea');
-      ta.rows = 1; // grows with its text (field-sizing: content)
-      ta.value = m.note;
-      ta.placeholder = `Note for ${m.n}`;
-      ta.oninput = () => {
-        m.note = ta.value;
-        markDirty();
-      };
-      row.append(badge, ta);
+      const field = document.createElement('div');
+      const mounted = MdNotes.mount(field, m.note, {
+        placeholder: `Note for ${m.n}`,
+        onChange: (md) => {
+          m.note = md;
+          markDirty();
+        },
+      });
+      fields.set(m, mounted);
+      void mounted.then((f) => ready.set(m, f));
+      row.append(badge, field);
       return row;
     }),
   );
@@ -608,8 +616,8 @@ async function save() {
   canvas.renderAll();
   await window.snapmark.save({
     png: canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1],
-    caption: captionEl.value,
-    notes: markers().map((m) => m.note),
+    caption: (await captionField).value(),
+    notes: markers().map(noteOf),
     cards: cards().map((c) => c.text.trim()),
     moves: canvas.getObjects().filter((o) => links.has(o)).length,
   });
@@ -618,7 +626,7 @@ async function save() {
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && e.key === 'Enter') return void save();
   if (e.metaKey && e.key === 'w') return window.close();
-  if (e.target instanceof HTMLTextAreaElement) {
+  if (e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) {
     // Also covers Fabric's hidden textarea while a card is being edited; Fabric handles Esc there itself.
     if (e.key === 'Escape') e.target.blur();
     return;
@@ -642,7 +650,7 @@ document.addEventListener('keydown', (e) => {
 // Tells the main process there is work to lose, so Quit asks first. The screenshot is the background, not an object.
 const markDirty = () => window.snapmark.dirty(true);
 canvas.on('object:added', markDirty);
-captionEl.addEventListener('input', markDirty);
+const captionField = MdNotes.mount($('caption'), '', { placeholder: 'Add a comment…', onChange: markDirty });
 colorEl.oninput = () => applyTool();
 $<HTMLButtonElement>('undo').onclick = undo;
 saveBtn.onclick = () => void save();

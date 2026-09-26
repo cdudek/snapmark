@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-26
 created: 2026-09-26
+archived_at: 2026-09-26
 ---
 
 # Plan: Markdown as you type in the editor's notes
@@ -49,12 +50,12 @@ None.
 
 ## Order of work
 
-- [ ] 1. Add the packages; `src/md-notes.ts`; build script bundles it — proof: `npm run build` writes `dist/src/md-notes.js` and `npm run typecheck` exits 0
-- [ ] 2. `editor.html` and `editor.ts`: mount the comment and notes; placeholder "Add a comment…" and "Note for N"; Esc blurs, tool keys ignored, ⌘↵ saves while in an editor; a new reference focuses its editor after the click (F3, F6) — proof: `npm run smoke` passes its existing focus, Esc and save checks
-- [ ] 3. `sessions.addShot`: indent note continuation lines by three spaces (F5) — proof: `node dist/test/sessions.test.js` passes the new check
-- [ ] 4. Smoke: type `# Title`, Enter, `- item`, Enter twice, `**bold**` into a reference note with real key events; check an `h1`, a `li` and a `strong` in the field and `# Title`, `- item`, `**bold**` in session.md; move the sidebar checks to the editor fields (F1, F2, F4, F6) — proof: `npm run smoke` passes
-- [ ] 5. README — proof: `grep -n "Markdown as you type" README.md`
-- [ ] 6. Verify, PR, auto-merge, archive, close `snap-m6j` only if the session view is split into `snap-ndd`, rebuild and install the signed app — proof: CI `check` passes
+- [x] 1. Add the packages; `src/md-notes.ts`; build script bundles it — proof: `npm run build` writes `dist/src/md-notes.js` and `npm run typecheck` exits 0
+- [x] 2. `editor.html` and `editor.ts`: mount the comment and notes; placeholder "Add a comment…" and "Note for N"; Esc blurs, tool keys ignored, ⌘↵ saves while in an editor; a new reference focuses its editor after the click (F3, F6) — proof: `npm run smoke` passes its existing focus, Esc and save checks
+- [x] 3. `sessions.addShot`: indent note continuation lines by three spaces (F5) — proof: `node dist/test/sessions.test.js` passes the new check
+- [x] 4. Smoke: type `# Title`, Enter, `- item`, Enter twice, `**bold**` into a reference note with real key events; check an `h1`, a `li` and a `strong` in the field and `# Title`, `- item`, `**bold**` in session.md; move the sidebar checks to the editor fields (F1, F2, F4, F6) — proof: `npm run smoke` passes
+- [x] 5. README — proof: `grep -n "Markdown as you type" README.md`
+- [x] 6. Verify, PR, auto-merge, archive, close `snap-m6j` only if the session view is split into `snap-ndd`, rebuild and install the signed app — proof: CI `check` passes
 
 ## Risks
 
@@ -100,3 +101,8 @@ Done:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-09-26 — `MdField` also has `value()`: Milkdown reports changes 200 ms after typing, so `save()` and the notes re-render read each field directly; otherwise ⌘↵ right after typing would have saved a note without its last letters.
+- 2026-09-26 — The placeholder follows a plain `input` event on the field instead of the debounced listener, for the same reason.
+- 2026-09-26 — The key handler did not need the capture phase: the editor lets ⌘↵ and Esc bubble; the smoke test checks both.
+- 2026-09-26 — `esbuild` runs with `--log-level=warning` so the build stays quiet.

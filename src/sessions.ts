@@ -51,7 +51,13 @@ export function addShot(
   const time = new Date().toTimeString().slice(0, 5);
   let md = `\n## ${pad(n)} · ${time}\n\n![Screenshot ${n}](img/${pad(n)}.png)\n`;
   if (caption.trim()) md += `\n${caption.trim()}\n`;
-  const refs = notes.map((t, i) => `${i + 1}. ${t.trim() || '_(no note)_'}`);
+  // A note is Markdown and may span lines (a heading, a list): indent its continuation lines under the
+  // number, so they stay inside that numbered item.
+  const refs = notes.map((t, i) => {
+    const marker = `${i + 1}. `;
+    const lines = (t.trim() || '_(no note)_').split('\n');
+    return marker + lines.map((l, j) => (j && l ? ' '.repeat(marker.length) + l : l)).join('\n');
+  });
   if (refs.length) md += `\n${refs.join('\n')}\n`;
   const extra = cards.filter((c) => c.trim()).map((c) => `- Card: ${c.trim().replace(/\s*\n\s*/g, ' / ')}`);
   if (moves)

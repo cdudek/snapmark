@@ -9,6 +9,7 @@ status: approved
 reviewed_by: calvindudek@googlemail.com (Plannotator gate)
 approved_at: 2026-09-26
 created: 2026-09-26
+archived_at: 2026-09-26
 ---
 
 # Facts: Markdown as you type in the editor's notes

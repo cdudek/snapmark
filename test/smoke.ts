@@ -67,9 +67,11 @@ app
     const key = (k, opts = {}) => document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
     const drag = (k, pts) => { if (k) key(k); ev('mousedown', ...pts[0]); pts.slice(1).forEach((p) => ev('mousemove', ...p)); ev('mouseup', ...pts.at(-1)); };
     const px = (fx, fy) => { canvas.renderAll(); return Array.from(canvas.lowerCanvasEl.getContext('2d').getImageData(Math.round(canvas.width * fx), Math.round(canvas.height * fy), 1, 1).data); };
-    const note = async (text) => { await sleep(10); document.activeElement.value = text; document.activeElement.dispatchEvent(new Event('input')); document.activeElement.blur(); };
+    // Notes are Markdown fields (contenteditable). A new reference's field is mounted and focused a moment after the click.
+    const note = async (text) => { for (let i = 0; i < 50 && !document.activeElement?.closest?.('#refs .md'); i++) await sleep(20); document.execCommand('insertText', false, text); document.activeElement.blur(); };
+    const setMd = (el, lines) => { el.querySelector('.ProseMirror').focus(); document.execCommand('selectAll'); lines.forEach((l, i) => { if (i) document.execCommand('insertParagraph'); document.execCommand('insertText', false, l); }); };
     const r = {};
-    r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs textarea');
+    r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs .md');
 
     drag(null, [[.05,.05],[.2,.2]]);                  // box (the starting tool)
     drag('2', [[.22,.05],[.35,.2]]);                  // 2 again -> ellipse
@@ -129,18 +131,24 @@ app
     // Sidebar (F7-F10): fields grow with their text; the buttons stay in view while the body scrolls
     const cap = document.getElementById('caption');
     const oneLine = cap.clientHeight;
-    r['comment is one line, "Add a comment…"'] = cap.rows === 1 && cap.placeholder === 'Add a comment…';
-    cap.value = 'a\\nb\\nc\\nd\\ne'; cap.dispatchEvent(new Event('input'));
-    r['comment grows as you type'] = cap.clientHeight > oneLine * 2 && cap.scrollHeight <= cap.clientHeight + 1;
-    const ta = document.querySelector('#refs textarea');
-    const kept = ta.value;
-    ta.value = 'line\\n'.repeat(5) + 'a long reference note that wraps inside the sidebar more than once';
-    r['reference note shows all its text'] = ta.scrollHeight <= ta.clientHeight + 1 && ta.clientHeight > oneLine * 3;
+    r['comment is one line, "Add a comment…"'] = cap.dataset.placeholder === 'Add a comment…' && cap.dataset.empty === 'true' && oneLine < 50;
+    setMd(cap, ['a', 'b', 'c', 'd', 'e']); await sleep(50);
+    r['comment grows as you type'] = cap.clientHeight > oneLine * 2 && cap.dataset.empty === 'false';
+    const ref1 = document.querySelector('#refs .md');
+    setMd(ref1, ['line', 'line', 'line', 'line', 'line', 'a long reference note that wraps inside the sidebar more than once']); await sleep(50);
+    r['reference note shows all its text'] = ref1.scrollHeight <= ref1.clientHeight + 1 && ref1.clientHeight > oneLine * 3;
     r['References shown once one exists'] = !document.getElementById('refs-label').hidden;
-    ta.value = 'x\\n'.repeat(60);
+    setMd(ref1, Array(60).fill('x')); await sleep(50);
     const sb = document.getElementById('save').getBoundingClientRect();
     r['buttons stay in view while notes scroll'] = sb.bottom <= window.innerHeight && sb.top > 0 && document.querySelector('aside .body').scrollHeight > document.querySelector('aside .body').clientHeight;
-    ta.value = kept;
+    await sleep(100); setMd(ref1, ['Button is misaligned']); await sleep(100);
+    r['restored reference note'] = ref1.textContent === 'Button is misaligned'; document.activeElement.blur();
+    ref1.querySelector('.ProseMirror').focus();
+    const toolBefore = tool();
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true }));
+    r['tool keys do nothing while typing a note'] = tool() === toolBefore;
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    r['Esc leaves the note field'] = !document.activeElement?.closest?.('.md');
     // Esc steps back one level (F6): with Card active and a card selected, Esc deselects, then goes to Select
     key('1'); if (tool() !== 'card') key('1');
     drag(null, [[.7,.75]]); const c = canvas.getActiveObject(); c?.set({ text: 'Esc test' }); c?.exitEditing?.(); // an empty card deletes itself
@@ -171,7 +179,7 @@ app
     r['icon cursor for Pen, crosshair for Box'] = penCursor.startsWith('url(') && canvas.defaultCursor === 'crosshair';
     key('c');
 
-    document.getElementById('caption').value = 'Smoke test caption';
+    setMd(cap, ['Smoke test caption']); document.activeElement.blur();
     return r;
   })()`;
     const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
@@ -186,7 +194,24 @@ app
     win.webContents.sendInputEvent({ type: 'mouseUp', x: at.x, y: at.y, button: 'left', clickCount: 1 });
     await new Promise((r) => setTimeout(r, 300));
     inPage['a new reference is ready to type into'] = await win.webContents.executeJavaScript(
-      `(() => { const t = document.activeElement; const ok = t?.tagName === 'TEXTAREA' && !!t.closest('#refs'); if (ok) { t.value = 'Typed right away'; t.dispatchEvent(new Event('input')); } return ok; })()`,
+      `!!document.activeElement?.isContentEditable && !!document.activeElement.closest('#refs .md')`,
+    );
+    // Markdown as you type (F1, F2), with real key events: the field's input rules only see real typing.
+    const type = (text: string) => [...text].forEach((ch) => win.webContents.sendInputEvent({ type: 'char', keyCode: ch }));
+    const enter = () => {
+      win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
+      win.webContents.sendInputEvent({ type: 'char', keyCode: '\r' });
+      win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Return' });
+    };
+    type('# Title');
+    enter();
+    type('- item');
+    enter();
+    enter();
+    type('**bold**');
+    await new Promise((r) => setTimeout(r, 300));
+    inPage['notes: # heading, - list and **bold** format as you type'] = await win.webContents.executeJavaScript(
+      `(() => { const f = document.activeElement?.closest('.md'); return !!f && !!f.querySelector('h1') && !!f.querySelector('li') && !!f.querySelector('strong') && !f.textContent.includes('**'); })()`,
     );
     win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
@@ -228,6 +253,8 @@ app
       'markdown has move': md.includes('- Moved an element'),
       'markdown has image': md.includes('img/001.png'),
       'markdown has caption': md.includes('Smoke test caption'),
+      'notes saved as Markdown, inside their numbered item':
+        md.includes('3. # Title') && /\n {3}[-*] item\n/.test(md) && md.includes('\n   **bold**'),
       'markdown has numbered notes': md.includes('1. Button is misaligned\n2. Typo here'),
     };
     console.log(md);
