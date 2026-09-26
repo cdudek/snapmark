@@ -39,4 +39,18 @@ assert.deepStrictEqual(sessions.byLastUse(['c', 'b', 'a'], { a: 2, b: 1 }), ['a'
 const nm = sessions.create(root, 'md-notes');
 sessions.addShot(root, nm, Buffer.from('m'), { notes: ['# Title\n\n- item\n\n**bold**', 'plain'] });
 assert.match(fs.readFileSync(path.join(root, nm, 'session.md'), 'utf8'), /\n1\. # Title\n\n {3}- item\n\n {3}\*\*bold\*\*\n2\. plain\n/);
+
+// Removing a screenshot keeps the rest of session.md and moves the image aside
+const rm = sessions.create(root, 'remove');
+[1, 2, 3].forEach((i) => sessions.addShot(root, rm, Buffer.from(String(i)), { caption: `Shot ${i}` }));
+assert.deepStrictEqual(sessions.shots(root, rm), [1, 2, 3]);
+const gone = sessions.removeShot(root, rm, 2)!;
+assert.deepStrictEqual(sessions.shots(root, rm), [1, 3]);
+const left = fs.readFileSync(path.join(root, rm, 'session.md'), 'utf8');
+assert.ok(left.includes('Shot 1') && left.includes('Shot 3') && !left.includes('Shot 2'), left);
+assert.ok(!left.includes('\n\n\n'), 'no blank-line pile-up');
+assert.ok(fs.existsSync(path.join(gone, 'image.png')) && fs.readFileSync(path.join(gone, 'entry.md'), 'utf8').includes('Shot 2'));
+assert.ok(!fs.existsSync(path.join(root, rm, 'img', '002.png')));
+assert.strictEqual(sessions.removeShot(root, rm, 9), null);
+assert.ok(!sessions.list(root).includes('.discarded'), 'the discarded folder is not a session');
 console.log('sessions: ok');

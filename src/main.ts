@@ -3,6 +3,7 @@ import { execFile } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
@@ -26,6 +27,10 @@ let quitting = false; // set by "Quit anyway" so the quit guard lets go
 const registered = new Set<string>(); // global shortcuts macOS let us have
 // keyed by webContents.id; dirty = marks or text not saved yet
 const editors = new Map<number, { image: string; root: string; session: string; win: BrowserWindow; dirty: boolean }>();
+// Session viewers, keyed by webContents.id; known = the session.md text the window shows
+const viewers = new Map<number, { root: string; session: string; win: BrowserWindow; known: string }>();
+// The Dock icon shows while any Snapmark window is open.
+const updateDock = () => (editors.size || viewers.size ? void app.dock?.show() : app.dock?.hide());
 
 function loadState() {
   try {
@@ -103,10 +108,10 @@ export function openEditor(image: string): BrowserWindow {
   });
   const id = win.webContents.id;
   editors.set(id, { image, root, session, win, dirty: false });
-  void app.dock?.show(); // an open editor is visible in the Dock
+  updateDock();
   win.on('closed', () => {
     editors.delete(id);
-    if (!editors.size) app.dock?.hide();
+    updateDock();
     fs.rmSync(image, { force: true });
   });
   win.loadFile(path.join(__dirname, 'editor.html'));
@@ -138,8 +143,9 @@ export function fitForAI(png: Buffer): Buffer {
   return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
 }
 
-ipcMain.handle('editor:save', (e, { png, caption, notes, cards, moves }: EditorSave): number => {
+ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves }: EditorSave): Promise<number> => {
   const { root: into, session } = editorFor(e.sender.id);
+  for (const v of viewers.values()) if (v.root === into && v.session === session) await flushViewer(v);
   const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes, cards, moves });
   used[session] = Date.now();
   saveState();
@@ -150,6 +156,80 @@ ipcMain.handle('editor:save', (e, { png, caption, notes, cards, moves }: EditorS
 ipcMain.on('editor:dirty', (e, value: boolean) => {
   const ed = editors.get(e.sender.id);
   if (ed) ed.dirty = value;
+});
+
+// Snapmark's own window for a session: session.md rendered and editable, and its screenshots one at a time.
+export function openViewer(name: string, into = root): BrowserWindow {
+  const open = [...viewers.values()].find((v) => v.root === into && v.session === name);
+  if (open) {
+    open.win.show();
+    app.focus({ steal: true });
+    return open.win;
+  }
+  const dir = path.join(into, name);
+  const win = new BrowserWindow({
+    width: 900,
+    height: 900,
+    title: `${name} — Snapmark`,
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  });
+  const id = win.webContents.id;
+  const v = { root: into, session: name, win, known: '' };
+  viewers.set(id, v);
+  updateDock();
+  // session.md changed outside this window (a new screenshot, an agent, another app): show the new text.
+  const watcher = fs.watch(dir, (_event, file) => {
+    if (file !== 'session.md' || !fs.existsSync(path.join(dir, file))) return;
+    if (fs.readFileSync(path.join(dir, file), 'utf8') !== v.known) win.webContents.send('viewer:reload', viewerData(v));
+  });
+  win.on('closed', () => {
+    watcher.close();
+    viewers.delete(id);
+    updateDock();
+  });
+  win.loadFile(path.join(__dirname, 'viewer.html'));
+  app.focus({ steal: true });
+  return win;
+}
+
+function viewerData(v: { root: string; session: string; known: string }): ViewerInit {
+  const dir = path.join(v.root, v.session);
+  v.known = fs.readFileSync(path.join(dir, 'session.md'), 'utf8');
+  return { session: v.session, base: `${pathToFileURL(dir).href}/`, md: v.known, shots: sessions.shots(v.root, v.session) };
+}
+
+function viewerFor(id: number) {
+  const v = viewers.get(id);
+  if (!v) throw new Error(`No viewer for webContents ${id}`);
+  return v;
+}
+
+function writeViewer(v: { root: string; session: string; known: string }, from: string, md: string): boolean {
+  const file = path.join(v.root, v.session, 'session.md');
+  if (fs.readFileSync(file, 'utf8') !== from) return false;
+  const text = `${md.trimEnd()}\n`;
+  v.known = text;
+  fs.writeFileSync(file, text);
+  return true;
+}
+
+// Text typed in the last 200 ms has not reached onChange yet: take it from the window before session.md changes.
+async function flushViewer(v: { root: string; session: string; win: BrowserWindow; known: string }) {
+  const md: unknown = await v.win.webContents.executeJavaScript('window.__flush && window.__flush()').catch(() => null);
+  if (typeof md === 'string') writeViewer(v, v.known, md);
+}
+
+ipcMain.handle('viewer:init', (e): ViewerInit => viewerData(viewerFor(e.sender.id)));
+ipcMain.handle('viewer:save', (e, from: string, md: string): boolean => writeViewer(viewerFor(e.sender.id), from, md));
+ipcMain.on('viewer:external', (e) => {
+  const v = viewerFor(e.sender.id);
+  void shell.openPath(sessionMdPath(path.join(v.root, v.session)));
+});
+ipcMain.handle('viewer:remove', async (e, n: number): Promise<ViewerInit> => {
+  const v = viewerFor(e.sender.id);
+  await flushViewer(v);
+  sessions.removeShot(v.root, v.session, n);
+  return viewerData(v);
 });
 
 // Background check: downloads and notifies once; the update installs on next quit. Offline or no release: log only.
@@ -243,6 +323,12 @@ function renameSession(name: string) {
     used[to] = used[name] ?? Date.now();
     delete used[name];
     for (const ed of editors.values()) if (ed.root === root && ed.session === name) ed.session = to;
+    // A viewer watches its folder, which just moved: reopen it on the new name.
+    for (const v of viewers.values())
+      if (v.root === root && v.session === name) {
+        v.win.close();
+        openViewer(to);
+      }
     saveState();
   });
 }
@@ -305,7 +391,7 @@ const actions: MenuActions = {
     clipboard.writeText(sessionMdPath(dirOf(name)));
     notify(`Path to ${sessions.shortName(name)} copied.`);
   },
-  openFile: (name) => exists(name, 'session.md') && void shell.openPath(sessionMdPath(dirOf(name))),
+  openFile: (name) => exists(name, 'session.md') && void openViewer(name),
   showInFinder: (name) => exists(name) && void shell.openPath(dirOf(name)),
   rename: renameSession,
   exportAs: (name, kind) => void runExport(kind, dirOf(name)),

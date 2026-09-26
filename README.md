@@ -82,7 +82,7 @@ Click the menu bar icon for the menu. It is built fresh each time it opens, and 
 
 - **Capture Screenshot** (⇧⌘1). A shortcut another app already owns shows as "(shortcut unavailable)".
 - **Current Session: <name> · <n> screenshots**, and what you can do with that session:
-  - **Open Session** opens `session.md`.
+  - **Open Session** opens the session in Snapmark's own window. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** shows one screenshot at a time: ← and → flip through them, and **Remove from Session** takes one out. The removed image and its text go to `.discarded/` in the sessions folder. **Open in Markdown App** opens `session.md` in your default app.
   - **Copy Prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
   - **Copy session.md Path** puts just the full path on the clipboard.
   - **Rename Session…**, **Show Session in Finder**, and **Export Session** ▸ PDF or ZIP (see below; shown once the session has a screenshot).
@@ -114,6 +114,7 @@ npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 | `src/main.ts`         | Menu bar, global shortcuts, capture, auto-update, IPC |
 | `src/menu.ts`         | The menu bar menu as data, tested without Electron    |
 | `src/editor.ts/.html` | Annotation editor window                              |
+| `src/viewer.ts/.html` | Session window: `session.md` editable, screenshots    |
 | `src/sessions.ts`     | Session folders and `session.md` writing              |
 | `assets/`             | App icon, menu bar template icon                      |
 | `build/`              | Packaging resources (icon, entitlements)              |

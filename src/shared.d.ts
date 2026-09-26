@@ -12,11 +12,24 @@ interface EditorSave {
   moves: number; // cut-and-move pieces
 }
 
+// The session viewer (viewer.html): session.md rendered and editable, and its screenshots one at a time.
+interface ViewerInit {
+  session: string;
+  base: string; // file:// URL of the session folder, ending in "/", so img/NNN.png resolves
+  md: string;
+  shots: number[]; // entry numbers in session.md, in order
+}
+
 interface Window {
   snapmark: {
     init(): Promise<EditorInit>;
     save(data: EditorSave): Promise<number>;
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
+    viewerInit(): Promise<ViewerInit>;
+    viewerSave(from: string, md: string): Promise<boolean>; // refused when session.md is no longer `from`
+    viewerExternal(): void; // open session.md in the default Markdown app
+    viewerRemove(n: number): Promise<ViewerInit>;
+    onViewerReload(cb: (data: ViewerInit) => void): void; // session.md changed outside this window
   };
 }
 
