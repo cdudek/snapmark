@@ -53,7 +53,6 @@ assert.deepStrictEqual(labels(menu()), [
   'New Session',
   '—',
   'Settings',
-  'Help',
   'Quit Snapmark',
 ]);
 assert.strictEqual(
@@ -101,10 +100,15 @@ find(listed, 'Old').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'makeCurrent:Old');
 assert.strictEqual(find(menu(), 'New Session').accelerator, 'CommandOrControl+Shift+2');
 
-// Settings and Help
-assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), ['Open at Login', 'Sessions Folder…', 'Check for Updates…']);
+// Settings holds what Help used to: the shortcuts, and the version under Check for Updates (no Help menu, owner 2026-09-26)
+assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
+  'Open at Login',
+  'Sessions Folder…',
+  'Keyboard Shortcuts',
+  'Check for Updates…',
+]);
+assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Check for Updates…').sublabel, 'Snapmark 0.2.0');
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Sessions Folder…').sublabel, '~/Documents/Snapmark');
-assert.deepStrictEqual(labels(sub(find(menu(), 'Help'))), ['Keyboard Shortcuts', 'Snapmark 0.2.0']);
 
 // A waiting update comes first; a shortcut is shown only when registered
 const upd = menu({ updateWaiting: '0.4.2' });

@@ -116,15 +116,8 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
           click: (item) => a.setLogin(item.checked),
         },
         { label: 'Sessions Folder…', sublabel: st.root, enabled: st.canChangeRoot, click: () => a.chooseRoot() },
-        { label: 'Check for Updates…', enabled: st.canUpdate, click: () => a.checkUpdates() },
-      ],
-    },
-    {
-      label: 'Help',
-      ...icon('help'),
-      submenu: [
         { label: 'Keyboard Shortcuts', click: () => a.keyboardShortcuts() },
-        { label: `Snapmark ${st.version}`, enabled: false },
+        { label: 'Check for Updates…', sublabel: `Snapmark ${st.version}`, enabled: st.canUpdate, click: () => a.checkUpdates() },
       ],
     },
     { label: 'Quit Snapmark', accelerator: 'Command+Q', ...icon('quit'), click: () => a.quit() },
