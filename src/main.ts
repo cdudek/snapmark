@@ -26,7 +26,17 @@ let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
 const registered = new Set<string>(); // global shortcuts macOS let us have
 // keyed by webContents.id; dirty = marks or text not saved yet
-const editors = new Map<number, { image: string; root: string; session: string; win: BrowserWindow; dirty: boolean }>();
+// state = marks to put back; replace = Edit Again's entry number
+interface EditorWin {
+  image: string;
+  root: string;
+  session: string;
+  win: BrowserWindow;
+  dirty: boolean;
+  state?: EditState;
+  replace?: number;
+}
+const editors = new Map<number, EditorWin>();
 // Session viewers, keyed by webContents.id; known = the session.md text the window shows
 const viewers = new Map<number, { root: string; session: string; win: BrowserWindow; known: string }>();
 // The Dock icon shows while any Snapmark window is open.
@@ -95,9 +105,11 @@ function capture() {
   });
 }
 
-export function openEditor(image: string): BrowserWindow {
-  const session = active ?? sessions.create(root);
-  setActive(session);
+// Opens the editor on a screenshot file, which it owns and deletes on close. `session` is where it saves (default:
+// the current one); `state` puts marks back; `replace` makes saving replace that entry (Edit Again).
+export function openEditor(image: string, opts: { session?: string; state?: EditState; replace?: number } = {}): BrowserWindow {
+  const session = opts.session ?? active ?? sessions.create(root);
+  if (!opts.replace) setActive(session);
   const { width, height } = nativeImage.createFromPath(image).getSize();
   // 1180 px minimum fits the whole toolbar on one line.
   const win = new BrowserWindow({
@@ -107,7 +119,7 @@ export function openEditor(image: string): BrowserWindow {
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
-  editors.set(id, { image, root, session, win, dirty: false });
+  editors.set(id, { image, root, session, win, dirty: false, state: opts.state, replace: opts.replace });
   updateDock();
   win.on('closed', () => {
     editors.delete(id);
@@ -126,8 +138,15 @@ function editorFor(id: number) {
 }
 
 ipcMain.handle('editor:init', (e): EditorInit => {
-  const { image, session } = editorFor(e.sender.id);
-  return { src: `data:image/png;base64,${fs.readFileSync(image, 'base64')}`, session };
+  const { image, session, state, replace } = editorFor(e.sender.id);
+  return { src: `data:image/png;base64,${fs.readFileSync(image, 'base64')}`, session, state, replacing: replace };
+});
+
+// Sent synchronously while the window unloads without a save, so the capture is kept before the window is gone.
+ipcMain.on('editor:stash', (e, state: EditState) => {
+  const ed = editors.get(e.sender.id);
+  if (ed && fs.existsSync(ed.image)) sessions.discardCapture(ed.root, ed.session, ed.image, JSON.stringify(state));
+  e.returnValue = null;
 });
 
 // Claude resizes images above 1568 px on the long edge or ~1.15 megapixels, so anything larger only
@@ -143,10 +162,14 @@ export function fitForAI(png: Buffer): Buffer {
   return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
 }
 
-ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves }: EditorSave): Promise<number> => {
-  const { root: into, session } = editorFor(e.sender.id);
+ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, state }: EditorSave): Promise<number> => {
+  const { root: into, session, image, replace } = editorFor(e.sender.id);
   for (const v of viewers.values()) if (v.root === into && v.session === session) await flushViewer(v);
-  const n = sessions.addShot(into, session, fitForAI(Buffer.from(png, 'base64')), { caption, notes, cards, moves });
+  const out = fitForAI(Buffer.from(png, 'base64'));
+  const text = { caption, notes, cards, moves };
+  // Edit Again on an entry removed in the meantime adds it back as a new one.
+  const n = replace && sessions.replaceShot(into, session, replace, out, text) ? replace : sessions.addShot(into, session, out, text);
+  sessions.saveEdit(into, session, n, fs.readFileSync(image), JSON.stringify(state));
   used[session] = Date.now();
   saveState();
   BrowserWindow.fromWebContents(e.sender)?.close();
@@ -195,7 +218,9 @@ export function openViewer(name: string, into = root): BrowserWindow {
 function viewerData(v: { root: string; session: string; known: string }): ViewerInit {
   const dir = path.join(v.root, v.session);
   v.known = fs.readFileSync(path.join(dir, 'session.md'), 'utf8');
-  return { session: v.session, base: `${pathToFileURL(dir).href}/`, md: v.known, shots: sessions.shots(v.root, v.session) };
+  const shots = sessions.shots(v.root, v.session);
+  const editable = shots.filter((n) => fs.existsSync(sessions.editFiles(v.root, v.session, n).json));
+  return { session: v.session, base: `${pathToFileURL(dir).href}/`, md: v.known, shots, editable };
 }
 
 function viewerFor(id: number) {
@@ -225,12 +250,57 @@ ipcMain.on('viewer:external', (e) => {
   const v = viewerFor(e.sender.id);
   void shell.openPath(sessionMdPath(path.join(v.root, v.session)));
 });
+ipcMain.on('viewer:edit', (e, n: number) => {
+  const v = viewerFor(e.sender.id);
+  const f = sessions.editFiles(v.root, v.session, n);
+  if (!fs.existsSync(f.json)) return;
+  const open = [...editors.values()].find((ed) => ed.root === v.root && ed.session === v.session && ed.replace === n);
+  if (open) return void open.win.show();
+  openEditor(tempCopy(f.png), { session: v.session, state: JSON.parse(fs.readFileSync(f.json, 'utf8')), replace: n });
+});
 ipcMain.handle('viewer:remove', async (e, n: number): Promise<ViewerInit> => {
   const v = viewerFor(e.sender.id);
   await flushViewer(v);
   sessions.removeShot(v.root, v.session, n);
   return viewerData(v);
 });
+
+// The editor deletes its image on close, so it always gets a copy.
+function tempCopy(file: string): string {
+  const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
+  fs.copyFileSync(file, tmp);
+  return tmp;
+}
+
+// ---------- Discarded: closed screenshots and removed entries, kept 7 days ----------
+
+export function reopen(d: sessions.Discarded) {
+  if (d.kind === 'shot') {
+    const n = sessions.restoreShot(root, d);
+    notify(`Screenshot ${n} is back in ${sessions.shortName(d.session)}.`);
+    openViewer(d.session);
+    return;
+  }
+  const state = JSON.parse(fs.readFileSync(path.join(d.dir, 'state.json'), 'utf8')) as EditState;
+  const session = sessions.list(root).includes(d.session) ? d.session : undefined;
+  openEditor(tempCopy(path.join(d.dir, 'image.png')), { session, state });
+  fs.rmSync(d.dir, { recursive: true, force: true }); // closing it again makes a new one
+}
+
+async function reopenDiscarded() {
+  const top = path.join(root, '.discarded');
+  app.focus({ steal: true });
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Reopen Discarded',
+    message: `Screenshots closed without saving and removed from sessions, kept for ${sessions.KEEP_DAYS} days.`,
+    defaultPath: top,
+    properties: ['openDirectory'],
+  });
+  if (canceled || !filePaths[0]) return;
+  const d = sessions.discarded(root).find((x) => x.dir === path.resolve(filePaths[0]));
+  if (!d) return notify(`That folder is not in ${tilde(top)}.`);
+  reopen(d);
+}
 
 // Background check: downloads and notifies once; the update installs on next quit. Offline or no release: log only.
 function checkForUpdates() {
@@ -292,6 +362,7 @@ function menuState(): MenuState {
       newSession: registered.has(SHORTCUT_NEW) ? SHORTCUT_NEW : null,
     },
     iconDir: path.join(__dirname, '../../assets'),
+    hasDiscarded: sessions.discarded(root).length > 0,
   };
 }
 
@@ -361,11 +432,11 @@ function showShortcuts() {
   const other = [
     ['⇧⌘1', 'Capture region', 'anywhere'],
     ['⇧⌘2', 'New session', 'anywhere'],
-    ['Esc', 'Step back', 'out of the text, then deselect, then back to Select'],
+    ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
     ['⌫', 'Delete', 'the selected mark'],
     ['⌘Z', 'Undo', ''],
     ['⌘↵', 'Add to session', ''],
-    ['⌘W', 'Discard', 'the screenshot'],
+    ['⌘W', 'Discard', 'the screenshot; Reopen Last Discarded in the menu brings it back'],
   ]
     .map(([k, n, w]) => row(k, '', n, w))
     .join('');
@@ -392,6 +463,11 @@ const actions: MenuActions = {
     notify(`Path to ${sessions.shortName(name)} copied.`);
   },
   openFile: (name) => exists(name, 'session.md') && void openViewer(name),
+  reopenLast: () => {
+    const [last] = sessions.discarded(root);
+    if (last) reopen(last);
+  },
+  reopenDiscarded: () => void reopenDiscarded(),
   showInFinder: (name) => exists(name) && void shell.openPath(dirOf(name)),
   rename: renameSession,
   exportAs: (name, kind) => void runExport(kind, dirOf(name)),
@@ -409,6 +485,7 @@ app.whenReady().then(() => {
   if (process.env.SNAPMARK_NO_UI) return; // test harness drives the app itself
   app.dock?.hide();
   loadState();
+  sessions.discarded(root); // deletes what is older than 7 days
   // "Template" in the file name makes macOS tint the icon for light and dark menu bars; @2x is picked up automatically.
   tray = new Tray(path.join(__dirname, '../../assets/trayTemplate.png'));
   tray.setToolTip('Snapmark');

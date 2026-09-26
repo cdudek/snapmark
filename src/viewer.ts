@@ -7,7 +7,7 @@
   const img = $<HTMLImageElement>('shot');
   const pad = (n: number) => String(n).padStart(3, '0');
 
-  let data: ViewerInit = { session: '', base: '', md: '', shots: [] };
+  let data: ViewerInit = { session: '', base: '', md: '', shots: [], editable: [] };
   let field: import('./md-notes').MdField | null = null;
   let edited = false; // the owner typed since the last load
   let index = 0;
@@ -45,6 +45,7 @@
     $<HTMLButtonElement>('prev').disabled = index <= 0;
     $<HTMLButtonElement>('next').disabled = index >= data.shots.length - 1;
     $<HTMLButtonElement>('remove').disabled = !n;
+    $<HTMLButtonElement>('edit').disabled = !data.editable.includes(n);
   }
 
   function show(mode: 'doc' | 'shots') {
@@ -64,6 +65,7 @@
   $('external').onclick = () => window.snapmark.viewerExternal();
   $('prev').onclick = () => step(-1);
   $('next').onclick = () => step(1);
+  $('edit').onclick = () => window.snapmark.viewerEdit(data.shots[index]);
   $('remove').onclick = async () => {
     const n = data.shots[index];
     if (n) await load(await window.snapmark.viewerRemove(n));
