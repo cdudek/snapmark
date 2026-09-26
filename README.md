@@ -134,7 +134,7 @@ Versions follow [semver](https://semver.org) and are chosen automatically by [se
 
 The version lives in the release tag; `package.json` is not bumped in git.
 
-`.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, and publishes the GitHub release and its `vX.Y.Z` tag with generated notes.
+`.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, and publishes the GitHub release and its `vX.Y.Z` tag with generated notes, at the version semantic-release chose for that commit.
 
 The app checks GitHub Releases on start and from **Settings → Check for Updates…** in the menu, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
 
