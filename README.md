@@ -133,6 +133,8 @@ Versions follow [semver](https://semver.org) and are chosen automatically by [se
 | `feat!:`, `fix!:`, or a `BREAKING CHANGE:` footer | major: → 1.0.0       |
 | `docs:`, `chore:`, `ci:`, `test:`, `refactor:`    | no release           |
 
+A major version is the owner's decision. CI fails a PR that would make one (`!` in the title, or `BREAKING CHANGE` in the description) unless it carries the `major` label, which only people with write access to the repo can add.
+
 The version lives in the release tag; `package.json` is not bumped in git.
 
 `.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, and publishes the GitHub release and its `vX.Y.Z` tag with generated notes, at the version semantic-release chose for that commit.
