@@ -23,14 +23,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # A major version is the owner's call: "!" in the title or BREAKING CHANGE in the body (the squash commit's
-      # message) needs the "major" label, and only people with write access to the repo can add labels.
+      # message, as a "BREAKING CHANGE:" line) needs the "major" label, and only people with write access to the repo can add labels.
       - if: github.event_name == 'pull_request'
         env:
           TITLE: ${{ github.event.pull_request.title }}
           BODY: ${{ github.event.pull_request.body }}
           MAJOR_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'major') }}
         run: |
-          if { printf '%s' "$TITLE" | grep -qE '^[a-z]+(\([^)]*\))?!:'; } || { printf '%s' "$BODY" | grep -qE 'BREAKING[ -]CHANGE'; }; then
+          if { printf '%s' "$TITLE" | grep -qE '^[a-z]+(\([^)]*\))?!:'; } || { printf '%s' "$BODY" | grep -qE '^BREAKING[ -]CHANGE:'; }; then
             if [ "$MAJOR_LABEL" != true ]; then
               echo "::error::This PR would release a new major version. Only the owner decides that: remove the '!' / BREAKING CHANGE, or ask the owner to add the 'major' label."
               exit 1
