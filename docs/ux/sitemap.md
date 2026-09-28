@@ -1,159 +1,208 @@
+---
+type: sitemap
+status: "As built" checked against the audit; "Proposed" is a proposal, nothing accepted
+created: 2026-09-28
+build: main at v0.9.0
+source: UX audit 2026-09-28, evaluators e1–e8 (finding IDs are the evaluators' own, renumbered at the merge)
+---
+
 # Snapmark sitemap
 
-## As built
+Snapmark has no pages or routes. It has surfaces, reached from the menu bar icon, three global keys and
+each other. This file shows how they are reached today (v0.9.0) and how the proposed interaction
+guidelines would arrange them.
 
-Snapmark has no pages or routes. It has these surfaces, reached as shown (from the code on `main`,
-v0.2.0, corrected by the audit of 2026-09-25). Paths marked "silent" give the reviewer no sign at all.
+## As built (v0.9.0)
+
+Sources: the menu data rendered for four states (agent 1), agent 2's every-way-in-and-out and
+where-things-open tables, agent 4's key × screen map, and the other evaluators' findings. Items marked
+_(native)_ are macOS's own; _(silent)_ gives the reviewer no sign.
 
 ```
-Menu bar icon (corner and dot; tooltip "Snapmark")
-└── Menu  (rebuilt only when Snapmark changes its own state, so it can go stale)
-    ├── Session: <active session, or —>        (disabled label, looks greyed out)
-    ├── Capture region                ⌘⇧1  ──►  macOS capture overlay
-    │                                            ├── drag a region / Space + click a window ──►  Editor window
-    │                                            │     (no session yet: one is created silently, named by date and time)
-    │                                            └── Esc, or a failed capture  ──►  nothing (silent; the two look the same)
-    ├── New session                   ⌘⇧2  ──►  notification "New session: <date time>"
-    ├── Switch session  ▸  the first 20 session folders in reverse name order (radio items)
-    │                      newest first only while every name is a date; a renamed folder sorts to the top;
-    │                      the 21st and older cannot be reached; disabled when there are no sessions
-    ├── ──
-    ├── Open session.md                     ──►  the default app for .md files (silent if the file is gone)
-    ├── Show session folder                 ──►  Finder (silent if the folder is gone)
-    ├── Copy prompt for AI                  ──►  clipboard, three lines with the path (silent)
-    ├── Export session  ▸  ZIP · PDF        ──►  Finder with the file selected (replaces the previous export)
-    │                                        └──  on failure: notification "Snapmark: ZIP/PDF export failed" with the raw error
-    │   (Open, Show, Copy and Export act on the active session only, and are disabled before the first session)
-    ├── ──
-    ├── Sessions folder: <path>             (disabled label; cannot be opened)
-    ├── Change sessions folder…             ──►  macOS open panel (its explanation is set as a title macOS does not show;
-    │                                             button "Open") ──► existing sessions stay behind; the active session
-    │                                             silently becomes the new folder's first one
-    │                                             (disabled whenever a test folder is set)
-    ├── ──
-    ├── Open at login                       (checkbox, installed app only)
-    ├── Snapmark <version>                  (label)
-    ├── Check for updates…                  (installed app only) ──► updater notification only when an update is found;
-    │                                             up to date, offline and failed are silent
-    └── Quit                                ──►  closes every open editor; their screenshots are lost (no question)
+ENTRY POINTS
+├── Menu bar icon (corner and dot; tooltip "Snapmark"; click or right-click opens the same menu;
+│   keyboard: only macOS's ⌃F8, mentioned nowhere)
+├── ⌃⇧1  Capture Screenshot     (works in every app; "(shortcut unavailable)" if another app owns it)
+├── ⌃⇧2  New Session            (between the two capture keys)
+├── ⌃⇧3  Capture Same Area
+└── Relaunching Snapmark from Applications or Spotlight: nothing happens (F217)
 
-At launch
-├── No window and no Dock icon: only the menu bar icon (no first-run hint)
-├── Background update check (installed app only)
-└── Notification "CommandOrControl+Shift+1 is taken by another app" if a shortcut could not be registered
-    (the menu keeps showing the shortcut anyway)
+MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-level rows)
+├── [Restart to Update to <v>]              only when an update waits ──► all windows close, no question (F212)
+├── Capture Screenshot  ⌃⇧1
+│     └──► macOS capture overlay (native): drag a region, or Space + click a window ──► Editor
+│                                          Esc or a failed capture ──► nothing (silent; the two look alike, F028)
+├── Capture Same Area   ⌃⇧3   sub-line "1280 × 720" or "First time: drag the area"
+│     ├── no area yet, or its display is gone ──► Area picker (display under the pointer, over full-screen apps)
+│     │        drag ≥ 8 × 8, release ──► captured at once ──► Editor · click or sliver ──► starts over · Esc ──► nothing
+│     └── area set ──► captured at once (with any Snapmark window that is over it, F033/F066) ──► Editor
+├── [Choose New Area…]                      only once an area exists ──► Area picker ──► captures at once ──► Editor
+├── [Reopen Last Discarded]                  only when Discarded holds something
+│     ├── a closed capture ──► Editor with its marks ("Add to session"); its old session becomes current (F010)
+│     └── a removed screenshot ──► back at the end of its session + notification ──► Session window
+├── [Reopen Discarded…]                      ──► folder panel on the hidden .discarded folder (native) ──► as above
+├── ──
+├── "Current Session: 28 Sep 09.14 · 7 screenshots" | "No Session Yet"      (grey header, not clickable)
+├── Open Session              ──► Session window (current session only); missing: notification that opens the menu
+├── Copy Prompt for AI        ──► clipboard (path + key to the marks) + notification
+├── Copy session.md Path      ──► clipboard (bare path) + notification "Path to 28 Sep 09.14 copied."
+├── Rename Session…           ──► AppleScript dialog "Rename session" (native); errors only after it closes
+├── Show Session in Finder    ──► Finder, the folder opened (not revealed)
+├── [Export Session ▸ PDF · ZIP]   hidden while empty ──► Finder with the file selected (replaces the last one)
+│                                                       failure: notification with the raw error (silent otherwise)
+├── ──
+├── Switch Session ▸  up to 20 sessions by last use, bare names, ✓ current (click = make current)
+│                     · Other Session… ──► folder panel (native); wrong pick: notification afterwards
+├── New Session  ⌃⇧2   ──► notification "New session: 2026-09-28 22.15" (or "… is still empty, so new captures keep going there.")
+├── ──
+├── Settings ▸  ✓ Open at Login · Sessions Folder… (sub-line ~/Documents/Snapmark) ──► folder panel; sessions left behind
+│               · Keyboard Shortcuts ──► Keyboard Shortcuts window · Check for Updates… (sub-line "Snapmark 0.9.0") ──► notification
+└── Quit Snapmark ⌘Q   ──► with unsaved editors: sheet "N screenshots are not in a session yet." [Review] [Quit anyway]
 
-Editor window  (one per capture; opens centred at 1180–1600 × 600–1000 from the image size, no minimum size;
-                a second editor opens exactly on top of the first; the title is created as "Snapmark — <session>"
-                but the page replaces it with "Snapmark"; no Dock icon, not listed in the menu)
-├── Toolbar: 1 Box · 2 Arrow · 3 Cross · 4 Tick · 5 Numbered · 6 Highlighter · 7 Cut & move · V Select
-│            (each button shows its key and its current tool, with dots for the other tools in its group;
-│             group names Mark · Draw · Remove · Approve · Note · Highlight · Move · Select appear only in tooltips;
-│             pressing a key again cycles: 1 Box/Ellipse · 2 Arrow/Pen · 3 Cross/Crossed box/Remove area ·
-│             4 Tick/Thumbs up · 5 Numbered/Card · 6 Highlighter/Spotlight/Redact)
-│            · colour swatch ("Color") · Undo ⌘Z · → <session> (muted, far right, not clickable)
-├── Canvas: the capture with every mark as a movable object (Select: move, resize, ⌫ delete; one mark at a time)
-├── Side panel: Comment · References (one note per numbered marker; cards not listed) · Discard ⌘W · Add to session ⌘↵
-│   (the whole panel scrolls, buttons included)
-├── ⌘↵ / Add to session  ──►  entry appended to session.md, window closes (no confirmation; a second ⌘↵ adds a duplicate)
-│                         └── on failure: window stays, button dead, no message
-├── ⌘W (also inside a text field) / Discard / the window's close button  ──►  closes at once; the capture is deleted
-└── Electron's stock application menu is assumed active (Reload ⌘R, developer tools); not checked
+EDITOR  (one per capture; title "Snapmark"; opens centred, exactly on top of any open editor; Dock icon shows;
+         from a full-screen app it stays on that Space while the Mac slides to the desktop, F026 / F026)
+├── Toolbar: C Select · 1 Reference/Card · 2 Box/Ellipse · 3 Arrow · 4 Pen · 5 Cross/Remove area ·
+│            6 Highlighter/Spotlight · 7 Cut & move/Redact · colour well · Undo ⌘Z · Redo ⇧⌘Z · "→ <folder name>" (text)
+├── Canvas (fitted, no zoom)
+├── Side panel: comment ("Add a comment…") · References (after the first) · [Discard ⌘W] [Add to session ⌘↵ | Save changes ⌘↵]
+├── ⌘↵ ──► entry added (or replaced, Edit Again) ──► window closes (silent; no route to the session)
+│         session folder gone ──► nothing; button dead (silent, F049)
+├── ⌘W · Discard · Esc past Select · close button · ⌘R (stock Reload) · Quit anyway · Restart to Update
+│         ──► Discarded, 7 days (silent); an unchanged Edit Again is filed too (F077/F078)
+└── Mac menu bar (Electron's stock menus): File ▸ Close Window ⌘W · Edit ▸ Undo (not the marks) ·
+    View ▸ Reload ⌘R, Force Reload, Toggle Developer Tools, zoom, Toggle Full Screen ⌃⌘F · Window · no Help, no Settings
 
-Session folder (Finder): session.md · img/NNN.png · <session>.zip · <session>.pdf
-session.md: "# <session>", then per screenshot "## NNN · hh:mm", the image ("Screenshot N"), the comment
-            unlabelled, numbered marker notes, "- Card: …" lines, one "Moved …" line
+SESSION WINDOW  (title "<folder name> — Snapmark"; 900 × 900; one per session, brought forward if open;
+                 follows outside changes to session.md; reopens on the new name after Rename)
+├── Header: name · [Document | Screenshots] · Open in Markdown App ──► the default .md app
+├── Document: session.md rendered and editable, saved as you type (silent; outside writes can drop typing, F126/F127)
+│             (the empty-session hint never shows, F132)
+└── Screenshots: one at a time · ← → · "n of N" (position) · Edit Again ──► Editor ("Save changes")
+                 · Remove from Session ──► Discarded (silent)
+
+AREA PICKER       see-through, display under the pointer, every Space; hint "Drag over the area to capture.
+                  ⌃⇧3 captures it again each time. Esc cancels."
+KEYBOARD SHORTCUTS WINDOW   "Keyboard shortcuts", 520 × 640, read-only, no Dock icon, Esc does nothing;
+                  "Editor tools" (13 rows) then "Other keys" (global and editor keys mixed)
+NOTIFICATIONS (native)   the only channel for copies, New Session, failures; clicking only "… is no longer in …" does something
+NATIVE PANELS AND DIALOGS   Sessions Folder…, Other Session…, Reopen Discarded… (folder panels, "Open"); Rename (AppleScript);
+                  Quit sheet
+FINDER            session folder = session.md · img/NNN.png · .edit/ (clean originals, also of redacted images, F192) ·
+                  <name>.pdf · <name>.zip ; sessions folder/.discarded/
+FIRST LAUNCH      no window, no hint; Screen Recording asked at the first capture, which is wallpaper until Snapmark restarts
 ```
 
-Dead ends and missing ways back:
+### Named or reachable two ways
 
-- After "Add to session" there is nowhere to go and no sign of where the screenshot went.
-- A saved screenshot cannot be reopened, corrected or removed in the app.
-- Sessions after the 20th, and sessions left in a previous sessions folder, are reachable only from Finder.
-- An editor behind other windows can only be found with Mission Control or the window list.
-- The editor has no route to its session.md, folder or prompt.
+- The editor: ⌃⇧1, ⌃⇧3, Choose New Area…, Reopen Last Discarded, Reopen Discarded…, Edit Again.
+- The session window: Open Session; restoring a removed screenshot.
+- "Discard" (editor) and "Remove from Session" (session window) end in one store; "Reopen" brings back both
+  with different results (F223).
+- "Capture Screenshot" (menu) = "Capture region" (Keyboard Shortcuts, README) (F224).
+- One session: "28 Sep 09.14" (menu, most notifications) and "2026-09-28 09.14" (editor, session window,
+  session.md, the New Session notification) (F201/F222, F222).
+- ⌘W in the editor: "Discard" (button, key list) and "Close Window" (Mac menu bar) (F110).
 
-Named two ways: "Show session folder" (one session) and "Sessions folder" (where all sessions live);
-"Discard" and the window's close button do the same thing.
+### Dead ends and no way back
+
+| Where                                  | What is missing                                                | Findings              |
+| -------------------------------------- | -------------------------------------------------------------- | --------------------- |
+| Editor                                 | no route to its session; destination cannot be changed         | F061/F101, F101       |
+| After Add to session                   | no sign of where the screenshot went                           | F062, F062            |
+| Session window                         | no hand-off, export, rename, Finder                            | F133, F133            |
+| Any non-current session                | reachable only by making it current                            | F008                  |
+| Sessions in a previous sessions folder | unreachable                                                    | F175, F175            |
+| Sessions                               | cannot be deleted                                              | F225, F008/F225       |
+| A taken global key                     | cannot be changed                                              | F021, F021/F158/F173  |
+| Discarded, beyond the last item        | folder panel on a hidden folder                                | F174, F174            |
+| Keyboard Shortcuts                     | one path (Settings); none from the editor; lost behind windows | F003/F065, F164, F065 |
+| Full-screen capture                    | reviewer on the desktop, editor on another Space               | F026, F026            |
+| The saved area                         | cannot be seen, adjusted or cleared                            | F035, F036            |
+| First launch                           | no window, no hint                                             | F209, F209            |
 
 ## Proposed
 
-**A proposal, not decided.** This is the structure the proposed interaction guidelines and the audit
-findings imply. Every item traces to a proposed rule; nothing here is accepted until the owner decides.
-Items that depend on an open decision are marked _(decision)_.
+**A proposal, not decided.** The structure the proposed interaction guidelines imply. Items that depend
+on an open decision are marked _(decision)_; the options are in the guidelines.
 
 ```
-Menu bar icon
-└── Menu  (rebuilt every time it opens)
-    ├── Checkout review · 7 screenshots               ──►  opens session.md
-    │     before the first session: "No session yet: press ⌘⇧1 to capture and start one"
-    ├── Capture region                ⌘⇧1  (shows "(shortcut unavailable)" when not registered)
-    ├── Capture front window          <shortcut>  (no pointer needed)
-    ├── Capture screen                <shortcut>  (no pointer needed)
-    ├── Mark up clipboard image                    ──►  Editor window on the clipboard image
-    ├── ──
-    ├── Copy prompt for AI            <optional global shortcut> (decision) ──► notification "Prompt for Checkout review copied"
-    ├── Copy path to session.md                    ──►  notification "Path to session.md copied"
-    ├── Open editors (2)  ▸  15:20 · 15:24         ──►  brings that editor forward
-    ├── Edit last screenshot · Remove last screenshot  (decision)
-    ├── Reopen last screenshot                     (after a discard, until Snapmark quits)
-    ├── ──
-    ├── New session…                  ⌘⇧2  ──►  optional name, date and time filled in; Return keeps it
-    ├── Rename session…
-    ├── Switch session  ▸  recent sessions by last use
-    │     ├── <each session>  ▸  Make active · Open session.md · Copy prompt for AI · Copy path to session.md · Export ▸
-    │     ├── Other session… (14 more)             ──►  chooser in the sessions folder
-    │     └── Show all sessions in Finder
-    ├── Open session.md · Preview session (decision) · Show in Finder   (a missing file or folder says so and offers
-    │                                                                    another session)
-    ├── Export session  ▸  ZIP · PDF  ──►  "Exporting PDF…" (disabled) ──► "PDF exported · Show in Finder"
-    │                                      (disabled while the session is empty; says whether it replaced an earlier export)
-    ├── ──
-    ├── Sessions are saved in ~/Documents/Snapmark ──►  Finder
-    ├── Change where sessions are saved…  ──►  folder dialog with a message and "Use this folder"
-    │                                        ──►  "Move your 12 sessions there too? [Move] [Leave them]"
-    │                                        ──►  "Sessions are now saved in … Active: …"
-    ├── Shortcuts…                                 ──►  a small window to change the two global shortcuts
-    ├── Keyboard shortcuts…  ·  Help (README)
-    ├── ──
-    ├── Open at login
-    ├── Snapmark <version>  ·  Restart to install <version> / Updates: download from GitHub… (until signed)
-    └── Quit Snapmark      ⌘Q  ──►  if editors hold work: "2 screenshots are not in a session yet. [Review] [Quit anyway]"
+ENTRY POINTS
+├── Menu bar icon (shows a brief tick and the count after each Add to session; a key opens it (decision))
+├── Global keys: capture only, on neighbouring keys, changeable (decision: ⌃⇧1 + ⌃⇧2 · ⌃⇧1 + ⌃⇧3 with ⌃⇧2 empty · ⌃⇧4 + ⌃⇧5)
+│     ├── Capture Screenshot
+│     └── Capture Same Area
+├── ⌘/ in any Snapmark window ──► Keyboard Shortcuts
+├── Drop an image on the menu bar icon, or paste ──► Editor on that image
+└── Relaunching Snapmark ──► opens its menu
 
-First launch  ──►  one notification: "Snapmark is in your menu bar. Press ⌘⇧1 to capture a region."
-Capture without Screen Recording permission  ──►  guide: [Open System Settings] then [Restart Snapmark]
-Failed capture  ──►  "Capture failed. No screenshot was taken."  (Esc stays silent)
+FIRST LAUNCH ──► the menu opens once: "Snapmark lives here. <keys> capture."
+FIRST CAPTURE without Screen Recording ──► small window: [Open System Settings] [Quit & Reopen] (no wallpaper capture)
 
-Editor window  (title "Snapmark — <session>"; minimum 1180 × 600; new editors cascade; opens with Select active;
-                its own application menu: Edit · View (zoom, key list) · Window (Close) · Quit; no Reload)
-├── Toolbar: group meaning + current tool per button, fixed widths ("1 Shape · Box", "3 Remove · Cross",
-│            "4 Approve · Tick", "5 Note · Marker" …), Shift+number cycles, the group's tools visible without cycling
-│            · colour control (neutral palette; disabled and showing red/green/yellow for fixed groups)
-│            · Undo ⌘Z · Redo ⇧⌘Z · zoom [−] [100%] [+] [Fit] · ?  ──►  key list
-├── Canvas: focusable; keyboard crosshair; Tab through marks; multi-select; right-click Delete · Duplicate ·
-│           Bring to front · Send to back; dropped images become pieces; never navigates away
-├── Side panel
-│   ├── Notes: marker notes · cards (A, B…) · moves (M1…) · "Remove 1 · Approve 2"; each row linked to its mark,
-│   │          with a remove control; only this list scrolls
-│   ├── Comment (grows with its text)
-│   ├── Hint for the active tool (always true)
-│   └── pinned foot: Session: Checkout review ▾ · will be 008
-│                    [Discard screenshot]            [Add to session ⌘↵]
-│                    (session menu: Open session.md · Show in Finder · Copy prompt for AI ·
-│                     Add to another session ▸ · New session…)
-│                    failure area: "Couldn't add to … [Try again] [Add to another session…]"
-├── ⌘↵ ──►  "Adding…" ──►  window closes; notification "Added 008 to Checkout review · Open session.md"
-└── ⌘W / Discard screenshot / close button / Quit  ──►  with work: sheet "Discard this screenshot? … [Keep editing] [Discard]"
-                                                      without work: closes at once
+MENU (fixed rows in a fixed order; unavailable rows greyed, never hidden; about 11 rows)
+├── Capture Screenshot                <key>
+├── Capture Same Area                 <key>    sub-line "1280 × 720 · Built-in Display, top left"
+├── Choose Area…                      ──► Area picker with the current area drawn, adjustable, then [Capture] (Return)
+├── ──
+├── "Checkout review · 7 screenshots"          (header)
+├── Copy for AI                       ──► clipboard + notification (decision: one line with the path, the key living in
+│                                          session.md · prompt with a "Path Only" setting that renames the item · ⌥ alternate)
+├── Open Session                      ──► Session window
+├── ──
+├── New Session…                      ──► asks for a name, date and time filled in (decision: no global key)
+├── Switch Session ▸                  sessions with count and date ──► opens that session's window (current unchanged)
+│                                     · Other Session… (any folder)
+├── Reopen Last Discarded             (greyed when nothing; says what comes back)
+├── ──
+├── Settings ▸  Open at Login · Sessions Folder… (offers to move sessions) · Check for Updates…
+├── Keyboard Shortcuts   ⌘/
+├── Quit Snapmark        ⌘Q
+└── [Undo New Session / Restart to Update (0.9.1) / "28 Sep 14:32 is missing · Locate…"]   state lines, at the bottom
 
-session.md: "# <session>", one line explaining the marks, then per screenshot
-            "## 004 · <first line of the comment>", the image with descriptive alt text,
-            "Remove: … · Approve: …", numbered notes, lettered cards with what they point at,
-            labelled moves, the labelled comment
-PDF: the same key first; titled, English, tagged
+EDITOR  (opens over the app and Space the capture came from, offset from any open editor, on the last tool and colour;
+         title "Screenshot → 28 Sep 14:32 — Snapmark" or "Screenshot 004 · 28 Sep 14:32 — Snapmark")
+├── Toolbar: tools (strong active state; ⇧ + key for the sibling (decision)) · colour (recolours the selection) ·
+│            Undo/Redo naming their step · zoom · ?
+├── Canvas: zoom and pan; keyboard cursor (arrows, Enter, Tab through marks); click-pairs for every drag;
+│           ⌘C ⌘V ⌘D on marks; drop an image ──► new editor
+├── Side panel: Comment (labelled) · References · Cards · Moves · [Remove: …, Keep: …] rows, each linked to its mark
+│   └── footer: "→ Checkout review ▾" (Open Session · other sessions · New Session…) · [Discard ⌘W] [Add to Session ⌘↵]
+├── ⌘↵ ──► added ──► focus back to the app it came from; tick and count on the menu bar icon
+│         failure ──► footer line with [Try Again] [Add to Another Session…]; the editor stays
+├── ⌘W / Discard ──► Discarded, said once; nothing filed when unchanged
+│   Edit Again with changes ──► "Discard your changes to screenshot 004?" [Keep Editing] [Discard Changes]
+├── Esc ──► steps back to Select and stops
+└── Mac menu bar: Snapmark (About, Settings… ⌘,, Keyboard Shortcuts ⌘/, Hide, Quit) · Edit (the editor's undo) · Window · Help
+
+SESSION WINDOW  (any session; title "Checkout review — Snapmark"; remembers tab, size and last entry)
+├── Header: name (click to rename, inline check) · "Saved" · [Document | Screenshots | Discarded] ·
+│           [Copy for AI] (primary) · ⋯ (Export ▸ PDF · ZIP, Show in Finder, Open in Markdown App, Capture into This
+│           Session, Delete Session…)
+├── Document: session.md with the key to the marks on top; each entry with Edit Again and Remove beside it;
+│             ⌘F find; conflicts ask [Keep Mine] [Load Theirs]; empty session: "No screenshots yet. Press <key> to capture one."
+├── Screenshots: "Screenshot 004 · 3 of 12", the picture with its comment and notes; ← →; Edit Again;
+│                Remove from Session (quiet, far right) ──► "Removed · Undo · In Discarded for 7 days"
+└── Discarded: thumbnails, time, session; Restore per item (current session unchanged)
+
+AREA PICKER       every display; opens with the current area drawn; drag or click-pairs or keys; [Capture] (Return); Esc
+KEYBOARD SHORTCUTS WINDOW   "Anywhere" first, then "In the editor", "In the session window", "In the area picker";
+                  global keys changeable here; Esc closes; built from the one key registry
+NOTIFICATIONS     only for what happens out of sight (copies, a key taken at launch, background update), each with an
+                  in-app twin in the menu
+FINDER            session folder = session.md · img/ · exports with a date in their name; clear originals of redacted
+                  images kept outside the shared folder (decision)
 ```
 
-Open decisions that change this structure: whether repeat key presses cycle (Shift) or keep the tool;
-whether an open editor follows a session switch; whether saved screenshots become editable or only the
-last one can be removed; whether exports replace or keep each version; whether the Dock icon shows while
-an editor is open; whether "Copy prompt for AI" gets a global shortcut.
+### What changes, in short
+
+| Today                                             | Proposed                                           | Guideline                                     |
+| ------------------------------------------------- | -------------------------------------------------- | --------------------------------------------- |
+| 12–17 top-level rows that move with state         | about 11 fixed rows, greyed when unavailable       | Dialogs, menus and popovers                   |
+| two copy items                                    | one hand-off item that says what it copies         | Dialogs, menus and popovers; The session file |
+| New Session on ⌃⇧2 between the captures           | capture-only global keys, changeable               | Keyboard and focus                            |
+| session actions in the menu, current session only | session actions in the session window, any session | Navigation and return                         |
+| Discarded as a folder panel                       | Discarded as a tab with Restore                    | Lists and selection; Confirmation and undo    |
+| editor stranded on a full-screen Space            | editor over the Space it came from, focus returned | Navigation and return                         |
+| Esc's last step discards                          | Esc stops at Select; ⌘W discards                   | Keyboard and focus                            |
+| silent Add to session, Discard, Remove, failures  | a sign on the icon, Undo bars, failures in place   | Feedback and notifications                    |
+| Keyboard Shortcuts under Settings                 | ⌘/ from every window, top level in the menu        | First run and help                            |
+| stock Electron app menu                           | Snapmark's own app menu                            | Platform conventions                          |

@@ -1,3 +1,9 @@
+---
+status: superseded
+---
+
+> Superseded by the audit of 2026-09-28: [findings](audits/2026-09-28/findings.md)
+
 # Editor window: decisions
 
 The owner's comments on the editor, 2026-09-25, are in [owner-words.md](owner-words.md#editor-window).

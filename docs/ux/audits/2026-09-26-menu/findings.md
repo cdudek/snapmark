@@ -1,3 +1,9 @@
+---
+status: superseded
+---
+
+> Superseded by the audit of 2026-09-28: [findings](../../audits/2026-09-28/findings.md)
+
 # Menu bar menu audit, 2026-09-26
 
 **Scope:** the menu bar menu of v0.3.0/v0.4.0 as the owner saw it (screenshot, 2026-09-26), read against `src/menu.ts`.

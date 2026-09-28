@@ -182,3 +182,21 @@ topic when it covers both.
 > Also it's not clear that you can only rename the current session and show the current session in Finder but it's not clear what's happening. A user doesn't understand: he clicks on buttons and he doesn't know what they mean" — 2026-09-26, with a screenshot of the v0.5.1 menu. "X" confirmed by the owner as icons in the menu.
 
 > "check once a day." — 2026-09-26, answering how auto-update should behave
+
+## Editor and capture, 2026-09-28
+
+> "1. We need an undo button. 2. When I create a square or a circle or whatever, I would expect that I create it from the top-left corner. When I drag a square I would drag it there but that's actually not the case and that should be the case. 3. The shortcut Command-1 on Chrome changes the tab. How about we do something different? 4. How about a specific area? I will have the browser open and I will select and mark a certain area. For every screenshot that I take I may want to record the same area. That's currently also not the case."
+>
+> — 2026-09-28 (built in v0.9.0: ⌘Z works everywhere with Redo, shapes start at the pointer, ⌃⇧1/⌃⇧2/⌃⇧3, Capture Same Area)
+
+## Full screen, scrolling capture, the menu, 2026-09-28
+
+> "For whatever reason in full screen mode, the app switches to the desktop but the actual window stays where I took the screenshot.
+>
+> Another thing is I wonder whether it would be possible to take a screenshot while scrolling down the area so we easily take a whole screenshot of everything and then concatenate it somehow. Is this possible without it being a Chrome extension or something? It's not important. This shouldn't be the default. We just want to maybe explore this.
+>
+> When I take a screenshot it's going to the desktop but the actual window stays at the full screen browser. This is something we should fix.
+>
+> Also the new session is a very dangerous shortcut because it sits in between 1 and 2. I think overall, X-wise, it's also quite complicated in terms of what we have in the menu. I just wonder whether we need just "Copy session info" when it comes with the prompt and everything, and in the settings you select whether you want to have the prompt with it or without it. I think everything is not very intuitive. Can we analyse and audit it with a UX audit?"
+>
+> — 2026-09-28, about v0.9.0. "X-wise" is read as UX-wise. "Sits in between 1 and 2" is read as ⌃⇧2 sitting between ⌃⇧1 and ⌃⇧3.
