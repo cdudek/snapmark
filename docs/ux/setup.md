@@ -1,6 +1,6 @@
 ---
 type: ux-setup
-updated: 2026-09-25
+updated: 2026-09-28
 ---
 
 # UX setup: Snapmark
@@ -10,7 +10,7 @@ Every `ux:` skill reads this file first. Keep it short and true.
 ## The product
 
 - **What it is:** a macOS menu bar app that captures a screen region, lets you mark it up, and appends it with your notes to a Markdown session an AI agent can read.
-- **Platform:** desktop — Electron 44, macOS only. Menu bar app (no Dock icon).
+- **Platform:** desktop — Electron 44, macOS only. Menu bar app; a Dock icon shows while an editor or session window is open.
 - **Audience file:** none; the owner confirmed these scenes on 2026-09-25 ("I think this are the main use cases").
   1. **Reviewing an overnight build:** a complete UX/UI review of what an agent built overnight, with detailed feedback on many different elements, captured on the fly with shortcuts, then handed to Claude Code. The main scene.
   2. **Sharing with a person:** the same session as a PDF or ZIP for a teammate or stakeholder.
@@ -48,19 +48,22 @@ Every `ux:` skill reads this file first. Keep it short and true.
 
 ## Screens and states
 
-| Screen                 | Route or entry                                    | States to capture                                                                                                                                                                                                                                                         |
-| ---------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Menu bar menu          | the corner-and-dot icon in the menu bar           | no session yet · active session · Switch session list · Export submenu · development build (updates and Open at login disabled)                                                                                                                                           |
-| Capture overlay        | `⌘⇧1`                                             | macOS's own `screencapture -i`: region · window (Space) · cancelled (Esc). Not Snapmark's UI, but part of the flow.                                                                                                                                                       |
-| Editor window          | opens after a capture                             | empty · every tool of groups 1–7 and Select · marker added, note being typed · card being typed · card with a pointer line · object selected with handles · cut piece mid-move · spotlight · redact · minimum width (1180 px) · light and dark system appearance · saving |
-| Notifications          | macOS notification centre                         | new session (`⌘⇧2`) · export failed · shortcut taken by another app                                                                                                                                                                                                       |
-| Sessions folder dialog | menu → Change sessions folder…                    | the native open dialog                                                                                                                                                                                                                                                    |
-| `session.md`           | menu → Open session.md (the owner's Markdown app) | one entry · many entries · entry with notes, cards and a move                                                                                                                                                                                                             |
-| PDF export             | menu → Export session → PDF                       | one entry · several entries · tall images across pages                                                                                                                                                                                                                    |
-| ZIP export             | menu → Export session → ZIP                       | Finder opens with the file selected                                                                                                                                                                                                                                       |
-| First run              | installing the DMG, first launch, first capture   | Gatekeeper "Open Anyway" · Screen Recording permission not granted (wallpaper-only capture) · first capture with no session                                                                                                                                               |
+| Screen                    | Route or entry                                                                               | States to capture                                                                                                                                                                                                                                                                                                                              |
+| ------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Menu bar menu             | the menu bar icon                                                                            | no session yet · current session empty · current session with screenshots · Switch Session list · Export submenu · Settings submenu · something discarded (Reopen items shown) · Capture Same Area with and without an area · update waiting · development build (updates and Open at Login disabled)                                          |
+| Capture region            | `⌃⇧1` or the menu                                                                            | macOS's own `screencapture -i`: region · window (Space) · cancelled (Esc) · from a full-screen app's Space. Not Snapmark's UI, but part of the flow.                                                                                                                                                                                           |
+| Area picker               | `⌃⇧3` the first time, or menu → Choose New Area…                                             | dimmed screen with the hint · dragging with the size label · a click or sliver (starts over) · Esc · over a full-screen app                                                                                                                                                                                                                    |
+| Capture Same Area         | `⌃⇧3` once an area is set                                                                    | captures at once · the area's display is gone (asks again)                                                                                                                                                                                                                                                                                     |
+| Editor window             | opens after a capture, a reopened discard, or Edit Again                                     | empty · every tool of groups 1–7 and Select · reference added, note being typed · card being typed · card with a pointer line · mark selected with handles · cut piece mid-move · spotlight · redact · undo and redo · Edit Again ("Save changes") · minimum width (1180 px) · light and dark · saving · opened from a full-screen app's Space |
+| Session window            | menu → Open Session                                                                          | Document tab (session.md rendered and editable) · Screenshots tab (one at a time, ← →, Edit Again, Remove from Session, Open in Markdown App) · empty session · session.md changed outside                                                                                                                                                     |
+| Keyboard Shortcuts window | menu → Settings → Keyboard Shortcuts                                                         | the list                                                                                                                                                                                                                                                                                                                                       |
+| Notifications             | macOS notification centre                                                                    | new session (`⌃⇧2`) · session still empty · copied prompt or path · export failed · shortcut taken by another app · session missing · update check                                                                                                                                                                                             |
+| Native dialogs            | Sessions Folder…, Other Session…, Reopen Discarded…, Rename Session…, Quit with unsaved work | each dialog                                                                                                                                                                                                                                                                                                                                    |
+| `session.md`              | the session window, or the owner's Markdown app                                              | one entry · many entries · entry with notes, cards and a move                                                                                                                                                                                                                                                                                  |
+| PDF and ZIP export        | menu → Export Session                                                                        | one entry · several entries · tall images across pages · Finder opens with the file selected                                                                                                                                                                                                                                                   |
+| First run                 | installing the DMG, first launch, first capture                                              | Screen Recording permission not granted (wallpaper-only capture) · first capture with no session · auto-update to a new version                                                                                                                                                                                                                |
 
-App-wide parts: menu bar icon and menu, global shortcuts `⌘⇧1` and `⌘⇧2`, macOS notifications, Finder reveal, the auto-update notification.
+App-wide parts: menu bar icon and menu, global shortcuts `⌃⇧1` (capture), `⌃⇧2` (new session) and `⌃⇧3` (capture same area), the Dock icon, macOS notifications, Finder reveal, auto-update, Discarded (kept 7 days).
 
 ## How to run it for an audit
 
@@ -69,14 +72,14 @@ App-wide parts: menu bar icon and menu, global shortcuts `⌘⇧1` and `⌘⇧2`
 - **Test data:** the mock page inside `test/smoke.ts`; `SNAPMARK_ROOT` points sessions at a temp folder. Never the owner's screen.
 - **Screenshots go to:** `docs/ux/audits/<YYYY-MM-DD>/shots/`
 - **Window sizes:** editor at its minimum 1180 × 600, and 1440 and 1920 wide; Retina (2×) and 1×.
-- **Builds to audit:** `main`. No open pull requests.
-- **Not scriptable:** the menu bar menu, the capture overlay, notifications and native dialogs. Capture those by hand or from code reading; say which in each finding.
+- **Builds to audit:** `main` (v0.9.0 and later). No open pull requests.
+- **Not scriptable:** the menu bar menu, macOS's capture overlay, notifications, native dialogs and Spaces (full-screen apps). Evaluate those from the code and the owner's reports; say which in each finding. The area picker can be driven like the smoke test does (`pickArea()` plus input events to its window); its screenshot shows only Snapmark's own window.
 
 ## Safety
 
 - **Never write to:** `~/Documents/Snapmark/` (the owner's real sessions), `~/Library/Application Support/snapmark/state.json` (the installed app's state), the owner's login items (the Open at login toggle), the owner's clipboard.
 - **Read only:** the owner's sessions, if a real example is needed, and only with the owner's permission.
-- **Never capture:** the owner's real screen. Use the mock page.
+- **Never capture:** the owner's real screen. Use the mock page. Never press `⌃⇧1`, `⌃⇧2` or `⌃⇧3`, and never run `screencapture`.
 - **Writes only against:** temp folders via `SNAPMARK_ROOT`, and `~/Library/Application Support/Electron/` (where the smoke test keeps its state, because it runs without the app's package name).
 
 ## Flows for this product
