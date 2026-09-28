@@ -599,17 +599,17 @@ function redo() {
 
 // ⌘Z and ⇧⌘Z undo the typing in the field that has the cursor first. With nothing left to undo there they undo
 // marks, so a reference or card placed by mistake goes with one ⌘Z although its empty note has the cursor.
-// Runs in the capture phase: the notes' ProseMirror would take the key first otherwise.
+// Runs in the capture phase and calls the field's undo itself, so the notes' own keymap never sees the key.
 document.addEventListener(
   'keydown',
   (e) => {
     if (!e.metaKey || e.key.toLowerCase() !== 'z') return;
-    const md = e.target instanceof Element ? MdNotes.fieldAt(e.target) : undefined;
-    if (md && (e.shiftKey ? md.canRedo() : md.canUndo())) return;
     const active = canvas.getActiveObject();
     if (active instanceof Card && active.isEditing && active.text.trim()) return; // the card's own text undo
     e.preventDefault(); // nor the Edit menu's Undo
     e.stopPropagation();
+    const md = e.target instanceof Element ? MdNotes.fieldAt(e.target) : undefined;
+    if (md && (e.shiftKey ? md.redo() : md.undo())) return;
     if (active instanceof Card && active.isEditing) return void active.exitEditing(); // an empty new card goes, with its step
     if (e.target instanceof HTMLElement && e.target.isContentEditable) e.target.blur();
     (e.shiftKey ? redo : undo)();
