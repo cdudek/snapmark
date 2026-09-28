@@ -165,15 +165,19 @@ app
     pick('box');
     ev('mousemove', .5, .5);
     const [cx, cy, d] = [canvas.width * .5, canvas.height * .5, unit * 8];
-    r['ghost: box follows the pointer'] = top(cx - d, cy) > 0 && top(cx - d, cy - d) > 0;
+    r['ghost: box follows the pointer, as its top left'] = top(cx, cy + d) > 0 && top(cx, cy) > 0 && top(cx - d, cy + d) === 0;
     key('2'); // Box -> Ellipse without moving
-    r['ghost: pressing the key again shows the next shape'] = tool() === 'ellipse' && top(cx - d, cy - d) === 0 && top(cx - d, cy) > 0;
+    r['ghost: pressing the key again shows the next shape'] = tool() === 'ellipse' && top(cx, cy) === 0 && top(cx, cy + d) > 0;
     up.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
-    r['ghost: gone when the pointer leaves'] = top(cx - d, cy) === 0;
+    r['ghost: gone when the pointer leaves'] = top(cx, cy + d) === 0;
     ev('mousemove', .5, .5); key('c');
-    r['ghost: gone on Select'] = top(cx - d, cy) === 0;
+    r['ghost: gone on Select'] = top(cx, cy + d) === 0;
     canvas.off('object:added', count);
     r['ghost: never in the scene, undo or unsaved work'] = adds === 0 && canvas.getObjects().length === objs && undoStack.length === undos;
+    pick('box'); drag(null, [[.5,.5]]);
+    const clicked = canvas.getObjects().at(-1);
+    r['click: the box starts at the pointer, where the ghost was'] = Math.abs(clicked.left - cx) < unit && Math.abs(clicked.top - cy) < unit && clicked.width === d * 2;
+    key('z', { metaKey: true });
     pick('pen');
     const penCursor = canvas.freeDrawingCursor;
     pick('box');

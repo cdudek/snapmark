@@ -274,8 +274,8 @@ function drawGhost() {
     ctx.roundRect(x, y, unit * 70, unit * 15, unit * 2); // a new card's size, placed from its top left
     ctx.fill();
   } else {
-    const d = unit * 8; // rect()'s click size
-    drawGlyph(ctx, t as GlyphKind, color(), x - d, y - d, d * 2, d * 2);
+    const d = unit * 16; // rect()'s click size, from the pointer as its top left
+    drawGlyph(ctx, t as GlyphKind, color(), x, y, d, d);
   }
   ctx.restore();
 }
@@ -328,12 +328,11 @@ function renderToolbar() {
   );
 }
 
-// Normalise a drag rectangle; a plain click gets a default size centred on the click.
+// Normalise a drag rectangle; a plain click gets a default size with the click as its top left, like a drag's start.
 function rect(a: Point, b: Point, clickSize = true): Rect | null {
   if (Math.hypot(b.x - a.x, b.y - a.y) < unit * 3) {
     if (!clickSize) return null;
-    const d = unit * 8;
-    return { x: a.x - d, y: a.y - d, w: d * 2, h: d * 2 };
+    return { x: a.x, y: a.y, w: unit * 16, h: unit * 16 };
   }
   return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
 }
