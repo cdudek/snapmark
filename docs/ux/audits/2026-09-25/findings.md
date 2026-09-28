@@ -1,10 +1,12 @@
 ---
 type: ux-audit-findings
-status: merged — awaiting the owner's decisions
+status: superseded
 created: 2026-09-25
 build: main at v0.2.0
 sources: eight agents (1 concepts, 2 navigation and states, 3 controls and output for AI, 4 words and keys, 5 accessibility, 6 and 7 independent evaluators, 8 independent evaluator run through Codex, code-only)
 ---
+
+> Superseded by the audit of 2026-09-28: [findings](../../audits/2026-09-28/findings.md)
 
 # Snapmark UX audit: findings
 

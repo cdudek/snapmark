@@ -1,6 +1,6 @@
 ---
 type: ux-audit-briefing
-status: draft — waiting for the owner's go
+status: approved — the owner said "go", 2026-09-28
 created: 2026-09-28
 build: main at v0.9.0
 ---

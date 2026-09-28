@@ -1,3 +1,9 @@
+---
+status: superseded
+---
+
+> Superseded by the audit of 2026-09-28: [findings](audits/2026-09-28/findings.md)
+
 # Menu bar menu: decisions
 
 The owner asked on 2026-09-25 to clean up the menu bar menu:
