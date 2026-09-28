@@ -56,7 +56,9 @@ interface EditorWin {
 const editors = new Map<number, EditorWin>();
 // Session viewers, keyed by webContents.id; known = the session.md text the window shows
 const viewers = new Map<number, { root: string; session: string; win: BrowserWindow; known: string }>();
-// The Dock icon shows while any Snapmark window is open.
+// The Dock icon shows while any Snapmark window is open. A new window turns it on only once it has focus: turned
+// on first, Snapmark becomes a Dock app while another app is full screen, and macOS slides to the desktop, leaving
+// the window behind on the full-screen Space (owner, 2026-09-28).
 const updateDock = () => (editors.size || viewers.size ? void app.dock?.show() : app.dock?.hide());
 
 function loadState() {
@@ -201,7 +203,7 @@ export function openEditor(image: string, opts: { session?: string; state?: Edit
   });
   const id = win.webContents.id;
   editors.set(id, { image, root, session, win, dirty: false, state: opts.state, replace: opts.replace });
-  updateDock();
+  win.once('focus', updateDock);
   win.on('closed', () => {
     editors.delete(id);
     updateDock();
@@ -280,7 +282,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
   const id = win.webContents.id;
   const v = { root: into, session: name, win, known: '' };
   viewers.set(id, v);
-  updateDock();
+  win.once('focus', updateDock);
   // session.md changed outside this window (a new screenshot, an agent, another app): show the new text.
   const watcher = fs.watch(dir, (_event, file) => {
     if (file !== 'session.md' || !fs.existsSync(path.join(dir, file))) return;
