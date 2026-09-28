@@ -80,7 +80,7 @@ The side panel starts with a one-line comment field. References appear there onc
 
 Click the menu bar icon for the menu. It is built fresh each time it opens, and every item has an icon:
 
-- **Capture Screenshot** (⇧⌘1). A shortcut another app already owns shows as "(shortcut unavailable)".
+- **Capture Screenshot** (⌃⇧1). A shortcut another app already owns shows as "(shortcut unavailable)".
 - **Reopen Last Discarded** and **Reopen Discarded…** appear when something was thrown away in the last 7 days. That covers an editor closed without saving (Discard, ⌘W, Esc, the close button) and a screenshot removed from a session. A closed editor reopens with its marks; a removed screenshot goes back into its session. They live in `.discarded/` in the sessions folder and are deleted after 7 days.
 - **Current Session: <name> · <n> screenshots**, and what you can do with that session:
   - **Open Session** opens the session in Snapmark's own window. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** shows one screenshot at a time: ← and → flip through them, and **Edit Again** reopens a screenshot in the editor with its marks and text, and saving replaces it in place. **Remove from Session** takes one out. **Open in Markdown App** opens `session.md` in your default app.
@@ -88,7 +88,7 @@ Click the menu bar icon for the menu. It is built fresh each time it opens, and 
   - **Copy session.md Path** puts just the full path on the clipboard.
   - **Rename Session…**, **Show Session in Finder**, and **Export Session** ▸ PDF or ZIP (see below; shown once the session has a screenshot).
 - **Switch Session** ▸ lists sessions by last use; click one to make it current. **Other Session…** reaches any beyond the 20 shown.
-- **New Session** (⇧⌘2) starts a new session; while the current one is still empty, it keeps using that one.
+- **New Session** (⌃⇧2) starts a new session; while the current one is still empty, it keeps using that one.
 - **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Keyboard Shortcuts, Check for Updates… (with the version under it). **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
 
 Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.

@@ -13,8 +13,9 @@ import { menuTemplate, loginState, MenuActions, MenuState, SessionInfo } from '.
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
 
 const DEFAULT_ROOT = path.join(os.homedir(), 'Documents', 'Snapmark');
-const SHORTCUT_CAPTURE = 'CommandOrControl+Shift+1';
-const SHORTCUT_NEW = 'CommandOrControl+Shift+2';
+// No ⌘: ⌘ keys belong to the app in front, and ⇧⌘1 sat next to Chrome's ⌘1 for tab 1 (owner, 2026-09-28).
+const SHORTCUT_CAPTURE = 'Control+Shift+1';
+const SHORTCUT_NEW = 'Control+Shift+2';
 
 const statePath = () => path.join(app.getPath('userData'), 'state.json');
 // SNAPMARK_ROOT (tests, dev) wins over the folder chosen in the menu.
@@ -90,7 +91,7 @@ function notify(body: string, onClick?: () => void) {
 const dirOf = (name: string) => path.join(root, name);
 
 function newSession() {
-  // Pressing ⇧⌘2 twice must not leave empty sessions behind.
+  // Pressing ⌃⇧2 twice must not leave empty sessions behind.
   if (active && fs.existsSync(dirOf(active)) && sessions.count(root, active) === 0)
     return notify(`${sessions.shortName(active)} is still empty, so new captures keep going there.`);
   setActive(sessions.create(root));
@@ -430,8 +431,8 @@ function showShortcuts() {
     g.tools.map((t, v) => row(v ? `${g.key.toUpperCase()} again` : g.key.toUpperCase(), t.icon, t.label, t.tip ?? t.means ?? '')),
   ).join('');
   const other = [
-    ['⇧⌘1', 'Capture region', 'anywhere'],
-    ['⇧⌘2', 'New session', 'anywhere'],
+    ['⌃⇧1', 'Capture region', 'anywhere'],
+    ['⌃⇧2', 'New session', 'anywhere'],
     ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
     ['⌫', 'Delete', 'the selected mark'],
     ['⌘Z', 'Undo', ''],
