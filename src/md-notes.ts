@@ -4,12 +4,19 @@ import { Editor, rootCtx, defaultValueCtx, editorViewCtx } from '@milkdown/kit/c
 import { commonmark, imageSchema } from '@milkdown/kit/preset/commonmark';
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
 import { history } from '@milkdown/kit/plugin/history';
+import { closeHistory, redoDepth, undoDepth } from '@milkdown/kit/prose/history';
 import { getMarkdown } from '@milkdown/kit/utils';
 
 export interface MdField {
   focus(): void;
   value(): string; // the Markdown now; onChange lags 200 ms behind typing, so save() reads this
+  canUndo(): boolean; // typing to take back: ⌘Z is the field's own only then
+  canRedo(): boolean;
 }
+
+const fields = new WeakMap<Element, MdField>();
+// The field an element sits in, so the editor can ask it before ProseMirror handles ⌘Z.
+export const fieldAt = (el: Element) => fields.get(el.closest('.md') ?? el);
 
 // The field keeps Markdown: onChange gets the Markdown source after edits (debounced by Milkdown's listener).
 // An empty paragraph serialises as "<br />": drop it when it is the whole field, or the first line of a list item
@@ -52,8 +59,17 @@ export async function mount(
     .create();
   // The placeholder follows every keystroke, not the debounced listener.
   el.addEventListener('input', () => (el.dataset.empty = String(!el.textContent?.trim())));
-  return {
-    focus: () => editor.action((ctx) => ctx.get(editorViewCtx).focus()),
+  const view = () => editor.action((ctx) => ctx.get(editorViewCtx));
+  // Milkdown leaves a step of its own in the history while mounting, which undoes nothing anyone can see.
+  // Count from here, and close that step so the first typing is a step of its own.
+  const base = undoDepth(view().state);
+  view().dispatch(closeHistory(view().state.tr));
+  const field: MdField = {
+    focus: () => view().focus(),
     value: () => clean(editor.action(getMarkdown())),
+    canUndo: () => undoDepth(view().state) > base,
+    canRedo: () => redoDepth(view().state) > 0,
   };
+  fields.set(el, field);
+  return field;
 }

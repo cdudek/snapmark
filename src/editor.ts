@@ -15,6 +15,8 @@ const saveBtn = $<HTMLButtonElement>('save');
 const toolsEl = $<HTMLSpanElement>('tools');
 const mainEl = document.querySelector('main')!;
 const refsLabel = $<HTMLLabelElement>('refs-label');
+const undoBtn = $<HTMLButtonElement>('undo');
+const redoBtn = $<HTMLButtonElement>('redo');
 
 const canvas = new fabric.Canvas($<HTMLCanvasElement>('canvas'), {
   enableRetinaScaling: false, // the screenshot is already at device resolution
@@ -22,7 +24,10 @@ const canvas = new fabric.Canvas($<HTMLCanvasElement>('canvas'), {
   preserveObjectStacking: true,
   uniformScaling: false,
 });
-const undoStack: (() => void)[] = [];
+// Every step goes both ways; objs are the marks a step added, so an empty new card can take its step back out.
+type Step = { undo: () => void; redo: () => void; objs?: FObject[] };
+const undoStack: Step[] = [];
+const redoStack: Step[] = [];
 const links = new WeakMap<FObject, FObject[]>(); // cut piece -> its ghost and arrow
 const variant = GROUPS.map(() => 0); // last-used tool per group
 let group = GROUPS.findIndex((g) => g.key === '2'); // start on Box
@@ -509,43 +514,50 @@ canvas.on('mouse:out', () => {
 function after() {
   markers().forEach((m, i) => (m.n = i + 1));
   renderRefs();
+  undoBtn.disabled = !undoStack.length;
+  redoBtn.disabled = !redoStack.length;
   canvas.requestRenderAll();
 }
 
-function added(...objs: FObject[]) {
-  undoStack.push(() => canvas.remove(...objs));
+function record(step: Step) {
+  undoStack.push(step);
+  redoStack.length = 0;
   after();
+}
+
+function added(...objs: FObject[]) {
+  record({ objs, undo: () => canvas.remove(...objs), redo: () => canvas.add(...objs) });
 }
 
 function remove(obj: FObject) {
   const all = [...(links.get(obj) ?? []), obj];
   canvas.remove(...all);
-  undoStack.push(() => {
-    canvas.add(...all);
-    relink(obj);
+  record({
+    undo: () => {
+      canvas.add(...all);
+      relink(obj);
+    },
+    redo: () => canvas.remove(...all),
   });
-  after();
 }
 
 let before: Record<string, unknown> | null = null;
 // Position and size only: a Line's x1..y2 go stale once it is moved, so they are never restored.
 const PROPS = ['left', 'top', 'width', 'height', 'scaleX', 'scaleY', 'angle'] as const;
-canvas.on('before:transform', ({ transform }) => {
-  const o = transform.target as unknown as Record<string, unknown>;
-  before = Object.fromEntries(PROPS.filter((k) => k in o).map((k) => [k, o[k]]));
-});
+const place = (obj: object) => Object.fromEntries(PROPS.filter((k) => k in obj).map((k) => [k, (obj as Record<string, unknown>)[k]]));
+canvas.on('before:transform', ({ transform }) => (before = place(transform.target)));
 canvas.on('object:modified', ({ target }) => {
   if (target instanceof Glyph) {
     target.set({ width: target.width * target.scaleX, height: target.height * target.scaleY, scaleX: 1, scaleY: 1 });
     target.setCoords();
   }
   if (before) {
-    const snapshot = before;
-    undoStack.push(() => {
-      target.set(snapshot as Partial<FObject>);
+    const put = (p: Record<string, unknown>) => () => {
+      target.set(p as Partial<FObject>);
       target.setCoords();
       relink(target);
-    });
+    };
+    record({ undo: put(before), redo: put(place(target)) });
   }
   before = null;
 });
@@ -554,19 +566,56 @@ let textBefore = '';
 canvas.on('text:editing:entered', ({ target }) => (textBefore = target.text));
 canvas.on('text:editing:exited', ({ target }) => {
   if (!target.text.trim()) {
-    canvas.remove(target); // an empty card is a mis-click
-    after();
+    canvas.remove(target);
+    // A new card left empty is a mis-click and leaves no step; a card whose text was cleared comes back with ⌘Z.
+    if (undoStack.at(-1)?.objs?.includes(target)) {
+      undoStack.pop();
+      after();
+    } else {
+      const old = textBefore;
+      record({ undo: () => canvas.add(target.set({ text: old })), redo: () => canvas.remove(target) });
+    }
   } else if (target.text !== textBefore) {
-    const old = textBefore;
-    undoStack.push(() => target.set({ text: old }));
+    const [old, now] = [textBefore, target.text];
+    record({ undo: () => target.set({ text: old }), redo: () => target.set({ text: now }) });
   }
 });
 
 function undo() {
-  undoStack.pop()?.();
+  const step = undoStack.pop();
+  step?.undo();
+  if (step) redoStack.push(step);
   canvas.discardActiveObject();
   after();
 }
+
+function redo() {
+  const step = redoStack.pop();
+  step?.redo();
+  if (step) undoStack.push(step);
+  canvas.discardActiveObject();
+  after();
+}
+
+// ⌘Z and ⇧⌘Z undo the typing in the field that has the cursor first. With nothing left to undo there they undo
+// marks, so a reference or card placed by mistake goes with one ⌘Z although its empty note has the cursor.
+// Runs in the capture phase: the notes' ProseMirror would take the key first otherwise.
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!e.metaKey || e.key.toLowerCase() !== 'z') return;
+    const md = e.target instanceof Element ? MdNotes.fieldAt(e.target) : undefined;
+    if (md && (e.shiftKey ? md.canRedo() : md.canUndo())) return;
+    const active = canvas.getActiveObject();
+    if (active instanceof Card && active.isEditing && active.text.trim()) return; // the card's own text undo
+    e.preventDefault(); // nor the Edit menu's Undo
+    e.stopPropagation();
+    if (active instanceof Card && active.isEditing) return void active.exitEditing(); // an empty new card goes, with its step
+    if (e.target instanceof HTMLElement && e.target.isContentEditable) e.target.blur();
+    (e.shiftKey ? redo : undo)();
+  },
+  true,
+);
 
 // ---------- state: the marks as plain data, for Discarded and Edit Again ----------
 
@@ -741,7 +790,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') e.target.blur();
     return;
   }
-  if (e.metaKey && e.key === 'z') return undo();
   const active = canvas.getActiveObject();
   // Esc steps back one level: a text field (above), then the selection, then the tool itself.
   if (e.key === 'Escape') {
@@ -763,7 +811,8 @@ const markDirty = () => window.snapmark.dirty(true);
 canvas.on('object:added', markDirty);
 let captionField: import('./md-notes').MdField | null = null; // mounted once init says what it holds
 colorEl.oninput = () => applyTool();
-$<HTMLButtonElement>('undo').onclick = undo;
+undoBtn.onclick = undo;
+redoBtn.onclick = redo;
 saveBtn.onclick = () => void save();
 $<HTMLButtonElement>('cancel').onclick = () => window.close();
 
