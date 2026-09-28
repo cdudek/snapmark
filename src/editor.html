@@ -57,6 +57,10 @@
         color: inherit;
         cursor: pointer;
       }
+      header button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
       #tools {
         display: flex;
         gap: 4px;
@@ -270,7 +274,8 @@
     <header>
       <span id="tools"></span>
       <input type="color" id="color" value="#e11d48" title="Color" />
-      <button id="undo">Undo<kbd>⌘Z</kbd></button>
+      <button id="undo" disabled>Undo<kbd>⌘Z</kbd></button>
+      <button id="redo" disabled>Redo<kbd>⇧⌘Z</kbd></button>
       <span class="session" id="session"></span>
     </header>
     <main><canvas id="canvas"></canvas></main>

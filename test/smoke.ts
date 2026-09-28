@@ -94,6 +94,10 @@ app
     r.spotlightDims = px(.02, .98)[0] < corner[0] * 0.7;
     key('z', { metaKey: true });
     r.undoRemovesSpotlight = px(.02, .98).join() === corner.join();
+    r['Undo and Redo buttons follow the history'] = !document.getElementById('undo').disabled && !document.getElementById('redo').disabled;
+    key('z', { metaKey: true, shiftKey: true });
+    r['⇧⌘Z redoes the spotlight'] = px(.02, .98)[0] < corner[0] * 0.7 && document.getElementById('redo').disabled;
+    key('z', { metaKey: true });
     key('7'); drag('7', [[.28,.2],[.45,.28]]);        // 7 twice -> redact the 'Revenue' line
     r.redacted = canvas.getObjects().some((o) => o.filters?.length === 1);
 
@@ -150,6 +154,10 @@ app
     r['tool keys do nothing while typing a note'] = tool() === toolBefore;
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     r['Esc leaves the note field'] = !document.activeElement?.closest?.('.md');
+    key('1'); if (tool() !== 'card') key('1');
+    const steps = undoStack.length, cardsBefore = cards().length;
+    drag(null, [[.8,.8]]); key('z', { metaKey: true });
+    r['⌘Z on a new empty card removes it and leaves no step'] = cards().length === cardsBefore && undoStack.length === steps;
     // Esc steps back one level (F6): with Card active and a card selected, Esc deselects, then goes to Select
     key('1'); if (tool() !== 'card') key('1');
     drag(null, [[.7,.75]]); const c = canvas.getActiveObject(); c?.set({ text: 'Esc test' }); c?.exitEditing?.(); // an empty card deletes itself
@@ -195,12 +203,27 @@ app
       return { x: Math.round(b.left + b.width * .8), y: Math.round(b.top + b.height * .3) };
     })()`);
     win.focus();
-    win.webContents.sendInputEvent({ type: 'mouseDown', x: at.x, y: at.y, button: 'left', clickCount: 1 });
-    win.webContents.sendInputEvent({ type: 'mouseUp', x: at.x, y: at.y, button: 'left', clickCount: 1 });
-    await new Promise((r) => setTimeout(r, 300));
-    inPage['a new reference is ready to type into'] = await win.webContents.executeJavaScript(
-      `!!document.activeElement?.isContentEditable && !!document.activeElement.closest('#refs .md')`,
-    );
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const click = async () => {
+      win.webContents.sendInputEvent({ type: 'mouseDown', x: at.x, y: at.y, button: 'left', clickCount: 1 });
+      win.webContents.sendInputEvent({ type: 'mouseUp', x: at.x, y: at.y, button: 'left', clickCount: 1 });
+      await sleep(300);
+    };
+    const inNote = `!!document.activeElement?.isContentEditable && !!document.activeElement.closest('#refs .md')`;
+    const refs = (): Promise<number> => win.webContents.executeJavaScript('markers().length');
+    const cmdZ = async (shift = false) => {
+      const ev: Omit<Electron.KeyboardInputEvent, 'type'> = { keyCode: shift ? 'Z' : 'z', modifiers: shift ? ['meta', 'shift'] : ['meta'] };
+      win.webContents.sendInputEvent({ type: 'keyDown', ...ev });
+      win.webContents.sendInputEvent({ type: 'keyUp', ...ev }); // or the next typed character counts as ⌘ + that key
+      await sleep(200);
+    };
+    await click();
+    const placed = await refs();
+    await cmdZ();
+    inPage['⌘Z in a new reference’s empty note removes the reference'] =
+      (await refs()) === placed - 1 && !(await win.webContents.executeJavaScript(inNote));
+    await click();
+    inPage['a new reference is ready to type into'] = await win.webContents.executeJavaScript(inNote);
     // Markdown as you type (F1, F2), with real key events: the field's input rules only see real typing.
     const type = (text: string) => [...text].forEach((ch) => win.webContents.sendInputEvent({ type: 'char', keyCode: ch }));
     const enter = () => {
@@ -218,6 +241,14 @@ app
     inPage['notes: # heading, - list and **bold** format as you type'] = await win.webContents.executeJavaScript(
       `(() => { const f = document.activeElement?.closest('.md'); return !!f && !!f.querySelector('h1') && !!f.querySelector('li') && !!f.querySelector('strong') && !f.textContent.includes('**'); })()`,
     );
+    const noteText = (): Promise<string | null> =>
+      win.webContents.executeJavaScript(`document.activeElement?.closest?.('.md')?.textContent ?? null`);
+    const [typed, count] = [await noteText(), await refs()];
+    await cmdZ();
+    const [undone, countAfter] = [await noteText(), await refs()];
+    await cmdZ(true);
+    inPage['⌘Z in a note undoes its typing, not a mark; ⇧⌘Z redoes it'] =
+      countAfter === count && undone !== null && undone !== typed && (await noteText()) === typed;
     win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
     fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());

@@ -435,7 +435,8 @@ function showShortcuts() {
     ['⌃⇧2', 'New session', 'anywhere'],
     ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
     ['⌫', 'Delete', 'the selected mark'],
-    ['⌘Z', 'Undo', ''],
+    ['⌘Z', 'Undo', 'in a note, its typing first, then the marks'],
+    ['⇧⌘Z', 'Redo', ''],
     ['⌘↵', 'Add to session', ''],
     ['⌘W', 'Discard', 'the screenshot; Reopen Last Discarded in the menu brings it back'],
   ]

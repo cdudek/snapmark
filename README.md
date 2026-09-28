@@ -59,20 +59,21 @@ In the editor, press a key to pick a tool. Press the same key again to cycle its
 
 The toolbar shows one icon per key: the tool that is on, with its key underneath. Dots under a key mean it holds more than one tool (the filled dot is the one that is on): press the key again for the next, and the icon changes with it. Hover an icon for its name.
 
-| Key   | Tools                                                                                    |
-| ----- | ---------------------------------------------------------------------------------------- |
-| `C`   | Select: move, resize or delete (`⌫`) any mark                                            |
-| `1`   | Reference: click, then type its note in the panel → Card: a sticky note you type on      |
-| `2`   | Box → Ellipse                                                                            |
-| `3`   | Arrow                                                                                    |
-| `4`   | Pen (freehand)                                                                           |
-| `5`   | Cross → Remove area (hatched), always red                                                |
-| `6`   | Highlighter → Spotlight (dims the rest)                                                  |
-| `7`   | Cut & move: drag around an element, then drag it where it should go → Redact (pixelates) |
-| `Esc` | Step back: out of the text, then deselect, then back to Select, then close               |
-| `⌘Z`  | Undo                                                                                     |
-| `⌘↵`  | Add to session                                                                           |
-| `⌘W`  | Discard the screenshot (kept 7 days: **Reopen Last Discarded** in the menu)              |
+| Key   | Tools                                                                                          |
+| ----- | ---------------------------------------------------------------------------------------------- |
+| `C`   | Select: move, resize or delete (`⌫`) any mark                                                  |
+| `1`   | Reference: click, then type its note in the panel → Card: a sticky note you type on            |
+| `2`   | Box → Ellipse                                                                                  |
+| `3`   | Arrow                                                                                          |
+| `4`   | Pen (freehand)                                                                                 |
+| `5`   | Cross → Remove area (hatched), always red                                                      |
+| `6`   | Highlighter → Spotlight (dims the rest)                                                        |
+| `7`   | Cut & move: drag around an element, then drag it where it should go → Redact (pixelates)       |
+| `Esc` | Step back: out of the text, then deselect, then back to Select, then close                     |
+| `⌘Z`  | Undo: in a note, its typing first, then the marks (a reference placed by mistake goes at once) |
+| `⇧⌘Z` | Redo                                                                                           |
+| `⌘↵`  | Add to session                                                                                 |
+| `⌘W`  | Discard the screenshot (kept 7 days: **Reopen Last Discarded** in the menu)                    |
 
 The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Settings → Keyboard Shortcuts** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
 
