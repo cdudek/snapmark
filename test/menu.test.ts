@@ -23,7 +23,8 @@ const base: MenuState = {
   version: '0.2.0',
   canUpdate: true,
   updateWaiting: null,
-  shortcuts: { capture: 'Control+Shift+1', newSession: 'Control+Shift+2' },
+  shortcuts: { capture: 'Control+Shift+1', area: 'Control+Shift+3', newSession: 'Control+Shift+2' },
+  area: null,
   iconDir: '',
   hasDiscarded: false,
 };
@@ -40,6 +41,7 @@ const head = (items: Item[]) => items.find((i) => i.type === 'header')!;
 // Order and labels: every label names what it acts on (owner, 2026-09-26); two levels at most
 assert.deepStrictEqual(labels(menu()), [
   'Capture Screenshot',
+  'Capture Same Area',
   '—',
   'Current Session: 25 Sep 12.03 · 2 screenshots',
   'Open Session',
@@ -57,16 +59,17 @@ assert.deepStrictEqual(labels(menu()), [
 ]);
 assert.strictEqual(
   menu().findIndex((i) => i.type === 'header'),
-  4,
-  'the header follows Capture and the two hidden Reopen items',
+  6,
+  'the header follows the two Captures and the hidden Choose New Area and Reopen items, then a line',
 );
 assert.strictEqual(find(menu(), 'Quit Snapmark').accelerator, 'Command+Q');
 const depth = (items: Item[]): number => Math.max(1, ...items.map((i) => (Array.isArray(i.submenu) ? 1 + depth(i.submenu) : 1)));
 assert.strictEqual(depth(menu()), 2, 'no submenu inside a submenu');
 
 // Discarded screenshots: two items under Capture, only when there is something to reopen
-assert.deepStrictEqual(labels(menu({ hasDiscarded: true })).slice(0, 4), [
+assert.deepStrictEqual(labels(menu({ hasDiscarded: true })).slice(0, 5), [
   'Capture Screenshot',
+  'Capture Same Area',
   'Reopen Last Discarded',
   'Reopen Discarded…',
   '—',
@@ -75,6 +78,20 @@ find(menu({ hasDiscarded: true }), 'Reopen Last Discarded').click!({} as never, 
 assert.strictEqual(calls.pop(), 'reopenLast');
 find(menu({ hasDiscarded: true }), 'Reopen Discarded…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'reopenDiscarded');
+
+// Capture Same Area: says the first press asks for the area; once there is one, shows its size and offers another
+const same = find(menu(), 'Capture Same Area');
+assert.strictEqual(same.accelerator, 'Control+Shift+3');
+assert.strictEqual(same.sublabel, 'First time: drag the area');
+assert.strictEqual(find(menu(), 'Choose New Area…').visible, false);
+const withArea = menu({ area: { x: 10, y: 40, width: 1800, height: 1007 } });
+assert.strictEqual(find(withArea, 'Capture Same Area').sublabel, '1800 × 1007');
+assert.deepStrictEqual(labels(withArea).slice(0, 3), ['Capture Screenshot', 'Capture Same Area', 'Choose New Area…']);
+find(withArea, 'Capture Same Area').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'captureArea');
+find(withArea, 'Choose New Area…').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'chooseArea');
+assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, area: null } })[1].label, 'Capture Same Area (shortcut unavailable)');
 
 // Header: singular, no count when empty; without a session the session items are disabled
 assert.strictEqual(head(menu({ current: { name: 'x', label: 'x', count: 1 } })).label, 'Current Session: x · 1 screenshot');
@@ -115,7 +132,7 @@ const upd = menu({ updateWaiting: '0.4.2' });
 assert.strictEqual(upd[0].label, 'Restart to Update to 0.4.2');
 upd[0].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'installUpdate');
-const off = menu({ shortcuts: { capture: null, newSession: 'Control+Shift+2' } });
+const off = menu({ shortcuts: { ...base.shortcuts, capture: null } });
 assert.strictEqual(off[0].label, 'Capture Screenshot (shortcut unavailable)');
 assert.strictEqual(off[0].accelerator, undefined);
 

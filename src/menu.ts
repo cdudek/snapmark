@@ -16,13 +16,16 @@ export interface MenuState {
   version: string;
   canUpdate: boolean;
   updateWaiting: string | null; // version downloaded and ready to install
-  shortcuts: { capture: string | null; newSession: string | null }; // null = not registered
+  shortcuts: { capture: string | null; area: string | null; newSession: string | null }; // null = not registered
+  area: Area | null; // what Capture Same Area captures; null until the first time
   iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
   hasDiscarded: boolean; // something closed without saving, or removed, in the last 7 days
 }
 
 export interface MenuActions {
   capture(): void;
+  captureArea(): void;
+  chooseArea(): void;
   reopenLast(): void;
   reopenDiscarded(): void;
   newSession(): void;
@@ -70,6 +73,12 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
   return [
     ...(st.updateWaiting ? [{ label: `Restart to Update to ${st.updateWaiting}`, ...icon('update'), click: () => a.installUpdate() }] : []),
     { ...shortcut('Capture Screenshot', st.shortcuts.capture, () => a.capture()), ...icon('capture') },
+    {
+      ...shortcut('Capture Same Area', st.shortcuts.area, () => a.captureArea()),
+      sublabel: st.area ? `${st.area.width} × ${st.area.height}` : 'First time: drag the area',
+      ...icon('area'),
+    },
+    { label: 'Choose New Area…', visible: !!st.area, click: () => a.chooseArea(), ...icon('choose') },
     // Shown only when there is something to bring back.
     { label: 'Reopen Last Discarded', visible: st.hasDiscarded, click: () => a.reopenLast(), ...icon('reopen') },
     { label: 'Reopen Discarded…', visible: st.hasDiscarded, click: () => a.reopenDiscarded(), ...icon('finder') },

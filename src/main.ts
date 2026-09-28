@@ -1,4 +1,18 @@
-import { app, BrowserWindow, Tray, Menu, clipboard, dialog, globalShortcut, ipcMain, nativeImage, shell, Notification } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Tray,
+  Menu,
+  clipboard,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  nativeImage,
+  screen,
+  shell,
+  Notification,
+} from 'electron';
+import type { IpcMainEvent } from 'electron';
 import { execFile } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -16,12 +30,14 @@ const DEFAULT_ROOT = path.join(os.homedir(), 'Documents', 'Snapmark');
 // No ⌘: ⌘ keys belong to the app in front, and ⇧⌘1 sat next to Chrome's ⌘1 for tab 1 (owner, 2026-09-28).
 const SHORTCUT_CAPTURE = 'Control+Shift+1';
 const SHORTCUT_NEW = 'Control+Shift+2';
+const SHORTCUT_AREA = 'Control+Shift+3';
 
 const statePath = () => path.join(app.getPath('userData'), 'state.json');
 // SNAPMARK_ROOT (tests, dev) wins over the folder chosen in the menu.
 let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
+let area: Area | null = null; // what Capture Same Area captures, in global screen points
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
@@ -48,6 +64,7 @@ function loadState() {
     const state = JSON.parse(fs.readFileSync(statePath(), 'utf8'));
     active = state.active;
     used = state.used ?? {};
+    area = state.area ?? null;
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -57,7 +74,7 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used }));
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area }));
 }
 
 export function setActive(name: string) {
@@ -98,11 +115,74 @@ function newSession() {
   notify(`New session: ${active}`);
 }
 
-function capture() {
+function shoot(args: string[]) {
   const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
-  // -i: interactive region (space toggles window mode), -x: no sound
-  execFile('screencapture', ['-i', '-x', tmp], () => {
+  // -x: no sound
+  execFile('screencapture', [...args, '-x', tmp], () => {
     if (fs.existsSync(tmp)) openEditor(tmp); // missing file = user pressed Esc
+  });
+}
+
+// -i: interactive region (space toggles window mode)
+const capture = () => shoot(['-i']);
+
+let picking = false;
+
+// The same area every time, e.g. the page in a browser. The first time, after Choose New Area, or when the display
+// it was on is gone, the owner drags it first.
+async function captureArea(choose = false) {
+  const onScreen = (a: Area) =>
+    screen
+      .getAllDisplays()
+      .some(({ bounds: b }) => a.x >= b.x && a.y >= b.y && a.x + a.width <= b.x + b.width && a.y + a.height <= b.y + b.height);
+  if (choose || !area || !onScreen(area)) {
+    if (picking) return; // ⌃⇧3 again while dragging
+    picking = true;
+    const picked = await pickArea().finally(() => (picking = false));
+    if (!picked) return;
+    area = picked;
+    saveState();
+  }
+  shoot(['-R', [area.x, area.y, area.width, area.height].map(Math.round).join(',')]);
+}
+
+// `screencapture -i` never says where its region was, so the area to repeat is dragged in Snapmark's own
+// see-through window over the display with the pointer. Resolves once that window is off the screen.
+export function pickArea(): Promise<Area | null> {
+  const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const win = new BrowserWindow({
+    ...bounds,
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    resizable: false,
+    movable: false,
+    fullscreenable: false,
+    enableLargerThanScreen: true, // over the menu bar too
+    show: false,
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  });
+  win.setAlwaysOnTop(true, 'screen-saver');
+  // Over a full-screen browser as well, instead of switching away from its Space.
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+  win.once('ready-to-show', () => {
+    win.show();
+    app.focus({ steal: true });
+  });
+  void win.loadFile(path.join(__dirname, 'area.html'));
+  return new Promise((resolve) => {
+    let picked: Area | null = null;
+    const done = (e: IpcMainEvent, a: Area | null) => {
+      if (e.sender !== win.webContents) return;
+      picked = a && { ...a, x: a.x + bounds.x, y: a.y + bounds.y };
+      win.close();
+    };
+    ipcMain.on('area:done', done);
+    win.on('closed', () => {
+      ipcMain.off('area:done', done);
+      // ponytail: a fixed 200 ms for the window server to drop the overlay; wait on a frame if captures ever show it.
+      setTimeout(() => resolve(picked), 200);
+    });
   });
 }
 
@@ -360,8 +440,10 @@ function menuState(): MenuState {
     updateWaiting,
     shortcuts: {
       capture: registered.has(SHORTCUT_CAPTURE) ? SHORTCUT_CAPTURE : null,
+      area: registered.has(SHORTCUT_AREA) ? SHORTCUT_AREA : null,
       newSession: registered.has(SHORTCUT_NEW) ? SHORTCUT_NEW : null,
     },
+    area,
     iconDir: path.join(__dirname, '../../assets'),
     hasDiscarded: sessions.discarded(root).length > 0,
   };
@@ -432,6 +514,7 @@ function showShortcuts() {
   ).join('');
   const other = [
     ['⌃⇧1', 'Capture region', 'anywhere'],
+    ['⌃⇧3', 'Capture same area', 'anywhere; the first time, drag the area'],
     ['⌃⇧2', 'New session', 'anywhere'],
     ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
     ['⌫', 'Delete', 'the selected mark'],
@@ -454,6 +537,8 @@ function showShortcuts() {
 
 const actions: MenuActions = {
   capture,
+  captureArea: () => void captureArea(),
+  chooseArea: () => void captureArea(true),
   newSession,
   copyPrompt: (name) => {
     clipboard.writeText(promptFor(dirOf(name)));
@@ -498,6 +583,7 @@ app.whenReady().then(() => {
   }
   for (const [key, fn] of [
     [SHORTCUT_CAPTURE, capture],
+    [SHORTCUT_AREA, () => void captureArea()],
     [SHORTCUT_NEW, newSession],
   ] as const) {
     if (globalShortcut.register(key, fn)) registered.add(key);
