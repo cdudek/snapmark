@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Choose the area</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        cursor: crosshair;
+        user-select: none;
+        font:
+          14px -apple-system,
+          system-ui,
+          sans-serif;
+      }
+      /* Dims the screen. While dragging the box's shadow dims instead, leaving the area clear. Never fully
+         transparent: macOS passes clicks on transparent pixels through to the window behind. */
+      body {
+        background: rgb(0 0 0 / 0.3);
+      }
+      body.dragging {
+        background: rgb(0 0 0 / 0.01);
+      }
+      #box {
+        position: fixed;
+        outline: 1px solid #fff;
+        box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.3);
+        background: rgb(255 255 255 / 0.01);
+      }
+      #hint,
+      #size {
+        position: fixed;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: rgb(0 0 0 / 0.75);
+        color: #fff;
+        pointer-events: none;
+      }
+      #hint {
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #size {
+        padding: 3px 8px;
+        font:
+          600 12px ui-monospace,
+          monospace;
+      }
+      [hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hint">Drag over the area to capture. ⌃⇧3 captures it again each time. Esc cancels.</div>
+    <div id="box" hidden></div>
+    <div id="size" hidden></div>
+    <script src="area.js"></script>
+  </body>
+</html>

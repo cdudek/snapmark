@@ -82,6 +82,7 @@ The side panel starts with a one-line comment field. References appear there onc
 Click the menu bar icon for the menu. It is built fresh each time it opens, and every item has an icon:
 
 - **Capture Screenshot** (⌃⇧1). A shortcut another app already owns shows as "(shortcut unavailable)".
+- **Capture Same Area** (⌃⇧3) captures the same part of the screen each time, for example the page in your browser. The first time the screen dims and you drag the area; after that every press captures it at once and opens the editor. **Choose New Area…** picks another one. Snapmark remembers the area after a restart, and asks again if the display it was on is gone.
 - **Reopen Last Discarded** and **Reopen Discarded…** appear when something was thrown away in the last 7 days. That covers an editor closed without saving (Discard, ⌘W, Esc, the close button) and a screenshot removed from a session. A closed editor reopens with its marks; a removed screenshot goes back into its session. They live in `.discarded/` in the sessions folder and are deleted after 7 days.
 - **Current Session: <name> · <n> screenshots**, and what you can do with that session:
   - **Open Session** opens the session in Snapmark's own window. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** shows one screenshot at a time: ← and → flip through them, and **Edit Again** reopens a screenshot in the editor with its marks and text, and saving replaces it in place. **Remove from Session** takes one out. **Open in Markdown App** opens `session.md` in your default app.
@@ -117,6 +118,7 @@ npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 | `src/menu.ts`         | The menu bar menu as data, tested without Electron    |
 | `src/editor.ts/.html` | Annotation editor window                              |
 | `src/viewer.ts/.html` | Session window: `session.md` editable, screenshots    |
+| `src/area.ts/.html`   | Area picker for Capture Same Area                     |
 | `src/sessions.ts`     | Session folders and `session.md` writing              |
 | `assets/`             | App icon, menu bar template icon                      |
 | `build/`              | Packaging resources (icon, entitlements)              |

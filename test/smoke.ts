@@ -2,7 +2,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { app, BrowserWindow, nativeImage } from 'electron';
+import { app, BrowserWindow, nativeImage, screen } from 'electron';
 
 const MOCK = `<body style="margin:0;font:16px system-ui;background:#fff;color:#18181b">
   <header style="height:56px;background:#18181b;color:#fff;display:flex;align-items:center;padding:0 24px">Acme Dashboard</header>
@@ -25,7 +25,7 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath } =
+const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath, pickArea } =
   require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
@@ -354,6 +354,27 @@ app
     await loaded(back);
     viewer['Reopen brings it back with its marks'] = JSON.parse(await inWin(back, counts))[0] === 1 && !fs.existsSync(kept.dir);
     back.destroy();
+
+    // Capture Same Area's picker: a drag in its see-through window gives the area in screen points; Esc gives none
+    const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).bounds;
+    const pickWith = async (act: (w: BrowserWindow) => void) => {
+      const before = BrowserWindow.getAllWindows();
+      const picked = pickArea();
+      const w = await nextWindow(before);
+      for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await new Promise((r) => setTimeout(r, 100));
+      act(w);
+      return picked;
+    };
+    const dragged = await pickWith((w) => {
+      w.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+      w.webContents.sendInputEvent({ type: 'mouseUp', x: 400, y: 320, button: 'left', clickCount: 1 });
+    });
+    viewer['area picker: a drag gives the area in screen points'] =
+      JSON.stringify(dragged) === JSON.stringify({ x: display.x + 100, y: display.y + 120, width: 300, height: 200 });
+    const cancelled = await pickWith((w) => w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' }));
+    viewer['area picker: Esc gives no area and closes the picker'] =
+      cancelled === null && !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('area.html'));
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,

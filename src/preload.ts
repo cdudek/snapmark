@@ -11,6 +11,7 @@ const api: Window['snapmark'] = {
   viewerRemove: (n) => ipcRenderer.invoke('viewer:remove', n),
   viewerEdit: (n) => ipcRenderer.send('viewer:edit', n),
   onViewerReload: (cb) => void ipcRenderer.on('viewer:reload', (_e, data: ViewerInit) => cb(data)),
+  areaDone: (area) => ipcRenderer.send('area:done', area),
 };
 
 contextBridge.exposeInMainWorld('snapmark', api);

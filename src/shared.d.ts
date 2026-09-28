@@ -30,8 +30,18 @@ interface ViewerInit {
   editable: number[]; // entries whose marks were kept, so Edit Again can reopen them
 }
 
+// A part of the screen in points, as `screencapture -R` takes it: global coordinates for Capture Same Area, window
+// coordinates when the area picker (area.html) sends it.
+interface Area {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface Window {
   snapmark: {
+    areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
     init(): Promise<EditorInit>;
     save(data: EditorSave): Promise<number>;
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
