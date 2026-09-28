@@ -27,7 +27,7 @@
     // Each save says which text it edits, so a late save from before a reload can never overwrite a new screenshot.
     let known = d.md;
     field = await MdNotes.mount(docEl, d.md, {
-      placeholder: 'This session is empty. Capture a screenshot with ⇧⌘1.',
+      placeholder: 'This session is empty. Capture a screenshot with ⌃⇧1.',
       onChange: (md) => {
         edited = true;
         void window.snapmark.viewerSave(known, md).then((ok) => ok && (known = md));

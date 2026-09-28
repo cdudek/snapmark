@@ -23,7 +23,7 @@ const base: MenuState = {
   version: '0.2.0',
   canUpdate: true,
   updateWaiting: null,
-  shortcuts: { capture: 'CommandOrControl+Shift+1', newSession: 'CommandOrControl+Shift+2' },
+  shortcuts: { capture: 'Control+Shift+1', newSession: 'Control+Shift+2' },
   iconDir: '',
   hasDiscarded: false,
 };
@@ -98,7 +98,7 @@ const listed = sub(find(menu(), 'Switch Session'));
 assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'makeCurrent:Old');
-assert.strictEqual(find(menu(), 'New Session').accelerator, 'CommandOrControl+Shift+2');
+assert.strictEqual(find(menu(), 'New Session').accelerator, 'Control+Shift+2');
 
 // Settings holds what Help used to: the shortcuts, and the version under Check for Updates (no Help menu, owner 2026-09-26)
 assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
@@ -115,7 +115,7 @@ const upd = menu({ updateWaiting: '0.4.2' });
 assert.strictEqual(upd[0].label, 'Restart to Update to 0.4.2');
 upd[0].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'installUpdate');
-const off = menu({ shortcuts: { capture: null, newSession: 'CommandOrControl+Shift+2' } });
+const off = menu({ shortcuts: { capture: null, newSession: 'Control+Shift+2' } });
 assert.strictEqual(off[0].label, 'Capture Screenshot (shortcut unavailable)');
 assert.strictEqual(off[0].accelerator, undefined);
 
