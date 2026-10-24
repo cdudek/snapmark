@@ -785,9 +785,17 @@ window.addEventListener('beforeunload', () => {
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && e.key === 'Enter') return void save();
   if (e.metaKey && e.key === 'w') return window.close();
-  if (e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) {
+  const typing = e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable);
+  // ⌘1–⌘7 pick a tool from anywhere, also while a note or card has the cursor, where the plain digit types.
+  const numbered = e.metaKey && /^\d$/.test(e.key) ? GROUPS.findIndex((x) => x.key === e.key) : -1;
+  if (numbered >= 0) {
+    e.preventDefault();
+    if (typing) (e.target as HTMLElement).blur();
+    return pickGroup(numbered);
+  }
+  if (typing) {
     // Also covers Fabric's hidden textarea while a card is being edited; Fabric handles Esc there itself.
-    if (e.key === 'Escape') e.target.blur();
+    if (e.key === 'Escape') (e.target as HTMLElement).blur();
     return;
   }
   const active = canvas.getActiveObject();

@@ -520,6 +520,7 @@ function showShortcuts() {
     ['⌃⇧2', 'New session', 'anywhere'],
     ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
     ['⌫', 'Delete', 'the selected mark'],
+    ['⌘1–⌘7', 'Pick a tool', 'also while typing a note or card, where the plain digit types'],
     ['⌘Z', 'Undo', 'in a note, its typing first, then the marks'],
     ['⇧⌘Z', 'Redo', ''],
     ['⌘↵', 'Add to session', ''],
