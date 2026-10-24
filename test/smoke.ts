@@ -36,7 +36,7 @@ if (process.platform === 'linux') app.disableHardwareAcceleration();
 setTimeout(() => {
   console.log('smoke: TIMEOUT');
   app.exit(1);
-}, 30000);
+}, 120000); // the whole suite; it grows with each milestone and runs slower on a busy machine
 app
   .whenReady()
   .then(async () => {
@@ -480,11 +480,13 @@ app
     const scrollArea = { x: display.x + 100, y: display.y + 100, width: 300, height: 200 };
     let ctlBounds: Electron.Rectangle | null = null;
     const fakeGrab = (frames: number[], key: string) => {
-      let i = 0;
+      let [i, sent] = [0, false];
       return async () => {
         await new Promise((r) => setTimeout(r, 20));
         const ctl = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().endsWith('scroll.html'));
-        if (i === frames.length - 1 && ctl && !ctl.webContents.isLoading()) {
+        // From the last frame on, until the control has loaded: on a busy machine it may still be loading at that frame
+        if (!sent && i >= frames.length - 1 && ctl && !ctl.webContents.isLoading()) {
+          sent = true;
           ctlBounds = ctl.getBounds();
           ctl.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
         }
@@ -535,10 +537,9 @@ app
       !!b && (b.y >= scrollArea.y + scrollArea.height || b.y + b.height <= scrollArea.y);
     windows = BrowserWindow.getAllWindows();
     const cancelled2 = await scrollCapture(scrollArea, fakeGrab([0, 400], 'Escape'));
-    await new Promise((r) => setTimeout(r, 300)); // the control closes a moment after
-    viewer['Capture Scrolling: Esc cancels, no editor, control gone'] =
-      cancelled2 === null &&
-      !BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
+    const extra = () => BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
+    for (let t = 0; t < 30 && extra(); t++) await new Promise((r) => setTimeout(r, 100)); // the control closes a moment after
+    viewer['Capture Scrolling: Esc cancels, no editor, control gone'] = cancelled2 === null && !extra();
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,

@@ -277,7 +277,7 @@ export async function scrollCapture(a: Area, grab = grabArea): Promise<BrowserWi
   ctl.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   ctl.once('ready-to-show', () => {
     ctl.show();
-    app.focus({ steal: true }); // ↩ and Esc reach the control; scrolling still goes to the window under the pointer
+    focusApp(); // ↩ and Esc reach the control; scrolling still goes to the window under the pointer
   });
   void ctl.loadFile(path.join(__dirname, 'scroll.html'));
 
