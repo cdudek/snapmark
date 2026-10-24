@@ -38,6 +38,7 @@ let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
 let area: Area | null = null; // what Capture Same Area captures, in global screen points
+let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
@@ -67,6 +68,7 @@ function loadState() {
     active = state.active;
     used = state.used ?? {};
     area = state.area ?? null;
+    editorSize = state.editorSize ?? null;
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -76,7 +78,7 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area }));
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize }));
 }
 
 export function setActive(name: string) {
@@ -193,17 +195,26 @@ export function pickArea(): Promise<Area | null> {
 export function openEditor(image: string, opts: { session?: string; state?: EditState; replace?: number } = {}): BrowserWindow {
   const session = opts.session ?? active ?? sessions.create(root);
   if (!opts.replace) setActive(session);
-  const { width, height } = nativeImage.createFromPath(image).getSize();
-  // 1180 px minimum fits the whole toolbar on one line.
+  // 90% of the screen with the pointer, or the size the owner last gave an editor, never larger than that screen.
+  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const want = editorSize ?? { width: wa.width * 0.9, height: wa.height * 0.9 };
+  const [width, height] = [Math.min(want.width, wa.width), Math.min(want.height, wa.height)].map(Math.round);
   const win = new BrowserWindow({
-    width: Math.min(Math.max(width / 2 + 340, 1180), 1600),
-    height: Math.min(Math.max(height / 2 + 120, 600), 1000),
+    x: Math.round(wa.x + (wa.width - width) / 2),
+    y: Math.round(wa.y + (wa.height - height) / 2),
+    width,
+    height,
     title: `Snapmark — ${session}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
   editors.set(id, { image, root, session, win, dirty: false, state: opts.state, replace: opts.replace });
   win.once('focus', updateDock);
+  win.on('resized', () => {
+    const [w, h] = win.getSize();
+    editorSize = { width: w, height: h };
+    saveState();
+  });
   win.on('closed', () => {
     editors.delete(id);
     updateDock();
