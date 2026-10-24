@@ -65,10 +65,13 @@ interface Viewer {
   watcher?: fs.FSWatcher;
 }
 const viewers = new Map<number, Viewer>();
+// Tests (SNAPMARK_NO_UI) run many times a day beside the owner's apps: Snapmark never takes the front or a Dock icon.
+const quiet = !!process.env.SNAPMARK_NO_UI;
+const focusApp = () => quiet || app.focus({ steal: true });
 // The Dock icon shows while any Snapmark window is open. A new window turns it on only once it has focus: turned
 // on first, Snapmark becomes a Dock app while another app is full screen, and macOS slides to the desktop, leaving
 // the window behind on the full-screen Space (owner, 2026-09-28).
-const updateDock = () => (editors.size || viewers.size ? void app.dock?.show() : app.dock?.hide());
+const updateDock = () => quiet || (editors.size || viewers.size ? void app.dock?.show() : app.dock?.hide());
 
 function loadState() {
   try {
@@ -97,7 +100,7 @@ export function setActive(name: string) {
 
 // Point Snapmark at another folder, e.g. inside iCloud Drive or Google Drive, so sessions sync.
 async function chooseRoot() {
-  app.focus({ steal: true });
+  focusApp();
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Choose where Snapmark keeps sessions',
     defaultPath: root,
@@ -116,7 +119,7 @@ const OLD_DAYS = 60;
 async function clearOldSessions() {
   const open = new Set([...editors.values(), ...viewers.values()].filter((w) => w.root === root).map((w) => w.session));
   const old = sessions.olderThan(root, OLD_DAYS, used).filter((n) => n !== active && !open.has(n));
-  app.focus({ steal: true });
+  focusApp();
   if (!old.length) return notify(`No session is older than ${OLD_DAYS} days.`);
   const shown = old.slice(0, 10).map(sessions.shortName).join('\n') + (old.length > 10 ? `\n… and ${old.length - 10} more` : '');
   const { response } = await dialog.showMessageBox({
@@ -208,7 +211,7 @@ export function pickArea(scroll = false): Promise<Area | null> {
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   win.once('ready-to-show', () => {
     win.show();
-    app.focus({ steal: true });
+    focusApp();
   });
   void win.loadFile(path.join(__dirname, 'area.html'), scroll ? { hash: 'scroll' } : {});
   return new Promise((resolve) => {
@@ -343,7 +346,7 @@ export function openEditor(image: string, opts: { session?: string; state?: Edit
     fs.rmSync(image, { force: true });
   });
   win.loadFile(path.join(__dirname, 'editor.html'));
-  app.focus({ steal: true });
+  focusApp();
   return win;
 }
 
@@ -416,7 +419,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
   const open = [...viewers.values()].find((v) => v.root === into && v.session === name);
   if (open) {
     open.win.show();
-    app.focus({ steal: true });
+    focusApp();
     return open.win;
   }
   const win = new BrowserWindow({
@@ -439,7 +442,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
     updateDock();
   });
   win.loadFile(path.join(__dirname, 'viewer.html'));
-  app.focus({ steal: true });
+  focusApp();
   return win;
 }
 
@@ -554,7 +557,7 @@ export function reopen(d: sessions.Discarded, into = root) {
 
 async function reopenDiscarded() {
   const top = path.join(root, '.discarded');
-  app.focus({ steal: true });
+  focusApp();
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Reopen Discarded',
     message: `Screenshots closed without saving and removed from sessions, kept for ${sessions.KEEP_DAYS} days.`,
@@ -683,7 +686,7 @@ function renameFromMenu(name: string) {
 }
 
 async function otherSession() {
-  app.focus({ steal: true });
+  focusApp();
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Choose a session',
     defaultPath: root,
@@ -731,7 +734,7 @@ function showShortcuts() {
     </style><h2>Editor tools</h2><table>${tools}</table><h2>Other keys</h2><table>${other}</table>`;
   shortcutsWin = new BrowserWindow({ width: 520, height: 640, title: 'Keyboard shortcuts' });
   void shortcutsWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
-  app.focus({ steal: true });
+  focusApp();
 }
 
 const actions: MenuActions = {
@@ -769,7 +772,7 @@ const actions: MenuActions = {
 };
 
 app.whenReady().then(() => {
-  if (process.env.SNAPMARK_NO_UI) return; // test harness drives the app itself
+  if (quiet) return void app.setActivationPolicy?.('accessory'); // test harness drives the app itself
   app.dock?.hide();
   loadState();
   sessions.discarded(root); // deletes what is older than 7 days
@@ -802,7 +805,7 @@ app.on('before-quit', (e) => {
   const first = open[0].win;
   first.show();
   first.focus();
-  app.focus({ steal: true });
+  focusApp();
   const n = open.length;
   void dialog
     .showMessageBox(first, {
