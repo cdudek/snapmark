@@ -125,7 +125,7 @@ app
     pick('box');
     const tb = () => document.querySelector('#tools [data-group="2"]');
     r['toolbar: active button has a blue tint and a blue icon'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(36, 146, 255') && getComputedStyle(tb()).color === 'rgb(36, 146, 255)';
-    r['"Add to session" is brand blue'] = getComputedStyle(document.getElementById('save')).backgroundColor === 'rgb(36, 146, 255)';
+    r['"Add to session" is the darker brand blue, for white text'] = getComputedStyle(document.getElementById('save')).backgroundColor === 'rgb(15, 114, 219)';
     r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3)';
     key('2');
     r['toolbar: pressing the key again swaps the icon'] = tool() === 'ellipse' && tb().dataset.tool === 'ellipse';
@@ -368,6 +368,17 @@ app
     for (let i = 0; i < 30 && !smokeMd().includes('Edited Smoke test caption'); i++) await new Promise((r) => setTimeout(r, 100));
     viewer['saving Edit Again replaces the entry in place'] =
       smokeMd().includes('Edited Smoke test caption') && JSON.stringify(sessions.shots(root, 'smoke')) === '[1]';
+    // An editor left open on the session follows its count and its name
+    fs.copyFileSync(shotCopy, path.join(root, 'open.png'));
+    const watching = openEditor(path.join(root, 'open.png'), { session: 'smoke' });
+    await new Promise<void>((r) => watching.webContents.once('did-finish-load', () => r()));
+    await loaded(watching);
+    const label = (text: string) =>
+      inWin(
+        watching,
+        `for (let i = 0; i < 30 && document.getElementById('session').textContent !== ${JSON.stringify(text)}; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('session').textContent === ${JSON.stringify(text)};`,
+      );
+    viewer['an open editor shows the count'] = await label('smoke · 1 screenshot');
     // Discarded tab: this session's removed screenshot, and Reopen puts it back
     await inView(`document.getElementById('tab-discarded').click();`);
     viewer['Discarded tab lists the removed screenshot'] = await waitFor(
@@ -377,6 +388,7 @@ app
     viewer['Reopen puts it back in the session'] =
       (await waitFor(`document.getElementById('tab-discarded').hidden && document.querySelectorAll('#grid .thumb').length === 2`)) &&
       smokeMd().includes('Second shot');
+    viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke · 2 screenshots');
     // Rename in place: ↩ saves (the folder moves, the window follows), a taken name keeps the field, Esc cancels
     sessions.create(root, 'taken');
     const rename = async (to: string, key: 'Return' | 'Escape') => {
@@ -403,8 +415,11 @@ app
       fs.existsSync(path.join(root, 'smoke renamed', 'session.md')) &&
       !fs.existsSync(path.join(root, 'smoke')) &&
       view.getTitle() === 'smoke renamed — Snapmark';
+    viewer['an open editor follows the rename'] =
+      (await label('smoke renamed · 2 screenshots')) && watching.getTitle() === 'Snapmark — smoke renamed';
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
+    watching.destroy();
     view.close();
 
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks

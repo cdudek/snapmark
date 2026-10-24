@@ -302,11 +302,21 @@ ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, sta
   // Edit Again on an entry removed in the meantime adds it back as a new one.
   const n = replace && sessions.replaceShot(into, session, replace, out, text) ? replace : sessions.addShot(into, session, out, text);
   sessions.saveEdit(into, session, n, fs.readFileSync(image), JSON.stringify(state));
+  tellEditors(into, session);
   used[session] = Date.now();
   saveState();
   BrowserWindow.fromWebContents(e.sender)?.close();
   return n;
 });
+
+// Open editors show their session's name and screenshot count: told again after a rename, an add, a remove or a reopen.
+function tellEditors(into: string, name: string) {
+  for (const ed of editors.values())
+    if (ed.root === into && ed.session === name && !ed.win.isDestroyed()) {
+      ed.win.setTitle(`Snapmark — ${name}`);
+      ed.win.webContents.send('editor:session', name, sessions.count(into, name));
+    }
+}
 
 ipcMain.on('editor:dirty', (e, value: boolean) => {
   const ed = editors.get(e.sender.id);
@@ -410,6 +420,7 @@ ipcMain.handle('viewer:remove', async (e, n: number): Promise<ViewerInit> => {
   const v = viewerFor(e.sender.id);
   await flushViewer(v);
   sessions.removeShot(v.root, v.session, n);
+  tellEditors(v.root, v.session);
   return viewerData(v);
 });
 ipcMain.handle('viewer:rename', async (e, wanted: string): Promise<string | null> => {
@@ -426,6 +437,7 @@ ipcMain.handle('viewer:reopen', async (e, dir: string): Promise<ViewerInit> => {
   if (d) {
     await flushViewer(v); // a removed screenshot goes back into session.md
     reopen(d, v.root);
+    tellEditors(v.root, v.session);
   }
   return viewerData(v);
 });
@@ -557,6 +569,7 @@ function renameSession(name: string, wanted: string, into = root): string | null
     saveState();
   }
   for (const ed of editors.values()) if (ed.root === into && ed.session === name) ed.session = to;
+  tellEditors(into, to);
   for (const v of viewers.values())
     if (v.root === into && v.session === name) {
       v.session = to;

@@ -61,6 +61,7 @@ interface Window {
     save(data: EditorSave): Promise<number>;
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
     stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
+    onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
     viewerInit(): Promise<ViewerInit>;
     viewerSave(from: string, md: string): Promise<boolean>; // refused when session.md is no longer `from`
     viewerExternal(): void; // open session.md in the default Markdown app

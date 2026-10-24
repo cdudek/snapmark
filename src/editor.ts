@@ -933,6 +933,7 @@ new ResizeObserver(fit).observe(mainEl);
 // "Ledgerly Q4 review · 12 screenshots"; only the name while the session is empty.
 const shotsLabel = (session: string, n: number) => (n ? `${session} · ${n} screenshot${n === 1 ? '' : 's'}` : session);
 
+window.snapmark.onSession((session, count) => ($('session').textContent = shotsLabel(session, count)));
 window.snapmark.init().then(async ({ src, session, count, state, replacing }) => {
   $('session').textContent = shotsLabel(session, count);
   if (replacing) saveBtn.textContent = `Save changes ⌘↵`;

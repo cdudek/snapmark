@@ -42,6 +42,11 @@ shapes of the Native mockup. Builds `docs/roadmap.md` M1 (editor half).
 ### Screenshot count
 
 - [ ] **F11** The toolbar's right side shall show "<session> · N screenshots" ("1 screenshot"; only the name when 0), the count coming from the main process.
+- [ ] **F12** While an editor is open, its label and window title shall follow a rename of its session and changes to the count (a save, a remove, a reopen).
+
+### Contrast
+
+- [ ] **F13** Filled buttons with white text ("Add to session"; in the session window the selected segment, Reopen, Edit Again and menu highlights) shall use the darker brand blue `#0F72DB` (`--accent-fill`, 4.7:1); `#2492FF` (`--accent`) stays for tints, outlines, focus rings and icons, with the same token names in both windows.
 
 <details>
 <summary>Verification</summary>
@@ -52,6 +57,8 @@ shapes of the Native mockup. Builds `docs/roadmap.md` M1 (editor half).
 - F9 — automated: smoke checks the bubble tail geometry points toward the target.
 - F10 — automated: smoke checks the prompt says "numbered diamonds".
 - F11 — automated: smoke reads the label with 0 and 1 screenshots and the plural form.
+- F12 — automated: smoke keeps an editor open while a screenshot is reopened and the session renamed, and reads its label and title.
+- F13 — automated: smoke reads "Add to session" as `rgb(15, 114, 219)`.
 
 </details>
 

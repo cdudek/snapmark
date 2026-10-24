@@ -15,7 +15,8 @@
         --muted: #6e6e73;
         --line: rgb(0 0 0 / 0.1);
         --hover: rgb(0 0 0 / 0.05);
-        --accent: #2492ff;
+        --accent: #2492ff; /* tints, outlines, focus rings, icons */
+        --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
         --accent-tint: rgb(36 146 255 / 0.14);
         --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
         --lift: 0 10px 30px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.06);
@@ -372,8 +373,8 @@
         padding: 8px;
       }
       .actions .primary {
-        background-color: var(--accent);
-        border-color: var(--accent);
+        background-color: var(--accent-fill);
+        border-color: var(--accent-fill);
         color: #fff;
         font-weight: 600;
       }

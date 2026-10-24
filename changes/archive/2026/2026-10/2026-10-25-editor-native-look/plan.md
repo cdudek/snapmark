@@ -54,10 +54,10 @@ None.
 
 ## Risks
 
-| Risk                                            | What we do                                                  | Where it lands |
-| ----------------------------------------------- | ----------------------------------------------------------- | -------------- |
-| Esc in the popover closes the editor            | the popover handles Esc and stops it before the document's  | step 2         |
-| White on `#2492FF` is 3.3:1 for the button text | semibold 13px; the owner chose the brand blue in the mockup | accepted       |
+| Risk                                            | What we do                                                 | Where it lands |
+| ----------------------------------------------- | ---------------------------------------------------------- | -------------- |
+| Esc in the popover closes the editor            | the popover handles Esc and stops it before the document's | step 2         |
+| White on `#2492FF` is 3.2:1 for the button text | filled buttons use `--accent-fill` `#0F72DB` (4.7:1)       | revision 1     |
 
 ## Out of scope
 
@@ -74,4 +74,4 @@ PR is merged.
 
 ## Revisions
 
-None.
+1. 2026-10-25, orchestrator: filled buttons with white text use `--accent-fill` `#0F72DB` in the editor and the session window (`src/viewer.html`); open editors follow renames and count changes through `editor:session` (`tellEditors` in `src/main.ts`, `onSession` in `src/preload.ts`). Facts F12 and F13 added.
