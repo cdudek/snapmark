@@ -600,11 +600,18 @@ app
     );
     viewer['one-shot: the preview shows the backdrop at the chosen ratio'] =
       Math.abs(preview.ratio - 16 / 9) < 0.02 && preview.bg === 'rgb(18, 52, 86)';
-    copied = null;
+    // Its own stubs, so the session-mode checks below still see their copy and file
+    const got = { copy: null as Buffer | null, offered: '' };
+    const oneSaved = path.join(root, 'one-shot-saved.png');
+    desk.copyImage = async (png) => void (got.copy = png);
+    desk.savePath = async (_win, opts) => {
+      got.offered = opts.defaultPath ?? '';
+      return { canceled: false, filePath: oneSaved };
+    };
     await inWin(one, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));`);
-    for (let i = 0; i < 30 && !copied; i++) await new Promise((r) => setTimeout(r, 100));
-    const oneCopy = copied as Buffer | null; // set by the stub, which TypeScript cannot see
-    const oneFile = path.join(root, 'one-shot-oneCopy.png');
+    for (let i = 0; i < 30 && !got.copy; i++) await new Promise((r) => setTimeout(r, 100));
+    const oneCopy = got.copy;
+    const oneFile = path.join(root, 'one-shot-copied.png');
     if (oneCopy) fs.writeFileSync(oneFile, oneCopy);
     const L = beautyLayout(shotSize.width, shotSize.height, { padding: 100, radius: 12, shadow: 40, backdrop: '#123456', ratio: '16:9' });
     const near = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]) <= 2);
@@ -614,12 +621,13 @@ app
       !!oneCopy && near(pixel(oneFile, 0, 0, 2, 2), [18, 52, 86]) && near(pixel(oneFile, 1, 1, -3, -3), [18, 52, 86]);
     viewer['one-shot: the screenshot and its marks sit centred on it'] =
       !!oneCopy && red(pixel(oneFile, (L.x + shotSize.width / 2) / L.width, (L.y + shotSize.height / 2) / L.height, -shotUnit * 8 * 0.45));
-    offered = '';
     await inWin(one, `document.getElementById('save-as').click();`);
-    for (let i = 0; i < 30 && !offered; i++) await new Promise((r) => setTimeout(r, 100));
-    await new Promise((r) => setTimeout(r, 200));
+    for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
     viewer['one-shot: Save As… writes the same image, named Snapmark <date time>'] =
-      /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(offered) && !!oneCopy && fs.readFileSync(savedAs).equals(oneCopy);
+      /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(got.offered) &&
+      !!oneCopy &&
+      fs.existsSync(oneSaved) &&
+      fs.readFileSync(oneSaved).equals(oneCopy);
     viewer['one-shot: nothing is added to any session'] =
       JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
     for (const key of ['Escape', 'Escape']) {
