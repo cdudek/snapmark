@@ -8,6 +8,7 @@ status: approved
 reviewed_by: calvin.dudek@omr.com (roadmap and mockups, 2026-10-25)
 approved_at: 2026-10-25
 created: 2026-10-25
+archived_at: 2026-10-25
 ---
 
 # Plan: OCR and auto-redact
@@ -49,7 +50,7 @@ None.
 - [x] 3. session.md block and notes count (F3, F6) — proof: `sessions.test.js`
 - [x] 4. main and editor wiring (F2, F10–F12), Document tab and PDF (F7), prompt (F8) — proof: smoke checks
 - [x] 5. README (F14)
-- [ ] 6. Verify, PR, auto-merge
+- [x] 6. Verify, PR, auto-merge
 
 ## Risks
 

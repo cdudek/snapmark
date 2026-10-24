@@ -8,6 +8,7 @@ status: approved
 reviewed_by: calvin.dudek@omr.com (roadmap and mockups, 2026-10-25)
 approved_at: 2026-10-25
 created: 2026-10-25
+archived_at: 2026-10-25
 ---
 
 # Intent: OCR and auto-redact (roadmap M4)
