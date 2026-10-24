@@ -24,6 +24,8 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, loginState, MenuActions, MenuState, SessionInfo } from './menu';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
+import { Box, ocrText, OcrLine, recognize } from './ocr';
+import { secretBoxes } from './redact';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
@@ -48,8 +50,10 @@ let quitting = false; // set by "Quit anyway" so the quit guard lets go
 const registered = new Set<string>(); // global shortcuts macOS let us have
 // keyed by webContents.id; dirty = marks or text not saved yet
 // state = marks to put back; replace = Edit Again's entry number; oneShot = no session ('' in session)
+// text = what text recognition finds in the image
 interface EditorWin {
   image: string;
+  text: Promise<OcrLine[] | null>;
   root: string;
   session: string;
   win: BrowserWindow;
@@ -347,7 +351,9 @@ export function openEditor(
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
-  editors.set(id, { image, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot });
+  // Read while the editor loads: auto-redact and session.md wait for it, opening the editor never does.
+  const text = desk.recognize(image);
+  editors.set(id, { image, text, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot });
   win.once('focus', updateDock);
   win.on('resized', () => {
     const [w, h] = win.getSize();
@@ -406,12 +412,22 @@ export function fitForAI(png: Buffer): Buffer {
   return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
 }
 
+// Auto-redact: where the screenshot's text holds an email, a key or token, a card number or an IBAN (redact.ts).
+// Null when there is no text recognition, so the editor tries again on Edit Again.
+ipcMain.handle('editor:secrets', async (e): Promise<Box[] | null> => {
+  const lines = await editorFor(e.sender.id).text;
+  return lines && secretBoxes(lines);
+});
+
 ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, state }: EditorSave): Promise<number> => {
-  const { root: into, session, image, replace, oneShot } = editorFor(e.sender.id);
+  const { root: into, session, image, replace, oneShot, text: read } = editorFor(e.sender.id);
   if (oneShot) throw new Error('A one-shot screenshot is never added to a session');
   for (const v of viewers.values()) if (v.root === into && v.session === session) await flushViewer(v);
   const out = fitForAI(Buffer.from(png, 'base64'));
-  const text = { caption, notes, cards, moves };
+  // What is under a Redact mark, the owner's or auto-redact's, never reaches session.md either.
+  const hidden = state.items.flatMap((i) => ((i as { t?: string }).t === 'redact' ? [(i as { r: Box }).r] : []));
+  const lines = await read;
+  const text = { caption, notes, cards, moves, text: lines ? ocrText(lines, hidden) : '' };
   // Edit Again on an entry removed in the meantime adds it back as a new one.
   const n = replace && sessions.replaceShot(into, session, replace, out, text) ? replace : sessions.addShot(into, session, out, text);
   sessions.saveEdit(into, session, n, fs.readFileSync(image), JSON.stringify(state));
@@ -431,8 +447,10 @@ function tellEditors(into: string, name: string) {
     }
 }
 
-// Out of the owner's sight, and swapped by the smoke test, which must not touch the clipboard or wait on a dialog.
+// Out of the owner's sight, and swapped by the smoke test, which must not touch the clipboard or wait on a dialog, and
+// runs on Linux, where there is no text recognition.
 export const desk = {
+  recognize,
   copyImage: (png: Buffer) => clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(png)], { type: 'image/png' }) })]),
   savePath: (win: BrowserWindow, opts: Electron.SaveDialogOptions) => dialog.showSaveDialog(win, opts),
 };
@@ -656,6 +674,7 @@ export function promptFor(dir: string): string {
   return [
     `Work through the visual feedback in "${sessionMdPath(dir)}".`,
     'Each entry is an annotated screenshot. The numbered list below it holds the notes for the references (numbered diamonds) on the image.',
+    `"${sessions.TEXT_SUMMARY}" under an entry is the text recognised on the image, top to bottom; [redacted] is private data pixelated on it.`,
     'What the marks mean:',
     ...TOOLS.flatMap((g) => g.tools)
       .filter((t) => t.means)

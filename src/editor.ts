@@ -777,7 +777,7 @@ function stateOf(): EditState {
     .filter((o) => !extras.has(o))
     .map(itemOf)
     .filter(Boolean);
-  return { caption: captionField?.value() ?? '', items, ...(oneShot ? { beautify: beauty } : {}) };
+  return { caption: captionField?.value() ?? '', items, redacted, ...(oneShot ? { beautify: beauty } : {}) };
 }
 
 async function restore(items: Item[]) {
@@ -851,6 +851,30 @@ function renderRefs() {
 
 let saving = false; // closing after a save is not a discard
 
+// Auto-redact: Redact marks over the emails, keys, tokens, card numbers and IBANs in the screenshot's text, added as
+// one step that ⌘Z takes back. Add to session, Copy Image and Save As… wait for it, so none of it leaves the Mac.
+let redacted = false; // it ran on this screenshot (kept in its state for Edit Again)
+let redacting = Promise.resolve();
+let quiet = false; // its marks are not the owner's unsaved work
+async function autoRedact() {
+  const found = await window.snapmark.secrets().catch(() => null);
+  if (!found || !background) return;
+  redacted = true;
+  if (!found.length) return;
+  const { width: W, height: H } = background;
+  const marks = found.map((r) => makeRedact({ ...r, w: Math.min(r.w, W - r.x), h: Math.min(r.h, H - r.y) }));
+  const note = $('redacted');
+  note.textContent = `Redacted ${marks.length} sensitive item${marks.length === 1 ? '' : 's'} · ⌘Z to undo`;
+  const show = (on: boolean) => {
+    quiet = true;
+    canvas[on ? 'add' : 'remove'](...marks);
+    quiet = false;
+    note.hidden = !on;
+  };
+  show(true);
+  record({ objs: marks, undo: () => show(false), redo: () => show(true) });
+}
+
 // The marked-up image as base64 PNG: card typing ended and nothing selected. Add to session, Copy Image and Save As…
 // all take it from here, so the three always match. One-shot mode puts it on its Beautify backdrop.
 function flatten(): string {
@@ -891,6 +915,7 @@ function beautified(shot: HTMLCanvasElement): HTMLCanvasElement {
 async function save() {
   saveBtn.disabled = true;
   saving = true;
+  await redacting;
   const png = flatten();
   const state = stateOf();
   await window.snapmark
@@ -914,8 +939,8 @@ window.addEventListener('beforeunload', () => {
   if (!saving && background) window.snapmark.stash(stateOf());
 });
 
-const copyImage = () => void (background && window.snapmark.copyImage(flatten()));
-const saveImageAs = () => void (background && window.snapmark.saveImageAs(flatten()));
+const copyImage = () => void (background && redacting.then(() => window.snapmark.copyImage(flatten())));
+const saveImageAs = () => void (background && redacting.then(() => window.snapmark.saveImageAs(flatten())));
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && e.key === 'Enter') return void (oneShot ? copyImage() : save()); // the primary button
@@ -962,7 +987,7 @@ document.addEventListener('keydown', (e) => {
 
 // Tells the main process there is work to lose, so Quit asks first. The screenshot is the background, not an object.
 const markDirty = () => window.snapmark.dirty(true);
-canvas.on('object:added', markDirty);
+canvas.on('object:added', () => quiet || markDirty());
 let captionField: import('./md-notes').MdField | null = null; // mounted once init says what it holds
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
@@ -1089,5 +1114,7 @@ window.snapmark.init().then(async ({ src, session, count, state, replacing, oneS
   fit();
   if (state) await restore(state.items as Item[]);
   applyTool();
+  redacted = !!state?.redacted;
+  if (!redacted) redacting = autoRedact();
 });
 setColor(colorEl.value); // shows it on the swatch and draws the toolbar

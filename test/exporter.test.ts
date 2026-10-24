@@ -10,7 +10,7 @@ import { exportZip, sessionHtml } from '../src/exporter';
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-export-'));
   const name = sessions.create(root, 'export demo');
   const dir = path.join(root, name);
-  sessions.addShot(root, name, Buffer.from('png'), { caption: 'Header', notes: ['Too tall'] });
+  sessions.addShot(root, name, Buffer.from('png'), { caption: 'Header', notes: ['Too tall'], text: 'Sign in' });
   fs.writeFileSync(path.join(dir, `${name}.pdf`), 'old export'); // must not end up in the zip
 
   const zip = await exportZip(dir);
@@ -24,6 +24,7 @@ import { exportZip, sessionHtml } from '../src/exporter';
   assert.match(html, /<h1>export demo<\/h1>/);
   assert.match(html, /<img src="img\/001\.png" alt="Screenshot 1">/);
   assert.match(html, /<li>Too tall<\/li>/);
+  assert.ok(html.includes('<details><summary>Text in the screenshot</summary>') && html.includes('details { display: none; }')); // not in the PDF
   console.log('exporter: ok');
 })().catch((e) => {
   console.error(e);

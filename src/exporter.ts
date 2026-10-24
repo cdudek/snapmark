@@ -24,6 +24,7 @@ export function sessionHtml(dir: string): string {
   h2 { font-size: 13pt; margin: 22pt 0 6pt; color: #52525b; break-after: avoid; }
   img { max-width: 100%; border: 1px solid #e4e4e7; border-radius: 4px; break-inside: avoid; }
   ol { padding-left: 18pt; } li { margin: 3pt 0; }
+  details { display: none; } /* the text in a screenshot is for agents; the reader has the image */
 </style></head><body>${body}</body></html>`;
 }
 

@@ -436,6 +436,11 @@
         padding: 0 3px;
         border-radius: 3px;
       }
+      #redacted {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
       .ref {
         display: grid;
         grid-template-columns: 24px 1fr;
@@ -526,6 +531,7 @@
           <h3 id="ratio-label">Ratio</h3>
           <div id="ratios" role="group" aria-labelledby="ratio-label"></div>
         </section>
+        <p id="redacted" hidden></p>
       </div>
       <div class="actions">
         <button id="cancel">Discard<kbd> ⌘W</kbd></button>
