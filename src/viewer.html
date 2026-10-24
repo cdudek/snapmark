@@ -16,7 +16,8 @@
         --muted: #6e6e73;
         --line: #e3e3e8;
         --soft: rgb(0 0 0 / 0.05);
-        --accent: #2492ff;
+        --accent: #2492ff; /* tints, outlines, focus rings, icons */
+        --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
         --annot: #e5484d;
       }
       @media (prefers-color-scheme: dark) {
@@ -67,8 +68,8 @@
         cursor: default;
       }
       button.primary {
-        background: var(--accent);
-        border-color: var(--accent);
+        background: var(--accent-fill);
+        border-color: var(--accent-fill);
         color: #fff;
       }
       /* Header: the traffic lights sit in it (titleBarStyle hiddenInset), so it drags the window */
@@ -142,7 +143,7 @@
         color: inherit;
       }
       #rename::selection {
-        background: var(--accent);
+        background: var(--accent-fill);
         color: #fff;
       }
       #hint {
@@ -180,7 +181,7 @@
         padding: 4px 12px;
       }
       .tabs button[aria-pressed='true'] {
-        background: var(--accent);
+        background: var(--accent-fill);
         color: #fff;
       }
       main {
@@ -340,7 +341,7 @@
       }
       .menu button:hover,
       .menu button:focus-visible {
-        background: var(--accent);
+        background: var(--accent-fill);
         color: #fff;
         outline: none;
       }

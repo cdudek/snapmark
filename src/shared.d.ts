@@ -2,6 +2,7 @@
 interface EditorInit {
   src: string; // data: URL of the captured PNG
   session: string;
+  count: number; // screenshots already in the session
   state?: EditState; // marks and text to put back: a reopened discard, or Edit Again
   replacing?: number; // Edit Again: saving replaces this entry instead of adding one
 }
@@ -60,6 +61,7 @@ interface Window {
     save(data: EditorSave): Promise<number>;
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
     stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
+    onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
     viewerInit(): Promise<ViewerInit>;
     viewerSave(from: string, md: string): Promise<boolean>; // refused when session.md is no longer `from`
     viewerExternal(): void; // open session.md in the default Markdown app

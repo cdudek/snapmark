@@ -17,7 +17,7 @@ interface ToolGroup {
   tools: ToolDef[];
 }
 
-const RED = '#e11d48';
+const RED = '#e5484d'; // coral red: remove marks, and the default annotation colour
 const YELLOW = '#facc15';
 
 // A key selects its group; pressing it again steps to the group's next tool.
@@ -41,14 +41,14 @@ const GROUPS: ToolGroup[] = [
       {
         id: 'marker',
         label: 'Reference',
-        icon: '<circle cx="12" cy="12" r="9"/><path d="M10.5 8.5L12.5 7v10"/>',
-        means: 'a numbered circle; its note is the item with the same number in the list under the image',
+        icon: '<rect x="5.5" y="5.5" width="13" height="13" rx="2.5" transform="rotate(45 12 12)"/><path d="M10.8 9.2L12.4 8v8"/>',
+        means: 'a numbered diamond; its note is the item with the same number in the list under the image',
       },
       {
         id: 'card',
         label: 'Card',
-        icon: '<path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5M8 9h8M8 13h5"/>',
-        means: 'a yellow card whose text is a comment about what its line points at',
+        icon: '<path d="M4 4h16v12H11l-4 4v-4H4z"/><path d="M8 8.5h8M8 12h5"/>',
+        means: 'a yellow speech bubble whose text is a comment about what its tail and line point at',
       },
     ],
   },
