@@ -7,6 +7,19 @@ type GlyphKind = 'box' | 'ellipse' | 'cross' | 'hatch' | 'highlight' | 'spotligh
 type Tool = ToolId; // GROUPS, RED and YELLOW come from tools.ts, loaded first
 
 const CARD_BG = '#fef9c3';
+// Annotation colours, never the app's blue accent for anything else. Lower case, as <input type="color"> reports them.
+const PALETTE: [string, string][] = [
+  ['Coral red', RED],
+  ['Orange', '#f76b15'],
+  ['Amber', '#ffb224'],
+  ['Green', '#30a46c'],
+  ['Teal', '#12a594'],
+  ['Cyan', '#05a2c2'],
+  ['Blue', '#2492ff'],
+  ['Violet', '#8b3dff'],
+  ['Pink', '#ef28a7'],
+  ['Graphite', '#2c2c31'],
+];
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const refsEl = $<HTMLDivElement>('refs');
@@ -144,32 +157,60 @@ class Arrow extends fabric.Line {
   }
 }
 
-// Reference: a numbered circle. The number is its position among markers, so it renumbers after deletes and undo.
+// A reference's diamond: a rounded square turned 45° (the logo's centre) with a white number; r is from centre to tip.
+function drawMarker(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, c: string, n: number) {
+  const k = r * 0.25; // corner radius
+  const a = (r - k) / Math.SQRT2 + k; // half side, so the rounded tips reach r
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.PI / 4);
+  ctx.beginPath();
+  ctx.roundRect(-a, -a, a * 2, a * 2, k);
+  ctx.fillStyle = c;
+  ctx.fill();
+  ctx.lineWidth = unit / 2;
+  ctx.strokeStyle = '#fff';
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${r * 0.8}px -apple-system, system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(n), x, y + r * 0.04);
+}
+
+// Reference: a numbered diamond. The number is its position among markers, so it renumbers after deletes and undo.
 class Marker extends fabric.Circle {
   n = 0;
   note = '';
   constructor(p: Point, c: string) {
-    super({ left: p.x, top: p.y, radius: unit * 6, originX: 'center', originY: 'center', fill: c });
+    super({ left: p.x, top: p.y, radius: unit * 8, originX: 'center', originY: 'center', fill: c });
     this.set({ objectCaching: false, hasControls: false });
   }
   _render(ctx: CanvasRenderingContext2D) {
-    const r = this.radius;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = String(this.fill);
-    ctx.fill();
-    ctx.lineWidth = unit / 2;
-    ctx.strokeStyle = '#fff';
-    ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${r * 1.1}px -apple-system, system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(this.n), 0, r * 0.05);
+    drawMarker(ctx, 0, 0, this.radius, String(this.fill), this.n);
   }
 }
 
-// Sticky note you type on. Optionally points at a spot with a line that follows the card around.
+// A speech bubble's tail: a triangle on the edge of the body (half sizes hw, hh around 0,0) toward t, wound like
+// roundRect (clockwise on screen) so one fill gives one outline. Null when t is inside the body.
+function bubbleTail(hw: number, hh: number, t: Point, u: number): [Point, Point, Point] | null {
+  const [kx, ky] = [hw / Math.abs(t.x || 1e-9), hh / Math.abs(t.y || 1e-9)];
+  const k = Math.min(kx, ky); // centre-to-t scale that lands on the edge
+  if (k >= 1) return null;
+  const e = { x: t.x * k, y: t.y * k };
+  const half = u * 5; // half the base; the base sits u inside the body, so no seam shows, and clear of the corners
+  const along = (v: number, h: number, lim = Math.max(0, h - u * 3 - half)) => Math.max(-lim, Math.min(lim, v));
+  const sideways = kx <= ky; // leaves through the left or right edge
+  const m = sideways ? { x: Math.sign(t.x) * (hw - u), y: along(e.y, hh) } : { x: along(e.x, hw), y: Math.sign(t.y) * (hh - u) };
+  // The tip stands u * 10 clear of the edge (less when the target is closer), on the way from the base to the target.
+  const f = Math.min(1, (u * 11) / (sideways ? Math.abs(t.x - m.x) : Math.abs(t.y - m.y)));
+  const tip = { x: m.x + (t.x - m.x) * f, y: m.y + (t.y - m.y) * f };
+  const [a, b] = [-1, 1].map((s) => (sideways ? { x: m.x, y: m.y + s * half } : { x: m.x + s * half, y: m.y }));
+  return (b.x - a.x) * (tip.y - a.y) - (b.y - a.y) * (tip.x - a.x) > 0 ? [a, b, tip] : [b, a, tip];
+}
+
+// Speech bubble you type on. Optionally points at a spot: its tail turns toward it and a line follows the card around.
 class Card extends fabric.Textbox {
   pointAt: Point | null;
   accent: string;
@@ -192,9 +233,10 @@ class Card extends fabric.Textbox {
   _renderBackground(ctx: CanvasRenderingContext2D) {
     const p = this.padding;
     const [w, h] = [this.width, this.height];
-    if (this.pointAt) {
-      // Line from the card centre to the target, drawn first so the card covers its start.
-      const t = fabric.util.transformPoint(new fabric.Point(this.pointAt), fabric.util.invertTransform(this.calcTransformMatrix()));
+    const t =
+      this.pointAt && fabric.util.transformPoint(new fabric.Point(this.pointAt), fabric.util.invertTransform(this.calcTransformMatrix()));
+    if (t) {
+      // Line from the card centre to the target, drawn first so the bubble covers its start.
       ctx.save();
       ctx.strokeStyle = ctx.fillStyle = this.accent;
       ctx.lineWidth = unit;
@@ -212,11 +254,18 @@ class Card extends fabric.Textbox {
     ctx.shadowOffsetY = unit;
     ctx.fillStyle = String(this.backgroundColor);
     ctx.beginPath();
-    ctx.roundRect(-w / 2 - p, -h / 2 - p, w + p * 2, h + p * 2, unit * 2);
+    ctx.roundRect(-w / 2 - p, -h / 2 - p, w + p * 2, h + p * 2, unit * 3);
+    const tail = t && bubbleTail(w / 2 + p, h / 2 + p, t, unit);
+    if (tail) {
+      ctx.moveTo(tail[0].x, tail[0].y);
+      ctx.lineTo(tail[1].x, tail[1].y);
+      ctx.lineTo(tail[2].x, tail[2].y);
+      ctx.closePath();
+    }
     ctx.fill();
     ctx.shadowColor = 'transparent';
     ctx.fillStyle = this.accent;
-    ctx.fillRect(-w / 2 - p, -h / 2 - p + unit * 2, unit * 1.2, h + p * 2 - unit * 4);
+    ctx.fillRect(-w / 2 - p, -h / 2 - p + unit * 3, unit * 1.2, h + p * 2 - unit * 6);
     ctx.restore();
   }
 }
@@ -262,21 +311,11 @@ function drawGhost() {
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalAlpha = 0.45;
-  if (t === 'marker') {
-    const r = unit * 6;
-    ctx.fillStyle = color();
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${r * 1.1}px -apple-system, system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(markers().length + 1), x, y + r * 0.05);
-  } else if (t === 'card') {
+  if (t === 'marker') drawMarker(ctx, x, y, unit * 8, color(), markers().length + 1);
+  else if (t === 'card') {
     ctx.fillStyle = CARD_BG;
     ctx.beginPath();
-    ctx.roundRect(x, y, unit * 70, unit * 15, unit * 2); // a new card's size, placed from its top left
+    ctx.roundRect(x, y, unit * 70, unit * 15, unit * 3); // a new card's size, placed from its top left
     ctx.fill();
   } else {
     const d = unit * 16; // rect()'s click size, from the pointer as its top left
@@ -332,6 +371,63 @@ function renderToolbar() {
     }),
   );
 }
+
+// ---------- annotation colour: the swatch, its presets and Custom… (the macOS colour panel) ----------
+
+// The colour input holds the current colour; it is also Custom…, so the colour panel writes straight into it.
+const swatchBtn = $<HTMLButtonElement>('swatch');
+const paletteEl = $<HTMLDivElement>('palette');
+const presetsEl = $<HTMLDivElement>('presets');
+const presetBtns = PALETTE.map(([name, c]) => {
+  const b = document.createElement('button');
+  b.dataset.color = c;
+  b.title = name;
+  b.setAttribute('aria-label', name);
+  b.style.color = c; // the swatch and its picked ring
+  b.onclick = () => {
+    setColor(c);
+    closePalette();
+  };
+  return b;
+});
+presetsEl.replaceChildren(...presetBtns);
+
+function setColor(c: string) {
+  colorEl.value = c;
+  swatchBtn.querySelector('i')!.style.background = c;
+  for (const b of presetBtns) b.setAttribute('aria-pressed', String(b.dataset.color === c));
+  applyTool();
+}
+
+function openPalette() {
+  const r = swatchBtn.getBoundingClientRect();
+  Object.assign(paletteEl.style, { left: `${r.left}px`, top: `${r.bottom + 6}px` });
+  paletteEl.hidden = false;
+  swatchBtn.setAttribute('aria-expanded', 'true');
+  (presetBtns.find((b) => b.dataset.color === colorEl.value) ?? presetBtns[0]).focus();
+}
+
+function closePalette(refocus = true) {
+  if (paletteEl.hidden) return;
+  paletteEl.hidden = true;
+  swatchBtn.setAttribute('aria-expanded', 'false');
+  if (refocus) swatchBtn.focus();
+}
+
+swatchBtn.onclick = () => (paletteEl.hidden ? openPalette() : closePalette());
+colorEl.oninput = () => setColor(colorEl.value);
+// Arrows walk the two rows of five. Esc stops here: the editor's own Esc would step back a tool or close the window.
+paletteEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') return void (e.stopPropagation(), closePalette());
+  const step = ({ ArrowLeft: -1, ArrowRight: 1, ArrowUp: -5, ArrowDown: 5 } as Record<string, number>)[e.key];
+  const i = presetBtns.indexOf(document.activeElement as HTMLButtonElement);
+  if (!step || i < 0) return;
+  e.preventDefault();
+  presetBtns[(i + step + presetBtns.length) % presetBtns.length].focus();
+});
+document.addEventListener('mousedown', (e) => {
+  if (!paletteEl.contains(e.target as Node) && !swatchBtn.contains(e.target as Node)) closePalette(false);
+});
 
 // Normalise a drag rectangle; a plain click gets a default size with the click as its top left, like a drag's start.
 function rect(a: Point, b: Point, clickSize = true): Rect | null {
@@ -734,7 +830,7 @@ function renderRefs() {
       row.className = 'ref';
       const badge = document.createElement('b');
       badge.textContent = String(m.n);
-      badge.style.background = String(m.fill);
+      badge.style.setProperty('--mark', String(m.fill));
       const field = document.createElement('div');
       const mounted = MdNotes.mount(field, m.note, {
         placeholder: `Note for ${m.n}`,
@@ -818,7 +914,6 @@ document.addEventListener('keydown', (e) => {
 const markDirty = () => window.snapmark.dirty(true);
 canvas.on('object:added', markDirty);
 let captionField: import('./md-notes').MdField | null = null; // mounted once init says what it holds
-colorEl.oninput = () => applyTool();
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
 saveBtn.onclick = () => void save();
@@ -835,8 +930,11 @@ function fit() {
 // Refit whenever the canvas area changes size: window resizes, and the toolbar wrapping onto a second line.
 new ResizeObserver(fit).observe(mainEl);
 
-window.snapmark.init().then(async ({ src, session, state, replacing }) => {
-  $('session').textContent = `→ ${session}`;
+// "Ledgerly Q4 review · 12 screenshots"; only the name while the session is empty.
+const shotsLabel = (session: string, n: number) => (n ? `${session} · ${n} screenshot${n === 1 ? '' : 's'}` : session);
+
+window.snapmark.init().then(async ({ src, session, count, state, replacing }) => {
+  $('session').textContent = shotsLabel(session, count);
   if (replacing) saveBtn.textContent = `Save changes ⌘↵`;
   captionField = await MdNotes.mount($('caption'), state?.caption ?? '', { placeholder: 'Add a comment…', onChange: markDirty });
   background = await fabric.FabricImage.fromURL(src);
@@ -849,4 +947,4 @@ window.snapmark.init().then(async ({ src, session, state, replacing }) => {
   if (state) await restore(state.items as Item[]);
   applyTool();
 });
-renderToolbar();
+setColor(colorEl.value); // shows it on the swatch and draws the toolbar

@@ -266,8 +266,9 @@ function editorFor(id: number) {
 }
 
 ipcMain.handle('editor:init', (e): EditorInit => {
-  const { image, session, state, replace } = editorFor(e.sender.id);
-  return { src: `data:image/png;base64,${fs.readFileSync(image, 'base64')}`, session, state, replacing: replace };
+  const { image, root: into, session, state, replace } = editorFor(e.sender.id);
+  const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
+  return { src, session, count: sessions.count(into, session), state, replacing: replace };
 });
 
 // Sent synchronously while the window unloads without a save, so the capture is kept before the window is gone.
@@ -492,7 +493,7 @@ export function sessionMdPath(dir: string): string {
 export function promptFor(dir: string): string {
   return [
     `Work through the visual feedback in "${sessionMdPath(dir)}".`,
-    'Each entry is an annotated screenshot. The numbered list below it holds the notes for the references (numbered circles) on the image.',
+    'Each entry is an annotated screenshot. The numbered list below it holds the notes for the references (numbered diamonds) on the image.',
     'What the marks mean:',
     ...TOOLS.flatMap((g) => g.tools)
       .filter((t) => t.means)

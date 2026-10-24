@@ -2,6 +2,7 @@
 interface EditorInit {
   src: string; // data: URL of the captured PNG
   session: string;
+  count: number; // screenshots already in the session
   state?: EditState; // marks and text to put back: a reopened discard, or Edit Again
   replacing?: number; // Edit Again: saving replaces this entry instead of adding one
 }

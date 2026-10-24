@@ -57,16 +57,16 @@ Snapmark lives in the menu bar as the corner-and-dot icon. It shows a Dock icon 
 
 In the editor, press a key to pick a tool. Press the same key again to cycle its tools; the top bar shows which one is active.
 
-The toolbar shows one icon per key: the tool that is on, with its key underneath. Dots under a key mean it holds more than one tool (the filled dot is the one that is on): press the key again for the next, and the icon changes with it. Hover an icon for its name.
+The toolbar shows one icon per key: the tool that is on, with its key underneath. The colour swatch beside the tools sets the colour of the next marks: ten presets, or **Custom…** for the macOS colour panel (Remove marks are always coral red, highlights yellow). The right side shows the session and how many screenshots it holds. Dots under a key mean it holds more than one tool (the filled dot is the one that is on): press the key again for the next, and the icon changes with it. Hover an icon for its name.
 
 | Key       | Tools                                                                                          |
 | --------- | ---------------------------------------------------------------------------------------------- |
 | `C`       | Select: move, resize or delete (`⌫`) any mark                                                  |
-| `1`       | Reference: click, then type its note in the panel → Card: a sticky note you type on            |
+| `1`       | Reference (a numbered diamond): click, then type its note in the panel → Card: a speech bubble |
 | `2`       | Box → Ellipse                                                                                  |
 | `3`       | Arrow                                                                                          |
 | `4`       | Pen (freehand)                                                                                 |
-| `5`       | Cross → Remove area (hatched), always red                                                      |
+| `5`       | Cross → Remove area (hatched), always coral red                                                |
 | `6`       | Highlighter → Spotlight (dims the rest)                                                        |
 | `7`       | Cut & move: drag around an element, then drag it where it should go → Redact (pixelates)       |
 | `Esc`     | Step back: out of the text, then deselect, then back to Select, then close                     |
@@ -78,7 +78,7 @@ The toolbar shows one icon per key: the tool that is on, with its key underneath
 
 The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Settings → Keyboard Shortcuts** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
 
-**Cards:** click to place one and start typing. To point at something, press on it and release where the card should sit; a line then follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
+**Cards** are yellow speech bubbles: click to place one and start typing. To point at something, press on it and release where the card should sit; the bubble's tail turns toward it and a line follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 
 Click the menu bar icon for the menu. It is built fresh each time it opens, and every item has an icon:
 

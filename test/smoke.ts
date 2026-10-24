@@ -124,7 +124,8 @@ app
     r['toolbar: key under each button, dots where a key has more tools'] = [...document.querySelectorAll('#tools .cap')].every((c, i) => { const g = GROUPS[i], d = c.querySelector('.dots')?.textContent ?? ''; return c.querySelector('kbd').textContent === g.key.toUpperCase() && (g.tools.length > 1 ? d.length === g.tools.length && d.split('●').length === 2 : d === ''); });
     pick('box');
     const tb = () => document.querySelector('#tools [data-group="2"]');
-    r['toolbar: active button has a soft grey tint'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(127, 127, 127');
+    r['toolbar: active button has a blue tint and a blue icon'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(36, 146, 255') && getComputedStyle(tb()).color === 'rgb(36, 146, 255)';
+    r['"Add to session" is brand blue'] = getComputedStyle(document.getElementById('save')).backgroundColor === 'rgb(36, 146, 255)';
     r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3)';
     key('2');
     r['toolbar: pressing the key again swaps the icon'] = tool() === 'ellipse' && tb().dataset.tool === 'ellipse';
@@ -132,6 +133,26 @@ app
     r['toolbar: click picks the tool'] = tool() === 'pen';
     r['keys: Arrow on 3, Pen on 4, crosses on 5'] = ['3:arrow', '4:pen', '5:cross'].every((k) => { const [key, id] = k.split(':'); return GROUPS.find((g) => g.key === key).tools[0].id === id; });
     r['no Tick, Thumbs up or Crossed box anywhere'] = !GROUPS.flatMap((g) => g.tools).some((t) => ['tick', 'thumb', 'xbox'].includes(t.id));
+    // Palette: ten presets and Custom…, the next mark takes the pick, Esc closes it and nothing else
+    const sw = document.getElementById('swatch'), pal = document.getElementById('palette');
+    const presets = [...document.querySelectorAll('#presets button')];
+    pick('box'); sw.click();
+    r['palette: the swatch opens ten presets, coral red picked, then Custom…'] = !pal.hidden && presets.length === 10 && presets[0].dataset.color === '#e5484d' && presets[0].getAttribute('aria-pressed') === 'true' && document.activeElement === presets[0] && !!pal.querySelector('.custom input[type="color"]') && pal.querySelector('.custom').textContent.trim() === 'Custom…';
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    r['palette: arrows move between the presets'] = document.activeElement === presets[5];
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    r['palette: Esc closes it, back on the swatch, the tool stays'] = pal.hidden && document.activeElement === sw && tool() === 'box';
+    sw.click(); presets.find((b) => b.title === 'Violet').click();
+    r['palette: a pick closes it and shows on the swatch'] = pal.hidden && sw.querySelector('i').style.background === 'rgb(139, 61, 255)';
+    drag(null, [[.7,.05],[.8,.15]]);
+    r['palette: the next mark uses the picked colour'] = canvas.getObjects().at(-1).stroke === '#8b3dff';
+    drag('5', [[.82,.05],[.9,.12]]);
+    r['palette: remove marks stay coral red'] = canvas.getObjects().at(-1).stroke === '#e5484d';
+    key('z', { metaKey: true }); key('z', { metaKey: true });
+    sw.click(); presets[0].click(); // back to coral red
+    r['toolbar shows the session name alone while it is empty, then the count'] = document.getElementById('session').textContent === 'smoke' && shotsLabel('Ledgerly Q4 review', 12) === 'Ledgerly Q4 review · 12 screenshots' && shotsLabel('s', 1) === 's · 1 screenshot';
+    const tail = bubbleTail(50, 20, { x: -200, y: -100 }, 2);
+    r['card: the bubble tail leaves the top edge toward its target; none when the target is inside'] = !!tail && tail[2].y < -20 && tail[2].x < tail[0].x && tail[0].y === -18 && bubbleTail(50, 20, { x: 10, y: 5 }, 2) === null;
     r['no "Numbered" in the editor'] = !/numbered marker|Numbered/.test(document.body.innerText + GROUPS.flatMap((g) => g.tools.map((t) => t.label + (t.tip ?? ''))).join(' '));
     // Sidebar (F7-F10): fields grow with their text; the buttons stay in view while the body scrolls
     const cap = document.getElementById('caption');
@@ -143,6 +164,7 @@ app
     setMd(ref1, ['line', 'line', 'line', 'line', 'line', 'a long reference note that wraps inside the sidebar more than once']); await sleep(50);
     r['reference note shows all its text'] = ref1.scrollHeight <= ref1.clientHeight + 1 && ref1.clientHeight > oneLine * 3;
     r['References shown once one exists'] = !document.getElementById('refs-label').hidden;
+    r['reference badge is a diamond in its marker colour'] = (() => { const s = getComputedStyle(document.querySelector('#refs .ref b'), '::before'); return s.backgroundColor === 'rgb(229, 72, 77)' && s.transform !== 'none'; })();
     setMd(ref1, Array(60).fill('x')); await sleep(50);
     const sb = document.getElementById('save').getBoundingClientRect();
     r['buttons stay in view while notes scroll'] = sb.bottom <= window.innerHeight && sb.top > 0 && document.querySelector('aside .body').scrollHeight > document.querySelector('aside .body').clientHeight;
@@ -262,7 +284,9 @@ app
     const unit = Math.max(2, Math.round(Math.max(shotSize.width, shotSize.height) / 400));
     const outSize = nativeImage.createFromPath(out).getSize();
     const k = outSize.width / shotSize.width; // saved image may be downscaled for AI
-    const [r1, g1, b1] = pixel(out, 0.5, 0.5, -unit * 6 * 0.6 * k); // left side of marker 1, beside its digit
+    const tip = unit * 8 * k; // a reference's centre-to-tip in the saved image
+    const red = ([r, g, b]: number[]) => r > 180 && g < 90 && b < 120;
+    const [r1, g1, b1] = pixel(out, 0.5, 0.5, -tip * 0.45); // left side of marker 1, beside its digit
     const pdf = await exportPdf(path.join(root, 'smoke'));
     const [r3, g3, b3] = pixel(out, 0.36, 0.7, unit * 2 * k, -unit * 2 * k); // card padding, above its text
     // The session viewer: session.md rendered with its image, editable, and screenshots one at a time
@@ -332,6 +356,8 @@ app
     const restored = JSON.parse(await inWin(again, counts));
     viewer['Edit Again restores references, cards, moves, comment and notes'] =
       JSON.stringify(restored) === JSON.stringify([3, 2, 1, 'Smoke test caption', 'Button is misaligned']);
+    viewer['Edit Again shows the session and its count'] =
+      (await inWin(again, `return document.getElementById('session').textContent`)) === 'smoke · 1 screenshot';
     viewer['Edit Again says it saves changes'] = (await inWin(again, `return document.getElementById('save').textContent`)).startsWith(
       'Save changes',
     );
@@ -386,7 +412,7 @@ app
     const gone = openEditor(path.join(root, 'discard.png'));
     await new Promise<void>((r) => gone.webContents.once('did-finish-load', () => r()));
     await loaded(gone);
-    await inWin(gone, `canvas.add(new Marker({ x: 50, y: 50 }, '#e11d48')); after();`);
+    await inWin(gone, `canvas.add(new Marker({ x: 50, y: 50 }, '#e5484d')); after();`);
     for (const key of ['Escape', 'Escape']) {
       gone.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
       await new Promise((r) => setTimeout(r, 200));
@@ -438,13 +464,16 @@ app
       })(),
       'prompt has no Tick or Thumbs up': !/Tick|Thumbs/.test(promptFor(root)),
       'prompt says Reference, not Numbered':
-        promptFor(root).includes('references (numbered circles)') && !/Numbered|numbered marker/.test(promptFor(root)),
+        promptFor(root).includes('references (numbered diamonds)') && !/Numbered|numbered marker/.test(promptFor(root)),
       'fits AI limits': Math.max(outSize.width, outSize.height) <= 1568 && outSize.width * outSize.height <= 1_150_000,
       'aspect kept': Math.abs(outSize.width / outSize.height - shotSize.width / shotSize.height) < 0.01,
       'small image untouched': fitForAI(big(800, 600)).equals(big(800, 600)),
       'large image shrunk':
         JSON.stringify(nativeImage.createFromBuffer(fitForAI(big(3000, 1000))).getSize()) === JSON.stringify({ width: 1568, height: 523 }),
       'marker drawn red': r1 > 180 && g1 < 90 && b1 < 120,
+      // A circle of the same size would cover the second point; a diamond's side passes inside it.
+      'marker is a diamond: red at its top tip, not beyond its side':
+        red(pixel(out, 0.5, 0.5, 0, -tip * 0.88)) && !red(pixel(out, 0.5, 0.5, tip * 0.66, tip * 0.66)),
       'session.md path is absolute':
         sessionMdPath(path.join(root, 'smoke')) === path.resolve(root, 'smoke', 'session.md') && path.isAbsolute(sessionMdPath('rel')),
       'prompt points at session.md': promptFor(path.join(root, 'smoke')).includes(`"${path.join(root, 'smoke', 'session.md')}"`),

@@ -5,21 +5,33 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data:; style-src 'self' 'unsafe-inline'" />
     <title>Snapmark</title>
     <style>
+      /* Two colour systems: --accent (brand blue) is for the app's own controls only; marks use the annotation colour. */
       :root {
-        --bg: #f4f4f5;
-        --panel: #fff;
-        --ink: #18181b;
-        --muted: #71717a;
-        --line: #e4e4e7;
-        --accent: #e11d48;
+        color-scheme: light dark;
+        --bg: #ececee;
+        --panel: #f7f7f8;
+        --field: #fff;
+        --ink: #1d1d1f;
+        --muted: #6e6e73;
+        --line: rgb(0 0 0 / 0.1);
+        --hover: rgb(0 0 0 / 0.05);
+        --accent: #2492ff;
+        --accent-tint: rgb(36 146 255 / 0.14);
+        --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+        --lift: 0 10px 30px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.06);
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #18181b;
-          --panel: #232327;
-          --ink: #f4f4f5;
-          --muted: #a1a1aa;
-          --line: #3f3f46;
+          --bg: #1c1c1e;
+          --panel: #262628;
+          --field: #313134;
+          --ink: #f5f5f7;
+          --muted: #98989d;
+          --line: rgb(255 255 255 / 0.1);
+          --hover: rgb(255 255 255 / 0.07);
+          --accent-tint: rgb(36 146 255 / 0.24);
+          --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+          --lift: 0 10px 30px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.1);
         }
       }
       * {
@@ -37,25 +49,35 @@
         background: var(--bg);
         color: var(--ink);
       }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
       header {
         grid-column: 1 / -1;
         /* One line, always: a wrapping toolbar would shift the canvas under the pointer when tool labels change. */
         overflow-x: auto;
         display: flex;
-        gap: 6px;
+        gap: 8px;
         align-items: center;
         padding: 8px 12px;
         border-bottom: 1px solid var(--line);
         background: var(--panel);
       }
-      header button {
+      header button,
+      .actions button {
         font: inherit;
         padding: 5px 10px;
         border: 1px solid var(--line);
-        border-radius: 6px;
-        background: transparent;
+        border-radius: 8px;
+        background: var(--field);
+        box-shadow: var(--shadow);
         color: inherit;
         cursor: pointer;
+      }
+      header button:hover:not(:disabled),
+      .actions button:hover {
+        background-image: linear-gradient(var(--hover), var(--hover));
       }
       header button:disabled {
         opacity: 0.4;
@@ -63,7 +85,9 @@
       }
       #tools {
         display: flex;
-        gap: 4px;
+        gap: 2px;
+        padding-right: 8px;
+        border-right: 1px solid var(--line);
       }
       #tools .group {
         display: flex;
@@ -92,16 +116,19 @@
       #tools button {
         display: grid;
         place-items: center;
-        width: 32px;
+        width: 34px;
         height: 30px;
         padding: 0;
         border-color: transparent;
+        background: transparent;
+        box-shadow: none;
       }
       #tools button:hover {
-        background: rgb(127 127 127 / 0.12);
+        background: var(--hover);
       }
       #tools button[aria-pressed='true'] {
-        background: rgb(127 127 127 / 0.22);
+        background: var(--accent-tint);
+        color: var(--accent);
       }
       #tools svg {
         width: 18px;
@@ -112,22 +139,96 @@
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      header kbd {
-        opacity: 0.6;
+      header kbd,
+      .actions kbd {
+        color: var(--muted);
         font-size: 11px;
         margin-left: 4px;
       }
       header .session {
         margin-left: auto;
+        padding-left: 12px;
+        white-space: nowrap;
         color: var(--muted);
       }
-      input[type='color'] {
-        width: 30px;
+      /* The annotation colour: a swatch, and a popover of presets with Custom… (the macOS colour panel). */
+      #swatch {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 30px;
+        padding: 0;
+      }
+      #swatch i {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15);
+      }
+      #palette {
+        position: fixed; /* the header scrolls sideways, so a popover inside it would be clipped */
+        z-index: 10;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--field);
+        box-shadow: var(--lift);
+      }
+      #presets {
+        display: grid;
+        grid-template-columns: repeat(5, 28px);
+        gap: 10px;
+      }
+      #presets button {
+        width: 28px;
         height: 28px;
         padding: 0;
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: none;
+        border: 0;
+        border-radius: 50%;
+        background-color: currentColor;
+        cursor: pointer;
+        outline-offset: 4px;
+      }
+      #presets button[aria-pressed='true'] {
+        box-shadow:
+          0 0 0 2px var(--field),
+          0 0 0 4px currentColor;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 12.5l3.2 3.2L17 9' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      }
+      #palette hr {
+        margin: 12px 0 6px;
+        border: 0;
+        border-top: 1px solid var(--line);
+      }
+      #palette .custom {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px;
+        border-radius: 8px;
+        font-weight: 400;
+        cursor: pointer;
+      }
+      #palette .custom:hover {
+        background: var(--hover);
+      }
+      #palette .custom:has(input:focus-visible) {
+        outline: 2px solid var(--accent);
+      }
+      /* Reached by Tab and by a click on its label; the colour panel it opens is the visible part. */
+      #palette .custom input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #palette .ring {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: conic-gradient(#e5484d, #ffb224, #30a46c, #05a2c2, #2492ff, #8b3dff, #ef28a7, #e5484d);
+        mask: radial-gradient(circle, transparent 8px, #000 9px);
       }
       main {
         overflow: hidden;
@@ -136,7 +237,9 @@
         padding: 16px;
       }
       .canvas-container {
-        box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+        box-shadow:
+          0 1px 3px rgb(0 0 0 / 0.1),
+          0 8px 30px rgb(0 0 0 / 0.12);
       }
       /* The notes scroll; Discard and "Add to session" stay in view below them. */
       aside {
@@ -166,14 +269,16 @@
         position: relative;
         width: 100%;
         min-height: 2.2em;
-        padding: 6px 8px;
+        padding: 7px 10px;
         border: 1px solid var(--line);
-        border-radius: 6px;
-        background: var(--bg);
+        border-radius: 8px;
+        background: var(--field);
+        box-shadow: var(--shadow);
         cursor: text;
       }
       .md:focus-within {
         border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-tint);
       }
       .md[data-empty='true']::before {
         content: attr(data-placeholder);
@@ -235,16 +340,26 @@
         gap: 6px;
         align-items: start;
       }
+      /* The marker's diamond, in the marker's colour (--mark, set per row). */
       .ref b {
+        position: relative;
+        z-index: 0;
         display: grid;
         place-items: center;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: var(--accent);
+        width: 24px;
+        height: 24px;
+        margin-top: 5px;
         color: #fff;
         font-size: 12px;
-        margin-top: 4px;
+      }
+      .ref b::before {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        z-index: -1;
+        border-radius: 4px;
+        background: var(--mark);
+        transform: rotate(45deg);
       }
       .actions {
         display: flex;
@@ -254,30 +369,41 @@
       }
       .actions button {
         flex: 1;
-        font: inherit;
         padding: 8px;
-        border-radius: 6px;
-        border: 1px solid var(--line);
-        background: transparent;
-        color: inherit;
-        cursor: pointer;
       }
       .actions .primary {
-        background: var(--accent);
+        background-color: var(--accent);
         border-color: var(--accent);
         color: #fff;
         font-weight: 600;
+      }
+      .actions .primary kbd {
+        color: inherit;
       }
     </style>
   </head>
   <body>
     <header>
       <span id="tools"></span>
-      <input type="color" id="color" value="#e11d48" title="Color" />
+      <button
+        id="swatch"
+        title="Annotation colour"
+        aria-label="Annotation colour"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="palette"
+      >
+        <i></i>
+      </button>
       <button id="undo" disabled>Undo<kbd>⌘Z</kbd></button>
       <button id="redo" disabled>Redo<kbd>⇧⌘Z</kbd></button>
       <span class="session" id="session"></span>
     </header>
+    <div id="palette" role="dialog" aria-label="Annotation colour" hidden>
+      <div id="presets"></div>
+      <hr />
+      <label class="custom"><input type="color" id="color" value="#e5484d" /><i class="ring"></i>Custom…</label>
+    </div>
     <main><canvas id="canvas"></canvas></main>
     <aside>
       <div class="body">
