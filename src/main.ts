@@ -4,6 +4,7 @@ import {
   Tray,
   Menu,
   clipboard,
+  ClipboardItem,
   dialog,
   globalShortcut,
   ipcMain,
@@ -164,6 +165,9 @@ function shoot(args: string[]) {
 
 // -i: interactive region (space toggles window mode)
 const capture = () => shoot(['-i']);
+// -w: only windows, so a click takes the window under the pointer; -o: without its shadow, a clean crop to the window's
+// edges (the shadow is transparent padding the marks and the AI do not need)
+const captureWindow = () => shoot(['-i', '-w', '-o']);
 
 let picking = false;
 
@@ -405,6 +409,36 @@ function tellEditors(into: string, name: string) {
       ed.win.webContents.send('editor:session', name, sessions.count(into, name));
     }
 }
+
+// Out of the owner's sight, and swapped by the smoke test, which must not touch the clipboard or wait on a dialog.
+export const desk = {
+  copyImage: (png: Buffer) => clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(png)], { type: 'image/png' }) })]),
+  savePath: (win: BrowserWindow, opts: Electron.SaveDialogOptions) => dialog.showSaveDialog(win, opts),
+};
+
+// Copy Image and Save As…: the image exactly as Add to session would save it, without adding it to the session.
+ipcMain.handle('editor:copy', async (e, png: string) => {
+  editorFor(e.sender.id);
+  await desk.copyImage(fitForAI(Buffer.from(png, 'base64')));
+  notify('Marked-up image copied. It is not in the session.');
+});
+
+ipcMain.handle('editor:saveAs', async (e, png: string): Promise<string | null> => {
+  const { root: into, session, replace, win } = editorFor(e.sender.id);
+  const { canceled, filePath } = await desk.savePath(win, {
+    defaultPath: sessions.saveAsName(into, session, replace), // a bare name: macOS opens the folder used last
+    filters: [{ name: 'PNG image', extensions: ['png'] }],
+  });
+  if (canceled || !filePath) return null;
+  try {
+    fs.writeFileSync(filePath, fitForAI(Buffer.from(png, 'base64')));
+  } catch (err) {
+    notify(`Couldn't save ${path.basename(filePath)}: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
+  notify(`Saved ${path.basename(filePath)}. It is not in the session.`, () => shell.showItemInFolder(filePath));
+  return filePath;
+});
 
 ipcMain.on('editor:dirty', (e, value: boolean) => {
   const ed = editors.get(e.sender.id);
@@ -718,6 +752,8 @@ function showShortcuts() {
     ['⌘Z', 'Undo', 'in a note, its typing first, then the marks'],
     ['⇧⌘Z', 'Redo', ''],
     ['⌘↵', 'Add to session', ''],
+    ['⇧⌘C', 'Copy Image', 'the marked-up image, without adding it to the session'],
+    ['⇧⌘S', 'Save As…', 'the marked-up image as a PNG wherever you pick, without adding it to the session'],
     ['⌘W', 'Discard', 'the screenshot; Reopen Last Discarded in the menu brings it back'],
     ['← →', 'Flip screenshots', 'in the session window, one at a time; Esc goes back to the grid'],
   ]
@@ -738,6 +774,7 @@ const actions: MenuActions = {
   capture,
   captureArea: () => void captureArea(),
   chooseArea: () => void captureArea(true),
+  captureWindow,
   captureScrolling: () => void captureScrolling(),
   newSession,
   copyPrompt: (name) => {

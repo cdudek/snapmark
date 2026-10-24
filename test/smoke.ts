@@ -25,8 +25,17 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath, pickArea, scrollCapture } =
+const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath, pickArea, scrollCapture, desk } =
   require('../src/main') as typeof import('../src/main');
+// Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
+let copied: Buffer | null = null;
+let offered = '';
+const savedAs = path.join(root, 'saved-as.png');
+desk.copyImage = async (png) => void (copied = png);
+desk.savePath = async (_win, opts) => {
+  offered = opts.defaultPath ?? '';
+  return { canceled: false, filePath: savedAs };
+};
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -277,10 +286,18 @@ app
     win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
     fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
+    // Copy Image (⇧⌘C, from inside the note) and Save As… (its button): the image Add to session saves, and no entry
+    await win.webContents.executeJavaScript(
+      `document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
+    );
+    await win.webContents.executeJavaScript(`document.getElementById('save-as').click()`);
+    for (let i = 0; i < 30 && !(copied && fs.existsSync(savedAs)); i++) await new Promise((r) => setTimeout(r, 100));
+    const notAdded = sessions.count(root, 'smoke') === 0;
     await win.webContents.executeJavaScript(`document.getElementById('save').click()`);
     await new Promise((r) => setTimeout(r, 800));
     const md = fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8');
     const out = path.join(root, 'smoke', 'img', '001.png');
+    const added = fs.existsSync(out) ? fs.readFileSync(out) : Buffer.alloc(0); // Edit Again replaces it further down
     const unit = Math.max(2, Math.round(Math.max(shotSize.width, shotSize.height) / 400));
     const outSize = nativeImage.createFromPath(out).getSize();
     const k = outSize.width / shotSize.width; // saved image may be downscaled for AI
@@ -545,6 +562,10 @@ app
       'card drawn yellow': r3 > 235 && g3 > 225 && b3 > 150 && b3 < 225,
       'pdf exported': fs.readFileSync(pdf).subarray(0, 5).toString() === '%PDF-' && fs.statSync(pdf).size > 20_000,
       'image saved': fs.existsSync(out),
+      'Copy Image and Save As… add nothing to the session': notAdded,
+      'Copy Image (⇧⌘C) copies the image Add to session saves': !!copied && copied.equals(added),
+      'Save As… writes the image Add to session saves': fs.existsSync(savedAs) && fs.readFileSync(savedAs).equals(added),
+      'Save As… suggests the entry it would become': offered === 'smoke 001.png',
       'mock is not blank': pixel(shotCopy, 0.02, 0.02).join() !== pixel(shotCopy, 0.5, 0.5).join(),
       'prompt explains every mark': (() => {
         const p = promptFor(root);

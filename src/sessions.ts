@@ -100,6 +100,11 @@ export function shortName(name: string): string {
   return m ? `${Number(m[2])} ${MONTHS[Number(m[1]) - 1]} ${m[3]}${m[4] ?? ''}` : name;
 }
 
+// Save As…'s suggested file name, after the entry the screenshot would become (n, or the next one): "Ledgerly Q4 review 013.png".
+export function saveAsName(root: string, name: string, n?: number): string {
+  return `${shortName(name)} ${pad(n ?? nextNumber(path.join(root, name)))}.png`;
+}
+
 // Renames the folder and the session.md title. Returns the new name, or null if it is empty, unchanged or taken.
 export function rename(root: string, from: string, to: string): string | null {
   const name = to.trim().replace(/[/:]/g, '-');

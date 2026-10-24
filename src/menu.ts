@@ -26,6 +26,7 @@ export interface MenuActions {
   capture(): void;
   captureArea(): void;
   chooseArea(): void;
+  captureWindow(): void;
   captureScrolling(): void;
   reopenLast(): void;
   reopenDiscarded(): void;
@@ -93,6 +94,8 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
       ...icon('choose'),
       submenu: [
         { label: 'Choose New Area…', click: () => a.chooseArea() },
+        // Click one window: cropped to its edges, without the shadow macOS draws around it.
+        { label: 'Capture Window…', click: () => a.captureWindow() },
         // Not the default, so no global shortcut (owner, 2026-10-25): drag an area, scroll it, and get one tall screenshot.
         { label: 'Capture Scrolling…', click: () => a.captureScrolling() },
       ],

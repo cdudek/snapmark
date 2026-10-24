@@ -68,6 +68,8 @@ interface Window {
     onScrollStatus(cb: (status: ScrollStatus) => void): void;
     init(): Promise<EditorInit>;
     save(data: EditorSave): Promise<number>;
+    copyImage(png: string): Promise<void>; // base64 PNG to the clipboard, not into the session
+    saveImageAs(png: string): Promise<string | null>; // base64 PNG to a file the owner picks; null when cancelled
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
     stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
     onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
