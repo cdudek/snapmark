@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Capture Scrolling</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        user-select: none;
+        font:
+          13px -apple-system,
+          system-ui,
+          sans-serif;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-sizing: border-box;
+        padding: 0 8px 0 14px;
+        border-radius: 10px;
+        background: rgb(0 0 0 / 0.8);
+        color: #fff;
+      }
+      #what {
+        flex: 1;
+      }
+      #count {
+        display: block;
+        font:
+          11px ui-monospace,
+          monospace;
+        color: rgb(255 255 255 / 0.7);
+      }
+      #count.warn {
+        color: #ffb224;
+      }
+      button {
+        font: inherit;
+        padding: 5px 12px;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #fff;
+        background: rgb(255 255 255 / 0.15);
+      }
+      #done {
+        background: #2492ff;
+        font-weight: 600;
+      }
+      button:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="what">Scroll down, then Done<span id="count">Starting…</span></div>
+    <button id="cancel" title="Esc">Cancel</button>
+    <button id="done" title="↩">Done ↩</button>
+    <script src="scroll.js"></script>
+  </body>
+</html>

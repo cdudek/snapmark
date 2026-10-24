@@ -919,11 +919,16 @@ redoBtn.onclick = redo;
 saveBtn.onclick = () => void save();
 $<HTMLButtonElement>('cancel').onclick = () => window.close();
 
-// Backing store at the screenshot's full resolution, displayed scaled down to fit the window.
+// Backing store at the screenshot's full resolution, displayed scaled down to fit the window. An image so tall that
+// fitting it whole would show it at under half its real size (Capture Scrolling) fits the width and scrolls instead.
 function fit() {
   if (!background) return;
   const [w, h] = [background.width, background.height];
-  const k = Math.min(1, (mainEl.clientWidth - 32) / w, (mainEl.clientHeight - 32) / h);
+  const kw = Math.min(1, (mainEl.clientWidth - 32) / w);
+  const whole = Math.min(kw, (mainEl.clientHeight - 32) / h);
+  const tall = whole * devicePixelRatio < 0.5;
+  const k = tall ? kw : whole;
+  Object.assign(mainEl.style, { overflowY: tall ? 'auto' : '', alignItems: tall ? 'start' : '' });
   canvas.setDimensions({ width: `${w * k}px`, height: `${h * k}px` }, { cssOnly: true });
   canvas.calcOffset(); // Fabric caches the canvas position; without this, clicks land offset after a resize
 }
@@ -940,7 +945,8 @@ window.snapmark.init().then(async ({ src, session, count, state, replacing }) =>
   captionField = await MdNotes.mount($('caption'), state?.caption ?? '', { placeholder: 'Add a comment…', onChange: markDirty });
   background = await fabric.FabricImage.fromURL(src);
   background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });
-  unit = Math.max(2, Math.round(Math.max(background.width, background.height) / 400));
+  // A tall scrolling capture counts as twice its width high: the strokes suit the part in view, not the whole page.
+  unit = Math.max(2, Math.round(Math.max(background.width, Math.min(background.height, 2 * background.width)) / 400));
   canvas.setDimensions({ width: background.width, height: background.height });
   canvas.backgroundImage = background;
   canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);

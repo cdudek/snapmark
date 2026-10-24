@@ -1,8 +1,10 @@
-// Renderer script for area.html (classic script, like editor.ts): drag out the area Capture Last Area keeps capturing.
+// Renderer script for area.html (classic script, like editor.ts): drag out the area Capture Last Area keeps capturing,
+// or the one Capture Scrolling grabs while the owner scrolls (area.html#scroll).
 // Wrapped in a function so its names stay out of editor.ts's scope.
 (() => {
   const el = (id: string) => document.getElementById(id)!;
   const [hint, box, size] = [el('hint'), el('box'), el('size')];
+  if (location.hash === '#scroll') hint.textContent = 'Drag over the part that scrolls, then scroll it. Esc cancels.';
   let start: { x: number; y: number } | null = null;
   let area: Area | null = null;
 
