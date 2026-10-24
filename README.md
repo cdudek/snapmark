@@ -92,7 +92,7 @@ Click the menu bar icon for the menu. It is built fresh each time it opens, and 
   - **Rename Session…**, **Show Session in Finder**, and **Export Session** ▸ PDF or ZIP (see below; shown once the session has a screenshot).
 - **Switch Session** ▸ lists sessions by last use; click one to make it current. **Other Session…** reaches any beyond the 20 shown.
 - **New Session** (⌃⇧2) starts a new session; while the current one is still empty, it keeps using that one.
-- **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Keyboard Shortcuts, Check for Updates… (with the version under it). **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
+- **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Clear Sessions Older Than 60 Days… (asks first, moves them to the Trash; never the current session or one that is open), Keyboard Shortcuts, Check for Updates… (with the version under it). **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
 
 Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.
 

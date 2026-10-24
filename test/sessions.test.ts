@@ -102,4 +102,11 @@ assert.ok(fs.existsSync(path.join(kept, 'image.png')) && fs.existsSync(path.join
 fs.mkdirSync(path.join(root, '.discarded', 'stray'));
 assert.strictEqual(sessions.discarded(root, Date.now() + 8 * 86_400_000).length, 0);
 assert.deepStrictEqual(fs.readdirSync(path.join(root, '.discarded')), [], 'old and stray folders are deleted');
+// olderThan: by the later of last use and session.md's last change
+const stale = sessions.create(root, 'stale');
+const day = 86_400_000;
+fs.utimesSync(path.join(root, stale, 'session.md'), new Date(Date.now() - 90 * day), new Date(Date.now() - 90 * day));
+assert.ok(sessions.olderThan(root, 60, {}).includes(stale), 'untouched for 90 days');
+assert.ok(!sessions.olderThan(root, 60, { [stale]: Date.now() - 10 * day }).includes(stale), 'used 10 days ago');
+assert.ok(!sessions.olderThan(root, 60, {}).includes(a), 'just written');
 console.log('sessions: ok');

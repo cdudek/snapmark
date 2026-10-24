@@ -100,6 +100,12 @@ export function rename(root: string, from: string, to: string): string | null {
   return name;
 }
 
+// Sessions untouched for `days`: the later of their last use in Snapmark and session.md's last change.
+export function olderThan(root: string, days: number, used: Record<string, number>, now = Date.now()): string[] {
+  const cutoff = now - days * 86_400_000;
+  return list(root).filter((n) => Math.max(used[n] ?? 0, fs.statSync(path.join(root, n, 'session.md')).mtimeMs) < cutoff);
+}
+
 // Most recently used first; sessions never used keep list()'s newest-first order after them.
 export function byLastUse(names: string[], used: Record<string, number>): string[] {
   return [...names].sort((a, b) => (used[b] ?? 0) - (used[a] ?? 0));

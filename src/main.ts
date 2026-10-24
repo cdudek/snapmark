@@ -99,6 +99,33 @@ async function chooseRoot() {
   saveState();
 }
 
+const OLD_DAYS = 60;
+
+// Settings → Clear Sessions Older Than 60 Days…: asks first, then moves them to the Trash, so a mistake can be undone
+// in Finder. The current session and any session open in a window are never cleared.
+async function clearOldSessions() {
+  const open = new Set([...editors.values(), ...viewers.values()].filter((w) => w.root === root).map((w) => w.session));
+  const old = sessions.olderThan(root, OLD_DAYS, used).filter((n) => n !== active && !open.has(n));
+  app.focus({ steal: true });
+  if (!old.length) return notify(`No session is older than ${OLD_DAYS} days.`);
+  const shown = old.slice(0, 10).map(sessions.shortName).join('\n') + (old.length > 10 ? `\n… and ${old.length - 10} more` : '');
+  const { response } = await dialog.showMessageBox({
+    type: 'warning',
+    message: `Move ${old.length} session${old.length === 1 ? '' : 's'} not used for ${OLD_DAYS} days to the Trash?`,
+    detail: shown,
+    buttons: ['Move to Trash', 'Cancel'],
+    defaultId: 1,
+    cancelId: 1,
+  });
+  if (response !== 0) return;
+  for (const n of old) {
+    await shell.trashItem(dirOf(n));
+    delete used[n];
+  }
+  saveState();
+  notify(`Moved ${old.length} old session${old.length === 1 ? '' : 's'} to the Trash.`);
+}
+
 const tilde = (p: string) => (p.startsWith(os.homedir()) ? `~${p.slice(os.homedir().length)}` : p);
 
 function notify(body: string, onClick?: () => void) {
@@ -564,6 +591,7 @@ const actions: MenuActions = {
   makeCurrent: setActive,
   otherSession: () => void otherSession(),
   chooseRoot: () => void chooseRoot(),
+  clearOldSessions: () => void clearOldSessions(),
   setLogin: (checked) => app.setLoginItemSettings({ openAtLogin: checked }),
   keyboardShortcuts: showShortcuts,
   checkUpdates: () => void checkForUpdatesNow(),
