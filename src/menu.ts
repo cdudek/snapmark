@@ -17,7 +17,7 @@ export interface MenuState {
   canUpdate: boolean;
   updateWaiting: string | null; // version downloaded and ready to install
   shortcuts: { capture: string | null; area: string | null; newSession: string | null }; // null = not registered
-  area: Area | null; // what Capture Same Area captures; null until the first time
+  area: Area | null; // what Capture Last Area captures; null until the first time
   iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
   hasDiscarded: boolean; // something closed without saving, or removed, in the last 7 days
 }
@@ -64,54 +64,73 @@ function shortcut(label: string, accelerator: string | null, click: () => void):
 
 const plural = (n: number) => `${n} screenshot${n === 1 ? '' : 's'}`;
 
-// Every label names what it acts on; the current session's actions sit under its header (owner, 2026-09-26).
-// Icons are template images, so macOS tints them for light and dark menus.
+// Grouped as the owner drew it (2026-10-24): capture on top, the current session's everyday actions next,
+// everything else about sessions under Session. Icons are template images, so macOS tints them for light and dark menus.
 export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
   const icon = (n: string) => (st.iconDir ? { icon: `${st.iconDir}/menu-${n}Template.png` } : {});
   const cur = st.current;
   const on = !!cur;
   const name = cur?.name ?? '';
+  // A header line plus a greyed line under it: plain text, not something to click.
+  const heading = (title: string, line: string | null): Item[] => [
+    { label: title, type: 'header' },
+    ...(line ? [{ label: line, enabled: false }] : []),
+  ];
   return [
     ...(st.updateWaiting ? [{ label: `Restart to Update to ${st.updateWaiting}`, ...icon('update'), click: () => a.installUpdate() }] : []),
-    { ...shortcut('Capture Screenshot', st.shortcuts.capture, () => a.capture()), ...icon('capture') },
+    ...(cur
+      ? heading('Adding screenshots to', `${cur.label}${cur.count ? ` · ${plural(cur.count)}` : ''}`)
+      : heading('No Session Yet', null)),
+    { ...shortcut('Capture Screenshot…', st.shortcuts.capture, () => a.capture()), ...icon('capture') },
     {
-      ...shortcut('Capture Same Area', st.shortcuts.area, () => a.captureArea()),
+      ...shortcut('Capture Last Area', st.shortcuts.area, () => a.captureArea()),
       sublabel: st.area ? `${st.area.width} × ${st.area.height}` : 'First time: drag the area',
       ...icon('area'),
     },
-    { label: 'Choose New Area…', visible: !!st.area, click: () => a.chooseArea(), ...icon('choose') },
-    // Shown only when there is something to bring back.
-    { label: 'Reopen Last Discarded', visible: st.hasDiscarded, click: () => a.reopenLast(), ...icon('reopen') },
-    { label: 'Reopen Discarded…', visible: st.hasDiscarded, click: () => a.reopenDiscarded(), ...icon('finder') },
+    { label: 'Capture Options', ...icon('choose'), submenu: [{ label: 'Choose New Area…', click: () => a.chooseArea() }] },
     { type: 'separator' },
-    {
-      label: cur ? `Current Session: ${cur.label}${cur.count ? ` · ${plural(cur.count)}` : ''}` : 'No Session Yet',
-      type: 'header',
-    },
-    { label: 'Open Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
+    { label: 'Open Current Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
     { label: 'Copy Prompt for AI', enabled: on, ...icon('prompt'), click: () => a.copyPrompt(name) },
-    { label: 'Copy session.md Path', enabled: on, ...icon('path'), click: () => a.copyPath(name) },
-    { label: 'Rename Session…', enabled: on, ...icon('rename'), click: () => a.rename(name) },
-    { label: 'Show Session in Finder', enabled: on, ...icon('finder'), click: () => a.showInFinder(name) },
-    {
-      label: 'Export Session',
-      visible: !!cur?.count, // nothing to export from an empty session
-      ...icon('export'),
-      submenu: (['PDF', 'ZIP'] as const).map((kind) => ({ label: kind, click: () => a.exportAs(name, kind) })),
-    },
     { type: 'separator' },
     {
-      label: 'Switch Session',
+      label: 'Session',
       ...icon('switch'),
       submenu: [
-        ...st.sessions
-          .slice(0, MAX_LISTED)
-          .map((s): Item => ({ label: s.label, type: 'checkbox', checked: s.name === cur?.name, click: () => a.makeCurrent(s.name) })),
-        ...(st.sessions.length ? [{ type: 'separator' } as Item] : []),
-        { label: 'Other Session…', click: () => a.otherSession() },
+        ...heading('Current Session', cur?.label ?? 'None yet'),
+        { ...shortcut('New Session', st.shortcuts.newSession, () => a.newSession()), ...icon('new') },
+        {
+          label: 'Switch Session',
+          ...icon('switch'),
+          submenu: [
+            ...st.sessions
+              .slice(0, MAX_LISTED)
+              .map((s): Item => ({ label: s.label, type: 'checkbox', checked: s.name === cur?.name, click: () => a.makeCurrent(s.name) })),
+            ...(st.sessions.length ? [{ type: 'separator' } as Item] : []),
+            { label: 'Other Session…', click: () => a.otherSession() },
+          ],
+        },
+        { type: 'separator' },
+        { label: 'Rename Session…', enabled: on, ...icon('rename'), click: () => a.rename(name) },
+        {
+          label: 'Export Session',
+          visible: !!cur?.count, // nothing to export from an empty session
+          ...icon('export'),
+          submenu: (['PDF', 'ZIP'] as const).map((kind) => ({ label: kind, click: () => a.exportAs(name, kind) })),
+        },
+        { label: 'Show Session in Finder', enabled: on, ...icon('finder'), click: () => a.showInFinder(name) },
+        { label: 'Copy Session File Path', sublabel: 'session.md', enabled: on, ...icon('path'), click: () => a.copyPath(name) },
       ],
     },
-    { ...shortcut('New Session', st.shortcuts.newSession, () => a.newSession()), ...icon('new') },
+    // Shown only when there is something to bring back.
+    {
+      label: 'Discarded Screenshots',
+      visible: st.hasDiscarded,
+      ...icon('reopen'),
+      submenu: [
+        { label: 'Reopen Last Discarded', click: () => a.reopenLast() },
+        { label: 'Reopen Discarded…', click: () => a.reopenDiscarded() },
+      ],
+    },
     { type: 'separator' },
     {
       label: 'Settings',

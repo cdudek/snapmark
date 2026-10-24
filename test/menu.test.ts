@@ -23,7 +23,7 @@ const base: MenuState = {
   version: '0.2.0',
   canUpdate: true,
   updateWaiting: null,
-  shortcuts: { capture: 'Control+Shift+1', area: 'Control+Shift+3', newSession: 'Control+Shift+2' },
+  shortcuts: { capture: 'Control+Shift+1', area: 'Control+Shift+3', newSession: 'Control+Shift+N' },
   area: null,
   iconDir: '',
   hasDiscarded: false,
@@ -38,84 +38,95 @@ const find = (items: Item[], label: string) => {
 const sub = (i: Item) => i.submenu as Item[];
 const head = (items: Item[]) => items.find((i) => i.type === 'header')!;
 
-// Order and labels: every label names what it acts on (owner, 2026-09-26); two levels at most
+// Order and labels, as the owner drew it (2026-10-24): capture, the current session, then Session ▸ for the rest
 assert.deepStrictEqual(labels(menu()), [
-  'Capture Screenshot',
-  'Capture Same Area',
+  'Adding screenshots to',
+  '25 Sep 12.03 · 2 screenshots',
+  'Capture Screenshot…',
+  'Capture Last Area',
+  'Capture Options',
   '—',
-  'Current Session: 25 Sep 12.03 · 2 screenshots',
-  'Open Session',
+  'Open Current Session',
   'Copy Prompt for AI',
-  'Copy session.md Path',
-  'Rename Session…',
-  'Show Session in Finder',
-  'Export Session',
   '—',
-  'Switch Session',
-  'New Session',
+  'Session',
   '—',
   'Settings',
   'Quit Snapmark',
 ]);
-assert.strictEqual(
-  menu().findIndex((i) => i.type === 'header'),
-  6,
-  'the header follows the two Captures and the hidden Choose New Area and Reopen items, then a line',
-);
+assert.strictEqual(head(menu()).label, 'Adding screenshots to');
+assert.strictEqual(menu()[1].enabled, false, 'the session line is text, not an action');
 assert.strictEqual(find(menu(), 'Quit Snapmark').accelerator, 'Command+Q');
 const depth = (items: Item[]): number => Math.max(1, ...items.map((i) => (Array.isArray(i.submenu) ? 1 + depth(i.submenu) : 1)));
-assert.strictEqual(depth(menu()), 2, 'no submenu inside a submenu');
+assert.strictEqual(depth(menu()), 3, 'Session ▸ Switch Session ▸ is the deepest');
 
-// Discarded screenshots: two items under Capture, only when there is something to reopen
-assert.deepStrictEqual(labels(menu({ hasDiscarded: true })).slice(0, 5), [
-  'Capture Screenshot',
-  'Capture Same Area',
-  'Reopen Last Discarded',
-  'Reopen Discarded…',
-  '—',
-]);
-find(menu({ hasDiscarded: true }), 'Reopen Last Discarded').click!({} as never, undefined, {} as never);
+// Discarded Screenshots: a submenu before Settings, only when there is something to reopen
+assert.deepStrictEqual(labels(menu({ hasDiscarded: true })).slice(-4), ['Discarded Screenshots', '—', 'Settings', 'Quit Snapmark']);
+const disc = sub(find(menu({ hasDiscarded: true }), 'Discarded Screenshots'));
+find(disc, 'Reopen Last Discarded').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'reopenLast');
-find(menu({ hasDiscarded: true }), 'Reopen Discarded…').click!({} as never, undefined, {} as never);
+find(disc, 'Reopen Discarded…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'reopenDiscarded');
 
-// Capture Same Area: says the first press asks for the area; once there is one, shows its size and offers another
-const same = find(menu(), 'Capture Same Area');
-assert.strictEqual(same.accelerator, 'Control+Shift+3');
-assert.strictEqual(same.sublabel, 'First time: drag the area');
-assert.strictEqual(find(menu(), 'Choose New Area…').visible, false);
+// Capture Last Area: says the first press asks for the area; once there is one, shows its size
+const last = find(menu(), 'Capture Last Area');
+assert.strictEqual(last.accelerator, 'Control+Shift+3');
+assert.strictEqual(last.sublabel, 'First time: drag the area');
 const withArea = menu({ area: { x: 10, y: 40, width: 1800, height: 1007 } });
-assert.strictEqual(find(withArea, 'Capture Same Area').sublabel, '1800 × 1007');
-assert.deepStrictEqual(labels(withArea).slice(0, 3), ['Capture Screenshot', 'Capture Same Area', 'Choose New Area…']);
-find(withArea, 'Capture Same Area').click!({} as never, undefined, {} as never);
+assert.strictEqual(find(withArea, 'Capture Last Area').sublabel, '1800 × 1007');
+find(withArea, 'Capture Last Area').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'captureArea');
-find(withArea, 'Choose New Area…').click!({} as never, undefined, {} as never);
+find(sub(find(menu(), 'Capture Options')), 'Choose New Area…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'chooseArea');
-assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, area: null } })[1].label, 'Capture Same Area (shortcut unavailable)');
+assert.strictEqual(find(menu(), 'Capture Screenshot…').accelerator, 'Control+Shift+1');
+assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, area: null } })[3].label, 'Capture Last Area (shortcut unavailable)');
 
-// Header: singular, no count when empty; without a session the session items are disabled
-assert.strictEqual(head(menu({ current: { name: 'x', label: 'x', count: 1 } })).label, 'Current Session: x · 1 screenshot');
-assert.strictEqual(head(menu({ current: { name: 'e', label: 'e', count: 0 } })).label, 'Current Session: e');
+// The session line: singular, no count when empty; without a session the session actions are disabled
+assert.strictEqual(menu({ current: { name: 'x', label: 'x', count: 1 } })[1].label, 'x · 1 screenshot');
+assert.strictEqual(menu({ current: { name: 'e', label: 'e', count: 0 } })[1].label, 'e');
 const none = menu({ current: null, sessions: [] });
 assert.strictEqual(head(none).label, 'No Session Yet');
-for (const l of ['Open Session', 'Copy Prompt for AI', 'Copy session.md Path', 'Rename Session…', 'Show Session in Finder'])
-  assert.strictEqual(find(none, l).enabled, false, l);
+assert.strictEqual(none[1].label, 'Capture Screenshot…');
+for (const l of ['Open Current Session', 'Copy Prompt for AI']) assert.strictEqual(find(none, l).enabled, false, l);
+for (const l of ['Rename Session…', 'Show Session in Finder', 'Copy Session File Path'])
+  assert.strictEqual(find(sub(find(none, 'Session')), l).enabled, false, l);
+find(menu(), 'Open Current Session').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'openFile:2026-09-25 12.03');
+
+// Session ▸: the current one's name, New and Switch, then what you do with it
+const ses = sub(find(menu(), 'Session'));
+assert.deepStrictEqual(labels(ses), [
+  'Current Session',
+  '25 Sep 12.03',
+  'New Session',
+  'Switch Session',
+  '—',
+  'Rename Session…',
+  'Export Session',
+  'Show Session in Finder',
+  'Copy Session File Path',
+]);
+assert.strictEqual(find(ses, 'New Session').accelerator, 'Control+Shift+N');
+assert.strictEqual(find(ses, 'Copy Session File Path').sublabel, 'session.md');
+find(ses, 'Copy Session File Path').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'copyPath:2026-09-25 12.03');
+find(ses, 'New Session').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'newSession');
 
 // Export is hidden, not disabled, while there is nothing to export
-assert.strictEqual(find(menu({ current: { name: 'e', label: 'e', count: 0 } }), 'Export Session').visible, false);
-find(sub(find(menu(), 'Export Session')), 'PDF').click!({} as never, undefined, {} as never);
+assert.strictEqual(find(sub(find(menu({ current: { name: 'e', label: 'e', count: 0 } }), 'Session')), 'Export Session').visible, false);
+find(sub(find(ses, 'Export Session')), 'PDF').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'exportAs:2026-09-25 12.03:PDF');
 
 // Switch Session: the list (current ticked, click switches), capped, then Other Session…
 const many = Array.from({ length: 25 }, (_, i) => ({ name: `s${i}`, label: `s${i}`, count: 1 }));
-const ss = sub(find(menu({ sessions: many }), 'Switch Session'));
+const ss = sub(find(sub(find(menu({ sessions: many }), 'Session')), 'Switch Session'));
 assert.strictEqual(ss.filter((i) => i.type === 'checkbox').length, MAX_LISTED);
 assert.deepStrictEqual(labels(ss).slice(-2), ['—', 'Other Session…']);
-const listed = sub(find(menu(), 'Switch Session'));
+const listed = sub(find(ses, 'Switch Session'));
 assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'makeCurrent:Old');
-assert.strictEqual(find(menu(), 'New Session').accelerator, 'Control+Shift+2');
 
 // Settings holds what Help used to: the shortcuts, and the version under Check for Updates (no Help menu, owner 2026-09-26)
 assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
@@ -136,12 +147,13 @@ assert.strictEqual(upd[0].label, 'Restart to Update to 0.4.2');
 upd[0].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'installUpdate');
 const off = menu({ shortcuts: { ...base.shortcuts, capture: null } });
-assert.strictEqual(off[0].label, 'Capture Screenshot (shortcut unavailable)');
-assert.strictEqual(off[0].accelerator, undefined);
+assert.strictEqual(off[2].label, 'Capture Screenshot… (shortcut unavailable)');
+assert.strictEqual(off[2].accelerator, undefined);
 
-// Icons: every top-level item except the header has one, and every icon file exists at 1x and 2x
-const withIcons = menu({ iconDir: path.join(__dirname, '../../assets'), updateWaiting: '1.0.0' });
-for (const i of withIcons.filter((x) => x.type !== 'separator' && x.type !== 'header')) {
+// Icons: every action at the top and in Session ▸ has one (headers and their text lines do not), and every file exists at 1x and 2x
+const withIcons = menu({ iconDir: path.join(__dirname, '../../assets'), updateWaiting: '1.0.0', hasDiscarded: true });
+const actions = (items: Item[]) => items.filter((x) => x.type !== 'separator' && x.type !== 'header' && x.enabled !== false);
+for (const i of [...actions(withIcons), ...actions(sub(find(withIcons, 'Session')))]) {
   assert.ok(typeof i.icon === 'string', `no icon for ${i.label}`);
   assert.ok(fs.existsSync(i.icon as string) && fs.existsSync((i.icon as string).replace('.png', '@2x.png')), `missing ${i.icon}`);
 }

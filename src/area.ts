@@ -1,4 +1,4 @@
-// Renderer script for area.html (classic script, like editor.ts): drag out the area Capture Same Area keeps capturing.
+// Renderer script for area.html (classic script, like editor.ts): drag out the area Capture Last Area keeps capturing.
 // Wrapped in a function so its names stay out of editor.ts's scope.
 (() => {
   const el = (id: string) => document.getElementById(id)!;

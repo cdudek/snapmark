@@ -30,7 +30,7 @@ interface ViewerInit {
   editable: number[]; // entries whose marks were kept, so Edit Again can reopen them
 }
 
-// A part of the screen in points, as `screencapture -R` takes it: global coordinates for Capture Same Area, window
+// A part of the screen in points, as `screencapture -R` takes it: global coordinates for Capture Last Area, window
 // coordinates when the area picker (area.html) sends it.
 interface Area {
   x: number;
