@@ -10,6 +10,8 @@ const api: Window['snapmark'] = {
   viewerExternal: () => ipcRenderer.send('viewer:external'),
   viewerRemove: (n) => ipcRenderer.invoke('viewer:remove', n),
   viewerEdit: (n) => ipcRenderer.send('viewer:edit', n),
+  viewerRename: (name) => ipcRenderer.invoke('viewer:rename', name),
+  viewerReopen: (dir) => ipcRenderer.invoke('viewer:reopen', dir),
   onViewerReload: (cb) => void ipcRenderer.on('viewer:reload', (_e, data: ViewerInit) => cb(data)),
   areaDone: (area) => ipcRenderer.send('area:done', area),
 };

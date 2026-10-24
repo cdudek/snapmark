@@ -5,21 +5,29 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data: file:; style-src 'self' 'unsafe-inline'" />
     <title>Snapmark</title>
     <style>
+      /* Two colour systems, never mixed: the app's own controls in brand blue, everything else neutral; numbers that
+         belong to marks in the annotation colour. */
       :root {
-        --bg: #f4f4f5;
+        color-scheme: light dark;
+        --bg: #f5f6f8;
         --panel: #fff;
-        --ink: #18181b;
-        --muted: #71717a;
-        --line: #e4e4e7;
-        --accent: #e11d48;
+        --bar: #f7f7f9;
+        --ink: #1d1d1f;
+        --muted: #6e6e73;
+        --line: #e3e3e8;
+        --soft: rgb(0 0 0 / 0.05);
+        --accent: #2492ff;
+        --annot: #e5484d;
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #18181b;
-          --panel: #232327;
-          --ink: #f4f4f5;
-          --muted: #a1a1aa;
-          --line: #3f3f46;
+          --bg: #1c1c1e;
+          --panel: #2a2a2d;
+          --bar: #262628;
+          --ink: #f5f5f7;
+          --muted: #98989d;
+          --line: #3a3a3d;
+          --soft: rgb(255 255 255 / 0.07);
         }
       }
       * {
@@ -37,26 +45,20 @@
         background: var(--bg);
         color: var(--ink);
       }
-      header {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        padding: 8px 12px;
-        border-bottom: 1px solid var(--line);
-        background: var(--panel);
+      [hidden] {
+        display: none !important;
       }
-      header h1 {
-        font-size: 13px;
-        margin: 0 auto 0 0;
-        font-weight: 600;
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
       button {
         font: inherit;
         font-size: 13px;
-        padding: 5px 10px;
+        padding: 5px 11px;
         border: 1px solid var(--line);
         border-radius: 6px;
-        background: transparent;
+        background: var(--panel);
         color: inherit;
         cursor: pointer;
       }
@@ -64,30 +66,137 @@
         opacity: 0.4;
         cursor: default;
       }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      /* Header: the traffic lights sit in it (titleBarStyle hiddenInset), so it drags the window */
+      header {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        height: 52px;
+        padding: 0 14px 0 84px;
+        border-bottom: 1px solid var(--line);
+        background: var(--bar);
+        -webkit-app-region: drag;
+      }
+      header button,
+      header input {
+        -webkit-app-region: no-drag;
+      }
+      header .icon {
+        width: 22px;
+        height: 22px;
+        flex: none;
+      }
+      .name {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        min-width: 0;
+      }
+      #title {
+        border: 0;
+        background: none;
+        padding: 3px 4px;
+        font-size: 15px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: text;
+      }
+      #pencil {
+        border: 0;
+        background: none;
+        padding: 3px;
+        color: var(--accent);
+        opacity: 0;
+        display: grid;
+      }
+      .name:hover #pencil,
+      #pencil:focus-visible {
+        opacity: 1;
+      }
+      #pencil svg {
+        width: 15px;
+        height: 15px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #rename {
+        font: inherit;
+        font-size: 15px;
+        width: 240px;
+        padding: 3px 6px;
+        border: 1px solid var(--accent);
+        border-radius: 5px;
+        outline: 3px solid rgb(36 146 255 / 0.35);
+        background: var(--panel);
+        color: inherit;
+      }
+      #rename::selection {
+        background: var(--accent);
+        color: #fff;
+      }
+      #hint {
+        position: absolute;
+        top: calc(100% + 1px);
+        left: 6px;
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      #hint.error {
+        color: var(--annot);
+      }
+      .name.editing #title,
+      .name.editing #pencil,
+      .name:not(.editing) #rename,
+      .name:not(.editing) #hint {
+        display: none;
+      }
+      #total {
+        color: var(--muted);
+        white-space: nowrap;
+        margin-right: auto;
+      }
       .tabs {
         display: flex;
-        border: 1px solid var(--line);
+        padding: 2px;
+        gap: 2px;
         border-radius: 7px;
-        overflow: hidden;
+        background: var(--soft);
       }
       .tabs button {
         border: 0;
-        border-radius: 0;
+        background: none;
+        padding: 4px 12px;
       }
       .tabs button[aria-pressed='true'] {
-        background: rgb(127 127 127 / 0.22);
+        background: var(--accent);
+        color: #fff;
       }
       main {
         overflow: auto;
       }
-      [hidden] {
-        display: none !important;
-      }
-      /* Document: session.md, rendered and editable (md-notes.js) */
-      #doc {
+      .page {
         max-width: 820px;
         margin: 0 auto;
         padding: 28px 32px 80px;
+      }
+      .page h2 {
+        font-size: 26px;
+        margin: 0 0 18px;
+      }
+      /* Document: session.md, rendered and editable (md-notes.js) */
+      #doc {
         line-height: 1.55;
       }
       #doc.md[data-empty='true']::before {
@@ -99,22 +208,27 @@
       }
       #doc img {
         max-width: 100%;
-        border-radius: 6px;
-        box-shadow: 0 1px 6px rgb(0 0 0 / 0.25);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
       }
       #doc h1 {
         font-size: 1.6em;
       }
       #doc h2 {
-        font-size: 1.15em;
-        margin-top: 2em;
+        font-size: 1.05em;
+        font-weight: 500;
+        margin: 2em 0 0.4em;
         color: var(--muted);
+      }
+      #doc ol > li::marker {
+        color: var(--annot); /* the note numbers match the numbers on the marks */
       }
       #doc code {
         font:
           0.92em ui-monospace,
           monospace;
-        background: rgb(127 127 127 / 0.18);
+        background: var(--soft);
         padding: 0 3px;
         border-radius: 3px;
       }
@@ -123,6 +237,112 @@
         padding-left: 12px;
         border-left: 3px solid var(--line);
         color: var(--muted);
+      }
+      /* Screenshots: a grid of thumbnails */
+      #grid-view {
+        padding: 28px 32px 60px;
+      }
+      #grid-view h2 {
+        font-size: 26px;
+        margin: 0 0 18px;
+      }
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+      }
+      .thumb {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+      .thumb:hover,
+      .thumb:focus-within {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+      }
+      .thumb .pic {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        border-bottom: 1px solid var(--line);
+        aspect-ratio: 16 / 10;
+        background: var(--bg);
+      }
+      .thumb .pic img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        display: block;
+      }
+      .thumb .edit,
+      .thumb .more {
+        position: absolute;
+        opacity: 0;
+      }
+      .thumb:hover .edit,
+      .thumb:hover .more,
+      .thumb:focus-within .edit,
+      .thumb:focus-within .more {
+        opacity: 1;
+      }
+      .thumb .edit {
+        top: 31%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 14px;
+        padding: 6px 16px;
+        box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+      }
+      .thumb .more {
+        top: 8px;
+        right: 8px;
+        padding: 0 8px 4px;
+        font-size: 16px;
+        line-height: 1;
+        font-weight: 700;
+      }
+      .thumb .label {
+        display: grid;
+        gap: 2px;
+        padding: 10px 12px 12px;
+      }
+      .thumb .heading {
+        font-size: 14px;
+      }
+      .thumb .notes {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .empty {
+        color: var(--muted);
+      }
+      .menu {
+        position: fixed;
+        padding: 4px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--panel);
+        box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+        z-index: 10;
+      }
+      .menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: none;
+      }
+      .menu button:hover,
+      .menu button:focus-visible {
+        background: var(--accent);
+        color: #fff;
+        outline: none;
       }
       /* Screenshots: one at a time */
       #shots {
@@ -150,37 +370,145 @@
         justify-content: center;
         padding: 10px;
         border-top: 1px solid var(--line);
-        background: var(--panel);
+        background: var(--bar);
+      }
+      #back {
+        margin-right: auto;
+      }
+      #shots .bar .end {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
       }
       #count {
         min-width: 110px;
         text-align: center;
         color: var(--muted);
       }
+      /* Discarded */
+      .quiet {
+        color: var(--muted);
+        margin: -10px 0 24px;
+        font-size: 15px;
+      }
+      .gone {
+        display: grid;
+        grid-template-columns: 300px 1fr auto;
+        gap: 24px;
+        align-items: start;
+        padding: 18px 0;
+        border-top: 1px solid var(--line);
+      }
+      .gone img {
+        width: 100%;
+        max-height: 190px;
+        object-fit: contain;
+        object-position: top left;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+      .gone .when {
+        color: var(--muted);
+        font-size: 15px;
+        margin-bottom: 6px;
+      }
+      .gone .what {
+        font-size: 15px;
+      }
+      .gone button {
+        font-size: 14px;
+        padding: 6px 22px;
+      }
     </style>
   </head>
   <body>
     <header>
-      <h1 id="title"></h1>
+      <svg class="icon" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="cool" x1="0" y1="0" x2=".85" y2="1">
+            <stop stop-color="#20F4EC" />
+            <stop offset=".45" stop-color="#2492FF" />
+            <stop offset="1" stop-color="#8B3DFF" />
+          </linearGradient>
+          <linearGradient id="pink" x1="0" y1="0" x2=".8" y2="1">
+            <stop stop-color="#FA6CFF" />
+            <stop offset="1" stop-color="#EF28A7" />
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1c20" />
+        <g transform="translate(14 14) scale(.72)">
+          <path
+            d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63"
+            fill="none"
+            stroke="url(#cool)"
+            stroke-width="12"
+            stroke-linecap="round"
+          />
+          <rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#pink)" />
+        </g>
+      </svg>
+      <div class="name" id="name">
+        <button id="title" title="Rename"></button>
+        <button id="pencil" title="Rename" aria-label="Rename session">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" /></svg>
+        </button>
+        <input id="rename" aria-label="Session name" spellcheck="false" />
+        <div id="hint" role="status"></div>
+      </div>
+      <span id="total"></span>
       <div class="tabs">
         <button id="tab-doc" aria-pressed="true">Document</button>
         <button id="tab-shots" aria-pressed="false">Screenshots</button>
+        <button id="tab-discarded" aria-pressed="false" hidden>Discarded <span id="discarded-count"></span></button>
       </div>
       <button id="external" title="Open session.md in your Markdown app">Open in Markdown App</button>
     </header>
     <main>
-      <div id="doc"></div>
+      <div class="page" id="doc-page"><div id="doc"></div></div>
+      <section id="grid-view" hidden>
+        <h2>Screenshots</h2>
+        <div id="grid"></div>
+        <p class="empty" id="grid-empty">No screenshots yet. Capture one with ⌃⇧1.</p>
+      </section>
       <section id="shots" hidden>
         <div class="stage"><img id="shot" alt="" /></div>
         <div class="bar">
+          <button id="back" title="All screenshots (Esc)">‹ All Screenshots</button>
           <button id="prev" title="Previous (←)">←</button>
           <span id="count"></span>
           <button id="next" title="Next (→)">→</button>
-          <button id="edit" title="Open it in the editor with its marks">Edit Again</button>
-          <button id="remove">Remove from Session</button>
+          <span class="end">
+            <button id="edit" class="primary" title="Open it in the editor with its marks">Edit Again</button>
+            <button id="remove">Remove from Session</button>
+          </span>
         </div>
       </section>
+      <section class="page" id="discarded" hidden>
+        <h2>Discarded</h2>
+        <p class="quiet">Discarded screenshots are kept for 7 days.</p>
+        <div id="discarded-list"></div>
+      </section>
     </main>
+    <div class="menu" id="menu" role="menu" hidden><button id="menu-remove" role="menuitem">Remove from Session</button></div>
+    <template id="thumb-t">
+      <div class="thumb">
+        <button class="pic"><img alt="" loading="lazy" /></button>
+        <button class="edit primary" title="Open it in the editor with its marks">Edit Again</button>
+        <button class="more" title="More" aria-label="More" aria-haspopup="menu">…</button>
+        <div class="label"><span class="heading"></span><span class="notes"></span></div>
+      </div>
+    </template>
+    <template id="gone-t">
+      <div class="gone">
+        <img alt="" />
+        <div>
+          <div class="when"></div>
+          <div class="what"></div>
+        </div>
+        <button class="primary">Reopen</button>
+      </div>
+    </template>
     <script src="md-notes.js"></script>
     <script src="viewer.js"></script>
   </body>

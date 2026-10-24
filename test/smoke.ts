@@ -288,13 +288,22 @@ app
       `document.getElementById('doc').textContent.includes('Second shot')`,
     );
     viewer['the viewer edit survives the new screenshot'] = smokeMd().includes('viewer edit') && smokeMd().includes('Second shot');
+    viewer['header counts the screenshots'] = await waitFor(`document.getElementById('total').textContent === '· 2 screenshots'`);
     await inView(`document.getElementById('tab-shots').click(); document.activeElement.blur();`);
-    view.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Right' });
-    viewer['→ flips to the next screenshot'] = await waitFor(
-      `document.getElementById('count').textContent === '2 of 2' && document.getElementById('shot').src.endsWith('img/002.png')`,
+    viewer['the Screenshots grid has a thumbnail per screenshot, with heading and notes'] = await waitFor(
+      `[...document.querySelectorAll('#grid .thumb')].map((t) => t.querySelector('.notes').textContent).join() === '3 notes,No notes' && /^001 · \\d\\d:\\d\\d$/.test(document.querySelector('#grid .heading').textContent)`,
     );
-    await inView(`document.getElementById('remove').click();`);
-    viewer['Remove from Session takes it out'] = await waitFor(`document.getElementById('count').textContent === '1 of 1'`);
+    await inView(`document.querySelector('#grid .thumb .pic').click();`);
+    view.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Right' });
+    viewer['a thumbnail opens one at a time; → flips to the next screenshot'] = await waitFor(
+      `document.getElementById('count').textContent === '2 of 2' && document.getElementById('shot').src.includes('img/002.png')`,
+    );
+    view.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+    viewer['Esc goes back to the grid'] = await waitFor(
+      `!document.getElementById('grid-view').hidden && document.getElementById('shots').hidden`,
+    );
+    await inView(`document.querySelectorAll('#grid .thumb .more')[1].click(); document.getElementById('menu-remove').click();`);
+    viewer['Remove from Session (… menu) takes it out'] = await waitFor(`document.querySelectorAll('#grid .thumb').length === 1`);
     viewer['the removed screenshot is kept in .discarded'] =
       !smokeMd().includes('Second shot') &&
       fs.readdirSync(path.join(root, '.discarded')).some((d) => d.endsWith(' · smoke · screenshot 2'));
@@ -314,9 +323,9 @@ app
         `for (let i = 0; i < 50 && !(background && captionField); i++) await new Promise((r) => setTimeout(r, 100)); await new Promise((r) => setTimeout(r, 300));`,
       );
     const counts = `return JSON.stringify([markers().length, cards().length, canvas.getObjects().filter((o) => links.has(o)).length, captionField.value(), markers().map(noteOf)[0]])`;
-    viewer['Edit Again is offered for a saved screenshot'] = await waitFor(`!document.getElementById('edit').disabled`);
+    viewer['Edit Again is offered for a saved screenshot'] = await waitFor(`!document.querySelector('#grid .thumb .edit').hidden`);
     let windows = BrowserWindow.getAllWindows();
-    await inView(`document.getElementById('edit').click();`);
+    await inView(`document.querySelector('#grid .thumb .edit').click();`);
     const again = await nextWindow(windows);
     await new Promise<void>((r) => again.webContents.once('did-finish-load', () => r()));
     await loaded(again);
@@ -333,6 +342,43 @@ app
     for (let i = 0; i < 30 && !smokeMd().includes('Edited Smoke test caption'); i++) await new Promise((r) => setTimeout(r, 100));
     viewer['saving Edit Again replaces the entry in place'] =
       smokeMd().includes('Edited Smoke test caption') && JSON.stringify(sessions.shots(root, 'smoke')) === '[1]';
+    // Discarded tab: this session's removed screenshot, and Reopen puts it back
+    await inView(`document.getElementById('tab-discarded').click();`);
+    viewer['Discarded tab lists the removed screenshot'] = await waitFor(
+      `document.getElementById('discarded-count').textContent === '1' && document.querySelector('#discarded-list .what').textContent === 'Removed from session' && document.querySelector('#discarded-list .when').textContent.startsWith('Today, ')`,
+    );
+    await inView(`document.querySelector('#discarded-list button').click();`);
+    viewer['Reopen puts it back in the session'] =
+      (await waitFor(`document.getElementById('tab-discarded').hidden && document.querySelectorAll('#grid .thumb').length === 2`)) &&
+      smokeMd().includes('Second shot');
+    // Rename in place: ↩ saves (the folder moves, the window follows), a taken name keeps the field, Esc cancels
+    sessions.create(root, 'taken');
+    const rename = async (to: string, key: 'Return' | 'Escape') => {
+      await inView(`document.getElementById('title').click(); document.getElementById('rename').value = ${JSON.stringify(to)};`);
+      view.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+      await new Promise((r) => setTimeout(r, 300));
+    };
+    const fieldOpen = `getComputedStyle(document.getElementById('rename')).display !== 'none'`;
+    await inView(`document.getElementById('title').click();`);
+    viewer['clicking the title opens the name, selected'] = await inView(
+      `const f = document.getElementById('rename'); return ${fieldOpen} && document.activeElement === f && f.selectionStart === 0 && f.selectionEnd === 5 && f.value === 'smoke';`,
+    );
+    await rename('taken', 'Return');
+    viewer['a taken name says so and keeps the field'] =
+      (await inView(`return ${fieldOpen} && document.getElementById('hint').textContent.includes('already exists');`)) &&
+      fs.existsSync(path.join(root, 'smoke'));
+    await rename('smoke renamed', 'Escape');
+    viewer['Esc cancels the rename'] =
+      (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
+      !fs.existsSync(path.join(root, 'smoke renamed'));
+    await rename('smoke renamed', 'Return');
+    viewer['↩ renames the session folder and the window'] =
+      (await waitFor(`!(${fieldOpen}) && document.getElementById('title').textContent === 'smoke renamed'`)) &&
+      fs.existsSync(path.join(root, 'smoke renamed', 'session.md')) &&
+      !fs.existsSync(path.join(root, 'smoke')) &&
+      view.getTitle() === 'smoke renamed — Snapmark';
+    await rename('smoke', 'Return'); // back, for the checks below
+    viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     view.close();
 
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks

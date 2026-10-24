@@ -55,8 +55,15 @@ interface EditorWin {
   replace?: number;
 }
 const editors = new Map<number, EditorWin>();
-// Session viewers, keyed by webContents.id; known = the session.md text the window shows
-const viewers = new Map<number, { root: string; session: string; win: BrowserWindow; known: string }>();
+// Session windows, keyed by webContents.id; known = the session.md text the window shows
+interface Viewer {
+  root: string;
+  session: string;
+  win: BrowserWindow;
+  known: string;
+  watcher?: fs.FSWatcher;
+}
+const viewers = new Map<number, Viewer>();
 // The Dock icon shows while any Snapmark window is open. A new window turns it on only once it has focus: turned
 // on first, Snapmark becomes a Dock app while another app is full screen, and macOS slides to the desktop, leaving
 // the window behind on the full-screen Space (owner, 2026-09-28).
@@ -266,7 +273,10 @@ ipcMain.handle('editor:init', (e): EditorInit => {
 // Sent synchronously while the window unloads without a save, so the capture is kept before the window is gone.
 ipcMain.on('editor:stash', (e, state: EditState) => {
   const ed = editors.get(e.sender.id);
-  if (ed && fs.existsSync(ed.image)) sessions.discardCapture(ed.root, ed.session, ed.image, JSON.stringify(state));
+  if (ed && fs.existsSync(ed.image)) {
+    sessions.discardCapture(ed.root, ed.session, ed.image, JSON.stringify(state));
+    for (const v of viewers.values()) if (v.root === ed.root && v.session === ed.session) reloadViewer(v); // its Discarded tab
+  }
   e.returnValue = null;
 });
 
@@ -310,24 +320,22 @@ export function openViewer(name: string, into = root): BrowserWindow {
     app.focus({ steal: true });
     return open.win;
   }
-  const dir = path.join(into, name);
   const win = new BrowserWindow({
-    width: 900,
+    width: 1100,
     height: 900,
     title: `${name} — Snapmark`,
+    // The header holds the title, the tabs and the traffic lights, like a native macOS window.
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 18, y: 19 },
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
-  const v = { root: into, session: name, win, known: '' };
+  const v: Viewer = { root: into, session: name, win, known: '' };
   viewers.set(id, v);
+  watch(v);
   win.once('focus', updateDock);
-  // session.md changed outside this window (a new screenshot, an agent, another app): show the new text.
-  const watcher = fs.watch(dir, (_event, file) => {
-    if (file !== 'session.md' || !fs.existsSync(path.join(dir, file))) return;
-    if (fs.readFileSync(path.join(dir, file), 'utf8') !== v.known) win.webContents.send('viewer:reload', viewerData(v));
-  });
   win.on('closed', () => {
-    watcher.close();
+    v.watcher?.close();
     viewers.delete(id);
     updateDock();
   });
@@ -336,12 +344,30 @@ export function openViewer(name: string, into = root): BrowserWindow {
   return win;
 }
 
+// session.md changed outside the window (a new screenshot, an agent, another app): show the new text. Watched again
+// after a rename, since the folder moved.
+function watch(v: Viewer) {
+  v.watcher?.close();
+  const dir = path.join(v.root, v.session);
+  v.watcher = fs.watch(dir, (_event, file) => {
+    if (file !== 'session.md' || !fs.existsSync(path.join(dir, file))) return;
+    if (fs.readFileSync(path.join(dir, file), 'utf8') !== v.known) reloadViewer(v);
+  });
+}
+
+const reloadViewer = (v: Viewer) => v.win.webContents.send('viewer:reload', viewerData(v));
+
 function viewerData(v: { root: string; session: string; known: string }): ViewerInit {
   const dir = path.join(v.root, v.session);
   v.known = fs.readFileSync(path.join(dir, 'session.md'), 'utf8');
-  const shots = sessions.shots(v.root, v.session);
-  const editable = shots.filter((n) => fs.existsSync(sessions.editFiles(v.root, v.session, n).json));
-  return { session: v.session, base: `${pathToFileURL(dir).href}/`, md: v.known, shots, editable };
+  const shots = sessions.entries(v.known).map((e) => ({ ...e, editable: fs.existsSync(sessions.editFiles(v.root, v.session, e.n).json) }));
+  const discarded = sessions.discardedIn(v.root, v.session).map((d) => ({
+    dir: d.dir,
+    src: pathToFileURL(path.join(d.dir, 'image.png')).href,
+    kind: d.kind,
+    when: sessions.whenLabel(d.at),
+  }));
+  return { session: v.session, base: `${pathToFileURL(dir).href}/`, md: v.known, shots, discarded };
 }
 
 function viewerFor(id: number) {
@@ -385,6 +411,23 @@ ipcMain.handle('viewer:remove', async (e, n: number): Promise<ViewerInit> => {
   sessions.removeShot(v.root, v.session, n);
   return viewerData(v);
 });
+ipcMain.handle('viewer:rename', async (e, wanted: string): Promise<string | null> => {
+  const v = viewerFor(e.sender.id);
+  const name = wanted.trim();
+  if (!name) return 'Enter a name.';
+  if (name === v.session) return null;
+  await flushViewer(v); // the title line in session.md changes
+  return renameSession(v.session, name, v.root) ? null : `A session named ${name} already exists.`;
+});
+ipcMain.handle('viewer:reopen', async (e, dir: string): Promise<ViewerInit> => {
+  const v = viewerFor(e.sender.id);
+  const d = sessions.discardedIn(v.root, v.session).find((x) => x.dir === dir);
+  if (d) {
+    await flushViewer(v); // a removed screenshot goes back into session.md
+    reopen(d, v.root);
+  }
+  return viewerData(v);
+});
 
 // The editor deletes its image on close, so it always gets a copy.
 function tempCopy(file: string): string {
@@ -395,15 +438,15 @@ function tempCopy(file: string): string {
 
 // ---------- Discarded: closed screenshots and removed entries, kept 7 days ----------
 
-export function reopen(d: sessions.Discarded) {
+export function reopen(d: sessions.Discarded, into = root) {
   if (d.kind === 'shot') {
-    const n = sessions.restoreShot(root, d);
+    const n = sessions.restoreShot(into, d);
     notify(`Screenshot ${n} is back in ${sessions.shortName(d.session)}.`);
-    openViewer(d.session);
+    openViewer(d.session, into);
     return;
   }
   const state = JSON.parse(fs.readFileSync(path.join(d.dir, 'state.json'), 'utf8')) as EditState;
-  const session = sessions.list(root).includes(d.session) ? d.session : undefined;
+  const session = sessions.list(into).includes(d.session) ? d.session : undefined;
   openEditor(tempCopy(path.join(d.dir, 'image.png')), { session, state });
   fs.rmSync(d.dir, { recursive: true, force: true }); // closing it again makes a new one
 }
@@ -501,29 +544,39 @@ function exists(name: string, file = ''): boolean {
   return false;
 }
 
-// Native text prompt; Cancel makes osascript exit non-zero, which changes nothing.
-function renameSession(name: string) {
+// Renames the folder and everything that points at it: the current session, open editors and session windows.
+// Returns the new name, or null if the name is empty, unchanged or taken (sessions.rename).
+function renameSession(name: string, wanted: string, into = root): string | null {
+  const to = sessions.rename(into, name, wanted);
+  if (!to) return null;
+  if (into === root) {
+    if (active === name) active = to;
+    used[to] = used[name] ?? Date.now();
+    delete used[name];
+    saveState();
+  }
+  for (const ed of editors.values()) if (ed.root === into && ed.session === name) ed.session = to;
+  for (const v of viewers.values())
+    if (v.root === into && v.session === name) {
+      v.session = to;
+      watch(v);
+      reloadViewer(v);
+    }
+  return to;
+}
+
+// Rename Session… in the menu: native text prompt; Cancel makes osascript exit non-zero, which changes nothing.
+function renameFromMenu(name: string) {
   const script = [
     'on run argv',
     'text returned of (display dialog "Rename session" default answer (item 1 of argv) buttons {"Cancel", "Rename"} default button "Rename")',
     'end run',
   ];
-  execFile('osascript', [...script.flatMap((l) => ['-e', l]), name], (err, stdout) => {
+  execFile('osascript', [...script.flatMap((l) => ['-e', l]), name], async (err, stdout) => {
     const wanted = stdout?.trim();
     if (err || !wanted || wanted === name) return;
-    const to = sessions.rename(root, name, wanted);
-    if (!to) return notify(`A session named ${wanted} already exists.`);
-    if (active === name) active = to;
-    used[to] = used[name] ?? Date.now();
-    delete used[name];
-    for (const ed of editors.values()) if (ed.root === root && ed.session === name) ed.session = to;
-    // A viewer watches its folder, which just moved: reopen it on the new name.
-    for (const v of viewers.values())
-      if (v.root === root && v.session === name) {
-        v.win.close();
-        openViewer(to);
-      }
-    saveState();
+    for (const v of viewers.values()) if (v.root === root && v.session === name) await flushViewer(v);
+    if (!renameSession(name, wanted)) notify(`A session named ${wanted} already exists.`);
   });
 }
 
@@ -563,6 +616,7 @@ function showShortcuts() {
     ['⇧⌘Z', 'Redo', ''],
     ['⌘↵', 'Add to session', ''],
     ['⌘W', 'Discard', 'the screenshot; Reopen Last Discarded in the menu brings it back'],
+    ['← →', 'Flip screenshots', 'in the session window, one at a time; Esc goes back to the grid'],
   ]
     .map(([k, n, w]) => row(k, '', n, w))
     .join('');
@@ -597,7 +651,7 @@ const actions: MenuActions = {
   },
   reopenDiscarded: () => void reopenDiscarded(),
   showInFinder: (name) => exists(name) && void shell.openPath(dirOf(name)),
-  rename: renameSession,
+  rename: renameFromMenu,
   exportAs: (name, kind) => void runExport(kind, dirOf(name)),
   makeCurrent: setActive,
   otherSession: () => void otherSession(),
