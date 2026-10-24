@@ -80,7 +80,13 @@ find(sub(find(menu(), 'Capture Options')), 'Choose New Area…').click!({} as ne
 assert.strictEqual(calls.pop(), 'chooseArea');
 
 // Capture Window and Capture Scrolling: under Capture Options, not the default, so no global shortcut
-assert.deepStrictEqual(labels(sub(find(menu(), 'Capture Options'))), ['Choose New Area…', 'Capture Window…', 'Capture Scrolling…']);
+assert.deepStrictEqual(labels(sub(find(menu(), 'Capture Options'))), [
+  'Choose New Area…',
+  'Capture Window…',
+  'Capture Scrolling…',
+  '—',
+  'One-Shot Capture…',
+]);
 const windowItem = find(sub(find(menu(), 'Capture Options')), 'Capture Window…');
 assert.strictEqual(windowItem.accelerator, undefined);
 windowItem.click!({} as never, undefined, {} as never);
@@ -89,6 +95,11 @@ const scrolling = find(sub(find(menu(), 'Capture Options')), 'Capture Scrolling�
 assert.strictEqual(scrolling.accelerator, undefined);
 scrolling.click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'captureScrolling');
+// One-Shot Capture: the second mode, last under Capture Options, no global shortcut
+const oneShot = find(sub(find(menu(), 'Capture Options')), 'One-Shot Capture…');
+assert.strictEqual(oneShot.accelerator, undefined);
+oneShot.click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'oneShot');
 assert.strictEqual(find(menu(), 'Capture Screenshot…').accelerator, 'Control+Shift+1');
 assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, area: null } })[3].label, 'Capture Last Area (shortcut unavailable)');
 

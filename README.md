@@ -12,7 +12,7 @@ When you review a UI with an AI agent (Claude Code, Cursor, Codex), you spend a 
 
 Snapmark is a macOS menu bar app for exactly that loop:
 
-1. Press `⌘⇧1`, drag over the part of the screen you mean.
+1. Press `⌃⇧1`, drag over the part of the screen you mean.
 2. Mark it: a box, an arrow, a cross for "remove this", a freehand pen, references ① ② with a note each.
 3. Press `⌘↵`. The annotated image and your notes are appended to the current session's `session.md`.
 4. Point your agent at the session folder: _"Work through `~/Documents/Snapmark/2026-09-25 14.02/session.md`"_.
@@ -50,10 +50,11 @@ Snapmark lives in the menu bar as the corner-and-dot icon. It shows a Dock icon 
 
 ## Use
 
-| Shortcut | Anywhere                                  |
-| -------- | ----------------------------------------- |
-| `⌘⇧1`    | Capture a region into the current session |
-| `⌘⇧2`    | Start a new session                       |
+| Shortcut | Anywhere                                                    |
+| -------- | ----------------------------------------------------------- |
+| `⌃⇧1`    | Capture a region into the current session                   |
+| `⌃⇧3`    | Capture the last area again (the first time, drag the area) |
+| `⌃⇧N`    | Start a new session                                         |
 
 In the editor, press a key to pick a tool. Press the same key again to cycle its tools; the top bar shows which one is active.
 
@@ -77,6 +78,7 @@ The toolbar shows one icon per key: the tool that is on, with its key underneath
 | `⇧⌘C`     | Copy Image: the marked-up image to the clipboard, without adding it to the session             |
 | `⇧⌘S`     | Save As…: the marked-up image as a PNG wherever you pick, without adding it to the session     |
 | `⌘W`      | Discard the screenshot (kept 7 days: **Reopen Last Discarded** in the menu)                    |
+| `⌘C`      | One-shot mode only: Copy Image, when no text has the cursor                                    |
 
 The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Settings → Keyboard Shortcuts** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
 
@@ -91,6 +93,7 @@ Click the menu bar icon for the menu. It is built fresh each time it opens, and 
 - **Capture Last Area** (⌃⇧3) captures the same part of the screen each time, for example the page in your browser. The first time the screen dims and you drag the area; after that every press captures it at once and opens the editor. **Capture Options** ▸ **Choose New Area…** picks another one. Snapmark remembers the area after a restart, and asks again if the display it was on is gone.
 - **Capture Options** ▸ **Capture Window…** captures one window: the pointer becomes a camera, click the window, and it opens in the editor cropped to the window's edges, without the shadow macOS draws around it. Esc cancels. No shortcut, like Capture Scrolling.
 - **Capture Options** ▸ **Capture Scrolling…** takes a page taller than the screen in one screenshot. The screen dims and you drag over the part that scrolls, for example a browser's page. Then scroll it down at your own pace: a small bar under the area counts the frames and the height so far. Press **Done** (↩) to open the stitched screenshot in the editor, or **Cancel** (Esc). The editor fits a tall screenshot to the window's width and scrolls. Snapmark stitches by matching each new view against the last one, keeps a sticky header and footer once, and stops at 20,000 px. Like every screenshot it is saved within the AI's size limits (1568 px on the long edge), so a page much taller than two screens arrives narrow and hard for the model to read. Scroll down only and not too fast: if a step goes further than the area's height, the bar says so, and scrolling back up a little picks up again. Content that moves by itself (animations, video, carousels), lazy-loaded images that appear late, and sideways scrolling come out wrong. There is no shortcut, on purpose: it is not the everyday capture.
+- **Capture Options** ▸ **One-Shot Capture…** is the second mode, for an image that goes to people rather than an AI, for example into slides. Drag a region as usual; the editor opens with the same tools, but the side panel shows **Beautify** instead of the comment and References: **Padding**, **Rounded corners** and **Shadow** sliders, a **Background** (the logo's gradient, pink, violet, teal, amber, graphite, a soft light gradient, white, **None** for transparent, or a custom colour), and a **Ratio** for the whole image (Auto, 4:3, 3:2, 16:9, 1:1; the screenshot stays centred and the padding grows to fill). The canvas shows the result as you change it. **Copy Image** (⌘C, or ⇧⌘C) is the main button, and **Save As…** (⇧⌘S) suggests `Snapmark 2026-10-25 14.03.12.png`; both give the beautified image at full Retina resolution, not the AI size. There is no Add to session, and nothing is written to a session. Closing it (Discard, ⌘W, Esc) keeps it in Discarded like any screenshot, and it reopens in one-shot mode. Snapmark remembers the last settings for the next one-shot. No shortcut.
 - **Open Current Session** opens the session in Snapmark's own window. Its header shows the session's name and how many screenshots it has; click the name (or the pencil) to rename it in place: ↩ saves, Esc cancels, and a name that is taken says so under the field. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** is a grid of every screenshot with its heading and note count; hover one for **Edit Again**, which reopens it in the editor with its marks and text (saving replaces it in place), and **…** ▸ **Remove from Session**. Click a thumbnail to see it large: ← and → flip through them, Esc or **‹ All Screenshots** goes back to the grid. **Discarded** (shown when there is something) lists this session's screenshots closed without saving or removed in the last 7 days, each with **Reopen**. **Open in Markdown App** opens `session.md` in your default app.
 - **Copy Prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
 - **Session** ▸ everything else about sessions, under the current one's name:
@@ -120,18 +123,19 @@ npm run smoke:background  # the same, failing if Snapmark ever takes the front f
 npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 ```
 
-| Path                  | What                                                    |
-| --------------------- | ------------------------------------------------------- |
-| `src/main.ts`         | Menu bar, global shortcuts, capture, auto-update, IPC   |
-| `src/menu.ts`         | The menu bar menu as data, tested without Electron      |
-| `src/editor.ts/.html` | Annotation editor window                                |
-| `src/viewer.ts/.html` | Session window: `session.md` editable, screenshots      |
-| `src/area.ts/.html`   | Area picker for Capture Last Area and Capture Scrolling |
-| `src/scroll.ts/.html` | Capture Scrolling's Done and Cancel bar                 |
-| `src/stitch.ts`       | Stitches the scrolled frames, tested without Electron   |
-| `src/sessions.ts`     | Session folders and `session.md` writing                |
-| `assets/`             | App icon, menu bar template icon                        |
-| `build/`              | Packaging resources (icon, entitlements)                |
+| Path                  | What                                                     |
+| --------------------- | -------------------------------------------------------- |
+| `src/main.ts`         | Menu bar, global shortcuts, capture, auto-update, IPC    |
+| `src/menu.ts`         | The menu bar menu as data, tested without Electron       |
+| `src/editor.ts/.html` | Annotation editor window                                 |
+| `src/viewer.ts/.html` | Session window: `session.md` editable, screenshots       |
+| `src/area.ts/.html`   | Area picker for Capture Last Area and Capture Scrolling  |
+| `src/scroll.ts/.html` | Capture Scrolling's Done and Cancel bar                  |
+| `src/stitch.ts`       | Stitches the scrolled frames, tested without Electron    |
+| `src/beautify.ts`     | One-shot mode's Beautify layout, tested without Electron |
+| `src/sessions.ts`     | Session folders and `session.md` writing                 |
+| `assets/`             | App icon, menu bar template icon                         |
+| `build/`              | Packaging resources (icon, entitlements)                 |
 
 CI (`.github/workflows/ci.yml`) runs format check, lint, typecheck, unit test and the smoke test on every pull request.
 

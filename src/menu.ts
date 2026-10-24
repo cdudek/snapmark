@@ -28,6 +28,7 @@ export interface MenuActions {
   chooseArea(): void;
   captureWindow(): void;
   captureScrolling(): void;
+  oneShot(): void;
   reopenLast(): void;
   reopenDiscarded(): void;
   newSession(): void;
@@ -98,6 +99,9 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
         { label: 'Capture Window…', click: () => a.captureWindow() },
         // Not the default, so no global shortcut (owner, 2026-10-25): drag an area, scroll it, and get one tall screenshot.
         { label: 'Capture Scrolling…', click: () => a.captureScrolling() },
+        { type: 'separator' },
+        // The second mode (owner, 2026-10-25): one image to beautify, then copy or save; nothing goes into a session.
+        { label: 'One-Shot Capture…', click: () => a.oneShot() },
       ],
     },
     { type: 'separator' },

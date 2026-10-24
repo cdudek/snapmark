@@ -41,12 +41,13 @@ let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
 let area: Area | null = null; // what Capture Last Area captures, in global screen points
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
+let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
 const registered = new Set<string>(); // global shortcuts macOS let us have
 // keyed by webContents.id; dirty = marks or text not saved yet
-// state = marks to put back; replace = Edit Again's entry number
+// state = marks to put back; replace = Edit Again's entry number; oneShot = no session ('' in session)
 interface EditorWin {
   image: string;
   root: string;
@@ -55,6 +56,7 @@ interface EditorWin {
   dirty: boolean;
   state?: EditState;
   replace?: number;
+  oneShot?: boolean;
 }
 const editors = new Map<number, EditorWin>();
 // Session windows, keyed by webContents.id; known = the session.md text the window shows
@@ -81,6 +83,7 @@ function loadState() {
     used = state.used ?? {};
     area = state.area ?? null;
     editorSize = state.editorSize ?? null;
+    beautify = state.beautify ?? null;
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -90,7 +93,7 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize }));
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify }));
 }
 
 export function setActive(name: string) {
@@ -158,16 +161,18 @@ function newSession() {
   notify(`New session: ${active}`);
 }
 
-function shoot(args: string[]) {
+function shoot(args: string[], oneShot = false) {
   const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
   // -x: no sound
   execFile('screencapture', [...args, '-x', tmp], () => {
-    if (fs.existsSync(tmp)) openEditor(tmp); // missing file = user pressed Esc
+    if (fs.existsSync(tmp)) openEditor(tmp, { oneShot }); // missing file = user pressed Esc
   });
 }
 
 // -i: interactive region (space toggles window mode)
 const capture = () => shoot(['-i']);
+// One-Shot Capture…: the same region capture, opened in one-shot mode
+const captureOneShot = () => shoot(['-i'], true);
 // -w: only windows, so a click takes the window under the pointer; -o: without its shadow, a clean crop to the window's
 // edges (the shadow is transparent padding the marks and the AI do not need)
 const captureWindow = () => shoot(['-i', '-w', '-o']);
@@ -320,10 +325,15 @@ export async function scrollCapture(a: Area, grab = grabArea): Promise<BrowserWi
 }
 
 // Opens the editor on a screenshot file, which it owns and deletes on close. `session` is where it saves (default:
-// the current one); `state` puts marks back; `replace` makes saving replace that entry (Edit Again).
-export function openEditor(image: string, opts: { session?: string; state?: EditState; replace?: number } = {}): BrowserWindow {
-  const session = opts.session ?? active ?? sessions.create(root);
-  if (!opts.replace) setActive(session);
+// the current one); `state` puts marks back; `replace` makes saving replace that entry (Edit Again); `oneShot` opens
+// it in one-shot mode, which has no session and never makes or changes one.
+export function openEditor(
+  image: string,
+  opts: { session?: string; state?: EditState; replace?: number; oneShot?: boolean } = {},
+): BrowserWindow {
+  const { oneShot } = opts;
+  const session = oneShot ? '' : (opts.session ?? active ?? sessions.create(root));
+  if (!opts.replace && !oneShot) setActive(session);
   // 90% of the screen with the pointer, or the size the owner last gave an editor, never larger than that screen.
   const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const want = editorSize ?? { width: wa.width * 0.9, height: wa.height * 0.9 };
@@ -333,11 +343,11 @@ export function openEditor(image: string, opts: { session?: string; state?: Edit
     y: Math.round(wa.y + (wa.height - height) / 2),
     width,
     height,
-    title: `Snapmark — ${session}`,
+    title: `Snapmark — ${oneShot ? 'One-shot' : session}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
-  editors.set(id, { image, root, session, win, dirty: false, state: opts.state, replace: opts.replace });
+  editors.set(id, { image, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot });
   win.once('focus', updateDock);
   win.on('resized', () => {
     const [w, h] = win.getSize();
@@ -361,16 +371,23 @@ function editorFor(id: number) {
 }
 
 ipcMain.handle('editor:init', (e): EditorInit => {
-  const { image, root: into, session, state, replace } = editorFor(e.sender.id);
+  const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
+  if (oneShot) return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined };
   return { src, session, count: sessions.count(into, session), state, replacing: replace };
+});
+
+ipcMain.on('editor:beautify', (e, settings: Beautify) => {
+  if (!editors.get(e.sender.id)?.oneShot) return;
+  beautify = settings;
+  saveState();
 });
 
 // Sent synchronously while the window unloads without a save, so the capture is kept before the window is gone.
 ipcMain.on('editor:stash', (e, state: EditState) => {
   const ed = editors.get(e.sender.id);
   if (ed && fs.existsSync(ed.image)) {
-    sessions.discardCapture(ed.root, ed.session, ed.image, JSON.stringify(state));
+    sessions.discardCapture(ed.root, ed.oneShot ? 'one-shot' : ed.session, ed.image, JSON.stringify(state));
     for (const v of viewers.values()) if (v.root === ed.root && v.session === ed.session) reloadViewer(v); // its Discarded tab
   }
   e.returnValue = null;
@@ -390,7 +407,8 @@ export function fitForAI(png: Buffer): Buffer {
 }
 
 ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, state }: EditorSave): Promise<number> => {
-  const { root: into, session, image, replace } = editorFor(e.sender.id);
+  const { root: into, session, image, replace, oneShot } = editorFor(e.sender.id);
+  if (oneShot) throw new Error('A one-shot screenshot is never added to a session');
   for (const v of viewers.values()) if (v.root === into && v.session === session) await flushViewer(v);
   const out = fitForAI(Buffer.from(png, 'base64'));
   const text = { caption, notes, cards, moves };
@@ -419,27 +437,34 @@ export const desk = {
   savePath: (win: BrowserWindow, opts: Electron.SaveDialogOptions) => dialog.showSaveDialog(win, opts),
 };
 
-// Copy Image and Save As…: the image exactly as Add to session would save it, without adding it to the session.
+// Copy Image and Save As…: in session mode the image exactly as Add to session would save it, without adding it to the
+// session; in one-shot mode the beautified image at full (Retina) resolution, for people rather than an AI.
+const outImage = (ed: EditorWin, png: string) => (ed.oneShot ? Buffer.from(png, 'base64') : fitForAI(Buffer.from(png, 'base64')));
+
 ipcMain.handle('editor:copy', async (e, png: string) => {
-  editorFor(e.sender.id);
-  await desk.copyImage(fitForAI(Buffer.from(png, 'base64')));
-  notify('Marked-up image copied. It is not in the session.');
+  const ed = editorFor(e.sender.id);
+  await desk.copyImage(outImage(ed, png));
+  notify(ed.oneShot ? 'Image copied.' : 'Marked-up image copied. It is not in the session.');
 });
 
 ipcMain.handle('editor:saveAs', async (e, png: string): Promise<string | null> => {
-  const { root: into, session, replace, win } = editorFor(e.sender.id);
+  const ed = editorFor(e.sender.id);
+  const { root: into, session, replace, win, oneShot } = ed;
   const { canceled, filePath } = await desk.savePath(win, {
-    defaultPath: sessions.saveAsName(into, session, replace), // a bare name: macOS opens the folder used last
+    // A bare name: macOS opens the folder used last. One-shot: "Snapmark 2026-10-25 14.03.12.png", local time.
+    defaultPath: oneShot
+      ? `Snapmark ${new Date().toLocaleString('sv-SE').replace(/:/g, '.')}.png`
+      : sessions.saveAsName(into, session, replace),
     filters: [{ name: 'PNG image', extensions: ['png'] }],
   });
   if (canceled || !filePath) return null;
   try {
-    fs.writeFileSync(filePath, fitForAI(Buffer.from(png, 'base64')));
+    fs.writeFileSync(filePath, outImage(ed, png));
   } catch (err) {
     notify(`Couldn't save ${path.basename(filePath)}: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
-  notify(`Saved ${path.basename(filePath)}. It is not in the session.`, () => shell.showItemInFolder(filePath));
+  notify(`Saved ${path.basename(filePath)}.${oneShot ? '' : ' It is not in the session.'}`, () => shell.showItemInFolder(filePath));
   return filePath;
 });
 
@@ -585,7 +610,7 @@ export function reopen(d: sessions.Discarded, into = root) {
   }
   const state = JSON.parse(fs.readFileSync(path.join(d.dir, 'state.json'), 'utf8')) as EditState;
   const session = sessions.list(into).includes(d.session) ? d.session : undefined;
-  openEditor(tempCopy(path.join(d.dir, 'image.png')), { session, state });
+  openEditor(tempCopy(path.join(d.dir, 'image.png')), { session, state, oneShot: !!state.beautify });
   fs.rmSync(d.dir, { recursive: true, force: true }); // closing it again makes a new one
 }
 
@@ -757,6 +782,7 @@ function showShortcuts() {
     ['⌘↵', 'Add to session', ''],
     ['⇧⌘C', 'Copy Image', 'the marked-up image, without adding it to the session'],
     ['⇧⌘S', 'Save As…', 'the marked-up image as a PNG wherever you pick, without adding it to the session'],
+    ['⌘C', 'Copy Image (one-shot)', 'the beautified image at full resolution, when no text has the cursor; ⇧⌘C works too'],
     ['⌘W', 'Discard', 'the screenshot; Reopen Last Discarded in the menu brings it back'],
     ['← →', 'Flip screenshots', 'in the session window, one at a time; Esc goes back to the grid'],
   ]
@@ -779,6 +805,7 @@ const actions: MenuActions = {
   chooseArea: () => void captureArea(true),
   captureWindow,
   captureScrolling: () => void captureScrolling(),
+  oneShot: captureOneShot,
   newSession,
   copyPrompt: (name) => {
     clipboard.writeText(promptFor(dirOf(name)));
