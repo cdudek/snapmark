@@ -43,6 +43,25 @@ const nm = sessions.create(root, 'md-notes');
 sessions.addShot(root, nm, Buffer.from('m'), { notes: ['# Title\n\n- item\n\n**bold**', 'plain'] });
 assert.match(fs.readFileSync(path.join(root, nm, 'session.md'), 'utf8'), /\n1\. # Title\n\n {3}- item\n\n {3}\*\*bold\*\*\n2\. plain\n/);
 
+// The text in the screenshot goes last, collapsed, as plain text; no block when there is none
+const tx = sessions.create(root, 'text');
+sessions.addShot(root, tx, Buffer.from('t'), { notes: ['a'], cards: ['c'], text: '1. Orders\nEmail: [redacted]\n' });
+sessions.addShot(root, tx, Buffer.from('u'), { caption: 'No text', text: '  ' });
+const txMd = fs.readFileSync(path.join(root, tx, 'session.md'), 'utf8');
+assert.ok(
+  txMd.includes(
+    '1. a\n\n- Card: c\n\n<details><summary>Text in the screenshot</summary>\n\n```text\n1. Orders\nEmail: [redacted]\n```\n\n</details>\n\n## 002',
+  ),
+  txMd,
+);
+assert.ok(!txMd.slice(txMd.indexOf('## 002')).includes('<details>'));
+assert.deepStrictEqual(
+  sessions.entries(txMd).map((e) => e.notes),
+  [1, 0],
+  'a numbered line in the text is not a note',
+);
+assert.strictEqual(sessions.textBlock('run `npm ci` or ```x```').split('\n')[2], '````text'); // a fence longer than any in the text
+
 // Removing a screenshot keeps the rest of session.md and moves the image aside
 const rm = sessions.create(root, 'remove');
 [1, 2, 3].forEach((i) => sessions.addShot(root, rm, Buffer.from(String(i)), { caption: `Shot ${i}` }));

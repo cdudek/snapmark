@@ -233,6 +233,28 @@
         padding: 0 3px;
         border-radius: 3px;
       }
+      #doc pre {
+        background: var(--soft);
+        padding: 8px 10px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+      }
+      #doc pre code {
+        background: none;
+        padding: 0;
+      }
+      /* "Text in the screenshot": session.md's <details> tags show as a quiet label over the text, not as raw HTML */
+      #doc span[data-type='html'][data-value^='<details>'] {
+        font-size: 0;
+      }
+      #doc span[data-type='html'][data-value^='<details>']::before {
+        content: 'Text in the screenshot';
+        font-size: 13px;
+        color: var(--muted);
+      }
+      #doc p:has(> span[data-type='html'][data-value='</details>']) {
+        display: none;
+      }
       #doc blockquote {
         margin-left: 0;
         padding-left: 12px;

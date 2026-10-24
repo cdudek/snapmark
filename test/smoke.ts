@@ -36,6 +36,7 @@ desk.savePath = async (_win, opts) => {
   offered = opts.defaultPath ?? '';
   return { canceled: false, filePath: savedAs };
 };
+desk.recognize = async () => null; // as on Linux, where there is no Vision; the auto-redact checks feed their own text
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -650,6 +651,79 @@ app
         `return document.getElementById('padding').value === '100' && document.querySelector('#ratios [aria-pressed="true"]').textContent === '16:9' && document.querySelector('#backdrops .custom').classList.contains('picked');`,
       )) === true;
     two.destroy();
+    // Auto-redact and the text in the screenshot, from a stubbed text recognition: words 9 px a character
+    const word = (start: number, end: number, x: number, y: number) => ({ start, end, x, y, w: (end - start) * 9, h: 18 });
+    desk.recognize = async () => [
+      {
+        text: 'Revenue is up 12%',
+        x: 260,
+        y: 140,
+        w: 153,
+        h: 18,
+        words: [word(0, 7, 260, 140), word(8, 10, 332, 140), word(11, 13, 359, 140), word(14, 17, 386, 140)],
+      },
+      { text: 'Mail jane.doe@example.com', x: 260, y: 100, w: 225, h: 18, words: [word(0, 4, 260, 100), word(5, 25, 305, 100)] },
+    ];
+    const autoMarks = `canvas.getObjects().filter((o) => o.filters?.length).map((o) => [o.cropX, o.cropY, o.width, o.height].join()).join(' ')`;
+    const redactLine = `document.getElementById('redacted')`;
+    fs.copyFileSync(shotCopy, path.join(root, 'ocr.png'));
+    const scan = openEditor(path.join(root, 'ocr.png'), { session: 'smoke' });
+    await new Promise<void>((r) => scan.webContents.once('did-finish-load', () => r()));
+    await loaded(scan);
+    const auto = JSON.parse(
+      await inWin(
+        scan,
+        `for (let i = 0; i < 30 && ${redactLine}.hidden; i++) await new Promise((r) => setTimeout(r, 100));
+        const shown = [${autoMarks}, ${redactLine}.textContent, ${redactLine}.hidden];
+        undo(); const undone = [${autoMarks}, ${redactLine}.hidden];
+        redo(); const redone = [${autoMarks}, ${redactLine}.hidden];
+        return JSON.stringify({ shown, undone, redone });`,
+      ),
+    );
+    viewer['auto-redact pixelates the email, padded, and says so in the side panel'] =
+      JSON.stringify(auto.shown) === JSON.stringify(['302,97,186,24', 'Redacted 1 sensitive item · ⌘Z to undo', false]);
+    viewer['⌘Z takes auto-redact back in one step, ⇧⌘Z puts it back'] =
+      JSON.stringify(auto.undone) === JSON.stringify(['', true]) &&
+      JSON.stringify(auto.redone) === JSON.stringify(['302,97,186,24', false]);
+    const before = sessions.shots(root, 'smoke');
+    await inWin(scan, `document.getElementById('save').click();`);
+    for (let i = 0; i < 30 && sessions.shots(root, 'smoke').length === before.length; i++) await new Promise((r) => setTimeout(r, 100));
+    const scanned = sessions.shots(root, 'smoke').at(-1)!;
+    const block = '<details><summary>Text in the screenshot</summary>\n\n```text\nMail [redacted]\nRevenue is up 12%\n```\n\n</details>';
+    viewer['session.md gets the text in the screenshot, in reading order, redacted'] =
+      smokeMd().includes(block) && !smokeMd().includes('jane.doe');
+    // Edit Again: auto-redact ran already, so a deleted mark stays deleted; here the saved mark comes back alone
+    const ef = sessions.editFiles(root, 'smoke', scanned);
+    fs.copyFileSync(ef.png, path.join(root, 'ocr-again.png'));
+    const reopened = openEditor(path.join(root, 'ocr-again.png'), {
+      session: 'smoke',
+      state: JSON.parse(fs.readFileSync(ef.json, 'utf8')),
+      replace: scanned,
+    });
+    await new Promise<void>((r) => reopened.webContents.once('did-finish-load', () => r()));
+    await loaded(reopened);
+    viewer['Edit Again does not auto-redact again'] =
+      (await inWin(reopened, `await new Promise((r) => setTimeout(r, 500)); return ${autoMarks} + '|' + ${redactLine}.hidden;`)) ===
+      '302,97,186,24|true';
+    reopened.destroy();
+    desk.recognize = async () => null;
+    // The session window shows the block's tags as a quiet label and keeps the block as it is
+    const textView = openViewer('smoke', root);
+    await new Promise<void>((r) => textView.webContents.once('did-finish-load', () => r()));
+    viewer['the Document tab shows "Text in the screenshot" as a label, not raw HTML'] = await textView.webContents.executeJavaScript(
+      `(async () => {
+        for (let i = 0; i < 50 && !document.querySelector('#doc span[data-type="html"]'); i++) await new Promise((r) => setTimeout(r, 100));
+        const open = document.querySelector('#doc span[data-type="html"][data-value^="<details>"]');
+        const close = document.querySelector('#doc span[data-type="html"][data-value="</details>"]');
+        const p = close?.closest('p');
+        return !!open && getComputedStyle(open).fontSize === '0px' && getComputedStyle(open, '::before').content === '"Text in the screenshot"' &&
+          !!p && getComputedStyle(p).display === 'none' && !!document.querySelector('#doc pre')?.textContent.includes('Mail [redacted]');
+      })()`,
+    );
+    viewer['the Document tab keeps the block as it is when it saves'] = (
+      await textView.webContents.executeJavaScript(`MdNotes.fieldAt(document.getElementById('doc')).value()`)
+    ).includes(block);
+    textView.close();
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,
@@ -680,6 +754,7 @@ app
         red(pixel(out, 0.5, 0.5, 0, -tip * 0.88)) && !red(pixel(out, 0.5, 0.5, tip * 0.66, tip * 0.66)),
       'session.md path is absolute':
         sessionMdPath(path.join(root, 'smoke')) === path.resolve(root, 'smoke', 'session.md') && path.isAbsolute(sessionMdPath('rel')),
+      'prompt explains the text in the screenshot': promptFor(root).includes('"Text in the screenshot" under an entry'),
       'prompt points at session.md': promptFor(path.join(root, 'smoke')).includes(`"${path.join(root, 'smoke', 'session.md')}"`),
       'markdown has card': md.includes('- Card: Make this bigger'),
       'markdown has move': md.includes('- Moved an element'),

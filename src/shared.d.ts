@@ -14,6 +14,7 @@ interface EditState {
   caption: string;
   items: unknown[];
   beautify?: Beautify; // only in one-shot mode, so a discarded one-shot reopens as one
+  redacted?: boolean; // auto-redact ran on it, so Edit Again does not add back marks the owner deleted
 }
 
 interface EditorSave {
@@ -74,6 +75,7 @@ interface Window {
     copyImage(png: string): Promise<void>; // base64 PNG to the clipboard, not into the session
     saveImageAs(png: string): Promise<string | null>; // base64 PNG to a file the owner picks; null when cancelled
     beautify(settings: Beautify): void; // one-shot: remember the settings as the one preset
+    secrets(): Promise<{ x: number; y: number; w: number; h: number }[] | null>; // auto-redact's areas; null: no text recognition
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
     stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
     onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed

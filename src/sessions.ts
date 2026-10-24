@@ -7,6 +7,7 @@ export interface ShotText {
   notes?: string[]; // numbered marker notes
   cards?: string[]; // text written on cards on the image
   moves?: number; // cut-and-move pieces
+  text?: string; // the text recognised in the screenshot (ocr.ts), redacted parts as [redacted]
 }
 
 const pad = (n: number) => String(n).padStart(3, '0');
@@ -33,16 +34,11 @@ export function create(root: string, name = stamp()): string {
 }
 
 // Writes the flattened PNG and appends an entry to session.md. Returns the entry number.
-export function addShot(
-  root: string,
-  name: string,
-  png: Buffer,
-  { caption = '', notes = [], cards = [], moves = 0 }: ShotText = {},
-): number {
+export function addShot(root: string, name: string, png: Buffer, text: ShotText = {}): number {
   const dir = path.join(root, name);
   const n = nextNumber(dir);
   fs.writeFileSync(path.join(dir, 'img', `${pad(n)}.png`), png);
-  fs.appendFileSync(path.join(dir, 'session.md'), `\n${entry(n, new Date().toTimeString().slice(0, 5), { caption, notes, cards, moves })}`);
+  fs.appendFileSync(path.join(dir, 'session.md'), `\n${entry(n, new Date().toTimeString().slice(0, 5), text)}`);
   return n;
 }
 
@@ -56,7 +52,7 @@ function nextNumber(dir: string): number {
 }
 
 // One session.md entry: heading, image, then the text.
-function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0 }: ShotText): string {
+function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0, text = '' }: ShotText): string {
   let md = `## ${pad(n)} · ${time}\n\n![Screenshot ${n}](img/${pad(n)}.png)\n`;
   if (caption.trim()) md += `\n${caption.trim()}\n`;
   // A note is Markdown and may span lines (a heading, a list): indent its continuation lines under the
@@ -73,7 +69,17 @@ function entry(n: number, time: string, { caption = '', notes = [], cards = [], 
       `- Moved ${moves === 1 ? 'an element' : `${moves} elements`}: the dashed outline is where it is now, the arrow shows where it should go.`,
     );
   if (extra.length) md += `\n${extra.join('\n')}\n`;
+  if (text.trim()) md += `\n${textBlock(text.trim())}\n`;
   return md;
+}
+
+export const TEXT_SUMMARY = 'Text in the screenshot';
+
+// The recognised text, last in the entry: collapsed where Markdown renders HTML (GitHub, the PDF export hides it), as
+// a plain-text block inside, so nothing in it reads as Markdown. The fence is longer than any backtick run in the text.
+export function textBlock(text: string): string {
+  const fence = '`'.repeat(Math.max(3, ...[...text.matchAll(/`+/g)].map((m) => m[0].length + 1)));
+  return `<details><summary>${TEXT_SUMMARY}</summary>\n\n${fence}text\n${text}\n${fence}\n\n</details>`;
 }
 
 // Screenshots in a session = PNGs in its img/ folder.
@@ -142,7 +148,11 @@ export function entries(md: string): { n: number; heading: string; notes: number
   return heads.map((m, i) => ({
     n: parseInt(m[2], 10),
     heading: m[1],
-    notes: md.slice(m.index, heads[i + 1]?.index ?? md.length).match(/^\d+\. /gm)?.length ?? 0,
+    notes:
+      md
+        .slice(m.index, heads[i + 1]?.index ?? md.length)
+        .split('\n<details>')[0]
+        .match(/^\d+\. /gm)?.length ?? 0, // not the text's lines
   }));
 }
 
