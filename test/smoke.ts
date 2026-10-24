@@ -358,7 +358,7 @@ app
     viewer['Reopen brings it back with its marks'] = JSON.parse(await inWin(back, counts))[0] === 1 && !fs.existsSync(kept.dir);
     back.destroy();
 
-    // Capture Same Area's picker: a drag in its see-through window gives the area in screen points; Esc gives none
+    // Capture Last Area's picker: a drag in its see-through window gives the area in screen points; Esc gives none
     const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).bounds;
     const pickWith = async (act: (w: BrowserWindow) => void) => {
       const before = BrowserWindow.getAllWindows();

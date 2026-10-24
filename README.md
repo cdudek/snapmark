@@ -82,16 +82,16 @@ The side panel starts with a one-line comment field. References appear there onc
 
 Click the menu bar icon for the menu. It is built fresh each time it opens, and every item has an icon:
 
-- **Capture Screenshot** (⌃⇧1). A shortcut another app already owns shows as "(shortcut unavailable)".
-- **Capture Same Area** (⌃⇧3) captures the same part of the screen each time, for example the page in your browser. The first time the screen dims and you drag the area; after that every press captures it at once and opens the editor. **Choose New Area…** picks another one. Snapmark remembers the area after a restart, and asks again if the display it was on is gone.
-- **Reopen Last Discarded** and **Reopen Discarded…** appear when something was thrown away in the last 7 days. That covers an editor closed without saving (Discard, ⌘W, Esc, the close button) and a screenshot removed from a session. A closed editor reopens with its marks; a removed screenshot goes back into its session. They live in `.discarded/` in the sessions folder and are deleted after 7 days.
-- **Current Session: <name> · <n> screenshots**, and what you can do with that session:
-  - **Open Session** opens the session in Snapmark's own window. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** shows one screenshot at a time: ← and → flip through them, and **Edit Again** reopens a screenshot in the editor with its marks and text, and saving replaces it in place. **Remove from Session** takes one out. **Open in Markdown App** opens `session.md` in your default app.
-  - **Copy Prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
-  - **Copy session.md Path** puts just the full path on the clipboard.
-  - **Rename Session…**, **Show Session in Finder**, and **Export Session** ▸ PDF or ZIP (see below; shown once the session has a screenshot).
-- **Switch Session** ▸ lists sessions by last use; click one to make it current. **Other Session…** reaches any beyond the 20 shown.
-- **New Session** (⌃⇧2) starts a new session; while the current one is still empty, it keeps using that one.
+- **Adding screenshots to** shows the current session and how many screenshots it holds.
+- **Capture Screenshot…** (⌃⇧1). A shortcut another app already owns shows as "(shortcut unavailable)".
+- **Capture Last Area** (⌃⇧3) captures the same part of the screen each time, for example the page in your browser. The first time the screen dims and you drag the area; after that every press captures it at once and opens the editor. **Capture Options** ▸ **Choose New Area…** picks another one. Snapmark remembers the area after a restart, and asks again if the display it was on is gone.
+- **Open Current Session** opens the session in Snapmark's own window. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** shows one screenshot at a time: ← and → flip through them, and **Edit Again** reopens a screenshot in the editor with its marks and text, and saving replaces it in place. **Remove from Session** takes one out. **Open in Markdown App** opens `session.md` in your default app.
+- **Copy Prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
+- **Session** ▸ everything else about sessions, under the current one's name:
+  - **New Session** (⌃⇧N) starts a new session; while the current one is still empty, it keeps using that one.
+  - **Switch Session** ▸ lists sessions by last use; click one to make it current. **Other Session…** reaches any beyond the 20 shown.
+  - **Rename Session…**, **Export Session** ▸ PDF or ZIP (see below; shown once the session has a screenshot), **Show Session in Finder**, and **Copy Session File Path**, which puts the full path to `session.md` on the clipboard.
+- **Discarded Screenshots** ▸ **Reopen Last Discarded** and **Reopen Discarded…** appears when something was thrown away in the last 7 days. That covers an editor closed without saving (Discard, ⌘W, Esc, the close button) and a screenshot removed from a session. A closed editor reopens with its marks; a removed screenshot goes back into its session. They live in `.discarded/` in the sessions folder and are deleted after 7 days.
 - **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Clear Sessions Older Than 60 Days… (asks first, moves them to the Trash; never the current session or one that is open), Keyboard Shortcuts, Check for Updates… (with the version under it). **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
 
 Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.
@@ -119,7 +119,7 @@ npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 | `src/menu.ts`         | The menu bar menu as data, tested without Electron    |
 | `src/editor.ts/.html` | Annotation editor window                              |
 | `src/viewer.ts/.html` | Session window: `session.md` editable, screenshots    |
-| `src/area.ts/.html`   | Area picker for Capture Same Area                     |
+| `src/area.ts/.html`   | Area picker for Capture Last Area                     |
 | `src/sessions.ts`     | Session folders and `session.md` writing              |
 | `assets/`             | App icon, menu bar template icon                      |
 | `build/`              | Packaging resources (icon, entitlements)              |

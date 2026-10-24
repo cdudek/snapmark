@@ -29,7 +29,7 @@ const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
 const DEFAULT_ROOT = path.join(os.homedir(), 'Documents', 'Snapmark');
 // No ⌘: ⌘ keys belong to the app in front, and ⇧⌘1 sat next to Chrome's ⌘1 for tab 1 (owner, 2026-09-28).
 const SHORTCUT_CAPTURE = 'Control+Shift+1';
-const SHORTCUT_NEW = 'Control+Shift+2';
+const SHORTCUT_NEW = 'Control+Shift+N';
 const SHORTCUT_AREA = 'Control+Shift+3';
 
 const statePath = () => path.join(app.getPath('userData'), 'state.json');
@@ -37,7 +37,7 @@ const statePath = () => path.join(app.getPath('userData'), 'state.json');
 let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
-let area: Area | null = null; // what Capture Same Area captures, in global screen points
+let area: Area | null = null; // what Capture Last Area captures, in global screen points
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
@@ -139,7 +139,7 @@ function notify(body: string, onClick?: () => void) {
 const dirOf = (name: string) => path.join(root, name);
 
 function newSession() {
-  // Pressing ⌃⇧2 twice must not leave empty sessions behind.
+  // Pressing ⌃⇧N twice must not leave empty sessions behind.
   if (active && fs.existsSync(dirOf(active)) && sessions.count(root, active) === 0)
     return notify(`${sessions.shortName(active)} is still empty, so new captures keep going there.`);
   setActive(sessions.create(root));
@@ -441,7 +441,7 @@ async function checkForUpdatesNow() {
 autoUpdater.on('update-downloaded', (info) => (updateWaiting = info.version));
 
 // Pasted into an agent's chat: points it at the session and explains the marks, so the notes need no preamble.
-// The one place the Markdown path is built, so "Copy session.md path" and the AI prompt never disagree.
+// The one place the Markdown path is built, so "Copy Session File Path" and the AI prompt never disagree.
 export function sessionMdPath(dir: string): string {
   return path.resolve(dir, 'session.md');
 }
@@ -554,8 +554,8 @@ function showShortcuts() {
   ).join('');
   const other = [
     ['⌃⇧1', 'Capture region', 'anywhere'],
-    ['⌃⇧3', 'Capture same area', 'anywhere; the first time, drag the area'],
-    ['⌃⇧2', 'New session', 'anywhere'],
+    ['⌃⇧3', 'Capture last area', 'anywhere; the first time, drag the area'],
+    ['⌃⇧N', 'New session', 'anywhere'],
     ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
     ['⌫', 'Delete', 'the selected mark'],
     ['⌘1–⌘7', 'Pick a tool', 'also while typing a note or card, where the plain digit types'],
