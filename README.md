@@ -85,6 +85,7 @@ Click the menu bar icon for the menu. It is built fresh each time it opens, and 
 - **Adding screenshots to** shows the current session and how many screenshots it holds.
 - **Capture Screenshot…** (⌃⇧1). A shortcut another app already owns shows as "(shortcut unavailable)".
 - **Capture Last Area** (⌃⇧3) captures the same part of the screen each time, for example the page in your browser. The first time the screen dims and you drag the area; after that every press captures it at once and opens the editor. **Capture Options** ▸ **Choose New Area…** picks another one. Snapmark remembers the area after a restart, and asks again if the display it was on is gone.
+- **Capture Options** ▸ **Capture Scrolling…** takes a page taller than the screen in one screenshot. The screen dims and you drag over the part that scrolls, for example a browser's page. Then scroll it down at your own pace: a small bar under the area counts the frames and the height so far. Press **Done** (↩) to open the stitched screenshot in the editor, or **Cancel** (Esc). The editor fits a tall screenshot to the window's width and scrolls. Snapmark stitches by matching each new view against the last one, keeps a sticky header and footer once, and stops at 20,000 px. Like every screenshot it is saved within the AI's size limits (1568 px on the long edge), so a page much taller than two screens arrives narrow and hard for the model to read. Scroll down only and not too fast: if a step goes further than the area's height, the bar says so, and scrolling back up a little picks up again. Content that moves by itself (animations, video, carousels), lazy-loaded images that appear late, and sideways scrolling come out wrong. There is no shortcut, on purpose: it is not the everyday capture.
 - **Open Current Session** opens the session in Snapmark's own window. Its header shows the session's name and how many screenshots it has; click the name (or the pencil) to rename it in place: ↩ saves, Esc cancels, and a name that is taken says so under the field. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** is a grid of every screenshot with its heading and note count; hover one for **Edit Again**, which reopens it in the editor with its marks and text (saving replaces it in place), and **…** ▸ **Remove from Session**. Click a thumbnail to see it large: ← and → flip through them, Esc or **‹ All Screenshots** goes back to the grid. **Discarded** (shown when there is something) lists this session's screenshots closed without saving or removed in the last 7 days, each with **Reopen**. **Open in Markdown App** opens `session.md` in your default app.
 - **Copy Prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
 - **Session** ▸ everything else about sessions, under the current one's name:
@@ -113,16 +114,18 @@ npm run smoke        # drives the real editor window: draws every tool, saves, c
 npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 ```
 
-| Path                  | What                                                  |
-| --------------------- | ----------------------------------------------------- |
-| `src/main.ts`         | Menu bar, global shortcuts, capture, auto-update, IPC |
-| `src/menu.ts`         | The menu bar menu as data, tested without Electron    |
-| `src/editor.ts/.html` | Annotation editor window                              |
-| `src/viewer.ts/.html` | Session window: `session.md` editable, screenshots    |
-| `src/area.ts/.html`   | Area picker for Capture Last Area                     |
-| `src/sessions.ts`     | Session folders and `session.md` writing              |
-| `assets/`             | App icon, menu bar template icon                      |
-| `build/`              | Packaging resources (icon, entitlements)              |
+| Path                  | What                                                    |
+| --------------------- | ------------------------------------------------------- |
+| `src/main.ts`         | Menu bar, global shortcuts, capture, auto-update, IPC   |
+| `src/menu.ts`         | The menu bar menu as data, tested without Electron      |
+| `src/editor.ts/.html` | Annotation editor window                                |
+| `src/viewer.ts/.html` | Session window: `session.md` editable, screenshots      |
+| `src/area.ts/.html`   | Area picker for Capture Last Area and Capture Scrolling |
+| `src/scroll.ts/.html` | Capture Scrolling's Done and Cancel bar                 |
+| `src/stitch.ts`       | Stitches the scrolled frames, tested without Electron   |
+| `src/sessions.ts`     | Session folders and `session.md` writing                |
+| `assets/`             | App icon, menu bar template icon                        |
+| `build/`              | Packaging resources (icon, entitlements)                |
 
 CI (`.github/workflows/ci.yml`) runs format check, lint, typecheck, unit test and the smoke test on every pull request.
 

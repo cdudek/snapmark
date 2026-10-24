@@ -25,7 +25,7 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath, pickArea } =
+const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath, pickArea, scrollCapture } =
   require('../src/main') as typeof import('../src/main');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
@@ -424,6 +424,80 @@ app
     const cancelled = await pickWith((w) => w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' }));
     viewer['area picker: Esc gives no area and closes the picker'] =
       cancelled === null && !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('area.html'));
+
+    // Capture Scrolling: frames of a synthetic 8200-row page under a fixed header go through the live loop; ↩ in its
+    // control stitches them into the editor, which fits the width and scrolls. Esc cancels without an editor.
+    const [PW, PH, VIEW, TOP] = [600, 8200, 600, 40];
+    const shade = (x: number, y: number) => (y < TOP ? 30 : 60 + (((((x / 12) | 0) * 73856093) ^ (((y / 10) | 0) * 19349663)) % 190));
+    const frame = (o: number) => {
+      const data = Buffer.alloc(PW * VIEW * 4, 255);
+      for (let y = 0; y < VIEW; y++)
+        for (let x = 0; x < PW; x++) data.fill(shade(x, y < TOP ? y : y + o), (y * PW + x) * 4, (y * PW + x) * 4 + 3);
+      return { width: PW, height: VIEW, data };
+    };
+    const offsets = Array.from({ length: (PH - VIEW) / 400 + 1 }, (_, i) => i * 400);
+    const scrollArea = { x: display.x + 100, y: display.y + 100, width: 300, height: 200 };
+    let ctlBounds: Electron.Rectangle | null = null;
+    const fakeGrab = (frames: number[], key: string) => {
+      let i = 0;
+      return async () => {
+        await new Promise((r) => setTimeout(r, 20));
+        const ctl = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().endsWith('scroll.html'));
+        if (i === frames.length - 1 && ctl && !ctl.webContents.isLoading()) {
+          ctlBounds = ctl.getBounds();
+          ctl.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+        }
+        return frame(frames[Math.min(i++, frames.length - 1)]);
+      };
+    };
+    const tall = await scrollCapture(scrollArea, fakeGrab(offsets, 'Return'));
+    viewer['Capture Scrolling: ↩ opens the stitched page in the editor'] = !!tall;
+    if (tall) {
+      await new Promise<void>((r) => (tall.webContents.isLoading() ? tall.webContents.once('did-finish-load', () => r()) : r()));
+      await loaded(tall);
+      const seen = JSON.parse(
+        await inWin(
+          tall,
+          `const c = document.createElement('canvas'); [c.width, c.height] = [background.width, background.height];
+          const g = c.getContext('2d'); g.drawImage(background.getElement(), 0, 0);
+          const at = (x, y) => g.getImageData(x, y, 1, 1).data[0];
+          return JSON.stringify({ w: background.width, h: background.height, px: [at(5, 5), at(301, 4321), at(599, 8199)],
+            scrolls: mainEl.scrollHeight > mainEl.clientHeight + 100, fitsWidth: canvas.upperCanvasEl.getBoundingClientRect().width <= mainEl.clientWidth });`,
+        ),
+      );
+      viewer['Capture Scrolling: the whole page, the header once'] =
+        seen.w === PW && seen.h === PH && JSON.stringify(seen.px) === JSON.stringify([shade(5, 5), shade(301, 4321), shade(599, 8199)]);
+      viewer['the editor fits a tall image to the width and scrolls'] = seen.scrolls && seen.fitsWidth;
+      // Scrolled down, a box lands where it is drawn, and Redact still pixelates far below the first screen
+      const drawn = JSON.parse(
+        await inWin(
+          tall,
+          `mainEl.scrollTop = 3000; await new Promise((r) => setTimeout(r, 100));
+          const up = document.querySelector('.upper-canvas'); const b = up.getBoundingClientRect(); const k = background.width / b.width;
+          const y = mainEl.getBoundingClientRect().top + 150;
+          for (const [type, dx, dy] of [['mousedown', 100, 0], ['mousemove', 200, 60], ['mouseup', 200, 60]])
+            up.dispatchEvent(new MouseEvent(type, { clientX: b.left + dx, clientY: y + dy, button: 0, buttons: type === 'mouseup' ? 0 : 1, bubbles: true }));
+          const box = canvas.getObjects().at(-1);
+          const r = makeRedact({ x: 0, y: 6000, w: 240, h: 120 });
+          const c = r.getElement(); const g = c.getContext ? c.getContext('2d') : null;
+          return JSON.stringify({ boxTop: box.top, want: (y - b.top) * k, k, block: g && [g.getImageData(1, 1, 1, 1).data[0], g.getImageData(13, 13, 1, 1).data[0]] });`,
+        ),
+      );
+      viewer['a tall image: a box drawn after scrolling lands under the pointer'] = Math.abs(drawn.boxTop - drawn.want) < 4 * drawn.k;
+      // Two pixels in one pixelated block match, and are not blank, where the page itself differs
+      viewer['a tall image: Redact pixelates far down the page'] =
+        shade(1, 6001) !== shade(13, 6013) && drawn.block?.[0] > 0 && drawn.block[0] === drawn.block[1];
+      tall.destroy();
+    }
+    const b = ctlBounds as Electron.Rectangle | null;
+    viewer['Capture Scrolling: the control sits outside the grabbed area'] =
+      !!b && (b.y >= scrollArea.y + scrollArea.height || b.y + b.height <= scrollArea.y);
+    windows = BrowserWindow.getAllWindows();
+    const cancelled2 = await scrollCapture(scrollArea, fakeGrab([0, 400], 'Escape'));
+    await new Promise((r) => setTimeout(r, 300)); // the control closes a moment after
+    viewer['Capture Scrolling: Esc cancels, no editor, control gone'] =
+      cancelled2 === null &&
+      !BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,

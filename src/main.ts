@@ -22,6 +22,7 @@ import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, loginState, MenuActions, MenuState, SessionInfo } from './menu';
+import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
@@ -181,12 +182,14 @@ async function captureArea(choose = false) {
     area = picked;
     saveState();
   }
-  shoot(['-R', [area.x, area.y, area.width, area.height].map(Math.round).join(',')]);
+  shoot(['-R', rect(area)]);
 }
+
+const rect = (a: Area) => [a.x, a.y, a.width, a.height].map(Math.round).join(',');
 
 // `screencapture -i` never says where its region was, so the area to repeat is dragged in Snapmark's own
 // see-through window over the display with the pointer. Resolves once that window is off the screen.
-export function pickArea(): Promise<Area | null> {
+export function pickArea(scroll = false): Promise<Area | null> {
   const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const win = new BrowserWindow({
     ...bounds,
@@ -207,7 +210,7 @@ export function pickArea(): Promise<Area | null> {
     win.show();
     app.focus({ steal: true });
   });
-  void win.loadFile(path.join(__dirname, 'area.html'));
+  void win.loadFile(path.join(__dirname, 'area.html'), scroll ? { hash: 'scroll' } : {});
   return new Promise((resolve) => {
     let picked: Area | null = null;
     const done = (e: IpcMainEvent, a: Area | null) => {
@@ -222,6 +225,91 @@ export function pickArea(): Promise<Area | null> {
       setTimeout(() => resolve(picked), 200);
     });
   });
+}
+
+// Capture Scrolling (Capture Options ▸): the owner drags an area, then scrolls what is under it while Snapmark grabs
+// the area again and again and stitches what scrolled in onto one tall screenshot (stitch.ts). Done opens the editor.
+async function captureScrolling() {
+  if (picking) return;
+  picking = true;
+  const picked = await pickArea(true).finally(() => (picking = false));
+  if (picked) await scrollCapture(picked);
+}
+
+// One frame of the area, as `screencapture -R` gives it: Retina displays give 2x pixels.
+function grabArea(a: Area): Promise<Bitmap> {
+  const tmp = path.join(os.tmpdir(), `snapmark-frame-${Date.now()}.png`);
+  return new Promise((resolve, reject) =>
+    execFile('screencapture', ['-x', '-R', rect(a), tmp], (err) => {
+      const img = nativeImage.createFromPath(tmp);
+      fs.rmSync(tmp, { force: true });
+      if (err || img.isEmpty()) return reject(err ?? new Error('screencapture made no image'));
+      resolve({ ...img.getSize(), data: img.toBitmap() });
+    }),
+  );
+}
+
+// Grabs `a` until Done (↩) or Cancel (Esc) in a small control beside it, then opens the stitched image in the editor.
+// `grab` is swappable so the smoke test feeds synthetic frames through the same loop. Resolves to the editor, if any.
+export async function scrollCapture(a: Area, grab = grabArea): Promise<BrowserWindow | null> {
+  const [W, H, GAP] = [380, 48, 8];
+  const { workArea: wa } = screen.getDisplayMatching({ x: a.x, y: a.y, width: a.width, height: a.height });
+  // Below the area, else above it, else inside its bottom edge (an area as tall as the screen).
+  const below = a.y + a.height + GAP;
+  const y = below + H <= wa.y + wa.height ? below : a.y - GAP - H >= wa.y ? a.y - GAP - H : a.y + a.height - H - GAP;
+  const ctl = new BrowserWindow({
+    x: Math.round(Math.max(wa.x, Math.min(a.x, wa.x + wa.width - W))),
+    y: Math.round(y),
+    width: W,
+    height: H,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    fullscreenable: false,
+    show: false,
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  });
+  ctl.setContentProtection(true); // kept out of screen captures where macOS allows it, for the inside-the-area case
+  ctl.setAlwaysOnTop(true, 'screen-saver');
+  ctl.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+  ctl.once('ready-to-show', () => {
+    ctl.show();
+    app.focus({ steal: true }); // ↩ and Esc reach the control; scrolling still goes to the window under the pointer
+  });
+  void ctl.loadFile(path.join(__dirname, 'scroll.html'));
+
+  let stop: 'done' | 'cancel' | null = null;
+  const onDone = (e: IpcMainEvent, ok: boolean) => {
+    if (e.sender === ctl.webContents) stop ??= ok ? 'done' : 'cancel';
+  };
+  ipcMain.on('scroll:done', onDone);
+  ctl.on('closed', () => (stop ??= 'cancel'));
+  const st = stitcher();
+  try {
+    while (stop !== 'cancel') {
+      const last = stop === 'done'; // one more frame after Done: the owner may have scrolled just before pressing it
+      const step = st.add(await grab(a));
+      if (!ctl.isDestroyed()) ctl.webContents.send('scroll:status', { frames: st.frames, height: st.height, step } satisfies ScrollStatus);
+      if (step === 'full') {
+        notify(`Stopped at ${MAX_HEIGHT.toLocaleString('en-US')} px, the tallest a screenshot gets.`);
+        stop = 'done';
+        break;
+      }
+      if (last) break;
+      await new Promise((r) => setTimeout(r, 50)); // leaves the CPU some air between grabs
+    }
+  } catch (e) {
+    stop = 'cancel';
+    notify(`Capture Scrolling stopped: ${e instanceof Error ? e.message : String(e)}`);
+  } finally {
+    ipcMain.off('scroll:done', onDone);
+    if (!ctl.isDestroyed()) ctl.close();
+  }
+  if (stop !== 'done' || !st.frames) return null;
+  const { width, height, data } = st.result();
+  const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
+  fs.writeFileSync(tmp, nativeImage.createFromBitmap(Buffer.from(data.buffer, data.byteOffset, data.length), { width, height }).toPNG());
+  return openEditor(tmp);
 }
 
 // Opens the editor on a screenshot file, which it owns and deletes on close. `session` is where it saves (default:
@@ -609,6 +697,7 @@ function showShortcuts() {
     ['⌃⇧1', 'Capture region', 'anywhere'],
     ['⌃⇧3', 'Capture last area', 'anywhere; the first time, drag the area'],
     ['⌃⇧N', 'New session', 'anywhere'],
+    ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (menu: Capture Options)'],
     ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
     ['⌫', 'Delete', 'the selected mark'],
     ['⌘1–⌘7', 'Pick a tool', 'also while typing a note or card, where the plain digit types'],
@@ -635,6 +724,7 @@ const actions: MenuActions = {
   capture,
   captureArea: () => void captureArea(),
   chooseArea: () => void captureArea(true),
+  captureScrolling: () => void captureScrolling(),
   newSession,
   copyPrompt: (name) => {
     clipboard.writeText(promptFor(dirOf(name)));

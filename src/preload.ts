@@ -14,6 +14,8 @@ const api: Window['snapmark'] = {
   viewerReopen: (dir) => ipcRenderer.invoke('viewer:reopen', dir),
   onViewerReload: (cb) => void ipcRenderer.on('viewer:reload', (_e, data: ViewerInit) => cb(data)),
   areaDone: (area) => ipcRenderer.send('area:done', area),
+  scrollDone: (ok) => ipcRenderer.send('scroll:done', ok),
+  onScrollStatus: (cb) => void ipcRenderer.on('scroll:status', (_e, status: ScrollStatus) => cb(status)),
 };
 
 contextBridge.exposeInMainWorld('snapmark', api);

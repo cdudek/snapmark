@@ -26,6 +26,7 @@ export interface MenuActions {
   capture(): void;
   captureArea(): void;
   chooseArea(): void;
+  captureScrolling(): void;
   reopenLast(): void;
   reopenDiscarded(): void;
   newSession(): void;
@@ -87,7 +88,15 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
       sublabel: st.area ? `${st.area.width} × ${st.area.height}` : 'First time: drag the area',
       ...icon('area'),
     },
-    { label: 'Capture Options', ...icon('choose'), submenu: [{ label: 'Choose New Area…', click: () => a.chooseArea() }] },
+    {
+      label: 'Capture Options',
+      ...icon('choose'),
+      submenu: [
+        { label: 'Choose New Area…', click: () => a.chooseArea() },
+        // Not the default, so no global shortcut (owner, 2026-10-25): drag an area, scroll it, and get one tall screenshot.
+        { label: 'Capture Scrolling…', click: () => a.captureScrolling() },
+      ],
+    },
     { type: 'separator' },
     { label: 'Open Current Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
     { label: 'Copy Prompt for AI', enabled: on, ...icon('prompt'), click: () => a.copyPrompt(name) },

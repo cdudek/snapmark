@@ -53,9 +53,18 @@ interface Area {
   height: number;
 }
 
+// Capture Scrolling's control (scroll.html), after each frame: what the stitched image holds and what the frame did.
+interface ScrollStatus {
+  frames: number;
+  height: number; // pixels
+  step: import('./stitch').Step;
+}
+
 interface Window {
   snapmark: {
     areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
+    scrollDone(ok: boolean): void; // Capture Scrolling: Done (true) or Cancel (false)
+    onScrollStatus(cb: (status: ScrollStatus) => void): void;
     init(): Promise<EditorInit>;
     save(data: EditorSave): Promise<number>;
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
