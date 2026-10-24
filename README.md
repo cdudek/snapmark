@@ -110,6 +110,7 @@ npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 npm test             # session and Markdown logic
 npm run smoke        # drives the real editor window: draws every tool, saves, checks pixels and Markdown
+npm run smoke:background  # the same, failing if Snapmark ever takes the front from your other apps (macOS)
 npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 ```
 
