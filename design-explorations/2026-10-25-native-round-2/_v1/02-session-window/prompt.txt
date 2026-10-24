@@ -1,0 +1,20 @@
+You are a senior product designer. Produce mockups as GENERATED IMAGES with your image generation tool, and nothing else. No HTML, no code.
+
+Attached references: native-session.png is the approved direction ("Native") for Snapmark's session window — keep its look exactly: light macOS window, SF Pro, quiet greys, an 820px document column. native-editor.png shows the same direction's editor. branded-editor-coral.png shows the coral red the owner liked for marks. today-screenshots-tab.png is today's Screenshots tab (one image at a time with ←, "1 of 3", →, Edit Again, Remove from Session). app-icon.png is the logo.
+
+THE OWNER'S CHANGES TO APPLY (2026-10-25):
+- Marks are a SIGNAL RED, not blue: every mark and numbered diamond marker inside the screenshots, and the note numbers, are CORAL RED #E5484D. The approve tick stays green #30A46C. Selected tab and links stay neutral/graphite; no blue marks.
+- Screenshot count is always visible: the header shows the session title, then "12 screenshots".
+- Rename from the screen: the session title in the header is editable in place: a subtle pencil icon appears next to it; clicking the title turns it into a text field.
+- Go back to annotated screenshots: the Screenshots tab is a GRID of thumbnails of the session's annotated screenshots (with their coral red marks visible), each with its number "001 · 23:38" and its note count; hovering one shows "Edit Again" and a "…" menu (Remove from Session). Clicking a thumbnail opens it large (today's one-at-a-time view).
+- Go through discarded screenshots: a third tab "Discarded 3" lists screenshots discarded in the last 7 days (editors closed without saving and screenshots removed from the session), each with a thumbnail, when it was discarded ("Today, 22:10", "Yesterday, 18:02", "Mon, 09:41"), what it was ("Closed without saving" / "Removed from session"), and a "Reopen" button; a quiet line at the top: "Discarded screenshots are kept for 7 days."
+- Header, left to right: traffic lights, app icon, session title (+ pencil on hover), "· 12 screenshots"; right side: segmented control "Document | Screenshots | Discarded 3", then "Open in Markdown App".
+
+Write exactly these files in the current directory, each landscape 1536x1024, a macOS window on a neutral desktop:
+1. shots/session--document.png — the Document tab, like native-session.png, with the new header and coral red marks. This is the anchor.
+2. shots/session--screenshots.png — an EDIT of image 1 (pass image 1 back in as the input image): change ONLY the content area to the Screenshots grid (12 thumbnails, 4 per row, the hovered one showing Edit Again), and select the Screenshots tab.
+3. shots/session--discarded.png — an EDIT of image 1: change ONLY the content area to the Discarded list (3 rows) and select the Discarded tab.
+4. shots/session--rename.png — an EDIT of image 1: change ONLY the title: it is a focused text field with "Ledgerly Q4 review" selected, with a blue macOS focus ring (focus rings may stay system blue), and a small hint "↩ to save · Esc to cancel".
+5. notes.md — first line "# Session window", then one short paragraph per change.
+
+Text sharp and readable at full size; nothing cut off; real content, no lorem.

@@ -1,0 +1,16 @@
+You are a senior product designer. Produce mockups as GENERATED IMAGES with your image generation tool, by EDITING the existing images in shots/ (pass each one in as the input image). No HTML, no code.
+
+The owner's rule (2026-10-25): "my buttons, the application buttons and so on, should be in the colour palette of the application, but the annotations should obviously be in the colour that I select."
+
+So there are two colour systems, never mixed:
+- APP UI = the brand palette of the logo (app-icon.png): brand blue #2492FF, from the logo's cool gradient (#20F4EC cyan -> #2492FF blue -> #8B3DFF violet). Used for: the selected segment of the "Document | Screenshots | Discarded 3" control, primary buttons ("Reopen" in the Discarded list becomes a brand-blue button with white text), the pencil icon on hover, the focus ring of the rename field, and the "Edit Again" button on the hovered thumbnail. Neutral greys for everything else.
+- ANNOTATIONS = the colour the user picked, default coral red #E5484D: every mark inside the screenshots, the numbered diamond markers, and the note numbers under each screenshot in the document (they are the same numbers as on the screenshot). The approve tick is always green.
+
+Edit these files in place (overwrite), changing ONLY the colours of app UI elements; keep every screenshot, mark, word and layout identical:
+1. shots/session--document.png — the selected "Document" segment gets a brand-blue #2492FF fill with white text (or a white pill with brand-blue text, whichever reads more native); marks and note numbers stay coral red.
+2. shots/session--screenshots.png — the selected "Screenshots" segment as in image 1; the hovered thumbnail's "Edit Again" becomes a brand-blue button with white text, and the hovered thumbnail gets a 2px brand-blue outline.
+3. shots/session--discarded.png — the selected "Discarded 3" segment as in image 1; each "Reopen" becomes a brand-blue button with white text.
+4. shots/session--rename.png — the selected "Document" segment as in image 1; the rename field's focus ring and text selection are brand blue #2492FF.
+Then update notes.md: keep its first line "# Session window", and add a short "Two colour systems" paragraph explaining the rule above.
+
+Text sharp and readable; nothing cut off.

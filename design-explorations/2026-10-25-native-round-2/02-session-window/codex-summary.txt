@@ -1,0 +1,3 @@
+Overwrote all four images in `shots/` using image generation and updated [notes.md](notes.md). Blue app controls and coral annotations remain separate.
+
+Generated blues vary slightly from exact `#2492FF`. Commit and push are blocked by workspace permissions.

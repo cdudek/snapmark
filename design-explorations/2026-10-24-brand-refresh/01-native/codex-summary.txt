@@ -1,0 +1,1 @@
+[Editor](shots/editor--in-use.png) · [Session](shots/session--document.png) · [Shortcuts](shots/shortcuts--window.png) · [Notes](notes.md)

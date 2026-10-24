@@ -1,0 +1,15 @@
+You are a senior product designer. Produce mockups as GENERATED IMAGES with your image generation tool, and nothing else. No HTML, no code.
+
+Attached references: native-editor.png is the approved direction ("Native") for the Snapmark screenshot editor — keep its look exactly: light macOS window, SF Pro, quiet greys, toolbar on top, side panel on the right, diamond-shaped numbered markers. branded-editor-coral.png shows the coral red the owner liked for marks. app-icon.png is the logo.
+
+THE OWNER'S CHANGES TO APPLY (2026-10-25):
+- Marks are a SIGNAL RED again, not blue: "with red, it's very clear that's feedback". Every mark, the numbered diamond markers, the reference badges in the side panel and the colour swatch in the toolbar use CORAL RED #E5484D (darker and more coral than pure red). The approve tick stays green #30A46C. The primary button "Add to session" is coral red #E5484D too. No blue marks.
+- Colour palette: clicking the colour swatch opens a small popover with 10 preset swatches in two rows of 5, in this order: coral red #E5484D (selected, with a check), orange #F76B15, amber #FFB224, green #30A46C, teal #12A594, cyan #05A2C2, blue #2492FF, violet #8B3DFF, pink #EF28A7, graphite #2C2C31; below them a divider and "Custom…" with a rainbow-ring swatch (opens the macOS colour panel). Small labels or tooltips are not needed.
+- Screenshot count: the toolbar's right side shows the session and its count: "Ledgerly Q4 review · 12 screenshots" with a small chevron, so you can see how many screenshots you took.
+
+Write exactly these files in the current directory:
+1. shots/editor--in-use.png — the editor exactly like native-editor.png (same captured Ledgerly orders page, same marks, same side panel words), but with all marks and markers in coral red #E5484D, the approve tick green, the coral red swatch in the toolbar, coral red "Add to session", and "Ledgerly Q4 review · 12 screenshots" at the top right. Landscape, 1536x1024.
+2. shots/editor--colour-palette.png — an EDIT of image 1 (pass image 1 back in as the input image): change ONLY this: the colour popover is open under the toolbar's colour swatch, showing the 10 swatches and "Custom…" as described. Everything else identical.
+3. notes.md — first line "# Editor", then one short paragraph on what changed, then the 10 colours with hex.
+
+Text sharp and readable at full size; nothing cut off; real content, no lorem.

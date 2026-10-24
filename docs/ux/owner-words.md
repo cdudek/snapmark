@@ -200,3 +200,38 @@ topic when it covers both.
 > Also the new session is a very dangerous shortcut because it sits in between 1 and 2. I think overall, X-wise, it's also quite complicated in terms of what we have in the menu. I just wonder whether we need just "Copy session info" when it comes with the prompt and everything, and in the settings you select whether you want to have the prompt with it or without it. I think everything is not very intuitive. Can we analyse and audit it with a UX audit?"
 >
 > — 2026-09-28, about v0.9.0. "X-wise" is read as UX-wise. "Sits in between 1 and 2" is read as ⌃⇧2 sitting between ⌃⇧1 and ⌃⇧3.
+
+## Look and brand, 2026-10-24 and 2026-10-25
+
+> "Okay can we take screenshots of the app, the user interface, and so on, and also make it overall appear and look nicer and more modern so it reflects the logo and brand identity pallette and feel?" … "using codex and creating mockups"
+>
+> — 2026-10-24.
+
+> "I'm not 100% sure about the blue because, with red, it's very clear that's feedback, whereas with the blue, it feels like you're not giving feedback. It's not as clear as the red because red is a signal colour.
+> That doesn't mean, though, that I think we have the colour picker. That is fine. There should be some predefined colour and some custom colour picker.
+> I also would want to:
+>
+> - Understand how many screenshots I took.
+> - Go through dismissed screenshots.
+> - Go back to screenshots I already augmented and annotated.
+> - Rename a session from the screen.
+>   I think that would be helpful as well. I think I most like the native version, almost like the native version, really.
+>   For the colour palette I don't know, maybe the default colour palette should have 10 different colours. The red should be a darker red but also a more coral red, like the branded theme, which is more coral red. Maybe you can create mockups based on my feedback here."
+>
+> — 2026-10-25, after the three mockup directions (Native, Branded, Signature) in `design-explorations/2026-10-24-brand-refresh/`. "Dismissed" is read as discarded; "augmented" as marked up.
+
+> "Well, my buttons, the application buttons and so on, should be in the colour palette of the application, but the annotations should obviously be in the colour that I select."
+>
+> — 2026-10-25, about the round-2 mockups, where "Add to session" had turned coral red with the marks.
+
+## Pricing and features, 2026-10-25
+
+> "Yeah, I think the closest is Shooter. I think that's kind of the price range I would like to go for, like 12.99 one-off.
+>
+> Also looking at the licences, how long do I have to support this? I also wonder whether we can explore, across the few applications that you shared, the features. I like Snapper overall but I think Shooter comes closer. I have Snapper. I bought Snapper and I bought it at a discount for 5.99 or something.
+>
+> I think it would be nice to explore the features and develop things. Things like bubbles (what do you call them, speak bubbles?), scrolling screenshots, and maybe beautiful backgrounds. Technically there could be a difference because with Snapper you create a screenshot and make it look nice. You can add padding inside, rounded corners, a shadow, and a background, and then have different gradients for the background or none, so you can copy it into presentations.
+>
+> We can specify the ratio for your screenshot. I don't know how this ratio works. We can add watermark text, even save as, and just copy it. I'm giving you a copy of the screenshot but also do some research, ask the agent to look at features and things, and then let's decide. Generally I would like to keep the app simple. Specifically I designed it for AI feedback but if we can switch between different modes, like session mode and one-shot mode, why not?"
+>
+> — 2026-10-25, with a screenshot of Xnapper's editor (padding, inset, rounded, shadow, background presets, ratio/size presets, redact sensitive data, watermark text, Copy ⌘C, Save ⌘S, Save As…). "Shooter" is read as Shottr, "Snapper" as Xnapper, "speak bubbles" as speech bubbles.
