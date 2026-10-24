@@ -3,6 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 const api: Window['snapmark'] = {
   init: () => ipcRenderer.invoke('editor:init'),
   save: (data) => ipcRenderer.invoke('editor:save', data),
+  copyImage: (png) => ipcRenderer.invoke('editor:copy', png),
+  saveImageAs: (png) => ipcRenderer.invoke('editor:saveAs', png),
   dirty: (value) => ipcRenderer.send('editor:dirty', value),
   stash: (state) => void ipcRenderer.sendSync('editor:stash', state),
   onSession: (cb) => void ipcRenderer.on('editor:session', (_e, session: string, count: number) => cb(session, count)),

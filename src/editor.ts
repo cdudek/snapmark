@@ -849,17 +849,24 @@ function renderRefs() {
 
 let saving = false; // closing after a save is not a discard
 
-async function save() {
-  saveBtn.disabled = true;
-  saving = true;
+// The marked-up image as base64 PNG: card typing ended and nothing selected. Add to session, Copy Image and Save As…
+// all take it from here, so the three always match.
+function flatten(): string {
   const active = canvas.getActiveObject();
   if (active instanceof fabric.Textbox && active.isEditing) active.exitEditing();
   canvas.discardActiveObject();
   canvas.renderAll();
+  return canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1];
+}
+
+async function save() {
+  saveBtn.disabled = true;
+  saving = true;
+  const png = flatten();
   const state = stateOf();
   await window.snapmark
     .save({
-      png: canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1],
+      png,
       caption: state.caption,
       notes: markers().map(noteOf),
       cards: cards().map((c) => c.text.trim()),
@@ -878,8 +885,17 @@ window.addEventListener('beforeunload', () => {
   if (!saving && background) window.snapmark.stash(stateOf());
 });
 
+const copyImage = () => void (background && window.snapmark.copyImage(flatten()));
+const saveImageAs = () => void (background && window.snapmark.saveImageAs(flatten()));
+
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && e.key === 'Enter') return void save();
+  // ⇧⌘C and ⇧⌘S from anywhere, also inside a note: plain ⌘C there still copies its text.
+  const k = e.metaKey && e.shiftKey && e.key.toLowerCase();
+  if (k === 'c' || k === 's') {
+    e.preventDefault();
+    return (k === 'c' ? copyImage : saveImageAs)();
+  }
   if (e.metaKey && e.key === 'w') return window.close();
   const typing = e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable);
   // ⌘1–⌘7 pick a tool from anywhere, also while a note or card has the cursor, where the plain digit types.
@@ -917,6 +933,8 @@ let captionField: import('./md-notes').MdField | null = null; // mounted once in
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
 saveBtn.onclick = () => void save();
+$<HTMLButtonElement>('copy').onclick = copyImage;
+$<HTMLButtonElement>('save-as').onclick = saveImageAs;
 $<HTMLButtonElement>('cancel').onclick = () => window.close();
 
 // Backing store at the screenshot's full resolution, displayed scaled down to fit the window. An image so tall that

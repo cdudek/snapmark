@@ -79,8 +79,12 @@ assert.strictEqual(calls.pop(), 'captureArea');
 find(sub(find(menu(), 'Capture Options')), 'Choose New Area…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'chooseArea');
 
-// Capture Scrolling: under Capture Options, not the default, so no global shortcut
-assert.deepStrictEqual(labels(sub(find(menu(), 'Capture Options'))), ['Choose New Area…', 'Capture Scrolling…']);
+// Capture Window and Capture Scrolling: under Capture Options, not the default, so no global shortcut
+assert.deepStrictEqual(labels(sub(find(menu(), 'Capture Options'))), ['Choose New Area…', 'Capture Window…', 'Capture Scrolling…']);
+const windowItem = find(sub(find(menu(), 'Capture Options')), 'Capture Window…');
+assert.strictEqual(windowItem.accelerator, undefined);
+windowItem.click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'captureWindow');
 const scrolling = find(sub(find(menu(), 'Capture Options')), 'Capture Scrolling…');
 assert.strictEqual(scrolling.accelerator, undefined);
 scrolling.click!({} as never, undefined, {} as never);

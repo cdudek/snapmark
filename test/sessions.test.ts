@@ -29,6 +29,9 @@ assert.strictEqual(sessions.count(root, 'nope'), 0);
 assert.strictEqual(sessions.shortName('2026-09-25 12.03'), '25 Sep 12.03');
 assert.strictEqual(sessions.shortName('2026-01-05 09.14 (2)'), '5 Jan 09.14 (2)');
 assert.strictEqual(sessions.shortName('Checkout review'), 'Checkout review');
+assert.strictEqual(sessions.saveAsName(root, a), 'demo 004.png'); // the next entry: 001–003 are taken
+assert.strictEqual(sessions.saveAsName(root, a, 2), 'demo 002.png'); // Edit Again: the entry it replaces
+assert.strictEqual(sessions.saveAsName(root, sessions.create(root, '2026-09-25 12.03')), '25 Sep 12.03 001.png');
 assert.strictEqual(sessions.rename(root, 'demo (2)', '  '), null);
 assert.strictEqual(sessions.rename(root, 'demo (2)', 'demo'), null); // taken
 assert.strictEqual(sessions.rename(root, 'demo (2)', 'Checkout/review'), 'Checkout-review');
