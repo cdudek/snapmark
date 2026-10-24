@@ -102,6 +102,46 @@ assert.ok(fs.existsSync(path.join(kept, 'image.png')) && fs.existsSync(path.join
 fs.mkdirSync(path.join(root, '.discarded', 'stray'));
 assert.strictEqual(sessions.discarded(root, Date.now() + 8 * 86_400_000).length, 0);
 assert.deepStrictEqual(fs.readdirSync(path.join(root, '.discarded')), [], 'old and stray folders are deleted');
+// The session window's Discarded tab: only this session's, and they follow a rename
+fs.writeFileSync(cap, 'png');
+sessions.discardCapture(root, rm, cap, '{}');
+const other = sessions.create(root, 'other');
+sessions.addShot(root, other, Buffer.from('o'));
+sessions.removeShot(root, other, 1);
+assert.deepStrictEqual(
+  sessions.discardedIn(root, rm).map((d) => d.kind),
+  ['capture'],
+);
+assert.deepStrictEqual(
+  sessions.discardedIn(root, other).map((d) => [d.kind, d.n]),
+  [['shot', 1]],
+);
+assert.strictEqual(sessions.rename(root, other, 'other renamed'), 'other renamed');
+assert.strictEqual(sessions.discardedIn(root, other).length, 0);
+const followed = sessions.discardedIn(root, 'other renamed');
+assert.strictEqual(followed.length, 1);
+assert.strictEqual(sessions.restoreShot(root, followed[0]), 1); // back into the renamed folder, not a new "other"
+assert.ok(!fs.existsSync(path.join(root, other)));
+
+// Entries for the Screenshots grid: heading and note count
+assert.deepStrictEqual(
+  sessions.entries(
+    '# s\n\n## 001 · 23:38\n\n![](img/001.png)\n\nCaption\n\n1. a\n   1. nested\n2. b\n\n- Card: c\n\n## 004 · 23:41\n\nNo notes\n',
+  ),
+  [
+    { n: 1, heading: '001 · 23:38', notes: 2 },
+    { n: 4, heading: '004 · 23:41', notes: 0 },
+  ],
+);
+
+// "Today, 22:10", "Yesterday, 18:02", "Mon, 09:41", and a date once the weekday would repeat
+const now = new Date(2026, 9, 25, 23, 0).getTime(); // Sun 25 Oct 2026
+assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 25, 22, 10).getTime(), now), 'Today, 22:10');
+assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 24, 18, 2).getTime(), now), 'Yesterday, 18:02');
+assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 19, 9, 41).getTime(), now), 'Mon, 09:41');
+assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 18, 9, 41).getTime(), now), '18 Oct, 09:41');
+assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 24, 23, 59).getTime(), new Date(2026, 9, 25, 0, 1).getTime()), 'Yesterday, 23:59');
+
 // olderThan: by the later of last use and session.md's last change
 const stale = sessions.create(root, 'stale');
 const day = 86_400_000;

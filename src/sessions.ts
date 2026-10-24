@@ -83,6 +83,16 @@ export function count(root: string, name: string): number {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// "Today, 22:10", "Yesterday, 18:02", "Mon, 09:41"; a week back or more "18 Oct, 09:41", so no weekday repeats.
+export function whenLabel(at: number, now = Date.now()): string {
+  const d = new Date(at);
+  const midnight = (t: Date) => new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
+  const days = Math.round((midnight(new Date(now)) - midnight(d)) / 86_400_000); // round: DST days are 23 or 25 h
+  const day = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : days < 7 ? DAYS[d.getDay()] : `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  return `${day}, ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
 
 // "2026-09-25 12.03 (2)" → "25 Sep 12.03 (2)"; a name the owner gave stays as it is.
 export function shortName(name: string): string {
@@ -97,6 +107,11 @@ export function rename(root: string, from: string, to: string): string | null {
   fs.renameSync(path.join(root, from), path.join(root, name));
   const md = path.join(root, name, 'session.md');
   fs.writeFileSync(md, fs.readFileSync(md, 'utf8').replace(/^# .*$/m, `# ${name}`));
+  // Its discarded screenshots go with it: they stay in its Discarded tab, and Reopen puts them back here.
+  for (const d of discardedIn(root, from)) {
+    const meta = path.join(d.dir, 'meta.json');
+    fs.writeFileSync(meta, JSON.stringify({ ...JSON.parse(fs.readFileSync(meta, 'utf8')), session: name }));
+  }
   return name;
 }
 
@@ -113,8 +128,17 @@ export function byLastUse(names: string[], used: Record<string, number>): string
 
 // Entry numbers in session.md, in order ("## 003 · 14:02" → 3).
 export function shots(root: string, name: string): number[] {
-  const md = fs.readFileSync(path.join(root, name, 'session.md'), 'utf8');
-  return [...md.matchAll(/^## (\d+) · /gm)].map((m) => parseInt(m[1], 10));
+  return entries(fs.readFileSync(path.join(root, name, 'session.md'), 'utf8')).map((e) => e.n);
+}
+
+// The entries of a session.md, in order: number, heading ("003 · 14:02") and how many numbered notes it has.
+export function entries(md: string): { n: number; heading: string; notes: number }[] {
+  const heads = [...md.matchAll(/^## ((\d+) · .*)$/gm)];
+  return heads.map((m, i) => ({
+    n: parseInt(m[2], 10),
+    heading: m[1],
+    notes: md.slice(m.index, heads[i + 1]?.index ?? md.length).match(/^\d+\. /gm)?.length ?? 0,
+  }));
 }
 
 // Where entry n starts and ends in session.md, or null if there is no such entry.
@@ -205,6 +229,9 @@ export function discarded(root: string, now = Date.now()): Discarded[] {
   }
   return all.sort((a, b) => b.at - a.at);
 }
+
+// One session's discarded screenshots: editors closed without saving while it was current, and entries removed from it.
+export const discardedIn = (root: string, session: string, now = Date.now()) => discarded(root, now).filter((d) => d.session === session);
 
 // Puts a removed entry back at the end of its session (recreated if it is gone). Returns its number, which is
 // the old one unless that number was taken in the meantime.
