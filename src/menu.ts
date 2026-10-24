@@ -38,6 +38,7 @@ export interface MenuActions {
   makeCurrent(name: string): void;
   otherSession(): void;
   chooseRoot(): void;
+  clearOldSessions(): void;
   setLogin(checked: boolean): void;
   keyboardShortcuts(): void;
   checkUpdates(): void;
@@ -125,6 +126,7 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
           click: (item) => a.setLogin(item.checked),
         },
         { label: 'Sessions Folder…', sublabel: st.root, enabled: st.canChangeRoot, click: () => a.chooseRoot() },
+        { label: 'Clear Sessions Older Than 60 Days…', click: () => a.clearOldSessions() },
         { label: 'Keyboard Shortcuts', click: () => a.keyboardShortcuts() },
         { label: 'Check for Updates…', sublabel: `Snapmark ${st.version}`, enabled: st.canUpdate, click: () => a.checkUpdates() },
       ],

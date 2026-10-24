@@ -121,10 +121,13 @@ assert.strictEqual(find(menu(), 'New Session').accelerator, 'Control+Shift+2');
 assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
   'Open at Login',
   'Sessions Folder…',
+  'Clear Sessions Older Than 60 Days…',
   'Keyboard Shortcuts',
   'Check for Updates…',
 ]);
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Check for Updates…').sublabel, 'Snapmark 0.2.0');
+find(sub(find(menu(), 'Settings')), 'Clear Sessions Older Than 60 Days…').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'clearOldSessions');
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Sessions Folder…').sublabel, '~/Documents/Snapmark');
 
 // A waiting update comes first; a shortcut is shown only when registered
