@@ -1,0 +1,10 @@
+Saved using built-in ImageGen:
+
+- [Solid-blue editor](/Users/calvindudek/projects/ai-feedback-editor/.worktrees/cmd-number-tools/design-explorations/2026-10-25-native-round-2/01-editor/shots/editor--in-use.png)
+- [Colour-palette editor](/Users/calvindudek/projects/ai-feedback-editor/.worktrees/cmd-number-tools/design-explorations/2026-10-25-native-round-2/01-editor/shots/editor--colour-palette.png)
+- [Gradient variant](/Users/calvindudek/projects/ai-feedback-editor/.worktrees/cmd-number-tools/design-explorations/2026-10-25-native-round-2/01-editor/shots/editor--in-use-gradient.png)
+- [Updated notes.md](/Users/calvindudek/projects/ai-feedback-editor/.worktrees/cmd-number-tools/design-explorations/2026-10-25-native-round-2/01-editor/notes.md)
+
+Prompts specified colour-only app-control edits, preserving coral annotations, text and layout. All images are 1536×1024.
+
+Commit and push were blocked by sandbox permissions and unavailable GitHub connectivity.

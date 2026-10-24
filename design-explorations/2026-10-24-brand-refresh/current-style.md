@@ -1,0 +1,7 @@
+- Font: system font (SF Pro) everywhere; 13px in the editor, 14px in the session window; key hints in ui-monospace 600 at 10-11px.
+- Colours today (generic zinc greys, not the brand): light bg #f4f4f5, panel #fff, ink #18181b, muted #71717a, line #e4e4e7; dark bg #18181b, panel #232327, ink #f4f4f5, muted #a1a1aa, line #3f3f46. Accent #e11d48 (rose red) for the primary button, markers and focus — which clashes with "red = remove".
+- Marks: red #e11d48, yellow #facc15; text cards are pale yellow #fef9c3 with dark text.
+- Hover/pressed: neutral grey tint. Radii 6px (buttons, fields, images), 7px tab group.
+- Editor: full-width toolbar on top (32x30 icon-only tool buttons, 18px stroke icons, key number and variant dots under each; then colour swatch, Undo, Redo, the session name on the right), canvas in the middle, a 320px side panel on the right (comment field, "References" list with numbered badges beside each note, footer with Discard and "Add to session").
+- Session window: header with title, a Document/Screenshots segmented switch and "Open in Markdown App"; the document is an 820px column with grey "001 · 23:38" headings, the screenshot, the comment, numbered notes. The Screenshots tab shows one image with a bottom bar: ←, "1 of 3", →, Edit Again, Remove from Session.
+- Keyboard Shortcuts window: an unstyled table.

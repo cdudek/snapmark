@@ -1,0 +1,57 @@
+You are a senior product designer. Produce ONE design direction for a visual refresh of an existing macOS app as GENERATED IMAGES, made with your image generation tool, and nothing else.
+
+First look at every attached reference image: they are the app's CURRENT screens (editor, session window, keyboard shortcuts) and its logo/app icon. Keep their structure, controls and words; change the look.
+
+Write exactly these files in the current directory:
+- the images listed below, in shots/
+- notes.md — first line "# Branded", then one paragraph on the idea, then the palette you used (hex values), then a short list of what you deliberately did NOT do.
+Do not write HTML, code, a build or a README.
+
+Hard constraints:
+- Same screens, same controls, same words as the references; this is a restyle, not a new product. Real content, never lorem ipsum.
+- The brand palette comes from the logo (below). Remove marks are always red, approve marks always green.
+- The marked-up screenshot is the hero; chrome never competes with it.
+- Text sharp and readable at full size; nothing cut off; native macOS window chrome (traffic lights).
+
+THE DIRECTION (commit to it; do not hedge toward the middle; you are one of three and the reviewer needs them genuinely different):
+Branded. The beacon becomes the visual language. Base surfaces are the icon tile: near-black graphite (#0D0D10 to #2C2C31, hairlines #3B3B42) in dark mode, with a clean light counterpart. The cool gradient (#20F4EC -> #2492FF -> #8B3DFF) marks focus and action: active tool, selection handles, focus rings, primary button, progress. Viewfinder corners (four rounded L-shaped corners like the logo) frame the selected mark and the screenshot. The pink diamond (#FA6CFF -> #EF28A7) is the numbered-note marker and the brand dot. One strong, coherent system a reviewer can name in a sentence.
+
+THE BRIEF:
+# Snapmark brand refresh
+
+**What:** a visual refresh of Snapmark's own windows — the screenshot editor, the session window and the Keyboard Shortcuts window — so the app looks modern and clearly belongs to its logo. Same screens, same controls, same words; new look.
+
+**Owner's words (2026-10-24):** "make it overall appear and look nicer and more modern so it reflects the logo and brand identity palette and feel", "using codex and creating mockups".
+
+**For whom:** a product person or developer reviewing what an AI agent built overnight. They capture dozens of screenshots on the fly with shortcuts, mark them up (numbered notes, boxes, arrows, text cards, cut-and-move, red remove / green approve), and hand the session to Claude Code as Markdown. Benchmarks they know: macOS Screenshot markup, Figma, Xnapper, CleanShot X.
+
+**The brand:** the logo is a "beacon": four rounded viewfinder corners drawn with a cool gradient (#20F4EC cyan → #2492FF blue → #8B3DFF violet) around a rotated rounded square (a diamond) in a pink gradient (#FA6CFF → #EF28A7). The app icon sets it on a near-black tile (#2C2C31 → #0D0D10, hairline #3B3B42). Feel: precise, focused, a little electric — a viewfinder that marks one spot.
+
+**Fixed, in every direction:**
+- macOS app (Electron): native traffic lights, system font (SF Pro) unless the direction argues otherwise, follows light/dark mode.
+- Remove marks are always red, approve marks always green; the brand colours must not be confused with them.
+- The screenshot being marked up stays the hero; chrome must never compete with it.
+- Everything is reachable by keyboard; ⌘1–⌘7 pick the seven tools, so the tool order stays.
+- The words on the screens stay as they are today (see the reference screenshots).
+
+**The axis the three directions differ on: how loudly the brand speaks.**
+1. **Native** — reads as a first-class macOS app; the brand shows only in the accent and a few signature details.
+2. **Branded** — the beacon's gradient and viewfinder corners become the app's visual language (selection, focus, active tool, headers), on a dark-tile base like the icon.
+3. **Signature** — the brand is the experience: bold gradient surfaces, viewfinder framing of the screenshot, expressive type; the most distinctive, the most risk.
+
+
+HOW IT LOOKS TODAY (for reference, from the code):
+- Font: system font (SF Pro) everywhere; 13px in the editor, 14px in the session window; key hints in ui-monospace 600 at 10-11px.
+- Colours today (generic zinc greys, not the brand): light bg #f4f4f5, panel #fff, ink #18181b, muted #71717a, line #e4e4e7; dark bg #18181b, panel #232327, ink #f4f4f5, muted #a1a1aa, line #3f3f46. Accent #e11d48 (rose red) for the primary button, markers and focus — which clashes with "red = remove".
+- Marks: red #e11d48, yellow #facc15; text cards are pale yellow #fef9c3 with dark text.
+- Hover/pressed: neutral grey tint. Radii 6px (buttons, fields, images), 7px tab group.
+- Editor: full-width toolbar on top (32x30 icon-only tool buttons, 18px stroke icons, key number and variant dots under each; then colour swatch, Undo, Redo, the session name on the right), canvas in the middle, a 320px side panel on the right (comment field, "References" list with numbered badges beside each note, footer with Discard and "Add to session").
+- Session window: header with title, a Document/Screenshots segmented switch and "Open in Markdown App"; the document is an 820px column with grey "001 · 23:38" headings, the screenshot, the comment, numbered notes. The Screenshots tab shows one image with a bottom bar: ←, "1 of 3", →, Edit Again, Remove from Session.
+- Keyboard Shortcuts window: an unstyled table.
+
+
+Generate exactly these images (landscape, 1536x1024 or larger, a macOS desktop window on a neutral desktop background), one screen and one state each:
+1. shots/editor--in-use.png — the screenshot editor: a captured web page (a realistic SaaS dashboard) being marked up with a numbered note marker with its note text in the side panel, a box, an arrow, a text card with a pointer line, a cut-and-move with dashed outline and arrow, one red "remove" mark and one green "approve" mark; the toolbar with the seven tools in this order (Select ⌘1 ... the order and names shown in the reference editor screenshots), the colour swatch, Undo and Redo, the session name; the side panel with the comment field, the References list and the actions "Discard" and "Add to session".
+2. shots/session--document.png — the session window, Document tab: the session "Ledgerly Q4 review · 3 screenshots" with its title, the Document / Screenshots tabs, and session.md rendered with three screenshots inline, each with numbered notes under it; "Open in Markdown App" action.
+3. shots/shortcuts--window.png — the Keyboard Shortcuts window: rows of key caps (⌃⇧1 Capture region, ⌃⇧3 Capture last area, ⌃⇧N New session, ⌘1–⌘7 Pick a tool, ⌘Z Undo, ⇧⌘Z Redo, Esc Step back, ⌫ Delete, ⌘W Discard) and the tool list with icons.
+Choose ONE theme (light or dark) for all three images so they read as one product, and say which in notes.md.

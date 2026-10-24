@@ -1,0 +1,3 @@
+![Editor in use](shots/editor--in-use.png)
+
+![Editor colour palette](shots/editor--colour-palette.png)

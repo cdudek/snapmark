@@ -1,0 +1,15 @@
+You are a senior product designer. Produce mockups as GENERATED IMAGES with your image generation tool, by EDITING the existing images in shots/ (pass each one in as the input image). No HTML, no code.
+
+The owner's rule (2026-10-25): "my buttons, the application buttons and so on, should be in the colour palette of the application, but the annotations should obviously be in the colour that I select."
+
+So there are two colour systems, never mixed:
+- APP UI = the brand palette of the logo (app-icon.png): brand blue #2492FF, from the logo's cool gradient (#20F4EC cyan -> #2492FF blue -> #8B3DFF violet). Used for: the primary button "Add to session", the active tool's highlight in the toolbar, focus rings, selected states, links. Neutral greys for everything else.
+- ANNOTATIONS = the colour the user picked, default coral red #E5484D: every mark on the screenshot, the numbered diamond markers, and the numbered diamond badges next to the notes in the side panel's References list (they are the same numbers as on the screenshot). The colour swatch in the toolbar shows the picked colour. The approve tick is always green.
+
+Edit these files in place (overwrite), changing ONLY the colours of app UI elements; keep every mark, word, layout and the screenshot identical:
+1. shots/editor--in-use.png — "Add to session ⌘↩" becomes brand blue #2492FF (solid, white text); the active tool button (the card/note tool, second from left) gets a light brand-blue tint and blue icon instead of red; everything on the screenshot and the References badges stay coral red.
+2. shots/editor--colour-palette.png — the same two changes; the open colour popover stays as it is (coral red selected with a check).
+3. shots/editor--in-use-gradient.png — a NEW variant made from the edited image 1: "Add to session ⌘↩" filled with the logo's cool gradient (#20F4EC -> #2492FF -> #8B3DFF, left to right) instead of solid blue; everything else identical to image 1.
+Then update notes.md: keep its first line "# Editor", and add a short "Two colour systems" paragraph explaining the rule above and the solid vs gradient button variants.
+
+Text sharp and readable; nothing cut off.
