@@ -47,6 +47,8 @@ let group = GROUPS.findIndex((g) => g.key === '2'); // start on Box
 let unit = 2; // stroke width in image pixels, scaled to the screenshot size
 let background: import('fabric').FabricImage | null = null;
 let drag: { start: Point; obj: FObject | null } | null = null;
+let oneShot = false; // one-shot mode: Beautify instead of References, Copy Image instead of Add to session
+let beauty: Beautify = DEFAULT_BEAUTY; // one-shot mode's settings
 
 const tool = (): Tool => GROUPS[group].tools[variant[group]].id;
 const color = () => GROUPS[group].color ?? colorEl.value;
@@ -775,7 +777,7 @@ function stateOf(): EditState {
     .filter((o) => !extras.has(o))
     .map(itemOf)
     .filter(Boolean);
-  return { caption: captionField?.value() ?? '', items };
+  return { caption: captionField?.value() ?? '', items, ...(oneShot ? { beautify: beauty } : {}) };
 }
 
 async function restore(items: Item[]) {
@@ -850,13 +852,40 @@ function renderRefs() {
 let saving = false; // closing after a save is not a discard
 
 // The marked-up image as base64 PNG: card typing ended and nothing selected. Add to session, Copy Image and Save As…
-// all take it from here, so the three always match.
+// all take it from here, so the three always match. One-shot mode puts it on its Beautify backdrop.
 function flatten(): string {
   const active = canvas.getActiveObject();
   if (active instanceof fabric.Textbox && active.isEditing) active.exitEditing();
   canvas.discardActiveObject();
   canvas.renderAll();
-  return canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1];
+  if (!oneShot) return canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1];
+  return beautified(canvas.toCanvasElement(1)).toDataURL('image/png').split(',')[1];
+}
+
+// The one-shot image: the marked screenshot on its backdrop, with padding, rounded corners and shadow, at the
+// screenshot's full resolution. The same layout as the preview (fit), which draws it with CSS.
+function beautified(shot: HTMLCanvasElement): HTMLCanvasElement {
+  const L = beautyLayout(shot.width, shot.height, beauty);
+  const out = document.createElement('canvas');
+  [out.width, out.height] = [L.width, L.height];
+  const g = out.getContext('2d')!;
+  const stops = backdropStops(beauty.backdrop);
+  if (stops.length) {
+    const grad = g.createLinearGradient(...gradientLine(L.width, L.height));
+    stops.forEach((c, i) => grad.addColorStop(i / Math.max(1, stops.length - 1), c));
+    g.fillStyle = grad;
+    g.fillRect(0, 0, L.width, L.height);
+  }
+  g.beginPath();
+  g.roundRect(L.x, L.y, shot.width, shot.height, L.radius);
+  g.save();
+  if (L.blur) Object.assign(g, { shadowColor: SHADOW, shadowBlur: L.blur, shadowOffsetY: L.offsetY });
+  g.fillStyle = '#fff'; // casts the shadow; the screenshot covers it
+  g.fill();
+  g.restore();
+  g.clip();
+  g.drawImage(shot, L.x, L.y);
+  return out;
 }
 
 async function save() {
@@ -889,7 +918,7 @@ const copyImage = () => void (background && window.snapmark.copyImage(flatten())
 const saveImageAs = () => void (background && window.snapmark.saveImageAs(flatten()));
 
 document.addEventListener('keydown', (e) => {
-  if (e.metaKey && e.key === 'Enter') return void save();
+  if (e.metaKey && e.key === 'Enter') return void (oneShot ? copyImage() : save()); // the primary button
   // ⇧⌘C and ⇧⌘S from anywhere, also inside a note: plain ⌘C there still copies its text.
   const k = e.metaKey && e.shiftKey && e.key.toLowerCase();
   if (k === 'c' || k === 's') {
@@ -898,6 +927,11 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.metaKey && e.key === 'w') return window.close();
   const typing = e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable);
+  // One-shot: plain ⌘C copies the image too, unless text has the cursor (interaction guidelines, Copy and paste).
+  if (oneShot && e.metaKey && !e.shiftKey && e.key === 'c' && !typing) {
+    e.preventDefault();
+    return copyImage();
+  }
   // ⌘1–⌘7 pick a tool from anywhere, also while a note or card has the cursor, where the plain digit types.
   const numbered = e.metaKey && /^\d$/.test(e.key) ? GROUPS.findIndex((x) => x.key === e.key) : -1;
   if (numbered >= 0) {
@@ -932,23 +966,97 @@ canvas.on('object:added', markDirty);
 let captionField: import('./md-notes').MdField | null = null; // mounted once init says what it holds
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
-saveBtn.onclick = () => void save();
+saveBtn.onclick = () => (oneShot ? copyImage() : void save());
 $<HTMLButtonElement>('copy').onclick = copyImage;
 $<HTMLButtonElement>('save-as').onclick = saveImageAs;
 $<HTMLButtonElement>('cancel').onclick = () => window.close();
 
 // Backing store at the screenshot's full resolution, displayed scaled down to fit the window. An image so tall that
 // fitting it whole would show it at under half its real size (Capture Scrolling) fits the width and scrolls instead.
+// In one-shot mode the whole beautified image fits, and the Beautify frame is drawn around the canvas at its scale.
 function fit() {
   if (!background) return;
   const [w, h] = [background.width, background.height];
-  const kw = Math.min(1, (mainEl.clientWidth - 32) / w);
-  const whole = Math.min(kw, (mainEl.clientHeight - 32) / h);
+  const L = oneShot ? beautyLayout(w, h, beauty) : null;
+  const [fw, fh] = L ? [L.width, L.height] : [w, h];
+  const kw = Math.min(1, (mainEl.clientWidth - 32) / fw);
+  const whole = Math.min(kw, (mainEl.clientHeight - 32) / fh);
   const tall = whole * devicePixelRatio < 0.5;
   const k = tall ? kw : whole;
   Object.assign(mainEl.style, { overflowY: tall ? 'auto' : '', alignItems: tall ? 'start' : '' });
   canvas.setDimensions({ width: `${w * k}px`, height: `${h * k}px` }, { cssOnly: true });
+  if (L) {
+    const stops = backdropStops(beauty.backdrop);
+    Object.assign(stageEl.style, { width: `${L.width * k}px`, height: `${L.height * k}px`, background: backdropCss(stops) });
+    stageEl.classList.toggle('checker', !stops.length); // transparent
+    Object.assign(canvas.wrapperEl.style, {
+      borderRadius: `${L.radius * k}px`,
+      boxShadow: L.blur ? `0 ${L.offsetY * k}px ${L.blur * k}px ${SHADOW}` : 'none',
+    });
+  }
   canvas.calcOffset(); // Fabric caches the canvas position; without this, clicks land offset after a resize
+}
+
+// ---------- Beautify (one-shot mode): sliders, background swatches, ratio; the last settings are the one preset ----------
+
+const SHADOW = 'rgba(0, 0, 0, 0.4)';
+const stageEl = $<HTMLDivElement>('stage');
+const backdropCss = (stops: string[]) => (stops.length > 1 ? `linear-gradient(to bottom right, ${stops.join(', ')})` : (stops[0] ?? ''));
+const sliders = (['padding', 'radius', 'shadow'] as const).map((key) => {
+  const input = $<HTMLInputElement>(key);
+  input.oninput = () => setBeauty({ [key]: Number(input.value) });
+  return input;
+});
+const swatch = (id: string, label: string) => {
+  const b = document.createElement('button');
+  b.dataset.backdrop = id;
+  b.title = label;
+  b.setAttribute('aria-label', label);
+  b.onclick = () => setBeauty({ backdrop: id });
+  return b;
+};
+const backdropBtns = [...BACKDROPS.map((d) => swatch(d.id, d.label)), swatch('none', 'None (transparent)')];
+backdropBtns.forEach((b) => (b.style.background = backdropCss(backdropStops(b.dataset.backdrop!))));
+backdropBtns.at(-1)!.classList.add('checker');
+// Custom…: the macOS colour panel writes straight into the hidden colour input, like the annotation palette's
+const customEl = document.createElement('label');
+customEl.className = 'custom';
+customEl.title = 'Custom colour…';
+const customInput = document.createElement('input');
+customInput.type = 'color';
+customInput.setAttribute('aria-label', 'Custom background colour');
+customInput.oninput = () => setBeauty({ backdrop: customInput.value });
+customEl.append(customInput);
+$('backdrops').replaceChildren(...backdropBtns, customEl);
+const ratioBtns = RATIOS.map((r) => {
+  const b = document.createElement('button');
+  b.textContent = r === 'auto' ? 'Auto' : r;
+  b.dataset.ratio = r;
+  b.onclick = () => setBeauty({ ratio: r });
+  return b;
+});
+$('ratios').replaceChildren(...ratioBtns);
+
+function setBeauty(change: Partial<Beautify>) {
+  beauty = { ...beauty, ...change };
+  renderBeauty();
+  fit();
+  window.snapmark.beautify(beauty);
+}
+
+function renderBeauty() {
+  for (const input of sliders) {
+    input.value = String(beauty[input.id as 'padding' | 'radius' | 'shadow']);
+    input.previousElementSibling!.textContent = input.value; // its <output>
+  }
+  for (const b of backdropBtns) b.setAttribute('aria-pressed', String(b.dataset.backdrop === beauty.backdrop));
+  const custom = beauty.backdrop.startsWith('#');
+  if (custom) customInput.value = beauty.backdrop;
+  customEl.classList.toggle('picked', custom);
+  customEl.style.background = custom
+    ? beauty.backdrop
+    : 'conic-gradient(#e5484d, #ffb224, #30a46c, #05a2c2, #2492ff, #8b3dff, #ef28a7, #e5484d)';
+  for (const b of ratioBtns) b.setAttribute('aria-pressed', String(b.dataset.ratio === beauty.ratio));
 }
 // Refit whenever the canvas area changes size: window resizes, and the toolbar wrapping onto a second line.
 new ResizeObserver(fit).observe(mainEl);
@@ -957,9 +1065,19 @@ new ResizeObserver(fit).observe(mainEl);
 const shotsLabel = (session: string, n: number) => (n ? `${session} · ${n} screenshot${n === 1 ? '' : 's'}` : session);
 
 window.snapmark.onSession((session, count) => ($('session').textContent = shotsLabel(session, count)));
-window.snapmark.init().then(async ({ src, session, count, state, replacing }) => {
+window.snapmark.init().then(async ({ src, session, count, state, replacing, oneShot: one, beautify }) => {
   $('session').textContent = shotsLabel(session, count);
   if (replacing) saveBtn.textContent = `Save changes ⌘↵`;
+  if (one) {
+    oneShot = true;
+    beauty = { ...DEFAULT_BEAUTY, ...beautify };
+    document.body.classList.add('one-shot');
+    $('beautify').hidden = false;
+    $('session').textContent = 'One-shot · not in a session';
+    saveBtn.textContent = 'Copy Image ⌘C';
+    saveBtn.title = 'Copy the image with its background, at full resolution';
+    renderBeauty();
+  }
   captionField = await MdNotes.mount($('caption'), state?.caption ?? '', { placeholder: 'Add a comment…', onChange: markDirty });
   background = await fabric.FabricImage.fromURL(src);
   background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });

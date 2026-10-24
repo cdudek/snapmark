@@ -242,6 +242,107 @@
           0 1px 3px rgb(0 0 0 / 0.1),
           0 8px 30px rgb(0 0 0 / 0.12);
       }
+      /* The screenshot's frame: nothing in session mode; in one-shot mode the Beautify preview (sized by editor.ts). */
+      #stage {
+        display: contents;
+      }
+      .one-shot #stage {
+        display: grid;
+        place-items: center;
+      }
+      .one-shot .canvas-container {
+        overflow: hidden; /* rounded corners clip the screenshot */
+      }
+      /* Transparent shows as a checkerboard, in the preview and on the None swatch. */
+      .checker {
+        background: repeating-conic-gradient(#d8d8dc 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+      }
+      .one-shot #caption,
+      .one-shot #refs,
+      .one-shot #refs-label,
+      .one-shot #copy {
+        display: none !important;
+      }
+      /* Beautify (one-shot mode): sliders with their values, background swatches, ratio as a segmented control. */
+      #beautify {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #beautify .row {
+        display: grid;
+        grid-template-columns: 1fr 34px;
+        align-items: center;
+        gap: 2px 8px;
+        font-weight: 400;
+      }
+      #beautify .row input {
+        grid-column: 1 / -1;
+        margin: 0;
+        accent-color: var(--accent);
+      }
+      #beautify output {
+        text-align: right;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      #beautify h3 {
+        margin: 6px 0 0;
+        font-size: 13px;
+      }
+      #backdrops {
+        display: grid;
+        grid-template-columns: repeat(5, 36px);
+        justify-content: space-between;
+        row-gap: 10px;
+      }
+      #backdrops > * {
+        position: relative;
+        height: 36px;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+        cursor: pointer;
+      }
+      #backdrops [aria-pressed='true'],
+      #backdrops .picked {
+        box-shadow:
+          0 0 0 2px var(--panel),
+          0 0 0 4px var(--accent);
+      }
+      #backdrops .custom:has(input:focus-visible) {
+        outline: 2px solid var(--accent);
+      }
+      #backdrops .custom input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #ratios {
+        display: flex;
+        padding: 2px;
+        border-radius: 8px;
+        background: var(--hover);
+      }
+      #ratios button {
+        flex: 1;
+        padding: 4px 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      #ratios button[aria-pressed='true'] {
+        background: var(--field);
+        box-shadow: var(--shadow);
+        color: var(--accent);
+        font-weight: 600;
+      }
       /* The notes scroll; Discard and "Add to session" stay in view below them. */
       aside {
         border-left: 1px solid var(--line);
@@ -407,12 +508,24 @@
       <hr />
       <label class="custom"><input type="color" id="color" value="#e5484d" /><i class="ring"></i>Custom…</label>
     </div>
-    <main><canvas id="canvas"></canvas></main>
+    <main>
+      <div id="stage"><canvas id="canvas"></canvas></div>
+    </main>
     <aside>
       <div class="body">
         <div id="caption" aria-label="Comment"></div>
         <label id="refs-label" hidden>References</label>
         <div id="refs"></div>
+        <section id="beautify" aria-label="Beautify" hidden>
+          <label>Beautify</label>
+          <label class="row">Padding<output for="padding"></output><input type="range" id="padding" min="0" max="200" /></label>
+          <label class="row">Rounded corners<output for="radius"></output><input type="range" id="radius" min="0" max="50" /></label>
+          <label class="row">Shadow<output for="shadow"></output><input type="range" id="shadow" min="0" max="100" /></label>
+          <h3 id="backdrop-label">Background</h3>
+          <div id="backdrops" role="group" aria-labelledby="backdrop-label"></div>
+          <h3 id="ratio-label">Ratio</h3>
+          <div id="ratios" role="group" aria-labelledby="ratio-label"></div>
+        </section>
       </div>
       <div class="actions">
         <button id="cancel">Discard<kbd> ⌘W</kbd></button>
@@ -422,6 +535,7 @@
     <script src="../../node_modules/fabric/dist/index.min.js"></script>
     <script src="md-notes.js"></script>
     <script src="tools.js"></script>
+    <script src="beautify.js"></script>
     <script src="editor.js"></script>
   </body>
 </html>

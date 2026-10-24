@@ -45,7 +45,7 @@ if (process.platform === 'linux') app.disableHardwareAcceleration();
 setTimeout(() => {
   console.log('smoke: TIMEOUT');
   app.exit(1);
-}, 120000); // the whole suite; it grows with each milestone and runs slower on a busy machine
+}, 150000); // the whole suite; it grows with each milestone and runs slower on a busy machine
 app
   .whenReady()
   .then(async () => {
@@ -557,6 +557,99 @@ app
     const extra = () => BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
     for (let t = 0; t < 30 && extra(); t++) await new Promise((r) => setTimeout(r, 100)); // the control closes a moment after
     viewer['Capture Scrolling: Esc cancels, no editor, control gone'] = cancelled2 === null && !extra();
+
+    // One-shot mode: Beautify instead of References, no Add to session; ⌘C copies the marked screenshot on its
+    // backdrop at full resolution; nothing goes into a session; closing keeps it in Discarded; the settings are remembered
+    const { beautyLayout } = require('../src/beautify') as { beautyLayout: typeof globalThis.beautyLayout };
+    const sessionsBefore = JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)]));
+    fs.copyFileSync(shotCopy, path.join(root, 'one.png'));
+    const one = openEditor(path.join(root, 'one.png'), { oneShot: true });
+    await new Promise<void>((r) => one.webContents.once('did-finish-load', () => r()));
+    await loaded(one);
+    const panel = JSON.parse(
+      await inWin(
+        one,
+        `const shown = (id) => getComputedStyle(document.getElementById(id)).display !== 'none';
+        return JSON.stringify({
+          beautify: !document.getElementById('beautify').hidden && shown('beautify'),
+          noRefs: !shown('refs') && !shown('caption'),
+          noAdd: !document.body.innerText.includes('Add to session'),
+          primary: document.getElementById('save').textContent,
+          values: ['padding', 'radius', 'shadow'].map((id) => document.getElementById(id).value + '=' + document.querySelector('output[for="' + id + '"]').textContent).join(),
+          backdrops: document.querySelectorAll('#backdrops > *').length,
+          ratios: [...document.querySelectorAll('#ratios button')].map((b) => b.textContent).join(),
+        });`,
+      ),
+    );
+    viewer['one-shot: the Beautify panel replaces References and the comment'] = panel.beautify && panel.noRefs;
+    viewer['one-shot: no Add to session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
+    viewer['one-shot: sliders show their values; 10 backgrounds; Auto 4:3 3:2 16:9 1:1'] =
+      panel.values === '64=64,12=12,40=40' && panel.backdrops === 10 && panel.ratios === 'Auto,4:3,3:2,16:9,1:1';
+    const shotUnit = Math.max(2, Math.round(Math.max(shotSize.width, Math.min(shotSize.height, 2 * shotSize.width)) / 400));
+    const preview = JSON.parse(
+      await inWin(
+        one,
+        `canvas.add(new Marker({ x: background.width / 2, y: background.height / 2 }, '#e5484d')); after();
+        const set = (el, v) => { el.value = v; el.dispatchEvent(new Event('input')); };
+        set(document.getElementById('padding'), '100');
+        set(document.querySelector('#backdrops input[type="color"]'), '#123456');
+        [...document.querySelectorAll('#ratios button')].find((b) => b.textContent === '16:9').click();
+        const s = document.getElementById('stage').getBoundingClientRect();
+        return JSON.stringify({ ratio: s.width / s.height, bg: getComputedStyle(document.getElementById('stage')).backgroundColor });`,
+      ),
+    );
+    viewer['one-shot: the preview shows the backdrop at the chosen ratio'] =
+      Math.abs(preview.ratio - 16 / 9) < 0.02 && preview.bg === 'rgb(18, 52, 86)';
+    // Its own stubs, so the session-mode checks below still see their copy and file
+    const got = { copy: null as Buffer | null, offered: '' };
+    const oneSaved = path.join(root, 'one-shot-saved.png');
+    desk.copyImage = async (png) => void (got.copy = png);
+    desk.savePath = async (_win, opts) => {
+      got.offered = opts.defaultPath ?? '';
+      return { canceled: false, filePath: oneSaved };
+    };
+    await inWin(one, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));`);
+    for (let i = 0; i < 30 && !got.copy; i++) await new Promise((r) => setTimeout(r, 100));
+    const oneCopy = got.copy;
+    const oneFile = path.join(root, 'one-shot-copied.png');
+    if (oneCopy) fs.writeFileSync(oneFile, oneCopy);
+    const L = beautyLayout(shotSize.width, shotSize.height, { padding: 100, radius: 12, shadow: 40, backdrop: '#123456', ratio: '16:9' });
+    const near = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]) <= 2);
+    viewer['one-shot: ⌘C copies at full resolution, the canvas at the ratio'] =
+      !!oneCopy && JSON.stringify(nativeImage.createFromPath(oneFile).getSize()) === JSON.stringify({ width: L.width, height: L.height });
+    viewer['one-shot: the copied image has the backdrop in its corners'] =
+      !!oneCopy && near(pixel(oneFile, 0, 0, 2, 2), [18, 52, 86]) && near(pixel(oneFile, 1, 1, -3, -3), [18, 52, 86]);
+    viewer['one-shot: the screenshot and its marks sit centred on it'] =
+      !!oneCopy && red(pixel(oneFile, (L.x + shotSize.width / 2) / L.width, (L.y + shotSize.height / 2) / L.height, -shotUnit * 8 * 0.45));
+    await inWin(one, `document.getElementById('save-as').click();`);
+    for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
+    viewer['one-shot: Save As… writes the same image, named Snapmark <date time>'] =
+      /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(got.offered) &&
+      !!oneCopy &&
+      fs.existsSync(oneSaved) &&
+      fs.readFileSync(oneSaved).equals(oneCopy);
+    viewer['one-shot: nothing is added to any session'] =
+      JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
+    for (const key of ['Escape', 'Escape']) {
+      one.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    for (let i = 0; i < 30 && !one.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
+    const [oneKept] = sessions.discarded(root);
+    viewer['one-shot: Esc, Esc closes it into Discarded with its settings'] =
+      one.isDestroyed() &&
+      oneKept?.session === 'one-shot' &&
+      JSON.parse(fs.readFileSync(path.join(oneKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
+    fs.copyFileSync(shotCopy, path.join(root, 'two.png'));
+    const two = openEditor(path.join(root, 'two.png'), { oneShot: true });
+    await new Promise<void>((r) => two.webContents.once('did-finish-load', () => r()));
+    await loaded(two);
+    viewer['one-shot: the next one starts from the last settings'] =
+      (await inWin(
+        two,
+        `return document.getElementById('padding').value === '100' && document.querySelector('#ratios [aria-pressed="true"]').textContent === '16:9' && document.querySelector('#backdrops .custom').classList.contains('picked');`,
+      )) === true;
+    two.destroy();
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,

@@ -5,6 +5,7 @@ const api: Window['snapmark'] = {
   save: (data) => ipcRenderer.invoke('editor:save', data),
   copyImage: (png) => ipcRenderer.invoke('editor:copy', png),
   saveImageAs: (png) => ipcRenderer.invoke('editor:saveAs', png),
+  beautify: (settings) => ipcRenderer.send('editor:beautify', settings),
   dirty: (value) => ipcRenderer.send('editor:dirty', value),
   stash: (state) => void ipcRenderer.sendSync('editor:stash', state),
   onSession: (cb) => void ipcRenderer.on('editor:session', (_e, session: string, count: number) => cb(session, count)),

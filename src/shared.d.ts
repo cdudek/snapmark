@@ -5,12 +5,15 @@ interface EditorInit {
   count: number; // screenshots already in the session
   state?: EditState; // marks and text to put back: a reopened discard, or Edit Again
   replacing?: number; // Edit Again: saving replaces this entry instead of adding one
+  oneShot?: boolean; // one-shot mode: Beautify, then copy or save; no session
+  beautify?: Beautify; // one-shot: the settings to start from (the reopened discard's, else the last used)
 }
 
 // Everything on a screenshot except the screenshot, as plain data (editor.ts writes and reads the items).
 interface EditState {
   caption: string;
   items: unknown[];
+  beautify?: Beautify; // only in one-shot mode, so a discarded one-shot reopens as one
 }
 
 interface EditorSave {
@@ -70,6 +73,7 @@ interface Window {
     save(data: EditorSave): Promise<number>;
     copyImage(png: string): Promise<void>; // base64 PNG to the clipboard, not into the session
     saveImageAs(png: string): Promise<string | null>; // base64 PNG to a file the owner picks; null when cancelled
+    beautify(settings: Beautify): void; // one-shot: remember the settings as the one preset
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
     stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
     onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
