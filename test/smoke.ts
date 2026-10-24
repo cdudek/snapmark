@@ -152,6 +152,9 @@ app
     const toolBefore = tool();
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true }));
     r['tool keys do nothing while typing a note'] = tool() === toolBefore;
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '3', metaKey: true, bubbles: true, cancelable: true }));
+    r['⌘3 picks Arrow from inside a note and leaves the note'] = tool() === 'arrow' && !document.activeElement?.closest?.('.md');
+    ref1.querySelector('.ProseMirror').focus();
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     r['Esc leaves the note field'] = !document.activeElement?.closest?.('.md');
     key('1'); if (tool() !== 'card') key('1');
