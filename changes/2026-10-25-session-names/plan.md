@@ -78,11 +78,11 @@ Words for every string are in [spec/microcopy.md](spec/microcopy.md); copy them 
 
 Feature 1 (`session-names/1-older-sessions`):
 
-- [ ] 1. Write the F13–F17 blocks in `test/menu.test.ts` first — proof: `npm test` fails on them.
-- [ ] 2. Change `menuTemplate()` in `src/menu.ts` — proof: F13–F17 pass in `npm test`.
-- [ ] 3. Add the panel message in `otherSession()` — proof: `grep -n "Session folders start with their date" src/main.ts` prints one line (F18).
-- [ ] 4. Update the two Switch Session lines in `docs/ux/sitemap.md` — proof: `grep -c "Other Session" docs/ux/sitemap.md` drops by two.
-- [ ] 5. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
+- [x] 1. Write the F13–F17 blocks in `test/menu.test.ts` first — proof: `npm test` fails on them.
+- [x] 2. Change `menuTemplate()` in `src/menu.ts` — proof: F13–F17 pass in `npm test`.
+- [x] 3. Add the panel message in `otherSession()` — proof: `grep -n "Session folders start with their date" src/main.ts` prints one line (F18).
+- [x] 4. Update the two Switch Session lines in `docs/ux/sitemap.md` — proof: `grep -c "Other Session" docs/ux/sitemap.md` drops by two.
+- [x] 5. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
 
 Feature 2 (`session-names/2-readable-dates`, cut after feature 1 merges):
 
@@ -150,3 +150,5 @@ Feature 2:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-10-25 — Feature 1 UX review found no Critical or High. Fixed: a committed `.pyc`, two stale "Other Session…" labels. The one-session Low is a beads follow-up.
