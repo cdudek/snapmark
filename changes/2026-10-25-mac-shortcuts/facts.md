@@ -4,7 +4,9 @@ type: facts
 change: 2026-10-25-mac-shortcuts
 design: docs/designs/2026-10-25-adr-keys-follow-macos.md
 author: Calvin Dudek
-status: draft
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-25
 created: 2026-10-25
 ---
 
