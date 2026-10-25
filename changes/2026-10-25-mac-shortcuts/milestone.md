@@ -19,10 +19,10 @@ own `decisions.json` and add their features below.
 
 In merge order. `state` is `todo`, `building`, `merged` or `blocked: <reason>`.
 
-| #   | Change                                     | Feature                                                            | PR                                         | State    |
-| --- | ------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------ | -------- |
-| 1   | 2026-10-25-mac-shortcuts (snap-bmr.17.1.1) | Shortcuts follow macOS (`mac-shortcuts/1-macos-keys`)              | https://github.com/cdudek/snapmark/pull/76 | merged   |
-| 2   | 2026-10-25-mac-shortcuts (snap-bmr.17.1.2) | Settings ▸ Single-Key Tools (`mac-shortcuts/2-single-key-setting`) | —                                          | building |
+| #   | Change                                     | Feature                                                            | PR                                         | State  |
+| --- | ------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------ | ------ |
+| 1   | 2026-10-25-mac-shortcuts (snap-bmr.17.1.1) | Shortcuts follow macOS (`mac-shortcuts/1-macos-keys`)              | https://github.com/cdudek/snapmark/pull/76 | merged |
+| 2   | 2026-10-25-mac-shortcuts (snap-bmr.17.1.2) | Settings ▸ Single-Key Tools (`mac-shortcuts/2-single-key-setting`) | https://github.com/cdudek/snapmark/pull/77 | merged |
 
 ## Done
 
