@@ -344,9 +344,14 @@ function cursorFor(t: Tool): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 8 8, crosshair`;
 }
 
-// One icon button per key, showing the group's current tool; pressing the key again swaps the icon.
-// Under it: the key that always works (capFor), and one dot per tool when the key holds more than one (the filled
-// dot is the current tool). Redrawn when Settings ▸ Single-Key Tools changes.
+// A two-tool key's icon as a stack: the current tool, nudged down and left, in front of the corner of a second layer
+// up and right; together they stay centred in the button.
+const STACK_BACK = '<path class="back" d="M7 0.5h13a3 3 0 0 1 3 3V17"/>';
+const STACK_FRONT = 'translate(-1.2 1.6) scale(0.92)';
+
+// One icon button per key, showing the group's current tool; pressing the key again swaps the icon. A key with two
+// tools draws its icon as a stack: the current tool in front, a layer behind it. Under the button: the key that
+// always works (capFor). Redrawn when Settings ▸ Single-Key Tools changes.
 function renderToolbar() {
   toolsEl.replaceChildren(
     ...GROUPS.map((g, i) => {
@@ -359,19 +364,15 @@ function renderToolbar() {
       b.setAttribute('aria-label', t.label);
       b.setAttribute('aria-pressed', String(i === group));
       b.title = tipFor(g, variant[i], singleKeys);
-      b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>`; // static markup from tools.ts
+      const stack = g.tools.length > 1;
+      const front = `<g class="front"${stack ? ` transform="${STACK_FRONT}"` : ''}>${t.icon}</g>`;
+      b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${stack ? STACK_BACK : ''}${front}</svg>`; // static markup from tools.ts
       b.onclick = () => pickGroup(i);
       const cap = document.createElement('div');
       cap.className = 'cap';
       const kbd = document.createElement('kbd');
       kbd.textContent = capFor(g, singleKeys);
       cap.append(kbd);
-      if (g.tools.length > 1) {
-        const dots = document.createElement('span');
-        dots.className = 'dots';
-        dots.textContent = g.tools.map((_, v) => (v === variant[i] ? '●' : '○')).join('');
-        cap.append(dots);
-      }
       wrap.append(b, cap);
       return wrap;
     }),

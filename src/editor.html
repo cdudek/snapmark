@@ -19,6 +19,7 @@
         --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
         --accent-tint: rgb(36 146 255 / 0.14);
         --focus: #0f72db; /* focus rings: --accent is 3:1 on the light panels */
+        --accent-ink: #0f72db; /* the picked tool's icon: 3.8:1 on its tint, where #2492ff is 2.6:1 */
         --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
         --lift: 0 10px 30px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.06);
       }
@@ -33,6 +34,7 @@
           --hover: rgb(255 255 255 / 0.07);
           --accent-tint: rgb(36 146 255 / 0.24);
           --focus: #2492ff;
+          --accent-ink: #2492ff; /* 3.4:1 on the dark tint */
           --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
           --lift: 0 10px 30px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.1);
         }
@@ -73,15 +75,16 @@
         width: 16px;
         height: 16px;
       }
+      /* The toolbar: every control's 36 px box sits on one row (so tool icons and Undo line up); tool captions hang
+         below it. Clusters (tools │ colour │ history and share) are split by hairlines, on an 8 pt rhythm. */
       header {
         grid-column: 1 / -1;
         /* One line, always: a wrapping toolbar would shift the canvas under the pointer when tool labels change. */
         overflow-x: auto;
         display: flex;
-        gap: 8px;
-        align-items: center;
-        min-height: 52px;
-        padding: 2px 12px 6px;
+        gap: 4px;
+        align-items: flex-start;
+        padding: 4px 16px 6px; /* the header clips (overflow), so the 3 px focus ring needs this room */
         border-bottom: 1px solid var(--line);
         background: var(--panel);
         -webkit-app-region: drag; /* between the controls */
@@ -89,7 +92,13 @@
       header button {
         -webkit-app-region: no-drag;
       }
-      header button,
+      header .sep {
+        flex: none;
+        width: 1px;
+        height: 24px;
+        margin: 6px 8px 0;
+        background: var(--line);
+      }
       .actions button {
         font: inherit;
         padding: 5px 10px;
@@ -100,73 +109,77 @@
         color: inherit;
         cursor: pointer;
       }
-      header button:hover:not(:disabled),
       .actions button:hover {
         background-image: linear-gradient(var(--hover), var(--hover));
       }
+      /* Toolbar buttons are borderless, like a macOS toolbar: a soft fill on hover, the blue tint when picked. */
+      header button {
+        flex: none;
+        display: grid;
+        place-items: center;
+        height: 36px;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      header button:hover:not(:disabled) {
+        background: var(--hover);
+      }
       header button:disabled {
-        opacity: 0.4;
+        opacity: 0.35;
         cursor: default;
       }
       #tools {
         display: flex;
-        gap: 2px;
-        padding-right: 8px;
-        border-right: 1px solid var(--line);
+        gap: 4px;
       }
       #tools .group {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1px;
+        gap: 2px;
       }
       #tools .cap {
-        display: flex;
-        gap: 3px;
-        align-items: center;
-        height: 13px;
+        height: 14px;
         font:
-          500 11px -apple-system,
+          500 11px/14px -apple-system,
           system-ui,
           sans-serif;
+        font-variant-numeric: tabular-nums;
         color: var(--ink);
+        white-space: nowrap;
       }
       #tools .cap kbd {
         font: inherit;
         color: inherit;
-        margin: 0;
-      }
-      #tools .dots {
-        font-size: 8px;
-        letter-spacing: 1px;
       }
       #tools button {
-        display: grid;
-        place-items: center;
         width: 40px;
-        height: 36px;
-        padding: 0;
-        border-color: transparent;
-        background: transparent;
-        box-shadow: none;
-      }
-      #tools button:hover {
-        background: var(--hover);
       }
       #tools button[aria-pressed='true'] {
         background: var(--accent-tint);
-        color: var(--accent);
+        color: var(--accent-ink);
       }
-      #tools svg {
-        width: 22px;
-        height: 22px;
+      header svg {
         fill: none;
         stroke: currentColor;
         stroke-width: 1.8;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      header kbd,
+      #tools svg {
+        width: 22px;
+        height: 22px;
+        overflow: visible; /* a two-tool button's back layer sits just outside the glyph's 24-unit box */
+      }
+      /* A key with two tools: the current tool in front, the corner of a second layer behind it. */
+      #tools .back {
+        opacity: 0.5;
+      }
       .actions kbd {
         color: var(--muted);
         font-size: 11px;
@@ -174,36 +187,26 @@
       }
       /* Undo, Redo and Copy or Save: icons; the name and key are in the tooltip and the accessible name. */
       header .icon-btn {
-        display: grid;
-        place-items: center;
         width: 36px;
-        height: 36px;
-        padding: 0;
       }
       header .icon-btn svg {
         width: 20px;
         height: 20px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.8;
-        stroke-linecap: round;
-        stroke-linejoin: round;
       }
       /* The session label: opens the session menu; only the name shortens, with "…". Plain text in Edit Again and
          one-shot. The chevron sits in the right padding, so the ellipsis never hides it. */
       header #session {
         position: relative;
+        display: block;
         flex: 0 1 auto;
         min-width: 0;
         max-width: 260px;
         margin-left: auto;
-        padding: 5px 24px 5px 10px;
+        padding: 0 26px 0 10px;
+        line-height: 36px;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        border-color: transparent;
-        background: transparent;
-        box-shadow: none;
         color: var(--muted);
       }
       header #session:disabled {
@@ -225,16 +228,12 @@
       }
       /* The annotation colour: a swatch, and a popover of presets with Custom… (the macOS colour panel). */
       #swatch {
-        display: grid;
-        place-items: center;
         width: 40px;
-        height: 36px;
-        padding: 0;
       }
       #swatch i {
-        width: 22px;
-        height: 22px;
-        border-radius: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
         box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15);
       }
       #palette {
@@ -589,6 +588,7 @@
     </div>
     <header>
       <span id="tools"></span>
+      <span class="sep" aria-hidden="true"></span>
       <button
         id="swatch"
         title="Annotation colour"
@@ -599,6 +599,7 @@
       >
         <i></i>
       </button>
+      <span class="sep" aria-hidden="true"></span>
       <button id="undo" class="icon-btn" title="Undo (⌘Z)" aria-label="Undo (⌘Z)" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 14L4 9l5-5" />
