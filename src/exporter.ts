@@ -18,12 +18,12 @@ export async function exportZip(dir: string): Promise<string> {
 }
 
 export function sessionHtml(dir: string): string {
-  // The first heading is the display name, also in a session.md that still starts with its folder name.
+  // A leading heading is the display name, also in a session.md that still starts with its folder name.
   const title = shortName(path.basename(dir)).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const body = marked
     .parse(fs.readFileSync(path.join(dir, 'session.md'), 'utf8'), { async: false })
-    .replace(/<h1>[^]*?<\/h1>/, `<h1>${title}</h1>`);
-  return `<!doctype html><html><head><meta charset="utf-8"><style>
+    .replace(/^<h1>[^]*?<\/h1>/, () => `<h1>${title}</h1>`); // only a heading on the first line; a function keeps $ in a name as it is
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
   body { font: 12pt -apple-system, system-ui, sans-serif; color: #18181b; margin: 0; }
   h1 { font-size: 20pt; margin: 0 0 12pt; }
   h2 { font-size: 13pt; margin: 22pt 0 6pt; color: #52525b; break-after: avoid; }

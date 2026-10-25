@@ -158,3 +158,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — The exporter row said `session.md` stays untouched; F19 changed that. `create()`, `rename()` and a recreated `session.md` write the display name as heading.
 - 2026-10-25 — `sessions.renamedTo()` gives the target folder, so the session window and the menu dialog check it before renaming.
 - 2026-10-25 — CI smoke failed F3: `editor.html`'s `<title>` replaced the editor window title on load, so it never showed the session. The editor window now keeps the title main gives it.
+- 2026-10-25 — Feature 2 UX review: 0 Critical, 4 High (all older than this PR). Fixed: `lang="en"` on the editor, session window and PDF HTML; an `--error` token for the rename error (4.5:1); `aria-describedby` on the rename field. Also fixed F005 (ADR rule 7), F009 and F024 (the PDF replaces only a leading heading, `$` in a name stays). Mediums and Lows went to snap-bmr.14.3.

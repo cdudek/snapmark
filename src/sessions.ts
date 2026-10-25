@@ -140,7 +140,10 @@ export function rename(root: string, from: string, to: string): string | null {
   if (!name || name === from || fs.existsSync(path.join(root, name))) return null;
   fs.renameSync(path.join(root, from), path.join(root, name));
   const md = path.join(root, name, 'session.md');
-  fs.writeFileSync(md, fs.readFileSync(md, 'utf8').replace(/^# .*$/m, `# ${shortName(name)}`));
+  fs.writeFileSync(
+    md,
+    fs.readFileSync(md, 'utf8').replace(/^# .*$/m, () => `# ${shortName(name)}`),
+  );
   // Its discarded screenshots go with it: they stay in its Discarded tab, and Reopen puts them back here.
   for (const d of discardedIn(root, from)) {
     const meta = path.join(d.dir, 'meta.json');

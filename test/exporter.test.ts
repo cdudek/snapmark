@@ -32,6 +32,11 @@ import { exportZip, sessionHtml } from '../src/exporter';
   const pdfHtml = sessionHtml(path.join(root, named));
   assert.match(pdfHtml, /<h1>2026-10-24 · Ledgerly Q4 review<\/h1>/);
   assert.ok(pdfHtml.includes('Some text'));
+  // Only a heading on the first line is replaced, and "$&" in a name stays as typed
+  const dollar = sessions.create(root, '2026-10-24 23.39 Q4 $& costs');
+  assert.match(sessionHtml(path.join(root, dollar)), /<h1>2026-10-24 · Q4 \$&amp; costs<\/h1>/);
+  fs.writeFileSync(path.join(root, dollar, 'session.md'), `Intro\n\n# My own heading\n`);
+  assert.match(sessionHtml(path.join(root, dollar)), /<h1>My own heading<\/h1>/);
   console.log('exporter: ok');
 })().catch((e) => {
   console.error(e);

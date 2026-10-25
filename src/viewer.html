@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data: file:; style-src 'self' 'unsafe-inline'" />
@@ -19,6 +19,7 @@
         --accent: #2492ff; /* tints, outlines, focus rings, icons */
         --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
         --annot: #e5484d;
+        --error: #cf222e; /* small text on the header: --annot is 3.7:1 there */
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -29,6 +30,7 @@
           --muted: #98989d;
           --line: #3a3a3d;
           --soft: rgb(255 255 255 / 0.07);
+          --error: #ff7b72;
         }
       }
       * {
@@ -155,7 +157,7 @@
         white-space: nowrap;
       }
       #hint.error {
-        color: var(--annot);
+        color: var(--error);
       }
       .name.editing #title,
       .name.editing #pencil,
@@ -476,7 +478,7 @@
         <button id="pencil" title="Rename" aria-label="Rename session">
           <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" /></svg>
         </button>
-        <input id="rename" aria-label="Session name" placeholder="Name this session" spellcheck="false" />
+        <input id="rename" aria-label="Session name" aria-describedby="hint" placeholder="Name this session" spellcheck="false" />
         <div id="hint" role="status"></div>
       </div>
       <span id="total"></span>
