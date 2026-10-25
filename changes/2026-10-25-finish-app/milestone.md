@@ -25,7 +25,7 @@ In build order. `state` is `todo`, `building`, `done <sha>` (a commit on the mil
 | 3   | 2026-10-25-finish-app | M1.3 Editor header like the mock               | d4fccd7      | done d4fccd7 |
 | 4   | 2026-10-25-finish-app | M1.4 Session window and rename leftovers       | 5019430      | done 5019430 |
 | 5   | 2026-10-25-finish-app | M1.5 Small fixes                               | 112f8b1      | done 112f8b1 |
-| 6   | 2026-10-25-finish-app | M1.6 Own LC_UUID                               | —            | todo  |
+| 6   | 2026-10-25-finish-app | M1.6 Own LC_UUID                               | 0340156      | done 0340156 |
 | 7   | 2026-10-25-finish-app | M2.1 Capture bar                               | —            | todo  |
 | 8   | 2026-10-25-finish-app | M2.2 Settings window                           | —            | todo  |
 | 9   | 2026-10-25-finish-app | M2.3 Keyboard Shortcuts window                 | —            | todo  |
