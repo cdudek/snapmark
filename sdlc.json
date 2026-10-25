@@ -53,7 +53,9 @@
     "rebaseOnDefault": true
   },
   "hotfix": true,
+  "delivery": "one-go",
   "goal": {
+    "runTurns": 200,
     "featureTurns": 40,
     "milestoneTurns": 30
   },

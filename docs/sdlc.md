@@ -136,3 +136,14 @@ One owner, so no tiers (`sdlc.json` `tiers: false`). Every PR merges itself once
 ## Repo-specific
 
 <!-- sdlc-run adopt keeps everything below this line -->
+
+### One go (owner, 2026-10-25)
+
+`sdlc.json` `delivery: "one-go"` overrides the per-feature flow above. Until the kit's next adopt carries the same text, this section is the rule.
+
+- Everything asked for at once is one change. The owner confirms the intent, then the plan, then pastes **one** `/goal` (`plan.md` `## Goal handover`) that builds every milestone in order.
+- Features are commits on `milestone/<slug>-<n>`. **No check, lint or test runs per feature or per commit.**
+- Per milestone, once: `verify_gate.py milestone` (format, lint, typecheck, unit tests, `smoke:background`), the UX and code reviews, and **validation**: every fact and ask of the milestone exercised in the built app, one row each in `validation.md` (expected, observed, evidence, verdict). A `not met` row blocks. One fix round, one PR to `main`, auto-merge, one release.
+- Milestone `n+1` is cut from `n` and builds while `n`'s PR waits; its PR opens after `n` merges (`git rebase --onto origin/main milestone/<slug>-<n>`).
+- **Questions never block.** They go to `questions.md` with the default taken, and the owner is told in one line. An answer becomes an ask of the next milestone.
+- The goal stops only on `VERIFY BLOCKED` or a Critical or High that would be deferred.

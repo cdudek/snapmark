@@ -158,7 +158,7 @@ def stage_of(change: Path | None, verb: str, rows: list[dict]) -> int:
     if change is None:
         return 1
     if (change / "lock.json").exists():
-        return 6 if rows and all(r["state"].startswith("merged") for r in rows) else 5
+        return 6 if rows and all(r["state"].startswith(("merged", "done")) for r in rows) else 5
     if (change / "plan.md").exists():
         return 4
     if (change / "facts.md").exists():
@@ -195,7 +195,7 @@ def state(change: Path | None, root: Path, cfg: dict) -> dict:
         "progress": status.get("progress", ""),
         "note": status.get("note", ""),
         "features": rows,
-        "merged": sum(1 for r in rows if r["state"].startswith("merged")),
+        "merged": sum(1 for r in rows if r["state"].startswith(("merged", "done"))),
     }
 
 
@@ -221,7 +221,7 @@ def status_line(s: dict) -> str:
 
 def milestone_map(s: dict) -> str:
     head = s["initiative"] + (f"  M{s['pos']} of {s['total']}" if s["pos"] else "")
-    marks = {"merged": "✓", "building": "◐", "blocked": "✗"}
+    marks = {"merged": "✓", "done": "✓", "building": "◐", "blocked": "✗"}
     bar = "".join(
         next((v for k, v in marks.items() if r["state"].startswith(k)), "○") for r in s["features"]
     )

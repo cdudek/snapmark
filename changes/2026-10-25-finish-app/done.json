@@ -1,0 +1,543 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Tags name the unit test block or the smoke check key. One go: every check runs once per milestone (owner, 2026-10-25).",
+  "facts": [
+    {
+      "id": "F101",
+      "tag": "smoke `r['F101 a highlight over the dark header reads at 3:1']`",
+      "screen": "editor, highlight over #18181b"
+    },
+    {
+      "id": "F102",
+      "tag": "smoke `r['F102 a highlight over white is as before']`",
+      "screen": "editor, highlight over white"
+    },
+    {
+      "id": "F103",
+      "tag": "`test/keys.test.ts` › \"F103 captions\" and smoke `r['F103 captions read C, ⌘1–⌘7']`",
+      "screen": "editor toolbar, setting on and off"
+    },
+    {
+      "id": "F104",
+      "tag": "`test/keys.test.ts` › \"F104 Select caption\"",
+      "screen": "editor toolbar"
+    },
+    {
+      "id": "F105",
+      "tag": "`test/keys.test.ts` › \"F105 tooltips\"",
+      "screen": "editor toolbar, hover"
+    },
+    {
+      "id": "F106",
+      "tag": "smoke `r['F106 the setting redraws the toolbar']`",
+      "screen": "editor open, menu Settings"
+    },
+    {
+      "id": "F107",
+      "tag": "smoke `r['F107 toolbar sizes']`",
+      "screen": "editor toolbar, light and dark"
+    },
+    {
+      "id": "F108",
+      "tag": "smoke `inPage['F108 the toolbar fits at 820 points']`",
+      "screen": "editor at minimum size"
+    },
+    {
+      "id": "F109",
+      "tag": "`test/keys.test.ts` › \"F109 shortcuts window\"",
+      "screen": "Keyboard Shortcuts window, on and off"
+    },
+    {
+      "id": "F110",
+      "tag": "smoke `inPage['F110 the setting reaches state.json and the editor']`",
+      "screen": "menu Settings"
+    },
+    {
+      "id": "F111",
+      "tag": "smoke `r['F111 title row']`",
+      "screen": "editor, session and one-shot"
+    },
+    {
+      "id": "F112",
+      "tag": "smoke `r['F112 Undo and Redo are icons']`",
+      "screen": "editor toolbar"
+    },
+    {
+      "id": "F113",
+      "tag": "`test/menu.test.ts` › \"F113 Copy or Save menu\" and smoke `r['F113 one Copy or Save button']`",
+      "screen": "editor toolbar"
+    },
+    {
+      "id": "F114",
+      "tag": "`test/menu.test.ts` › \"F114 editor session menu\" and smoke `inPage['F114 the label switches the session']`",
+      "screen": "editor, session mode"
+    },
+    {
+      "id": "F115",
+      "tag": "smoke `inPage['F115 no session menu in Edit Again or one-shot']`",
+      "screen": "editor, Edit Again and one-shot"
+    },
+    {
+      "id": "F116",
+      "tag": "smoke `inPage['F116 a long name shortens']`",
+      "screen": "editor, 80-character name"
+    },
+    {
+      "id": "F117",
+      "tag": "smoke `inPage['F117 the next editor keeps the colour']`",
+      "screen": "editor, second window"
+    },
+    {
+      "id": "F118",
+      "tag": "`test/menu.test.ts` › \"F118 one session\"",
+      "screen": "menu bar menu, Session ▸; editor session menu"
+    },
+    {
+      "id": "F119",
+      "tag": "`test/sessions.test.ts` › \"F119 back in place\"",
+      "screen": "session window, ⌘Z and Reopen"
+    },
+    {
+      "id": "F123",
+      "tag": "smoke `viewer['F123 a long name never wraps the buttons']`",
+      "screen": "session window header"
+    },
+    {
+      "id": "F124",
+      "tag": "`test/sessions.test.ts` › \"F124 bracket number refused\"",
+      "screen": "rename field, menu Rename Session…"
+    },
+    {
+      "id": "F125",
+      "tag": "smoke `viewer['F125 a failed rename says why']`; menu: manual, the verifier reads `renameFromMenu` in `src/main.ts`",
+      "screen": "rename refused, rename throws"
+    },
+    {
+      "id": "F126",
+      "tag": "smoke `viewer['F126 the hint names the date']`",
+      "screen": "rename field open"
+    },
+    {
+      "id": "F127",
+      "tag": "smoke `viewer['F127 an empty field and a click away keep the name']`",
+      "screen": "rename field, click away"
+    },
+    {
+      "id": "F128",
+      "tag": "smoke `viewer['F128 typing clears the error']`",
+      "screen": "rename field, error shown"
+    },
+    {
+      "id": "F129",
+      "tag": "smoke `viewer['F129 placeholder contrast']`",
+      "screen": "rename field, empty, light and dark"
+    },
+    {
+      "id": "F130",
+      "tag": "smoke `viewer['F130 minimum size']`",
+      "screen": "session window"
+    },
+    {
+      "id": "F131",
+      "tag": "smoke `viewer['F131 ⌘Z puts back the one removed']`",
+      "screen": "session window"
+    },
+    {
+      "id": "F135",
+      "tag": "smoke `viewer['F135 ↩ after a removal does not rename']`",
+      "screen": "session window, large view after ⌘⌫"
+    },
+    {
+      "id": "F120",
+      "tag": "smoke `viewer['F120 Done is the dark blue']`, next to the Capture Scrolling checks (`test/smoke.ts:654`)",
+      "screen": "Capture Scrolling control"
+    },
+    {
+      "id": "F121",
+      "tag": "`test/menu.test.ts` › \"F121 quit warning\"",
+      "screen": "quit warning, one-shot only and mixed"
+    },
+    {
+      "id": "F122",
+      "tag": "`test/uuid.test.ts` › \"F122 own LC_UUID\"; manual, the owner sees no local network prompt on the next release",
+      "screen": "packaged app"
+    },
+    {
+      "id": "F132",
+      "tag": "manual, the verifier reads `shoot` and `busy` in `src/main.ts`",
+      "screen": "crosshair open"
+    },
+    {
+      "id": "F133",
+      "tag": "manual, the verifier reads `popUp` in `src/main.ts`",
+      "screen": "menu bar menu"
+    },
+    {
+      "id": "F134",
+      "tag": "smoke `r['F134 every copy keeps the selection']`",
+      "screen": "editor, marks selected"
+    },
+    {
+      "id": "F201",
+      "tag": "smoke `viewer['F201 the capture bar opens bottom-centre on the pointer's display']`; `test/keys.test.ts` › \"F201 ⌃⇧5 opens the bar\"",
+      "screen": "capture bar, opened"
+    },
+    {
+      "id": "F202",
+      "tag": "`test/capture.test.ts` › \"F202 bar order\"; smoke `viewer['F202 the bar shows its seven controls in order']`",
+      "screen": "capture bar"
+    },
+    {
+      "id": "F203",
+      "tag": "smoke `viewer['F203 every bar control is named; the modes are a radio group']`. Speech itself: owner at the milestone",
+      "screen": "capture bar, VoiceOver"
+    },
+    {
+      "id": "F204",
+      "tag": "smoke `viewer['F204 arrows pick, Return captures, Esc closes']`",
+      "screen": "capture bar, keyboard"
+    },
+    {
+      "id": "F205",
+      "tag": "smoke `viewer['F205 the bar is gone when the capture starts']`",
+      "screen": "capture bar → capture"
+    },
+    {
+      "id": "F206",
+      "tag": "smoke `viewer['F206 one bar at a time']`; manual, verifier reads `busy()` in `src/main.ts`",
+      "screen": "capture bar, busy"
+    },
+    {
+      "id": "F207",
+      "tag": "smoke `viewer['F207 the bar remembers the last mode']`",
+      "screen": "capture bar, reopened"
+    },
+    {
+      "id": "F208",
+      "tag": "smoke `viewer['F208 the bar is on top on every Space']` (`isAlwaysOnTop()`, `isVisibleOnAllWorkspaces()`). Over a full-screen app without a Space switch, and the owner's app keeping focus: owner at the milestone",
+      "screen": "capture bar over a full-screen app"
+    },
+    {
+      "id": "F209",
+      "tag": "manual, verifier reads `vibrancy: 'popover'` in `openCaptureBar`; owner at the milestone. Linux has no vibrancy",
+      "screen": "capture bar, light and dark"
+    },
+    {
+      "id": "F210",
+      "tag": "`test/capture.test.ts` › \"F210 screencapture arguments\"",
+      "screen": "each mode"
+    },
+    {
+      "id": "F211",
+      "tag": "`test/capture.test.ts` › \"F211 Options menu\"",
+      "screen": "Options menu"
+    },
+    {
+      "id": "F212",
+      "tag": "`test/capture.test.ts` › \"F212 Capture One-Shot\"; smoke `viewer['F212 a one-shot scrolling capture opens in one-shot mode']`",
+      "screen": "capture bar, One-Shot; editor, one-shot"
+    },
+    {
+      "id": "F213",
+      "tag": "`test/capture.test.ts` › \"F213 New Session\"",
+      "screen": "Options menu, New Session"
+    },
+    {
+      "id": "F214",
+      "tag": "manual, verifier reads `runCapture` in `src/main.ts`. No tray in smoke",
+      "screen": "menu bar icon, counting"
+    },
+    {
+      "id": "F215",
+      "tag": "`test/capture.test.ts` › \"F215 pointer\"",
+      "screen": "area capture"
+    },
+    {
+      "id": "F216",
+      "tag": "`test/capture.test.ts` › \"F216 areas only\"",
+      "screen": "Options menu, window and scrolling"
+    },
+    {
+      "id": "F217",
+      "tag": "`test/keys.test.ts` › \"F217 keys unchanged\"",
+      "screen": "global keys"
+    },
+    {
+      "id": "F218",
+      "tag": "`test/menu.test.ts` › \"F218 Capture Options…\"",
+      "screen": "menu bar menu"
+    },
+    {
+      "id": "N201",
+      "tag": "smoke `viewer['N201 the bar shows within 1 s']` (prints the milliseconds)",
+      "screen": ""
+    },
+    {
+      "id": "F219",
+      "tag": "`test/menu.test.ts` › \"F219 Settings… and ⌘,\"; smoke `viewer['F219 one Settings window']`",
+      "screen": "Settings window"
+    },
+    {
+      "id": "F220",
+      "tag": "smoke `viewer['F220 three tabs; the title names the tab']`",
+      "screen": "Settings, each tab"
+    },
+    {
+      "id": "F221",
+      "tag": "smoke `viewer['F221 General holds the four settings']`; manual, verifier reads the `settings:run` mapping in `src/main.ts`",
+      "screen": "Settings, General"
+    },
+    {
+      "id": "F222",
+      "tag": "`test/menu.test.ts` › existing `loginState` blocks; smoke `viewer['F222 a development build greys login and updates']`. Approval: verifier and owner",
+      "screen": "Settings, General, approval and development"
+    },
+    {
+      "id": "F223",
+      "tag": "smoke `viewer['F223 Capture tab and bar share their options']`",
+      "screen": "Settings, Capture"
+    },
+    {
+      "id": "F224",
+      "tag": "smoke `viewer['F224 Shortcuts tab lists the keys']`",
+      "screen": "Settings, Shortcuts"
+    },
+    {
+      "id": "F225",
+      "tag": "smoke `viewer['F225 single keys off reaches the editor']`",
+      "screen": "Settings, Shortcuts; editor"
+    },
+    {
+      "id": "F226",
+      "tag": "`test/menu.test.ts` › \"F226 Settings…\"",
+      "screen": "menu bar menu"
+    },
+    {
+      "id": "F227",
+      "tag": "manual, verifier reads the `focus` listener in `src/settings.ts`",
+      "screen": "Settings, refocused"
+    },
+    {
+      "id": "F228",
+      "tag": "smoke `viewer['F228 Settings controls are labelled and reachable']`",
+      "screen": "Settings, keyboard"
+    },
+    {
+      "id": "F229",
+      "tag": "`test/keys.test.ts` › \"F229 no data URL\"; smoke `viewer['F229 Keyboard Shortcuts is its own page']`",
+      "screen": "Keyboard Shortcuts window"
+    },
+    {
+      "id": "F230",
+      "tag": "smoke `viewer['F230 two columns as in the round-1 mock']`",
+      "screen": "Keyboard Shortcuts, 980 pt wide"
+    },
+    {
+      "id": "F231",
+      "tag": "smoke `viewer['F231 every key is a keycap']`",
+      "screen": "Keyboard Shortcuts"
+    },
+    {
+      "id": "F232",
+      "tag": "smoke `viewer['F232 every key and tool listed once']`",
+      "screen": "Keyboard Shortcuts"
+    },
+    {
+      "id": "F233",
+      "tag": "`test/menu.test.ts` › \"F233 ⌘/\"; smoke `viewer['F233 one Keyboard Shortcuts window']`",
+      "screen": "Keyboard Shortcuts, from editor, session window, Settings"
+    },
+    {
+      "id": "F234",
+      "tag": "smoke `viewer['F234 Esc closes Keyboard Shortcuts']`",
+      "screen": "Keyboard Shortcuts, Esc"
+    },
+    {
+      "id": "F235",
+      "tag": "smoke `viewer['F235 Keyboard Shortcuts turns dark']`",
+      "screen": "Keyboard Shortcuts, dark"
+    },
+    {
+      "id": "F236",
+      "tag": "`test/keys.test.ts` › \"F236 key groups\"",
+      "screen": "Keyboard Shortcuts"
+    },
+    {
+      "id": "F1",
+      "tag": "`test/sessions.test.ts` › \"F1 tall entry\"",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F2",
+      "tag": "`test/parts.test.ts` › \"F2 part size\"",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F3",
+      "tag": "`test/parts.test.ts` › \"F3 tall rule\"",
+      "screen": "`session.md` entry, fits and tall"
+    },
+    {
+      "id": "F4",
+      "tag": "`test/parts.test.ts` › \"F4 overlap\"",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F5",
+      "tag": "`test/parts.test.ts` › \"F5 diamond whole\"",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F6",
+      "tag": "`test/sessions.test.ts` › \"F6 parts line\"",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F7",
+      "tag": "`test/sessions.test.ts` › \"F7 alt text\"",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F8",
+      "tag": "`test/sessions.test.ts` › \"F8 text once\"",
+      "screen": "`session.md` entry, tall and tall with no text"
+    },
+    {
+      "id": "F9",
+      "tag": "manual, verifier reads `editor:save` in `src/main.ts`",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F10",
+      "tag": "smoke `viewer['F10 a saved 1280×8000 capture links parts at least 1000 px wide']` and `test/parts.test.ts` › \"F10 1280×8000\"",
+      "screen": "`session.md` entry, tall"
+    },
+    {
+      "id": "F11",
+      "tag": "`test/sessions.test.ts` › \"F11 fits unchanged\"",
+      "screen": "`session.md` entry, fits"
+    },
+    {
+      "id": "N1",
+      "tag": "smoke `viewer['N1 a 2560×20000 capture is cut in under 1 s']`",
+      "screen": ""
+    },
+    {
+      "id": "N2",
+      "tag": "`test/parts.test.ts` › \"N2 at most 99 parts\"",
+      "screen": ""
+    },
+    {
+      "id": "F12",
+      "tag": "`test/sessions.test.ts` › \"F12 counted once\"",
+      "screen": "menu header, editor toolbar"
+    },
+    {
+      "id": "F13",
+      "tag": "`test/sessions.test.ts` › \"F13 number kept\"",
+      "screen": "`session.md`, numbering"
+    },
+    {
+      "id": "F14",
+      "tag": "smoke `viewer['F14 the one image is the whole page at 1280 px']`",
+      "screen": "Screenshots tab, large view, Discarded tab"
+    },
+    {
+      "id": "F15",
+      "tag": "`test/sessions.test.ts` › \"F15 Edit Again\"",
+      "screen": "editor, Save changes"
+    },
+    {
+      "id": "F16",
+      "tag": "`test/sessions.test.ts` › \"F16 failed write\"",
+      "screen": "editor, failed save"
+    },
+    {
+      "id": "F17",
+      "tag": "`test/sessions.test.ts` › \"F17 old entry\"",
+      "screen": "editor, Save changes"
+    },
+    {
+      "id": "F18",
+      "tag": "`test/sessions.test.ts` › \"F18 remove\"",
+      "screen": "Screenshots tab, removed"
+    },
+    {
+      "id": "F19",
+      "tag": "`test/sessions.test.ts` › \"F19 reopen renumbers\"",
+      "screen": "Discarded tab, Reopen"
+    },
+    {
+      "id": "F20",
+      "tag": "manual, verifier reads `reopenDiscarded` in `src/main.ts`",
+      "screen": "Reopen Discarded… panel"
+    },
+    {
+      "id": "F21",
+      "tag": "manual, verifier reads the viewer's reload path",
+      "screen": "Document tab, after Edit Again"
+    },
+    {
+      "id": "F22",
+      "tag": "`test/exporter.test.ts` › \"F22 PDF one image\"",
+      "screen": "PDF export, tall and edited"
+    },
+    {
+      "id": "F23",
+      "tag": "`test/exporter.test.ts` › \"F23 ZIP parts\"",
+      "screen": "ZIP export"
+    },
+    {
+      "id": "F24",
+      "tag": "manual, verifier reads `outImage` in `src/main.ts`",
+      "screen": "editor, session mode"
+    },
+    {
+      "id": "F25",
+      "tag": "smoke `viewer['F25 typing keeps the part links']`",
+      "screen": "Document tab, typing"
+    },
+    {
+      "id": "F401",
+      "tag": "CI `smoke` on the milestone PR and `npm run smoke:background` once",
+      "screen": "every window, smoke"
+    },
+    {
+      "id": "F402",
+      "tag": "`npm test`",
+      "screen": ""
+    },
+    {
+      "id": "F403",
+      "tag": "`npm ls electron-updater marked @milkdown/kit electron-builder eslint prettier typescript-eslint dompurify fast-uri undici` prints the target versions; `gh pr list --author app/dependabot --state open` lists none of them",
+      "screen": ""
+    },
+    {
+      "id": "F404",
+      "tag": "`npm audit --omit=dev --audit-level=high` exits 0",
+      "screen": ""
+    },
+    {
+      "id": "F405",
+      "tag": "the Release workflow on `main` succeeds; `codesign --verify --deep --strict` and `spctl --assess` on the downloaded ZIP's app, run by the install step",
+      "screen": ""
+    }
+  ],
+  "pages": [
+    "editor",
+    "capture bar",
+    "Settings window",
+    "Keyboard Shortcuts window",
+    "session window",
+    "menu bar menu",
+    "session.md",
+    "PDF export",
+    "ZIP export"
+  ],
+  "widths": {
+    "feature": [1180, 1440],
+    "milestone": "responsiveTier"
+  },
+  "turns": {
+    "run": 200
+  }
+}
