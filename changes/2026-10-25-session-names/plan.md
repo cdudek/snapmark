@@ -93,6 +93,7 @@ Feature 2 (`session-names/2-readable-dates`, cut after feature 1 merges):
 - [ ] 10. Smoke checks F2, F3, F8, F9 in `test/smoke.ts` — proof: `npm run build` exits 0. CI's smoke run passes them on the PR; never run locally.
 - [ ] 11. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
 - [ ] 12. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
+- [ ] 13. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
 
 ## Risks
 
@@ -152,3 +153,5 @@ Feature 2:
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
 
 - 2026-10-25 — Feature 1 UX review found no Critical or High. Fixed: a committed `.pyc`, two stale "Other Session…" labels. The one-session Low is a beads follow-up.
+- 2026-10-25 — Step 13 added: subagents are closed when their report is in (owner, retro of the mac-shortcuts change).
+- 2026-10-25 — Retro: a Critical or High is never deferred without asking first. Interior branches now wait for CI before auto-merge.
