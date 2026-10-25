@@ -20,6 +20,7 @@ export interface MenuState {
   area: Area | null; // what Capture Last Area captures; null until the first time
   iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
   hasDiscarded: boolean; // something closed without saving, or removed, in the last 7 days
+  singleKeys: boolean; // plain letters and digits pick tools in the editor
 }
 
 export interface MenuActions {
@@ -43,6 +44,7 @@ export interface MenuActions {
   chooseRoot(): void;
   clearOldSessions(): void;
   setLogin(checked: boolean): void;
+  setSingleKeys(on: boolean): void;
   keyboardShortcuts(): void;
   checkUpdates(): void;
   installUpdate(): void;
@@ -169,6 +171,14 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
         { label: 'Sessions Folder…', sublabel: st.root, enabled: st.canChangeRoot, click: () => a.chooseRoot() },
         { label: 'Clear Sessions Older Than 60 Days…', click: () => a.clearOldSessions() },
         { label: 'Keyboard Shortcuts', click: () => a.keyboardShortcuts() },
+        // WCAG 2.1.4: keys without a modifier can be turned off. ⌘1–⌘7 still pick tools.
+        {
+          label: 'Single-Key Tools',
+          type: 'checkbox',
+          checked: st.singleKeys,
+          sublabel: 'Off: only ⌘1–⌘7 pick tools',
+          click: (item) => a.setSingleKeys(item.checked),
+        },
         { label: 'Check for Updates…', sublabel: `Snapmark ${st.version}`, enabled: st.canUpdate, click: () => a.checkUpdates() },
       ],
     },
