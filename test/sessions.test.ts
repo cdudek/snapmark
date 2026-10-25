@@ -375,4 +375,39 @@ assert.ok(
   'F17 old entry',
 );
 
+// F18 remove: the parts go to Discarded with the screenshot, as parts/01.png onward
+const rt = sessions.create(root, 'tall removed');
+const rtImg = path.join(root, rt, 'img');
+const rtMd = () => fs.readFileSync(path.join(root, rt, 'session.md'), 'utf8');
+for (let i = 1; i <= 6; i++) sessions.addShot(root, rt, Buffer.from(`fit${i}`));
+sessions.addShot(root, rt, Buffer.from('one'), { caption: 'Tall seven' }, bufs(11, 'r'));
+const removed7 = sessions.removeShot(root, rt, 7)!;
+assert.ok(!fs.existsSync(path.join(rtImg, '007')) && !fs.existsSync(path.join(rtImg, '007.png')), 'F18 remove: img/007/ is gone');
+assert.deepStrictEqual(fs.readdirSync(path.join(removed7, 'parts')).sort(), names(11), 'F18 remove: the parts are in Discarded');
+assert.strictEqual(fs.readFileSync(path.join(removed7, 'parts', '01.png'), 'utf8'), 'r1', 'F18 remove');
+
+// F19 reopen renumbers: entry 7 removed, a new screenshot took 7, four more followed; it comes back as 12
+assert.strictEqual(sessions.addShot(root, rt, Buffer.from('new7')), 7);
+for (let i = 8; i <= 11; i++) sessions.addShot(root, rt, Buffer.from(`fit${i}`));
+assert.strictEqual(sessions.restoreShot(root, sessions.discardedIn(root, rt)[0]), 12, 'F19 reopen renumbers: entry 12');
+const twelve = entryOf(rtMd(), 12);
+assert.deepStrictEqual(
+  linksIn(twelve),
+  names(11).map((f, i) => ({ alt: `Screenshot 12, part ${i + 1} of 11`, src: `img/012/${f}` })),
+  'F19 reopen renumbers: links and alt texts',
+);
+assert.ok(twelve.includes(sessions.partsLine(11)) && twelve.includes('Tall seven'), 'F19 reopen renumbers: the rest of the entry');
+assert.deepStrictEqual(fs.readdirSync(path.join(rtImg, '012')).sort(), names(11), 'F19 reopen renumbers: the part files');
+assert.strictEqual(fs.readFileSync(path.join(rtImg, '012', '11.png'), 'utf8'), 'r11', 'F19 reopen renumbers: the same parts');
+assert.ok(!fs.existsSync(path.join(rtImg, '007')) && !entryOf(rtMd(), 7).includes('part'), 'F19 the new 7 is untouched');
+// Reopened under its own number, the paths stay
+sessions.removeShot(root, rt, 12);
+assert.strictEqual(sessions.restoreShot(root, sessions.discardedIn(root, rt)[0]), 12, 'F19 own number');
+assert.ok(linksIn(entryOf(rtMd(), 12))[0].src === 'img/012/01.png' && fs.readdirSync(path.join(rtImg, '012')).length === 11, 'F19 own number');
+// A leftover img/012/ alone counts as taken
+sessions.removeShot(root, rt, 12);
+fs.mkdirSync(path.join(rtImg, '012'));
+assert.strictEqual(sessions.restoreShot(root, sessions.discardedIn(root, rt)[0]), 13, 'F19 a leftover img/012/ counts as taken');
+assert.ok(linksIn(entryOf(rtMd(), 13)).every((l) => l.src.startsWith('img/013/')) && fs.readdirSync(path.join(rtImg, '013')).length === 11);
+
 console.log('sessions: ok');

@@ -1749,6 +1749,21 @@ app
     const ms = Math.round(performance.now() - t0);
     console.log(`N1 scaled and cut 2560 × 20000 into ${cut.length} parts in ${ms} ms`);
     viewer['N1 a 2560×20000 capture is cut in under 1 s'] = cut.length === 13 && ms < 1000;
+    // F25: typing at the end of the Document tab keeps every part link as written
+    const partLinks = () => tallMd().match(/!\[[^\]]*\]\(img\/001\/\d+\.png\)/g)?.join('\n') ?? '';
+    const linksBefore = partLinks();
+    const tallView = openViewer(tall, root);
+    await new Promise<void>((r) => tallView.webContents.once('did-finish-load', () => r()));
+    await tallView.webContents.executeJavaScript(`(async () => {
+      for (let i = 0; i < 50 && !document.querySelector('#doc img[src^="img/001/"]'); i++) await new Promise((r) => setTimeout(r, 100));
+      const p = [...document.querySelectorAll('#doc p')].pop(); const r = document.createRange(); r.selectNodeContents(p); r.collapse(false);
+      getSelection().removeAllRanges(); getSelection().addRange(r); p.closest('[contenteditable]').focus();
+    })()`);
+    for (const ch of ' typed in the Document tab') tallView.webContents.sendInputEvent({ type: 'char', keyCode: ch });
+    for (let i = 0; i < 30 && !tallMd().includes('typed in the Document tab'); i++) await sleep(100);
+    viewer['F25 typing keeps the part links'] =
+      tallMd().includes('typed in the Document tab') && linksBefore.split('\n').length === 11 && partLinks() === linksBefore;
+    tallView.close();
     setActive(moved);
     const checks: Record<string, boolean> = {
       ...inPage,

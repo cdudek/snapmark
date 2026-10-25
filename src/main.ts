@@ -921,7 +921,10 @@ async function reopenDiscarded() {
     properties: ['openDirectory'],
   });
   if (canceled || !filePaths[0]) return;
-  const d = sessions.discarded(root).find((x) => x.dir === path.resolve(filePaths[0]));
+  // The parts folder inside a removed tall screenshot's folder counts as picking that folder (F20).
+  const picked = path.resolve(filePaths[0]);
+  const dir = path.basename(picked) === 'parts' ? path.dirname(picked) : picked;
+  const d = sessions.discarded(root).find((x) => x.dir === dir);
   if (!d) return notify(`That folder is not in ${tilde(top)}.`);
   reopen(d);
 }

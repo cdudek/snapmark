@@ -49,6 +49,9 @@
     // Only the lists changed (something discarded): keep the field, and what is being typed in it.
     if (field && d.md === mounted.md) return;
     edited = false;
+    // A tall screenshot saved again keeps its part file names: never show the old parts from the cache (F21). Nothing
+    // is added to session.md for it.
+    window.snapmark.clearImageCache();
     docEl.replaceChildren();
     // Each save says which text it edits, so a late save from before a reload can never overwrite a new screenshot.
     const m = { md: d.md };

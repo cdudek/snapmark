@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import { marked } from 'marked';
-import { shortName } from './sessions';
+import { partsLine, shortName } from './sessions';
 
 const run = promisify(execFile);
 
@@ -17,11 +17,25 @@ export async function exportZip(dir: string): Promise<string> {
   return out;
 }
 
+// The parts line with any number of parts; "." is the only character in it a RegExp reads specially.
+const PARTS_LINE = new RegExp(`^${partsLine(0).replaceAll('.', '\\.').replace('0', '\\d+')}$`, 'gm');
+
+// A person reads a tall screenshot as its one image: per number, the first part link becomes the one-image link, the
+// other part links and the parts line go. Keyed on the links, so an entry edited by hand prints right too.
+function oneImages(md: string): string {
+  const seen = new Set<string>();
+  return md
+    .replace(PARTS_LINE, '')
+    .replace(/!\[[^\]]*\]\(img\/(\d+)\/\d+\.png\)/g, (_, nnn: string) =>
+      seen.has(nnn) ? '' : (seen.add(nnn), `![Screenshot ${parseInt(nnn, 10)}](img/${nnn}.png)`),
+    );
+}
+
 export function sessionHtml(dir: string): string {
   // A leading heading is the display name, also in a session.md that still starts with its folder name.
   const title = shortName(path.basename(dir)).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const body = marked
-    .parse(fs.readFileSync(path.join(dir, 'session.md'), 'utf8'), { async: false })
+    .parse(oneImages(fs.readFileSync(path.join(dir, 'session.md'), 'utf8')), { async: false })
     .replace(/^<h1>[^]*?<\/h1>/, () => `<h1>${title}</h1>`); // only a heading on the first line; a function keeps $ in a name as it is
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title><style>
   body { font: 12pt -apple-system, system-ui, sans-serif; color: #18181b; margin: 0; }

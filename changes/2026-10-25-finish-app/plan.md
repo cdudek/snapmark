@@ -274,12 +274,12 @@ Feature 3.1 — parts on save:
 
 Feature 3.2 — one screenshot everywhere:
 
-- [ ] 10. Write the F18, F19 blocks in `test/sessions.test.ts` and F22, F23 in `test/exporter.test.ts` — proof: `npm test` fails on F18, F19 and F22.
-- [ ] 11. `src/sessions.ts`: `removeShot`, `restoreShot` — proof: F18, F19 pass.
-- [ ] 12. `src/exporter.ts`: `sessionHtml` — proof: F22, F23 pass.
-- [ ] 13. `src/main.ts`: `reopenDiscarded` — proof: `grep -n "'parts'" src/main.ts` prints the parent fallback (F20).
-- [ ] 14. `src/preload.ts`, `src/shared.d.ts`, `src/viewer.ts`: `clearImageCache` — proof: `npm run typecheck` exits 0; `grep -n clearImageCache src/viewer.ts` prints the call in `load()` (F21).
-- [ ] 15. Smoke check F25 — proof: `npm run build` exits 0; smoke runs once at the milestone.
+- [x] 10. Write the F18, F19 blocks in `test/sessions.test.ts` and F22, F23 in `test/exporter.test.ts` — proof: `npm test` fails on F18, F19 and F22.
+- [x] 11. `src/sessions.ts`: `removeShot`, `restoreShot` — proof: F18, F19 pass.
+- [x] 12. `src/exporter.ts`: `sessionHtml` — proof: F22, F23 pass.
+- [x] 13. `src/main.ts`: `reopenDiscarded` — proof: `grep -n "'parts'" src/main.ts` prints the parent fallback (F20).
+- [x] 14. `src/preload.ts`, `src/shared.d.ts`, `src/viewer.ts`: `clearImageCache` — proof: `npm run typecheck` exits 0; `grep -n clearImageCache src/viewer.ts` prints the call in `load()` (F21).
+- [x] 15. Smoke check F25 — proof: `npm run build` exits 0; smoke runs once at the milestone.
 - [ ] 17. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
 
 ### Milestone 4
@@ -415,3 +415,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-26 — M2 gate: F123's smoke check failed here for the reason milestone 1's fix round logged (it also required the 60-character name to be cut, which the fact does not ask; the name fits whole at 1100 points). That fix is not on this branch, so the same check is applied: "Open in Markdown App" stays on one line and no other header control is clipped.
 - 2026-10-26 — M2 on main: the Settings Shortcuts tab and the Keyboard Shortcuts window take milestone 1's one keycap style (A18): 11 px, weight 500, system font, tabular digits, the text's colour, no wrap (they had 12 px). They keep the cap's border, radius and 4 × 10 pt padding, which F231 asks for. The capture bar shows no keys. Milestone 2 was rebased onto main after milestone 1 merged: `state.json` keeps both `customColors` and `capture`, `src/tools.ts` exports both sides' helpers, and `npm test` runs both `capture.test` and `colour.test`.
 - 2026-10-25 — M3.1: `src/parts.ts` also exports `fitScale` (the fit-whole scale `fitForAI` used inline) and `MAX_PARTS`, and `src/sessions.ts` exports `partsLine`, so the tests read the words from one place; `nextNumber` also counts a part link (`img/007/…`) in `session.md` as taken; step 8 needed no edit: the ADR and `docs/designs/INDEX.md` already said `accepted`
+- 2026-10-25 — M3.2: `sessionHtml` finds the parts line by its words from `sessions.partsLine` (a parts line the owner rewrote prints as written); `restoreShot` renumbers a part link by its path (`](img/007/`) and its alt text (`[Screenshot 7, part `) separately, so an alt text edited by hand keeps the right path; F23 needed no code change, since `exportZip` already zips `img/` with its folders

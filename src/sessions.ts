@@ -277,7 +277,8 @@ export function replaceShot(root: string, name: string, n: number, png: Buffer, 
 export const KEEP_DAYS = 7;
 
 // kind "capture": a screenshot closed without saving (image.png is the clean capture, state.json its marks).
-// kind "shot": an entry removed from a session (entry.md, image.png, and original.png + state.json when kept).
+// kind "shot": an entry removed from a session (entry.md, image.png, parts/ for a tall one, and original.png +
+// state.json when kept).
 export interface Discarded {
   dir: string;
   kind: 'capture' | 'shot';
@@ -338,14 +339,20 @@ export function restoreShot(root: string, d: Discarded): number {
     fs.writeFileSync(path.join(dir, 'session.md'), `# ${shortName(d.session)}\n`);
   }
   const old = d.n!;
-  const taken = shots(root, d.session).includes(old) || fs.existsSync(path.join(dir, 'img', `${pad(old)}.png`));
+  const img = path.join(dir, 'img');
+  // A parts folder left behind holds its number too, so moving the parts back can never fail midway.
+  const taken =
+    shots(root, d.session).includes(old) || fs.existsSync(path.join(img, `${pad(old)}.png`)) || fs.existsSync(path.join(img, pad(old)));
   const n = taken ? nextNumber(dir) : old;
   const text = fs
     .readFileSync(path.join(d.dir, 'entry.md'), 'utf8')
     .replace(`## ${pad(old)} · `, `## ${pad(n)} · `)
-    .replace(`![Screenshot ${old}](img/${pad(old)}.png)`, `![Screenshot ${n}](img/${pad(n)}.png)`);
-  fs.mkdirSync(path.join(dir, 'img'), { recursive: true });
-  fs.renameSync(path.join(d.dir, 'image.png'), path.join(dir, 'img', `${pad(n)}.png`));
+    .replace(`![Screenshot ${old}](img/${pad(old)}.png)`, `![Screenshot ${n}](img/${pad(n)}.png)`)
+    .replaceAll(`[Screenshot ${old}, part `, `[Screenshot ${n}, part `)
+    .replaceAll(`](img/${pad(old)}/`, `](img/${pad(n)}/`);
+  fs.mkdirSync(img, { recursive: true });
+  fs.renameSync(path.join(d.dir, 'image.png'), path.join(img, `${pad(n)}.png`));
+  if (fs.existsSync(path.join(d.dir, 'parts'))) fs.renameSync(path.join(d.dir, 'parts'), path.join(img, pad(n)));
   if (fs.existsSync(path.join(d.dir, 'state.json')))
     saveEdit(
       root,
@@ -378,6 +385,8 @@ export function removeShot(root: string, name: string, n: number): string | null
   fs.writeFileSync(path.join(to, 'entry.md'), md.slice(start, end).trim() + '\n');
   const img = path.join(dir, 'img', `${pad(n)}.png`);
   if (fs.existsSync(img)) fs.renameSync(img, path.join(to, 'image.png'));
+  const parts = path.join(dir, 'img', pad(n)); // a tall screenshot's parts go with it
+  if (fs.existsSync(parts)) fs.renameSync(parts, path.join(to, 'parts'));
   const edit = editFiles(root, name, n);
   if (fs.existsSync(edit.json)) {
     fs.renameSync(edit.png, path.join(to, 'original.png'));
