@@ -2,7 +2,7 @@
 
 > ⌃⇧5 opens a capture bar at the bottom of the screen, like macOS's ⇧⌘5. Settings becomes a window with three tabs. The Keyboard Shortcuts window gets the round-1 look, in its own file.
 
-Facts are in [facts.md](facts.md), build rows in [plan-rows.md](plan-rows.md). Every word on screen is in the Words tables below; copy them exactly.
+Facts are in [facts.md](../facts.md), build rows in [plan.md](../plan.md). Every word on screen is in the Words tables below; copy them exactly.
 
 ## Asks
 

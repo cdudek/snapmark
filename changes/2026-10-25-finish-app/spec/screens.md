@@ -35,13 +35,13 @@ The whole entry, as written to `session.md`:
 
 This screenshot is tall, so it comes in 11 parts. Read them top to bottom as one image; each part repeats a strip from the bottom of the part before.
 
-`![Screenshot 7, part 1 of 11](img/007/01.png)`
+`image “Screenshot 7, part 1 of 11” → img/007/01.png`
 
-`![Screenshot 7, part 2 of 11](img/007/02.png)`
+`image “Screenshot 7, part 2 of 11” → img/007/02.png`
 
 …
 
-`![Screenshot 7, part 11 of 11](img/007/11.png)`
+`image “Screenshot 7, part 11 of 11” → img/007/11.png`
 
 Pricing table overflows on the right.
 
@@ -53,7 +53,7 @@ Pricing table overflows on the right.
 </details>
 ```
 
-A screenshot that is not tall keeps today's entry, byte for byte: `![Screenshot 7](img/007.png)`.
+A screenshot that is not tall keeps today's entry, byte for byte: `image “Screenshot 7” → img/007.png`.
 
 ### Layout
 
@@ -324,9 +324,9 @@ Hand the session to a person (setup.md: PDF and ZIP export, scene 2). J3.
 
 ### Components
 
-| Region | Component                            | Status      | Notes                                                                                                                                                                                                  |
-| ------ | ------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| body   | `sessionHtml()` in `src/exporter.ts` | new variant | before `marked`, swaps the part links of each screenshot for `![Screenshot 7](img/007.png)` and drops the parts line, keyed on the links so an entry edited in the Document tab still prints one image |
+| Region | Component                            | Status      | Notes                                                                                                                                                                                                        |
+| ------ | ------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| body   | `sessionHtml()` in `src/exporter.ts` | new variant | before `marked`, swaps the part links of each screenshot for `image “Screenshot 7” → img/007.png` and drops the parts line, keyed on the links so an entry edited in the Document tab still prints one image |
 
 ## ZIP export
 

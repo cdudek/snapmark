@@ -1,6 +1,6 @@
 # Spec: M1 Editor polish and leftovers
 
-Milestone 1 of `2026-10-25-finish-app`. The editor gets the toolbar and header the design mock promised, a Highlighter that shows on dark screens, and the open beads leftovers are fixed or closed. Facts F101–F135 are in [facts.md](facts.md); files and order in [plan-rows.md](plan-rows.md).
+Milestone 1 of `2026-10-25-finish-app`. The editor gets the toolbar and header the design mock promised, a Highlighter that shows on dark screens, and the open beads leftovers are fixed or closed. Facts F101–F135 are in [facts.md](../facts.md); files and order in [plan.md](../plan.md).
 
 Mock: `design-explorations/2026-10-25-native-round-2/01-editor/shots/editor--in-use.png` (title row "Snapmark" with the app icon; tool captions C, ⌘1–⌘7; Undo and Redo with icons; no Copy Image or Save As… in the toolbar; "Ledgerly Q4 review · 12 screenshots ⌄" at the right).
 

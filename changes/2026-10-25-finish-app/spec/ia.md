@@ -105,7 +105,7 @@ stateDiagram-v2
   Removed --> [*]: 7 days
 ```
 
-No editor tool changes the image size, so a new screenshot never moves between Fits and Tall on Edit Again. An entry saved before this change can: an old tall entry (the 251 px strip, `![Screenshot 7](img/007.png)`) becomes Tall with parts when Edit Again saves it again from `.edit/007.png`. Existing entries are never rewritten otherwise. The rule runs on every save, so it can never go stale.
+No editor tool changes the image size, so a new screenshot never moves between Fits and Tall on Edit Again. An entry saved before this change can: an old tall entry (the 251 px strip, `image “Screenshot 7” → img/007.png`) becomes Tall with parts when Edit Again saves it again from `.edit/007.png`. Existing entries are never rewritten otherwise. The rule runs on every save, so it can never go stale.
 
 ## Sitemap
 

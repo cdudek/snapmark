@@ -6,7 +6,7 @@ One line: title · status · date · tags. Newest first within each type.
 
 ## adr (40)
 
-- [Tall screenshots reach the agent as parts at up to 1280 px wide, and stay one screenshot everywhere else](2026-10-25-adr-tall-screenshots-saved-as-parts.md) · proposed · 2026-10-25 · ux, session, ai-handoff
+- [Tall screenshots reach the agent as parts at up to 1280 px wide, and stay one screenshot everywhere else](2026-10-25-adr-tall-screenshots-saved-as-parts.md) · accepted · 2026-10-25 · ux, session, ai-handoff
 - [Session folders keep their date stamp; screens show a readable name](2026-10-25-adr-session-folders-keep-their-date-stamp.md) · accepted · 2026-10-25 · ux, sessions, menu
 - [Keys follow macOS: ⌃⇧ plus the screenshot digits, Preview and Finder keys in the windows](2026-10-25-adr-keys-follow-macos.md) · accepted · 2026-10-25 · ux, keys
 - [Updates](2026-09-26-adr-updates.md) · accepted · 2026-09-26 · ux

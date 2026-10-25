@@ -2,7 +2,7 @@
 id: 2026-10-25-adr-tall-screenshots-saved-as-parts
 title: 'Tall screenshots reach the agent as parts at up to 1280 px wide, and stay one screenshot everywhere else'
 type: adr
-status: proposed
+status: accepted
 created: 2026-10-25
 supersedes: []
 superseded_by: []

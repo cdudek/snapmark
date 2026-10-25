@@ -2,9 +2,9 @@
 type: validation
 change: 2026-10-25-finish-app
 verdict: ready
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-25
 created: 2026-10-25
 ---
 

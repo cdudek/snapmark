@@ -4,9 +4,9 @@ type: facts
 change: 2026-10-25-finish-app
 design: docs/designs/2026-10-25-adr-tall-screenshots-saved-as-parts.md
 author: Claude (orchestrator)
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-25
 created: 2026-10-25
 ---
 
@@ -142,7 +142,7 @@ The system is Snapmark. Words are in `spec.md` Words. Unit facts are plain-Node 
 
 ## Milestone 2 — Capture bar, Settings window, Keyboard Shortcuts window
 
-The system is Snapmark. Every word is in [spec.md](spec.md) (Words tables and tabs); copy them exactly. Unit facts are plain-Node assert blocks in `test/*.test.ts`, one block per fact, its comment starting with the fact id. Smoke checks in `test/smoke.ts` are keyed strings in the `viewer` record, starting with the fact id. CI runs smoke headless on Linux (xvfb) on every PR, and on macOS in the release workflow; never locally. What neither can check is named per fact and in spec.md "What CI can and cannot check".
+The system is Snapmark. Every word is in [spec/capture-and-settings.md](spec/capture-and-settings.md) (Words tables and tabs); copy them exactly. Unit facts are plain-Node assert blocks in `test/*.test.ts`, one block per fact, its comment starting with the fact id. Smoke checks in `test/smoke.ts` are keyed strings in the `viewer` record, starting with the fact id. CI runs smoke headless on Linux (xvfb) on every PR, and on macOS in the release workflow; never locally. What neither can check is named per fact and in spec.md "What CI can and cannot check".
 
 ### Capture bar
 

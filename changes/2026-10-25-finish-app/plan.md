@@ -4,9 +4,9 @@ type: plan
 change: 2026-10-25-finish-app
 design: docs/designs/2026-10-25-adr-tall-screenshots-saved-as-parts.md
 author: Claude (orchestrator)
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-25
 created: 2026-10-25
 ---
 
@@ -390,3 +390,5 @@ One goal for the whole change, from the kit's `templates/goal/run.txt`, with thi
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-10-25 — before the lock was committed: one facts.md link pointed at a draft file name (`spec.md`); it now points at `spec/capture-and-settings.md`, and the lock was taken again. No fact changed. Example `session.md` image links in `spec/` are written as plain text, and an empty `validation.md` skeleton was added, so the guardrail test reads no missing files.
