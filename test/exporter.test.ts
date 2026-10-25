@@ -25,6 +25,13 @@ import { exportZip, sessionHtml } from '../src/exporter';
   assert.match(html, /<img src="img\/001\.png" alt="Screenshot 1">/);
   assert.match(html, /<li>Too tall<\/li>/);
   assert.ok(html.includes('<details><summary>Text in the screenshot</summary>') && html.includes('details { display: none; }')); // not in the PDF
+
+  // F5 PDF heading: the display name, also for a session.md that still has its folder name on top
+  const named = sessions.create(root, '2026-10-24 23.38 Ledgerly Q4 review');
+  fs.writeFileSync(path.join(root, named, 'session.md'), `# ${named}\n\nSome text\n`);
+  const pdfHtml = sessionHtml(path.join(root, named));
+  assert.match(pdfHtml, /<h1>2026-10-24 · Ledgerly Q4 review<\/h1>/);
+  assert.ok(pdfHtml.includes('Some text'));
   console.log('exporter: ok');
 })().catch((e) => {
   console.error(e);

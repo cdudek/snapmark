@@ -86,10 +86,10 @@ Feature 1 (`session-names/1-older-sessions`):
 
 Feature 2 (`session-names/2-readable-dates`, cut after feature 1 merges):
 
-- [ ] 6. Write the F1, F6, F7, F10, F11, F12, F19, N1, N2 blocks in `test/sessions.test.ts` and F5 in `test/exporter.test.ts` — proof: `npm test` fails on them.
-- [ ] 7. `src/sessions.ts`: stamp regex, `shortName`, `namePart`, `renamedTo`, `rename`, `saveAsName`, `whenLabel` — proof: the unit blocks pass.
-- [ ] 8. `src/exporter.ts` heading — proof: F5 passes.
-- [ ] 9. `src/shared.d.ts`, `src/main.ts`, `src/viewer.ts`, `src/viewer.html` — proof: `npm run typecheck` exits 0; `grep -n "notify(" src/main.ts` shows every session name through `sessions.shortName` (F4).
+- [x] 6. Write the F1, F6, F7, F10, F11, F12, F19, N1, N2 blocks in `test/sessions.test.ts` and F5 in `test/exporter.test.ts` — proof: `npm test` fails on them.
+- [x] 7. `src/sessions.ts`: stamp regex, `shortName`, `namePart`, `renamedTo`, `rename`, `saveAsName`, `whenLabel` — proof: the unit blocks pass.
+- [x] 8. `src/exporter.ts` heading — proof: F5 passes.
+- [x] 9. `src/shared.d.ts`, `src/main.ts`, `src/viewer.ts`, `src/viewer.html` — proof: `npm run typecheck` exits 0; `grep -n "notify(" src/main.ts` shows every session name through `sessions.shortName` (F4).
 - [ ] 10. Smoke checks F2, F3, F8, F9 in `test/smoke.ts` — proof: `npm run build` exits 0. CI's smoke run passes them on the PR; never run locally.
 - [ ] 11. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
 - [ ] 12. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
