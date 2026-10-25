@@ -129,9 +129,28 @@
     renderShot();
   };
 
+  let removing = false; // one removal at a time, so a held ⌘⌫ never takes a second screenshot
+  let lastRemoved: string | null = null; // its Discarded folder, for ⌘Z
   const remove = async (n: number | undefined) => {
-    if (n) await load(await window.snapmark.viewerRemove(n));
+    if (!n || removing) return;
+    removing = true;
+    try {
+      await load(await window.snapmark.viewerRemove(n));
+      lastRemoved = data.discarded.find((d) => d.kind === 'shot')?.dir ?? null; // newest first
+    } finally {
+      removing = false;
+    }
   };
+
+  // ⌘Z, as in Finder after ⌘⌫: the last removed screenshot comes back, shown large. Once.
+  async function putBack() {
+    const dir = lastRemoved;
+    lastRemoved = null;
+    if (!dir || !data.discarded.some((d) => d.dir === dir)) return;
+    await load(await window.snapmark.viewerReopen(dir));
+    index = data.shots.length - 1; // it goes back at the end
+    show('shot');
+  }
 
   function openMenu(at: HTMLElement, n: number) {
     const r = at.getBoundingClientRect();
@@ -185,10 +204,25 @@
   $('menu-remove').onclick = () => remove(menuFor);
   document.addEventListener('click', (e) => {
     if (!menu.contains(e.target as Node)) menu.hidden = true;
+    // A button clicked with the pointer lets go of the focus, so ↩ renames instead of clicking it again.
+    if (e.detail > 0) (e.target as Element).closest('button')?.blur();
   });
   document.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLElement && (e.target.isContentEditable || e.target === input)) return;
-    if (e.key === 'Escape' && !menu.hidden) menu.hidden = true;
+    const shown = view === 'shot' ? data.shots[index] : undefined; // the screenshot shown large
+    // Finder's keys: ↩ renames, ⌘⌫ removes, ⌘Z puts back, ⌘O opens (here: Edit Again).
+    const cmd = e.metaKey && !e.shiftKey && !e.repeat;
+    if (e.key === 'Enter' && (e.target === document.body || e.target === document.documentElement)) {
+      e.preventDefault();
+      startRename();
+    } else if (cmd && e.key === 'Backspace' && shown) void remove(shown.n);
+    else if (cmd && e.key === 'z') {
+      e.preventDefault();
+      void putBack();
+    } else if (cmd && e.key === 'o' && shown?.editable) {
+      e.preventDefault();
+      window.snapmark.viewerEdit(shown.n);
+    } else if (e.key === 'Escape' && !menu.hidden) menu.hidden = true;
     else if (e.key === 'Escape' && view === 'shot') show('grid');
     else if (view === 'shot' && e.key === 'ArrowLeft') step(-1);
     else if (view === 'shot' && e.key === 'ArrowRight') step(1);
