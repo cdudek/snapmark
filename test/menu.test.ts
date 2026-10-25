@@ -278,7 +278,11 @@ share[1].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'saveAs', 'F113');
 
 // F114 editor session menu: at most 10 sessions, this editor's ticked, then a separator and New Session
-const edMenu = editorSessionMenu({ ...base, sessions: [...many(12).slice(0, 1), { name: 'b', label: 'B', count: 3 }, ...many(12).slice(1)] }, 'b', ed);
+const edMenu = editorSessionMenu(
+  { ...base, sessions: [...many(12).slice(0, 1), { name: 'b', label: 'B', count: 3 }, ...many(12).slice(1)] },
+  'b',
+  ed,
+);
 const edRows = edMenu.filter((i) => i.type === 'checkbox');
 assert.strictEqual(edRows.length, 10, 'F114 at most 10');
 assert.deepStrictEqual(

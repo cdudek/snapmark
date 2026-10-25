@@ -254,7 +254,10 @@ assert.strictEqual(sessions.nameProblem('Ledgerly (2)'), null, 'F124');
 assert.strictEqual(sessions.nameProblem('(draft) Ledgerly'), null, 'F124');
 const mainSrc = fs.readFileSync(path.join(__dirname, '../../src/main.ts'), 'utf8');
 // Both renames go through tryRename, which asks nameProblem first
-const tryRenameSrc = mainSrc.slice(mainSrc.indexOf('async function tryRename'), mainSrc.indexOf('\n}\n', mainSrc.indexOf('async function tryRename')));
+const tryRenameSrc = mainSrc.slice(
+  mainSrc.indexOf('async function tryRename'),
+  mainSrc.indexOf('\n}\n', mainSrc.indexOf('async function tryRename')),
+);
 assert.ok(tryRenameSrc.includes('sessions.nameProblem(wanted)'), 'F124 tryRename uses nameProblem');
 assert.ok(/'viewer:rename'[\s\S]{0,200}tryRename\(/.test(mainSrc), 'F124 viewer:rename uses it');
 assert.ok(/function renameFromMenu[\s\S]*?tryRename\(/.test(mainSrc), 'F124 renameFromMenu uses it');

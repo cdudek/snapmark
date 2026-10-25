@@ -563,7 +563,9 @@ app
     viewer['F131 ⌘Z puts back the one removed'] =
       removedOne &&
       !!newerKept &&
-      (await waitFor(`document.querySelectorAll('#grid .thumb').length === 1 && document.getElementById('count').textContent === '1 of 1'`)) &&
+      (await waitFor(
+        `document.querySelectorAll('#grid .thumb').length === 1 && document.getElementById('count').textContent === '1 of 1'`,
+      )) &&
       JSON.stringify(sessions.shots(root, 'smoke')) === '[1]';
     if (newerKept) fs.rmSync(newerKept.dir, { recursive: true, force: true }); // the Discarded tab checks below count one
     viewer['Edit Again is offered for a saved screenshot'] = await waitFor(`!document.querySelector('#grid .thumb .edit').hidden`);
@@ -687,7 +689,9 @@ app
       (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
       !fs.existsSync(path.join(root, 'smoke renamed'));
     // F127: an emptied field and a click away keep the name
-    await inView(`document.getElementById('title').click(); document.getElementById('rename').value = ''; document.getElementById('rename').blur();`);
+    await inView(
+      `document.getElementById('title').click(); document.getElementById('rename').value = ''; document.getElementById('rename').blur();`,
+    );
     await sleep(300);
     viewer['F127 an empty field and a click away keep the name'] =
       (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
@@ -722,7 +726,10 @@ app
     await rename(long, 'Return');
     inPage['F116 a long name shortens'] =
       (await label(`${long} · 2 screenshots`)) &&
-      (await inWin(watching, `const s = document.getElementById('session'); return s.scrollWidth > s.clientWidth && s.title.startsWith(${JSON.stringify(long)});`));
+      (await inWin(
+        watching,
+        `const s = document.getElementById('session'); return s.scrollWidth > s.clientWidth && s.title.startsWith(${JSON.stringify(long)});`,
+      ));
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     // F123: at 1100 points a 60-character name leaves "Open in Markdown App" on one line; only the name shortens
@@ -978,7 +985,10 @@ app
       !!oneCopy && near(pixel(oneFile, 0, 0, 2, 2), [18, 52, 86]) && near(pixel(oneFile, 1, 1, -3, -3), [18, 52, 86]);
     viewer['one-shot: the screenshot and its marks sit centred on it'] =
       !!oneCopy && red(pixel(oneFile, (L.x + shotSize.width / 2) / L.width, (L.y + shotSize.height / 2) / L.height, -shotUnit * 8 * 0.45));
-    await inWin(one, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`);
+    await inWin(
+      one,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`,
+    );
     for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
     viewer['one-shot: Save As… writes the same image, named Snapmark <date time>'] =
       /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(got.offered) &&
@@ -987,7 +997,7 @@ app
       fs.readFileSync(oneSaved).equals(oneCopy);
     // F134: one-shot ⌘↵ copies and keeps the selected marks selected
     got.copy = null;
-    const oneKept = await inWin(
+    const oneSelected = await inWin(
       one,
       `canvas.add(new Marker({ x: 40, y: 40 }, '#e5484d')); after();
       select(canvas.getObjects().filter((o) => o instanceof Marker));
@@ -998,7 +1008,7 @@ app
       return n;`,
     );
     for (let i = 0; i < 30 && !got.copy; i++) await sleep(100);
-    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu && oneKept === 2 && !!got.copy;
+    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu && oneSelected === 2 && !!got.copy;
     viewer['one-shot: nothing is added to any session'] =
       JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
     for (const key of ['Escape', 'Escape']) {
@@ -1127,7 +1137,10 @@ app
     );
     const movedTitle = mover.getTitle();
     const nowCurrent = (menuItems()[1] as { label?: string }).label;
-    await inWin(mover, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true, cancelable: true }));`);
+    await inWin(
+      mover,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true, cancelable: true }));`,
+    );
     for (let i = 0; i < 30 && sessions.count(root, moved) === 0; i++) await sleep(100);
     inPage['F114 the label switches the session'] =
       movedLabel && movedTitle === 'Snapmark — moved' && nowCurrent === 'moved' && sessions.count(root, moved) === 1;

@@ -312,9 +312,7 @@ export function restoreShot(root: string, d: Discarded): number {
   const later = [...md.matchAll(/^## (\d+) · /gm)].find((m) => parseInt(m[1], 10) > n);
   fs.writeFileSync(
     mdPath,
-    later
-      ? `${md.slice(0, later.index).trimEnd()}\n\n${text.trim()}\n\n${md.slice(later.index)}`
-      : `${md.trimEnd()}\n\n${text.trim()}\n`,
+    later ? `${md.slice(0, later.index).trimEnd()}\n\n${text.trim()}\n\n${md.slice(later.index)}` : `${md.trimEnd()}\n\n${text.trim()}\n`,
   );
   fs.rmSync(d.dir, { recursive: true, force: true });
   return n;

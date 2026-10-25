@@ -135,12 +135,18 @@
     if (!n || removing) return;
     removing = true;
     try {
+      const at = data.shots.findIndex((s) => s.n === n);
       const { data: d, dir } = await window.snapmark.viewerRemove(n);
       await load(d);
       lastRemoved = dir;
       $('announce').textContent = `Screenshot ${n} moved to Discarded. ⌘Z puts it back.`;
-      // Focus on the large image, not the page: ↩ would start a rename (snap-c5c).
+      // Focus stays in the content, never on the page: ↩ would start a rename (snap-c5c).
+      // The grid focuses the tile that took the removed one's place, or the Screenshots tab when none is left.
       if (view === 'shot') img.focus();
+      else if (view === 'grid') {
+        const pics = $('grid').querySelectorAll<HTMLElement>('.pic');
+        (pics[Math.min(at, pics.length - 1)] ?? $('tab-shots')).focus();
+      }
     } finally {
       removing = false;
     }
@@ -154,7 +160,10 @@
     const had = new Set(data.shots.map((s) => s.n));
     await load(await window.snapmark.viewerReopen(dir));
     // Back in place, or at the end when its number was taken in the meantime.
-    index = Math.max(0, data.shots.findIndex((s) => !had.has(s.n)));
+    index = Math.max(
+      0,
+      data.shots.findIndex((s) => !had.has(s.n)),
+    );
     show('shot');
     $('announce').textContent = `Screenshot ${data.shots[index]?.n ?? ''} is back.`;
   }

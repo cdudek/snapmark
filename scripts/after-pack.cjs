@@ -20,7 +20,11 @@ function setUuid(buf, appId, arch) {
   // shortcut: thin only, electron-builder builds per arch; upgrade if a universal target is added
   if (magic === 0xcafebabe || magic === 0xcafebabf) throw new Error('setUuid: a fat (universal) Mach-O is not supported');
   if (buf.readUInt32LE(0) !== MH_MAGIC_64) throw new Error('setUuid: not a 64-bit Mach-O');
-  const uuid = crypto.createHash('sha256').update(appId + arch).digest().subarray(0, 16);
+  const uuid = crypto
+    .createHash('sha256')
+    .update(appId + arch)
+    .digest()
+    .subarray(0, 16);
   uuid[6] = (uuid[6] & 0x0f) | 0x40; // version 4
   uuid[8] = (uuid[8] & 0x3f) | 0x80; // RFC 4122 variant
   const ncmds = buf.readUInt32LE(16);

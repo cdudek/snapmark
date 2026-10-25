@@ -18,20 +18,20 @@ Kind: new, delivered in one go: four milestones, each its own branch, PR and rel
 
 In build order. `state` is `todo`, `building`, `done <sha>` (a commit on the milestone branch), `merged` (its milestone PR merged) or `blocked: <reason>`.
 
-| #   | Change                | Feature                                        | PR or commit | State |
-| --- | --------------------- | ---------------------------------------------- | ------------ | ----- |
+| #   | Change                | Feature                                        | PR or commit | State        |
+| --- | --------------------- | ---------------------------------------------- | ------------ | ------------ |
 | 1   | 2026-10-25-finish-app | M1.1 Highlighter shows on dark screens         | c02e5a7      | done c02e5a7 |
 | 2   | 2026-10-25-finish-app | M1.2 Toolbar keys and size                     | 873a777      | done 873a777 |
 | 3   | 2026-10-25-finish-app | M1.3 Editor header like the mock               | d4fccd7      | done d4fccd7 |
 | 4   | 2026-10-25-finish-app | M1.4 Session window and rename leftovers       | 5019430      | done 5019430 |
 | 5   | 2026-10-25-finish-app | M1.5 Small fixes                               | 112f8b1      | done 112f8b1 |
 | 6   | 2026-10-25-finish-app | M1.6 Own LC_UUID                               | 0340156      | done 0340156 |
-| 7   | 2026-10-25-finish-app | M2.1 Capture bar                               | —            | todo  |
-| 8   | 2026-10-25-finish-app | M2.2 Settings window                           | —            | todo  |
-| 9   | 2026-10-25-finish-app | M2.3 Keyboard Shortcuts window                 | —            | todo  |
-| 10  | 2026-10-25-finish-app | M3.1 Parts on save                             | —            | todo  |
-| 11  | 2026-10-25-finish-app | M3.2 One screenshot everywhere                 | —            | todo  |
-| 12  | 2026-10-25-finish-app | M4.1 Electron 45, vitest 5, Dependabot updates | —            | todo  |
+| 7   | 2026-10-25-finish-app | M2.1 Capture bar                               | —            | todo         |
+| 8   | 2026-10-25-finish-app | M2.2 Settings window                           | —            | todo         |
+| 9   | 2026-10-25-finish-app | M2.3 Keyboard Shortcuts window                 | —            | todo         |
+| 10  | 2026-10-25-finish-app | M3.1 Parts on save                             | —            | todo         |
+| 11  | 2026-10-25-finish-app | M3.2 One screenshot everywhere                 | —            | todo         |
+| 12  | 2026-10-25-finish-app | M4.1 Electron 45, vitest 5, Dependabot updates | —            | todo         |
 
 ## Milestone PRs
 

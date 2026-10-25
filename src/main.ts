@@ -419,10 +419,20 @@ ipcMain.handle('editor:init', (e): EditorInit => {
   const picked = color ?? undefined;
   if (oneShot)
     return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined, singleKeys, color: picked };
-  return { src, session: sessions.shortName(session), count: sessions.count(into, session), state, replacing: replace, singleKeys, color: picked };
+  return {
+    src,
+    session: sessions.shortName(session),
+    count: sessions.count(into, session),
+    state,
+    replacing: replace,
+    singleKeys,
+    color: picked,
+  };
 });
 
-ipcMain.on('editor:color', (_e, c: string) => {
+ipcMain.on('editor:color', (_e, c: unknown) => {
+  // The page is not trusted to send a colour: only #rrggbb is kept in state.json.
+  if (typeof c !== 'string' || !/^#[0-9a-f]{6}$/i.test(c)) return;
   color = c;
   saveState();
 });

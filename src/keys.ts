@@ -63,8 +63,7 @@ export function shortcutsHtml(groups: ToolGroup[], singleKeys: boolean): string 
   const row = (keys: string, icon: string, name: string, what: string) =>
     `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
   // On: "C or Esc", "1 or ⌘1", "1 again". Off: "Esc", "⌘1", "⌘1 again".
-  const first = (g: ToolGroup) =>
-    g.key === 'c' ? (singleKeys ? 'C or Esc' : 'Esc') : singleKeys ? `${g.key} or ⌘${g.key}` : `⌘${g.key}`;
+  const first = (g: ToolGroup) => (g.key === 'c' ? (singleKeys ? 'C or Esc' : 'Esc') : singleKeys ? `${g.key} or ⌘${g.key}` : `⌘${g.key}`);
   const tools = groups
     .flatMap((g) =>
       g.tools.map((t, v) => row(v ? `${singleKeys ? g.key : `⌘${g.key}`} again` : first(g), t.icon, t.label, t.tip ?? t.means ?? '')),
