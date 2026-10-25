@@ -49,6 +49,7 @@ let background: import('fabric').FabricImage | null = null;
 let drag: { start: Point; obj: FObject | null } | null = null;
 let oneShot = false; // one-shot mode: Beautify instead of References, Copy Image instead of Add to session
 let beauty: Beautify = DEFAULT_BEAUTY; // one-shot mode's settings
+let singleKeys = true; // Settings ▸ Single-Key Tools: off, only ⌘1–⌘7 pick tools
 
 const tool = (): Tool => GROUPS[group].tools[variant[group]].id;
 const color = () => GROUPS[group].color ?? colorEl.value;
@@ -1080,7 +1081,7 @@ document.addEventListener('keydown', (e) => {
   if ((e.key === 'Backspace' || e.key === 'Delete') && active)
     return active instanceof fabric.ActiveSelection ? removeAll(canvas.getActiveObjects()) : remove(active);
   const g = GROUPS.findIndex((x) => x.key === e.key.toLowerCase());
-  if (!e.metaKey && g >= 0) pickGroup(g);
+  if (!e.metaKey && g >= 0 && singleKeys) pickGroup(g);
 });
 
 // Tells the main process there is work to lose, so Quit asks first. The screenshot is the background, not an object.
@@ -1188,7 +1189,9 @@ new ResizeObserver(fit).observe(mainEl);
 const shotsLabel = (session: string, n: number) => (n ? `${session} · ${n} screenshot${n === 1 ? '' : 's'}` : session);
 
 window.snapmark.onSession((session, count) => ($('session').textContent = shotsLabel(session, count)));
-window.snapmark.init().then(async ({ src, session, count, state, replacing, oneShot: one, beautify }) => {
+window.snapmark.onSingleKeys((on) => (singleKeys = on));
+window.snapmark.init().then(async ({ src, session, count, state, replacing, oneShot: one, beautify, singleKeys: keys }) => {
+  singleKeys = keys;
   $('session').textContent = shotsLabel(session, count);
   if (replacing) saveBtn.textContent = `Save changes ⌘↵`;
   if (one) {

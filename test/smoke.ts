@@ -259,6 +259,16 @@ app
     r['F11 keys stay in the text'] = box.left === x0 && canvas.getActiveObject() === box;
     capText.blur();
 
+    // Settings ▸ Single-Key Tools off (WCAG 2.1.4): a plain digit picks no tool, ⌘ with it still does
+    singleKeys = false;
+    const t0 = tool();
+    key('3');
+    const plainIgnored = tool() === t0;
+    key('3', { metaKey: true });
+    r['Single-Key Tools off: only ⌘1–⌘7 pick tools'] = plainIgnored && tool() === 'arrow';
+    singleKeys = true;
+    key('c');
+
     key('5'); // a drawing tool: ⌘A switches to Select
     key('a', { metaKey: true });
     const all = canvas.getActiveObject();
