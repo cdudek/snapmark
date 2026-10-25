@@ -2,7 +2,7 @@
 linear: none
 type: intent
 change: 2026-10-25-tall-capture-tiles
-design: none
+design: docs/designs/2026-10-25-adr-tall-screenshots-saved-as-parts.md
 author: Claude (orchestrator)
 status: approved
 reviewed_by: Calvin Dudek

@@ -1,0 +1,65 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Tags name the unit test block or the smoke check key (this repo has no tagged E2E titles). Smoke runs in CI only (owner's rule).",
+  "facts": [
+    { "id": "F1", "tag": "test/sessions.test.ts › F1 tall entry", "screen": "session.md", "states": ["tall"] },
+    { "id": "F2", "tag": "test/parts.test.ts › F2 part size", "screen": "session.md", "states": ["tall"] },
+    { "id": "F3", "tag": "test/parts.test.ts › F3 tall rule", "screen": "session.md", "states": ["fits", "tall"] },
+    { "id": "F4", "tag": "test/parts.test.ts › F4 overlap", "screen": "session.md", "states": ["tall"] },
+    { "id": "F5", "tag": "test/parts.test.ts › F5 diamond whole", "screen": "session.md", "states": ["tall"] },
+    { "id": "F6", "tag": "test/sessions.test.ts › F6 parts line", "screen": "session.md", "states": ["tall"] },
+    { "id": "F7", "tag": "test/sessions.test.ts › F7 alt text", "screen": "session.md", "states": ["tall"] },
+    { "id": "F8", "tag": "test/sessions.test.ts › F8 text once", "screen": "session.md", "states": ["tall", "tall, no text found"] },
+    { "id": "F9", "tag": "manual: verifier reads editor:save in src/main.ts", "screen": "session.md", "states": ["tall"] },
+    {
+      "id": "F10",
+      "tag": "smoke viewer['F10 a saved 1280×8000 capture links parts at least 1000 px wide'] + test/parts.test.ts › F10 1280×8000",
+      "screen": "session.md",
+      "states": ["tall"]
+    },
+    { "id": "F11", "tag": "test/sessions.test.ts › F11 fits unchanged", "screen": "session.md", "states": ["fits"] },
+    { "id": "N1", "tag": "smoke viewer['N1 a 2560×20000 capture is cut in under 1 s']", "screen": "editor", "states": ["Add to Session"] },
+    { "id": "N2", "tag": "test/parts.test.ts › N2 at most 99 parts", "screen": "none", "states": [] },
+    { "id": "F12", "tag": "test/sessions.test.ts › F12 counted once", "screen": "menu", "states": ["header", "editor toolbar label"] },
+    { "id": "F13", "tag": "test/sessions.test.ts › F13 number kept", "screen": "session.md", "states": ["numbering"] },
+    {
+      "id": "F14",
+      "tag": "smoke viewer['F14 the one image is the whole page at 1280 px']",
+      "screen": "session window",
+      "states": ["Screenshots tab", "large view", "Discarded tab"]
+    },
+    { "id": "F15", "tag": "test/sessions.test.ts › F15 Edit Again", "screen": "editor", "states": ["Save changes"] },
+    { "id": "F16", "tag": "test/sessions.test.ts › F16 failed write", "screen": "editor", "states": ["failed save"] },
+    { "id": "F17", "tag": "test/sessions.test.ts › F17 old entry", "screen": "editor", "states": ["Save changes"] },
+    { "id": "F18", "tag": "test/sessions.test.ts › F18 remove", "screen": "session window", "states": ["removed, tall"] },
+    {
+      "id": "F19",
+      "tag": "test/sessions.test.ts › F19 reopen renumbers",
+      "screen": "session window",
+      "states": ["Discarded tab", "tall, renumbered"]
+    },
+    {
+      "id": "F20",
+      "tag": "manual: verifier reads reopenDiscarded in src/main.ts",
+      "screen": "Reopen Discarded… panel",
+      "states": ["parts folder picked"]
+    },
+    {
+      "id": "F21",
+      "tag": "manual: verifier reads load() in src/viewer.ts",
+      "screen": "session window",
+      "states": ["Document tab, after Edit Again"]
+    },
+    { "id": "F22", "tag": "test/exporter.test.ts › F22 PDF one image", "screen": "PDF export", "states": ["tall", "edited"] },
+    { "id": "F23", "tag": "test/exporter.test.ts › F23 ZIP parts", "screen": "ZIP export", "states": ["tall"] },
+    { "id": "F24", "tag": "manual: verifier reads outImage in src/main.ts", "screen": "editor", "states": ["session mode"] },
+    {
+      "id": "F25",
+      "tag": "smoke viewer['F25 typing keeps the part links']",
+      "screen": "session window",
+      "states": ["Document tab, typing"]
+    }
+  ],
+  "pages": ["session.md", "session window", "editor", "menu bar menu", "PDF export", "ZIP export"],
+  "widths": { "feature": [1180, 1440], "milestone": "responsiveTier" },
+  "turns": { "feature": 40, "milestone": 30 }
+}

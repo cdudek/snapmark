@@ -1,0 +1,61 @@
+{
+  "generated": "2026-10-25",
+  "source": { "stack": "electron-menu-bar", "routeRoot": "src/menu.ts", "ref": "764a2be" },
+  "scope": "changes/2026-10-25-tall-capture-tiles/spec",
+  "locales": ["en"],
+  "defaultLocale": "en",
+  "localePrefix": null,
+  "hosts": null,
+  "navigation": null,
+  "pages": [
+    {
+      "route": "session-window",
+      "label": { "en": "<session> — Snapmark" },
+      "type": "record",
+      "tabs": [
+        { "label": "Document", "count": false, "primary": "Open in Markdown App" },
+        { "label": "Screenshots", "count": false, "primary": "Open in Markdown App" },
+        { "label": "Discarded", "count": true, "primary": "Open in Markdown App" }
+      ],
+      "reachedFrom": [
+        { "kind": "menu", "via": "Open Current Session", "source": "src/menu.ts:116" },
+        { "kind": "notification", "via": "Screenshot n is back in …", "source": "src/main.ts:638" }
+      ],
+      "source": "src/main.ts:508",
+      "status": "as-built",
+      "change": "Document tab: a tall entry shows a parts line and its parts"
+    },
+    {
+      "route": "menu/export-session/pdf",
+      "label": { "en": "PDF" },
+      "type": "export",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "menu", "via": "Export Session", "source": "src/menu.ts:139" }],
+      "source": "src/menu.ts:142",
+      "status": "as-built",
+      "change": "a tall entry shows the one image"
+    },
+    {
+      "route": "menu/export-session/zip",
+      "label": { "en": "ZIP" },
+      "type": "export",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "menu", "via": "Export Session", "source": "src/menu.ts:139" }],
+      "source": "src/menu.ts:142",
+      "status": "as-built",
+      "change": null
+    },
+    {
+      "route": "finder/session-folder",
+      "label": { "en": "<session>/" },
+      "type": "files",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "menu", "via": "Copy Session File Path", "source": "src/menu.ts:145" }],
+      "source": "src/sessions.ts:37",
+      "status": "as-built",
+      "change": "img/NNN/01.png … beside img/NNN.png for a tall screenshot"
+    }
+  ],
+  "redirects": [],
+  "links": []
+}

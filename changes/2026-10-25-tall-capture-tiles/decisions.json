@@ -1,8 +1,11 @@
 {
   "size": "M",
   "kind": "feature",
-  "milestone": { "kind": "existing", "slug": "fixes" },
-  "project": { "kind": "existing", "slug": "launch" },
+  "milestone": { "kind": "new", "slug": "tiles" },
+  "milestoneNote": "2026-10-25: moved out of milestone fixes into its own milestone; the owner chose a release per milestone, so no project branch. Plan gate pending.",
   "ticket": "snap-bmr.10",
-  "design": "none"
+  "design": "docs/designs/2026-10-25-adr-tall-screenshots-saved-as-parts.md",
+  "skips": {
+    "prototype": "skip -- UI not risky: no window, control, menu or notification changes; the only new words are one line and alt texts in session.md, which the Document tab shows as written, and the PDF shows the one image (stages.md 2.6; orchestrator, 2026-10-25)"
+  }
 }
