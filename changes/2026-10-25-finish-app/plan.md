@@ -230,14 +230,14 @@ Milestone 1 close (after feature 6):
 
 Feature 2.1 — capture bar (F201–F218, N201):
 
-- [ ] 1. Write `test/capture.test.ts` (F202, F210, F211, F212, F213, F215, F216) and add it to the `test` script — proof: `npm test` fails on them.
-- [ ] 2. Write `src/capture.ts` — proof: the `test/capture.test.ts` blocks pass.
-- [ ] 3. Write F218 in `test/menu.test.ts` and F201, F217 in `test/keys.test.ts`, replacing the Capture Options blocks — proof: `npm test` fails on F201 and F218.
-- [ ] 4. `src/menu.ts` Capture Options… row; `src/keys.ts` ⌃⇧5 row and Capture bar group — proof: F218 and the key list block pass.
-- [ ] 5. `src/bar.html`, `src/bar.ts`, `src/preload.ts`, `src/shared.d.ts`, `package.json` build — proof: `npm run build` exits 0 and `ls dist/src/bar.html` prints it.
-- [ ] 6. `src/main.ts`: state, `openCaptureBar`, `runCapture`, `busy()`, `scrollCapture` option, IPC, ⌃⇧5 — proof: `npm run typecheck` exits 0. F201 passes. `grep -n "popOptions" src/main.ts` prints nothing. `grep -n "counting" src/main.ts` prints the `busy()` line and the `finally` that unregisters Esc (F206, F214).
-- [ ] 7. Smoke checks F201–F208, F212, N201 — proof: `npm run build` exits 0. smoke runs once at the milestone.
-- [ ] 8. ADR, keys ADR `amended_by`, `python3 scripts/design_index.py write`; README, sitemap and setup rows for the bar — proof: `python3 scripts/design_index.py check` exits 0. `grep -n "Capture Options…" README.md docs/ux/sitemap.md` prints both.
+- [x] 1. Write `test/capture.test.ts` (F202, F210, F211, F212, F213, F215, F216) and add it to the `test` script — proof: `npm test` fails on them.
+- [x] 2. Write `src/capture.ts` — proof: the `test/capture.test.ts` blocks pass.
+- [x] 3. Write F218 in `test/menu.test.ts` and F201, F217 in `test/keys.test.ts`, replacing the Capture Options blocks — proof: `npm test` fails on F201 and F218.
+- [x] 4. `src/menu.ts` Capture Options… row; `src/keys.ts` ⌃⇧5 row and Capture bar group — proof: F218 and the key list block pass.
+- [x] 5. `src/bar.html`, `src/bar.ts`, `src/preload.ts`, `src/shared.d.ts`, `package.json` build — proof: `npm run build` exits 0 and `ls dist/src/bar.html` prints it.
+- [x] 6. `src/main.ts`: state, `openCaptureBar`, `runCapture`, `busy()`, `scrollCapture` option, IPC, ⌃⇧5 — proof: `npm run typecheck` exits 0. F201 passes. `grep -n "popOptions" src/main.ts` prints nothing. `grep -n "counting" src/main.ts` prints the `busy()` line and the `finally` that unregisters Esc (F206, F214).
+- [x] 7. Smoke checks F201–F208, F212, N201 — proof: `npm run build` exits 0. smoke runs once at the milestone.
+- [x] 8. ADR, keys ADR `amended_by`, `python3 scripts/design_index.py write`; README, sitemap and setup rows for the bar — proof: `python3 scripts/design_index.py check` exits 0. `grep -n "Capture Options…" README.md docs/ux/sitemap.md` prints both.
 
 Feature 2.2 — Settings window (F219–F228):
 
@@ -408,3 +408,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-26 — Ask A17 (one dot): the swatch and every dot in the panel are one 24 px circle (spec: a 22 px swatch, 28 px presets; the A14 pass had a 20 px swatch). The picked colour wears the same ring in both: a 2 px outline in the colour, 2 px out. Every dot has a hairline edge, so Graphite stays visible in dark mode. In the panel, keyboard focus is a blue ring outside the picked ring, so both show at once.
 - 2026-10-26 — Ask A18 (one keycap style): one `kbd` rule in `src/editor.html`, 11 px, weight 500, system font, tabular digits, in the colour of the text it belongs to. The ⇧ looked small because `.actions kbd` never set a font and fell back to monospace, where ⇧ is 6 px tall and the digits 8 px. In the system font the glyphs stand as tall as the digits. Position follows the button type: icon buttons have the key under them, and text buttons have it after the label ("Discard ⌘W", "Add to session ⌘↵", "Save changes ⌘↵", "Copy Image ⌘C"). The toolbar is icon buttons, where a caption is the only place a key fits without widening the row (F108). The side panel is text buttons, where the key reads as part of the label, as in a macOS menu. So Undo ⌘Z and Redo ⇧⌘Z now carry captions too (spec decision 6 had them in the tooltip only). Their captions turn --muted while the button is disabled (4.7:1 light, 6.1:1 dark). Departures: keys use the text colour, not the secondary label colour, because the locked F107 requires captions in the text colour. Select keeps "Esc" (F104), not ⎋. Copy or Save gets no caption: it has two keys, and its native menu shows them. Every bottom-bar and toolbar button keeps one height and padding per row (smoke A18).
 - 2026-10-26 — contrast: the editor's dark --muted goes from #98989d to #a4a4a9, so the "Custom" label is 5.2:1 on the panel (it was 4.5:1). Measured in light / dark: captions 15.7 / 13.9, Discard key 16.8 / 11.9, Add to session key 4.7 / 4.7, Custom label 5.1 / 5.2, "#" 4.7 / 6.1, hex digits 15.7 / 13.9, error 5.6 / 5.1, Custom… 16.8 / 11.9.
+- 2026-10-25 — M2.1: `barOptions` IPC carries the chosen mode, `barOptions(mode, rect)`, and saves it, so the Options menu greys Timer and pointer for the mode on screen; `MODES` holds ids and names only, since the icons are inline SVG in `src/bar.html`; `type: 'panel'` is set on macOS only (Linux has no such window type); `rect` moved from `src/main.ts` into `src/capture.ts`, and an exported `setCapture` in `src/main.ts` serves the Options menu, Settings and smoke

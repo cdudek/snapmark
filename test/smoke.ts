@@ -41,6 +41,8 @@ const {
   setSingleKeys,
   menuItems,
   moveEditor,
+  openCaptureBar,
+  setCapture,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -1139,6 +1141,91 @@ app
     const extra = () => BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
     for (let t = 0; t < 30 && extra(); t++) await new Promise((r) => setTimeout(r, 100)); // the control closes a moment after
     viewer['Capture Scrolling: Esc cancels, no editor, control gone'] = cancelled2 === null && !extra();
+
+    // The capture bar (F201–F208, F212, N201), with a swapped runner: screencapture never runs
+    const runs: { o: CaptureOpts; barGone: boolean }[] = [];
+    const barUp = () => BrowserWindow.getAllWindows().filter((w) => w.getTitle() === 'Capture Options');
+    const runner = (o: CaptureOpts) =>
+      void runs.push({ o, barGone: !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('bar.html')) });
+    const keyTo = (w: BrowserWindow, keyCode: string, modifiers: Electron.KeyboardInputEvent['modifiers'] = []) => {
+      w.webContents.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
+      w.webContents.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
+    };
+    const barReady = async (w: BrowserWindow) => {
+      for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await sleep(100);
+      await inWin(w, `for (let i = 0; i < 50 && !document.querySelector('[aria-checked="true"]'); i++) await new Promise((r) => setTimeout(r, 100));`);
+    };
+    const t0 = Date.now();
+    const barWin = openCaptureBar(runner)!;
+    const shownIn = await new Promise<number>((r) => barWin.once('ready-to-show', () => r(Date.now() - t0)));
+    console.log(`N201: the bar showed in ${shownIn} ms`);
+    viewer['N201 the bar shows within 1 s'] = shownIn < 1000;
+    await barReady(barWin);
+    const wa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+    const bb = barWin.getBounds();
+    viewer["F201 the capture bar opens bottom-centre on the pointer's display"] =
+      Math.abs(bb.x + bb.width / 2 - (wa.x + wa.width / 2)) <= 1 && Math.abs(wa.y + wa.height - 24 - (bb.y + bb.height)) <= 1;
+    viewer['F202 the bar shows its seven controls in order'] =
+      (await inWin(barWin, `return JSON.stringify([...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label').split(' · ')[0]))`)) ===
+      JSON.stringify(['Close', 'Capture Window', 'Choose New Area', 'Capture Last Area', 'Capture Scrolling', 'Options', 'Capture']);
+    viewer['F203 every bar control is named; the modes are a radio group'] =
+      barWin.getTitle() === 'Capture Options' &&
+      (await inWin(
+        barWin,
+        `const named = [...document.querySelectorAll('button, [role=radio]')].every((b) => (b.getAttribute('aria-label') ?? '').trim() !== '');
+        const g = document.querySelector('[role=radiogroup]');
+        return named && document.title === 'Capture Options' && g.getAttribute('aria-label') === 'Mode' &&
+          g.querySelectorAll('[role=radio]').length === 4 && g.querySelectorAll('[aria-checked="true"]').length === 1 &&
+          document.querySelector('[aria-label^="Capture Last Area · "]')?.getAttribute('aria-label') === 'Capture Last Area · First time: drag the area';`,
+      ));
+    const barSays = () =>
+      inWin(barWin, `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.getAttribute('aria-label').split(' · ')[0]`);
+    const firstTime = await barSays();
+    const again = openCaptureBar(runner);
+    viewer['F206 one bar at a time'] = again === barWin && barUp().length === 1;
+    viewer["F208 the bar is on top on every Space"] = barWin.isAlwaysOnTop() && barWin.isVisibleOnAllWorkspaces();
+    // ← → move between the modes, wrapping; Tab goes Close → the chosen mode → Options → Capture; ↩ on a mode captures
+    const moves: string[] = [];
+    for (const k of ['Right', 'Left', 'Left', 'Left', 'Right', 'Right', 'Right']) {
+      keyTo(barWin, k);
+      await sleep(80);
+      moves.push(await barSays());
+    }
+    const tabs: string[] = [];
+    for (const m of [['shift'], [], [], [], ['shift'], ['shift']] as Electron.KeyboardInputEvent['modifiers'][]) {
+      keyTo(barWin, 'Tab', m);
+      await sleep(80);
+      tabs.push(((await barSays()) as string).split('|')[1]);
+    }
+    keyTo(barWin, 'Return');
+    for (let i = 0; i < 30 && !runs.length; i++) await sleep(100);
+    const arrowsOk =
+      JSON.stringify(moves) ===
+      JSON.stringify([
+        'last|Capture Last Area',
+        'area|Choose New Area',
+        'window|Capture Window',
+        'scroll|Capture Scrolling',
+        'window|Capture Window',
+        'area|Choose New Area',
+        'last|Capture Last Area',
+      ]);
+    const tabsOk = JSON.stringify(tabs) === JSON.stringify(['Close', 'Capture Last Area', 'Options', 'Capture', 'Options', 'Capture Last Area']);
+    viewer['F205 the bar is gone when the capture starts'] = runs.length === 1 && runs[0].barGone;
+    // Reopened: on the mode last used; Esc closes it without capturing
+    const reopened = openCaptureBar(runner)!;
+    await barReady(reopened);
+    const lastUsed = await inWin(reopened, `return document.querySelector('[aria-checked="true"]').dataset.mode`);
+    viewer['F207 the bar remembers the last mode'] = firstTime === 'area|Choose New Area' && runs[0]?.o.mode === 'last' && lastUsed === 'last';
+    keyTo(reopened, 'Escape');
+    for (let i = 0; i < 30 && !reopened.isDestroyed(); i++) await sleep(100);
+    viewer['F204 arrows pick, Return captures, Esc closes'] =
+      arrowsOk && tabsOk && runs.length === 1 && runs[0].o.mode === 'last' && reopened.isDestroyed() && !barUp().length;
+    // One-Shot: a scrolling capture opens in one-shot mode, never in a session
+    const oneShotScroll = await scrollCapture(scrollArea, fakeGrab([0, 400], 'Return'), { oneShot: true });
+    viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-shot';
+    oneShotScroll?.destroy();
+    setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false }); // as the first time again
 
     // One-shot mode: Beautify instead of References, no Add to session; ⌘C copies the marked screenshot on its
     // backdrop at full resolution; nothing goes into a session; closing keeps it in Discarded; the settings are remembered

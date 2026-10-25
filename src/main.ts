@@ -24,7 +24,6 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import {
   menuTemplate,
-  captureOptions,
   loginState,
   editorSessionMenu,
   copyMenu,
@@ -34,6 +33,7 @@ import {
   SessionInfo,
 } from './menu';
 import { SHORTCUTS, shortcutsHtml } from './keys';
+import { FIRST, barLabel, barOptions, captureArgs, rect } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { Box, ocrText, OcrLine, recognize } from './ocr';
@@ -55,6 +55,7 @@ let color: string | null = null; // the annotation colour last picked; every new
 let customColors: string[] = []; // the colour panel's Custom row, newest first (withCustom in tools.ts)
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
+let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, Save to, Timer and Show Mouse Pointer, as last used
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
@@ -102,6 +103,7 @@ function loadState() {
     singleKeys = state.singleKeys ?? true;
     color = state.color ?? null;
     customColors = state.customColors ?? [];
+    captureOpts = { ...FIRST, ...state.capture };
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -111,7 +113,10 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys, color, customColors }));
+  fs.writeFileSync(
+    statePath(),
+    JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys, color, customColors, capture: captureOpts }),
+  );
 }
 
 // Settings ▸ Single-Key Tools: plain letters and digits pick tools in the editor. WCAG 2.1.4 asks that such keys can be
@@ -205,20 +210,20 @@ function shoot(args: string[], oneShot = false) {
 let picking = false; // the area picker is open
 let scrolling = false; // Capture Scrolling is grabbing what scrolls under its area
 let shooting = false; // screencapture runs: its crosshair is up, or it is writing the file
-// One capture at a time: a capture key or item while one is running does nothing.
-const busy = () => picking || scrolling || shooting;
+let counting = false; // the capture bar's Timer counts down
+let bar: BrowserWindow | null = null; // the capture bar (⌃⇧5)
+const barOpen = () => !!bar && !bar.isDestroyed();
+// One capture at a time: a capture key or item while one is running does nothing. An open bar counts, or it would be
+// in the picture of the macOS overlay.
+const busy = () => picking || scrolling || shooting || barOpen() || counting;
 
 // -i: interactive region (space toggles window mode)
 const capture = () => void (busy() || shoot(['-i']));
-// One-Shot Capture…: the same region capture, opened in one-shot mode
-const captureOneShot = () => void (busy() || shoot(['-i'], true));
-// -w: only windows, so a click takes the window under the pointer; -o: without its shadow, a clean crop to the window's
-// edges (the shadow is transparent padding the marks and the AI do not need)
-const captureWindow = () => void (busy() || shoot(['-i', '-w', '-o']));
 
 // The same area every time, e.g. the page in a browser. The first time, after Choose New Area, or when the display
 // it was on is gone, the owner drags it first.
-async function captureArea(choose = false) {
+// `o`: the capture bar's options; ⌃⇧3 and the menu row capture as before, without them (F217).
+async function captureArea(choose = false, o?: CaptureOpts) {
   const onScreen = (a: Area) =>
     screen
       .getAllDisplays()
@@ -232,10 +237,28 @@ async function captureArea(choose = false) {
     area = picked;
     saveState();
   }
-  shoot(['-R', rect(area)]);
+  if (o?.timer && !(await countdown(o.timer))) return;
+  shoot(captureArgs(choose ? 'area' : 'last', { pointer: !!o?.pointer }, area), o?.oneShot);
 }
 
-const rect = (a: Area) => [a.x, a.y, a.width, a.height].map(Math.round).join(',');
+// The bar's Timer, once the area is known: the seconds left beside the menu bar icon. Esc is taken from every app
+// only while it counts, and cancels: nothing is captured, and no message shows. False when cancelled.
+async function countdown(seconds: number): Promise<boolean> {
+  let cancelled = false;
+  counting = true;
+  globalShortcut.register('Escape', () => (cancelled = true));
+  try {
+    for (let s = seconds; s > 0 && !cancelled; s--) {
+      tray?.setTitle(String(s));
+      for (let t = 0; t < 10 && !cancelled; t++) await new Promise((r) => setTimeout(r, 100));
+    }
+    return !cancelled;
+  } finally {
+    globalShortcut.unregister('Escape');
+    tray?.setTitle('');
+    counting = false;
+  }
+}
 
 // `screencapture -i` never says where its region was, so the area to repeat is dragged in Snapmark's own
 // see-through window over the display with the pointer. Resolves once that window is off the screen. `mode` picks the
@@ -278,16 +301,113 @@ export function pickArea(mode: '' | 'scroll' | 'gone' = ''): Promise<Area | null
   });
 }
 
-// Capture Scrolling (Capture Options ▸): the owner drags an area, then scrolls what is under it while Snapmark grabs
+// Capture Scrolling (the capture bar): the owner drags an area, then scrolls what is under it while Snapmark grabs
 // the area again and again and stitches what scrolled in onto one tall screenshot (stitch.ts). Done opens the editor.
-async function captureScrolling() {
+async function captureScrolling(oneShot = false) {
   if (busy()) return;
   picking = true;
   const picked = await pickArea('scroll').finally(() => (picking = false));
   if (!picked) return;
   scrolling = true;
-  await scrollCapture(picked).finally(() => (scrolling = false));
+  await scrollCapture(picked, grabArea, { oneShot }).finally(() => (scrolling = false));
 }
+
+// A capture from the bar, once it is off the screen: each mode as its menu item did, with the bar's options.
+// Timer and Show Mouse Pointer apply to areas only (capture.ts).
+async function runCapture(o: CaptureOpts) {
+  if (o.mode === 'window') return void (busy() || shoot(captureArgs('window', o), o.oneShot));
+  if (o.mode === 'scroll') return captureScrolling(o.oneShot);
+  return captureArea(o.mode === 'area', o);
+}
+
+// The capture bar (⌃⇧5, Capture Options…), like macOS's ⇧⌘5: bottom centre of the display with the pointer, over
+// every Space and full-screen app. A non-activating panel, so it takes keys without pulling the owner's app to the
+// back. `run` is swappable so the smoke test never runs screencapture. One bar: asked again, it comes forward.
+let runBar: (o: CaptureOpts) => unknown = runCapture;
+export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): BrowserWindow | null {
+  if (bar && barOpen()) {
+    bar.show();
+    if (!quiet) bar.focus();
+    return bar;
+  }
+  if (busy()) return null;
+  runBar = run;
+  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const [W, H] = [520, 52];
+  const win = new BrowserWindow({
+    x: Math.round(wa.x + (wa.width - W) / 2),
+    y: Math.round(wa.y + wa.height - 24 - H), // 24 pt above the work area's bottom, clear of the Dock
+    width: W,
+    height: H,
+    title: 'Capture Options',
+    frame: false,
+    transparent: true,
+    hasShadow: true,
+    roundedCorners: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    ...(process.platform === 'darwin' ? { type: 'panel' } : {}),
+    vibrancy: 'popover', // follows light and dark mode; 'hud' is always dark
+    visualEffectState: 'active',
+    show: false,
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  });
+  bar = win;
+  win.setContentProtection(true); // belt and braces: it closes before every capture
+  win.setAlwaysOnTop(true, 'screen-saver');
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+  win.once('ready-to-show', () => {
+    win.show();
+    if (!quiet) win.focus(); // never app.focus: over a full-screen app it would slide to another Space
+  });
+  void win.loadFile(path.join(__dirname, 'bar.html'));
+  return win;
+}
+
+const fromBar = (e: { sender: Electron.WebContents }) => !!bar && barOpen() && e.sender === bar.webContents;
+const barInit = (): BarInit => ({
+  ...captureOpts,
+  label: barLabel(captureOpts),
+  last: area ? `${area.width} × ${area.height}` : 'First time: drag the area',
+});
+
+// The bar's Options menu and the Settings window's Capture tab change the same options; an open bar shows them.
+export function setCapture(change: Partial<CaptureOpts>) {
+  captureOpts = { ...captureOpts, ...change };
+  saveState();
+  if (bar && barOpen()) bar.webContents.send('bar:state', barInit());
+}
+
+ipcMain.handle('bar:init', (): BarInit => barInit());
+ipcMain.on('bar:close', (e) => fromBar(e) && bar!.close());
+// Capture: the bar closes, then the mode runs once the window server has dropped it (the area picker's wait), so the
+// bar is never in the screenshot (F205).
+ipcMain.on('bar:capture', (e, mode: CaptureMode) => {
+  if (!fromBar(e)) return;
+  const [win, run] = [bar!, runBar];
+  setCapture({ mode });
+  const o = captureOpts;
+  win.once('closed', () => setTimeout(() => void run(o), 200));
+  win.close();
+});
+ipcMain.on('bar:options', (e, mode: CaptureMode, at: Area) => {
+  if (!fromBar(e)) return;
+  setCapture({ mode });
+  const cur = menuState().current;
+  const items = barOptions(
+    { ...captureOpts, session: cur?.label ?? null, newSession: registered.has(SHORTCUTS.newSession) ? SHORTCUTS.newSession : null },
+    {
+      setOneShot: (oneShot) => setCapture({ oneShot }),
+      setTimer: (timer) => setCapture({ timer }),
+      setPointer: (pointer) => setCapture({ pointer }),
+      newSession,
+    },
+  );
+  popUnder(bar!, items, at);
+});
 
 // One frame of the area, as `screencapture -R` gives it: Retina displays give 2x pixels.
 function grabArea(a: Area): Promise<Bitmap> {
@@ -304,7 +424,7 @@ function grabArea(a: Area): Promise<Bitmap> {
 
 // Grabs `a` until Done (↩) or Cancel (Esc) in a small control beside it, then opens the stitched image in the editor.
 // `grab` is swappable so the smoke test feeds synthetic frames through the same loop. Resolves to the editor, if any.
-export async function scrollCapture(a: Area, grab = grabArea): Promise<BrowserWindow | null> {
+export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: boolean } = {}): Promise<BrowserWindow | null> {
   const [W, H, GAP] = [380, 48, 8];
   const { workArea: wa } = screen.getDisplayMatching({ x: a.x, y: a.y, width: a.width, height: a.height });
   // Below the area, else above it, else inside its bottom edge (an area as tall as the screen).
@@ -362,7 +482,7 @@ export async function scrollCapture(a: Area, grab = grabArea): Promise<BrowserWi
   const { width, height, data } = st.result();
   const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
   fs.writeFileSync(tmp, nativeImage.createFromBitmap(Buffer.from(data.buffer, data.byteOffset, data.length), { width, height }).toPNG());
-  return openEditor(tmp);
+  return openEditor(tmp, { oneShot: opts.oneShot });
 }
 
 // Opens the editor on a screenshot file, which it owns and deletes on close. `session` is where it saves (default:
@@ -870,25 +990,9 @@ function menuState(): MenuState {
   };
 }
 
-let menuOpen = false;
-
-function popUp(items: MenuItemConstructorOptions[]) {
-  const menu = Menu.buildFromTemplate(items);
-  menu.once('menu-will-close', () => (menuOpen = false));
-  menuOpen = true;
-  tray?.popUpContextMenu(menu);
-  // On macOS popUpContextMenu returns when the menu closes, so ⌃⇧5 works again even if menu-will-close never came.
-  menuOpen = false;
-}
-
 // The menu bar menu as it is right now; built on every open, so counts and sessions changed in Finder are never stale.
 export const menuItems = () => menuTemplate(menuState(), actions);
-const popMenu = () => popUp(menuItems());
-
-// ⌃⇧5, like macOS's ⇧⌘5: the capture options as a menu at the menu bar icon. Not over a capture or an open menu.
-function popOptions() {
-  if (!busy() && !menuOpen) popUp(captureOptions(actions));
-}
+const popMenu = () => tray?.popUpContextMenu(Menu.buildFromTemplate(menuItems()));
 
 // A session moved or deleted outside Snapmark: say so instead of doing nothing.
 function exists(name: string, file = ''): boolean {
@@ -967,10 +1071,7 @@ function showShortcuts() {
 const actions: MenuActions = {
   capture,
   captureArea: () => void captureArea(),
-  chooseArea: () => void captureArea(true),
-  captureWindow,
-  captureScrolling: () => void captureScrolling(),
-  oneShot: captureOneShot,
+  captureBar: () => void openCaptureBar(),
   newSession,
   copyPrompt: (name) => {
     desk.copyText(promptFor(dirOf(name)));
@@ -1018,7 +1119,7 @@ app.whenReady().then(() => {
   for (const [key, fn] of [
     [SHORTCUTS.capture, capture],
     [SHORTCUTS.area, () => void captureArea()],
-    [SHORTCUTS.options, popOptions],
+    [SHORTCUTS.options, () => void openCaptureBar()],
     [SHORTCUTS.newSession, newSession],
   ] as const) {
     if (globalShortcut.register(key, fn)) registered.add(key);

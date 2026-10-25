@@ -23,7 +23,7 @@ ENTRY POINTS
 ├── Menu bar icon (corner and dot; tooltip "Snapmark"; click or right-click opens the same menu;
 │   keyboard: only macOS's ⌃F8, mentioned nowhere)
 ├── ⌃⇧4  Capture Screenshot     (works in every app; "(shortcut unavailable)" if another app owns it)
-├── ⌃⇧5  Capture Options        (a menu at the menu bar icon: the Capture Options items)
+├── ⌃⇧5  Capture Options        ──► CAPTURE BAR (brought forward if open; nothing while a capture runs)
 ├── ⌃⇧3  Capture Last Area
 ├── ⌃⇧N  New Session
 └── Relaunching Snapmark from Applications or Spotlight: nothing happens (F217)
@@ -37,7 +37,7 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 │     ├── no area yet, or its display is gone ──► Area picker (display under the pointer, over full-screen apps)
 │     │        drag ≥ 8 × 8, release ──► captured at once ──► Editor · click or sliver ──► starts over · Esc ──► nothing
 │     └── area set ──► captured at once (with any Snapmark window that is over it, F033/F066) ──► Editor
-├── [Choose New Area…]                      only once an area exists ──► Area picker ──► captures at once ──► Editor
+├── Capture Options…  ⌃⇧5      ──► CAPTURE BAR (was: Capture Options ▸ four items)
 ├── [Reopen Last Discarded]                  only when Discarded holds something
 │     ├── a closed capture ──► Editor with its marks ("Add to session"); its old session becomes current (F010)
 │     └── a removed screenshot ──► back at the end of its session + notification ──► Session window
@@ -86,6 +86,11 @@ SESSION WINDOW  (title "<folder name> — Snapmark"; 900 × 900; one per session
 └── Screenshots: one at a time · ← → · "n of N" (position) · Edit Again ──► Editor ("Save changes")
                  · Remove from Session ──► Discarded (silent)
 
+CAPTURE BAR       bottom centre of the pointer's display, every Space, full screen too; Close · Capture Window ·
+                  Choose New Area · Capture Last Area · Capture Scrolling · Options ▾ (Save to · Timer · Show Mouse Pointer) ·
+                  Capture | Capture One-Shot
+                  ↩ ──► bar closes ──► the mode (Timer: seconds beside the menu bar icon, Esc cancels) ──► Editor
+                  (session or one-shot) · Esc ──► nothing
 AREA PICKER       see-through, display under the pointer, every Space; hint "Drag over the area to capture.
                   ⌃⇧3 captures it again each time. Esc cancels."
 KEYBOARD SHORTCUTS WINDOW   "Keyboard shortcuts", 520 × 640, read-only, no Dock icon, Esc does nothing;

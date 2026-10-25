@@ -71,8 +71,27 @@ interface ScrollStatus {
   step: import('./stitch').Step;
 }
 
+// The capture bar (bar.html, ⌃⇧5): what it captures, where it goes and how. Kept in state.json under `capture`.
+type CaptureMode = 'window' | 'area' | 'last' | 'scroll';
+interface CaptureOpts {
+  mode: CaptureMode;
+  oneShot: boolean; // Save to: One-Shot, else Current Session
+  timer: number; // seconds after the area is known: 0, 5 or 10
+  pointer: boolean; // Show Mouse Pointer (areas only)
+}
+
+interface BarInit extends CaptureOpts {
+  label: string; // the Capture button: "Capture" or "Capture One-Shot"
+  last: string; // Capture Last Area's suffix: "1280 × 720" or "First time: drag the area"
+}
+
 interface Window {
   snapmark: {
+    barInit(): Promise<BarInit>;
+    barCapture(mode: CaptureMode): void; // closes the bar, then runs the mode
+    barOptions(mode: CaptureMode, at: Area): void; // the Options menu under `at` (window points), for the chosen mode
+    barClose(): void;
+    onBarState(cb: (s: BarInit) => void): void; // an option changed in the Options menu or in Settings
     areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
     scrollDone(ok: boolean): void; // Capture Scrolling: Done (true) or Cancel (false)
     onScrollStatus(cb: (status: ScrollStatus) => void): void;

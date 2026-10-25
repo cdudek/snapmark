@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Capture Options</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        user-select: none;
+        font:
+          13px -apple-system,
+          system-ui,
+          sans-serif;
+      }
+      /* Opaque where there is no vibrancy (Linux); on macOS the window's popover material shows through. */
+      body {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        box-sizing: border-box;
+        padding: 0 6px 0 8px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: Canvas;
+        color: CanvasText;
+      }
+      body.mac {
+        background: transparent;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        height: 40px;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+      button:focus-visible {
+        outline: 2px solid #0f72db;
+        outline-offset: -2px;
+      }
+      #close {
+        width: 30px;
+      }
+      [role='radiogroup'] {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      [role='radio'] {
+        width: 44px;
+      }
+      /* The chosen mode shows pressed, as in macOS's bar. */
+      [role='radio'][aria-checked='true'] {
+        background: rgb(128 128 128 / 0.28);
+      }
+      .sep {
+        width: 1px;
+        height: 28px;
+        margin: 0 4px;
+        background: rgb(128 128 128 / 0.4);
+      }
+      #options {
+        padding: 0 10px;
+      }
+      #capture {
+        margin-left: auto;
+        padding: 0 16px;
+        font-weight: 600;
+        background: rgb(128 128 128 / 0.18);
+      }
+      svg {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #close svg {
+        width: 18px;
+        height: 18px;
+      }
+      #options svg {
+        width: 12px;
+        height: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="close" aria-label="Close" title="Close">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9 9l6 6M15 9l-6 6" /></svg>
+    </button>
+    <div role="radiogroup" aria-label="Mode">
+      <button role="radio" data-mode="window" aria-checked="false" tabindex="-1" aria-label="Capture Window" title="Capture Window">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18M6 7h.01M8 7h.01" /></svg>
+      </button>
+      <button role="radio" data-mode="area" aria-checked="false" tabindex="-1" aria-label="Choose New Area" title="Choose New Area">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1" stroke-dasharray="2.5 2.5" /></svg>
+      </button>
+      <button role="radio" data-mode="last" aria-checked="false" tabindex="-1" aria-label="Capture Last Area" title="Capture Last Area">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2.5" y="4" width="16" height="12" rx="1.5" />
+          <circle cx="18.5" cy="16.5" r="3.5" fill="currentColor" />
+        </svg>
+      </button>
+      <span class="sep" aria-hidden="true"></span>
+      <button role="radio" data-mode="scroll" aria-checked="false" tabindex="-1" aria-label="Capture Scrolling" title="Capture Scrolling">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="2.5" width="16" height="12" rx="1.5" /><path d="M12 15v6.5M9 18.5l3 3 3-3" /></svg>
+      </button>
+    </div>
+    <span class="sep" aria-hidden="true"></span>
+    <button id="options" aria-haspopup="menu" aria-label="Options" title="Options">
+      Options<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+    </button>
+    <button id="capture" aria-label="Capture" title="Capture">Capture</button>
+    <script src="bar.js"></script>
+  </body>
+</html>

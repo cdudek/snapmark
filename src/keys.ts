@@ -17,9 +17,17 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
     rows: [
       ['⌃⇧4', 'Capture screenshot', 'drag an area, or press Space and click a window'],
       ['⌃⇧3', 'Capture last area', 'the first time, drag the area'],
-      ['⌃⇧5', 'Capture options', 'a menu under the menu bar icon: Choose New Area, Capture Window, Capture Scrolling, One-Shot Capture'],
+      ['⌃⇧5', 'Capture options', 'the capture bar: window, new area, last area or scrolling, and where it goes'],
       ['⌃⇧N', 'New session', ''],
       ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (menu: Capture Options)'],
+    ],
+  },
+  {
+    title: 'Capture bar',
+    rows: [
+      ['← →', 'Pick a mode', 'Tab moves on to Options and Capture'],
+      ['↩', 'Capture', ''],
+      ['Esc', 'Close', ''],
     ],
   },
   {

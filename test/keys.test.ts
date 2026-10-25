@@ -33,13 +33,19 @@ for (const f of srcFiles) {
 }
 assert.ok(!/['"]Control\+Shift\+\w['"]/.test(main), 'main.ts takes every global key from SHORTCUTS');
 
-// F19 key list: three groups by where the key works, in the rows of spec/microcopy.md
+// F19 key list: groups by where the key works, in the rows of spec/microcopy.md and spec/capture-and-settings.md
 assert.deepStrictEqual(
   KEY_GROUPS.map((g) => g.title),
-  ['Anywhere', 'Editor', 'Session window'],
+  ['Anywhere', 'Capture bar', 'Editor', 'Session window'],
 );
 const keys = (title: string) => KEY_GROUPS.find((g) => g.title === title)!.rows.map(([k]) => k);
 assert.deepStrictEqual(keys('Anywhere'), ['⌃⇧4', '⌃⇧3', '⌃⇧5', '⌃⇧N', '↩ / Esc']);
+assert.deepStrictEqual(KEY_GROUPS[0].rows[2], [
+  '⌃⇧5',
+  'Capture options',
+  'the capture bar: window, new area, last area or scrolling, and where it goes',
+]);
+assert.deepStrictEqual(keys('Capture bar'), ['← →', '↩', 'Esc']);
 assert.deepStrictEqual(keys('Editor'), ['Esc', '⌫', '← ↑ → ↓', '⌘A', '⌘1–⌘7', '⌘Z', '⇧⌘Z', '⌘S / ⌘↵', '⌘C / ⇧⌘C', '⇧⌘S', '⌘W']);
 assert.deepStrictEqual(keys('Session window'), ['← →', '↩', '⌘⌫', '⌘O', '⌘Z']);
 for (const g of KEY_GROUPS) for (const r of g.rows) assert.strictEqual(r.length, 3, `${r[0]}: key, name, what`);
@@ -111,6 +117,22 @@ for (const g of KEY_GROUPS)
     assert.ok(at >= from, `F19 row ${k} ${n}`);
     from = at;
   }
+// F201 ⌃⇧5 opens the bar: the options key opens the capture bar, and the popup menu is gone
+assert.ok(main.includes('[SHORTCUTS.options, () => void openCaptureBar()]'), 'F201 ⌃⇧5 opens the bar');
+assert.ok(!main.includes('popOptions'), 'F201 no popup menu');
+assert.ok(main.includes("loadFile(path.join(__dirname, 'bar.html'))"), 'F201 the bar is bar.html');
+
+// F217 keys unchanged: the bar's options never reach ⌃⇧4, ⌃⇧3 and ⌃⇧N
+assert.deepStrictEqual(
+  { ...SHORTCUTS },
+  { capture: 'Control+Shift+4', area: 'Control+Shift+3', options: 'Control+Shift+5', newSession: 'Control+Shift+N' },
+  'F217',
+);
+assert.ok(main.includes('[SHORTCUTS.capture, capture]'), 'F217 ⌃⇧4');
+assert.ok(main.includes('[SHORTCUTS.area, () => void captureArea()]'), 'F217 ⌃⇧3 without the bar’s options');
+assert.ok(main.includes('[SHORTCUTS.newSession, newSession]'), 'F217 ⌃⇧N');
+assert.ok(main.includes("const capture = () => void (busy() || shoot(['-i']));"), 'F217 ⌃⇧4 is screencapture -i');
+
 const setter = main.slice(main.indexOf('function setSingleKeys'), main.indexOf('\n}\n', main.indexOf('function setSingleKeys')));
 assert.ok(setter.includes('shortcutsWin') && setter.includes('loadURL'), 'F109 setSingleKeys redraws an open Keyboard Shortcuts window');
 

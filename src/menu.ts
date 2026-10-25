@@ -26,10 +26,7 @@ export interface MenuState {
 export interface MenuActions {
   capture(): void;
   captureArea(): void;
-  chooseArea(): void;
-  captureWindow(): void;
-  captureScrolling(): void;
-  oneShot(): void;
+  captureBar(): void; // Capture Options… (⌃⇧5): the capture bar
   reopenLast(): void;
   reopenDiscarded(): void;
   newSession(): void;
@@ -85,20 +82,6 @@ function shortcut(label: string, accelerator: string | null, click: () => void):
 
 const plural = (n: number) => `${n} screenshot${n === 1 ? '' : 's'}`;
 
-// The less frequent ways to capture: the Capture Options submenu, and the menu ⌃⇧5 pops at the menu bar icon.
-export function captureOptions(a: MenuActions): Item[] {
-  return [
-    { label: 'Choose New Area…', click: () => a.chooseArea() },
-    // Click one window: cropped to its edges, without the shadow macOS draws around it.
-    { label: 'Capture Window…', click: () => a.captureWindow() },
-    // Not the default, so no direct shortcut (owner, 2026-10-25): drag an area, scroll it, and get one tall screenshot.
-    { label: 'Capture Scrolling…', click: () => a.captureScrolling() },
-    { type: 'separator' },
-    // The second mode (owner, 2026-10-25): one image to beautify, then copy or save; nothing goes into a session.
-    { label: 'One-Shot Capture…', click: () => a.oneShot() },
-  ];
-}
-
 // Grouped as the owner drew it (2026-10-24): capture on top, the current session's everyday actions next,
 // everything else about sessions under Session. Icons are template images, so macOS tints them for light and dark menus.
 export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
@@ -122,12 +105,8 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
       sublabel: st.area ? `${st.area.width} × ${st.area.height}` : 'First time: drag the area',
       ...icon('area'),
     },
-    {
-      // macOS draws no key on a row that opens a submenu, so ⌃⇧5 is its sublabel.
-      ...(st.shortcuts.options ? { label: 'Capture Options', sublabel: '⌃⇧5' } : { label: 'Capture Options (shortcut unavailable)' }),
-      ...icon('choose'),
-      submenu: captureOptions(a),
-    },
+    // The less frequent ways to capture live in the capture bar, as macOS's ⇧⌘5 (ADR capture bar and Settings window).
+    { ...shortcut('Capture Options…', st.shortcuts.options, () => a.captureBar()), ...icon('choose') },
     { type: 'separator' },
     { label: 'Open Current Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
     { label: 'Copy Prompt for AI', enabled: on, ...icon('prompt'), click: () => a.copyPrompt(name) },

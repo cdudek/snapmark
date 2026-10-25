@@ -6,7 +6,7 @@ status: accepted
 created: 2026-10-25
 supersedes: []
 superseded_by: []
-amended_by: []
+amended_by: [2026-10-25-adr-capture-bar-and-settings-window]
 tags: [ux, keys]
 ---
 
