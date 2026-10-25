@@ -573,6 +573,8 @@ export function openViewer(name: string, into = root): BrowserWindow {
   const win = new BrowserWindow({
     width: 1100,
     height: 900,
+    minWidth: 720,
+    minHeight: 480,
     title: `${sessions.shortName(name)} — Snapmark`,
     // The header holds the title, the tabs and the traffic lights, like a native macOS window.
     titleBarStyle: 'hiddenInset',
@@ -665,20 +667,34 @@ ipcMain.on('viewer:edit', (e, n: number) => {
   if (open) return void open.win.show();
   openEditor(tempCopy(f.png), { session: v.session, state: JSON.parse(fs.readFileSync(f.json, 'utf8')), replace: n });
 });
-ipcMain.handle('viewer:remove', async (e, n: number): Promise<ViewerInit> => {
+// Also says which Discarded folder it went to, so ⌘Z puts back exactly that one.
+ipcMain.handle('viewer:remove', async (e, n: number): Promise<{ data: ViewerInit; dir: string | null }> => {
   const v = viewerFor(e.sender.id);
   await flushViewer(v);
-  sessions.removeShot(v.root, v.session, n);
+  const dir = sessions.removeShot(v.root, v.session, n);
   tellEditors(v.root, v.session);
-  return viewerData(v);
+  return { data: viewerData(v), dir };
 });
-ipcMain.handle('viewer:rename', async (e, wanted: string): Promise<string | null> => {
-  const v = viewerFor(e.sender.id);
-  const to = sessions.renamedTo(v.session, wanted);
+
+// Why a rename to `wanted` did not happen, for the session window's hint and the menu's dialog; null when it did, or
+// when the name is unchanged.
+async function tryRename(name: string, wanted: string, into: string): Promise<string | null> {
+  const problem = sessions.nameProblem(wanted);
+  if (problem) return problem;
+  const to = sessions.renamedTo(name, wanted);
   if (!to) return 'Enter a name.'; // only a session without a date stamp can end up with no name
-  if (to === v.session) return null;
-  await flushViewer(v); // the title line in session.md changes
-  return renameSession(v.session, wanted, v.root) ? null : `${sessions.shortName(to)} already exists. Choose another name.`;
+  if (to === name) return null;
+  for (const v of viewers.values()) if (v.root === into && v.session === name) await flushViewer(v); // its title line changes
+  try {
+    return renameSession(name, wanted, into) ? null : `${sessions.shortName(to)} already exists. Choose another name.`;
+  } catch (err) {
+    return `Couldn't rename: ${err instanceof Error ? err.message : String(err)}`; // the folder moved, or no permission
+  }
+}
+
+ipcMain.handle('viewer:rename', (e, wanted: string): Promise<string | null> => {
+  const v = viewerFor(e.sender.id);
+  return tryRename(v.session, wanted, v.root);
 });
 ipcMain.handle('viewer:reopen', async (e, dir: string): Promise<ViewerInit> => {
   const v = viewerFor(e.sender.id);
@@ -846,21 +862,20 @@ function renameSession(name: string, wanted: string, into = root): string | null
 
 // Rename Session… in the menu: native text prompt; Cancel makes osascript exit non-zero, which changes nothing.
 // Prompt and default answer go in as argv, never into the script text, so no session name can break the script.
-function renameFromMenu(name: string) {
+// A refused, empty or failed name asks again, with the reason as the prompt and the typed name filled in.
+function renameFromMenu(name: string, why?: string, typed?: string) {
   const stamped = sessions.namePart(name) !== name;
-  const prompt = stamped ? `Name this session. The date ${name.slice(0, 10)} stays in front.` : 'Rename session';
+  const prompt = why ?? (stamped ? `Name this session. The date ${name.slice(0, 10)} stays in front.` : 'Rename session');
   const script = [
     'on run argv',
     'text returned of (display dialog (item 1 of argv) default answer (item 2 of argv) buttons {"Cancel", "Rename"} default button "Rename")',
     'end run',
   ];
-  execFile('osascript', [...script.flatMap((l) => ['-e', l]), prompt, sessions.namePart(name)], async (err, stdout) => {
+  execFile('osascript', [...script.flatMap((l) => ['-e', l]), prompt, typed ?? sessions.namePart(name)], async (err, stdout) => {
     if (err) return;
     const wanted = stdout?.trim() ?? '';
-    const to = sessions.renamedTo(name, wanted);
-    if (!to || to === name) return;
-    for (const v of viewers.values()) if (v.root === root && v.session === name) await flushViewer(v);
-    if (!renameSession(name, wanted)) notify(`${sessions.shortName(name)} keeps its name: ${sessions.shortName(to)} already exists.`);
+    const problem = await tryRename(name, wanted, root);
+    if (problem) renameFromMenu(name, problem, wanted);
   });
 }
 

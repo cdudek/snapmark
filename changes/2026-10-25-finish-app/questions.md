@@ -20,6 +20,7 @@ None blocks the build. Each has the default taken above.
 7. **snap-c5c L2 nudge:** close as accepted (default), or pass the capture's display scale to the editor?
 8. **snap-bmr.14.3 E2E gaps F025/F027/F028/F041/F043:** the PR 79 review report is not in the repo, and `gh api …/pulls/79/comments` returns 0. Default: the builder reads the review from PR 79's checks or the review run before writing the smoke assertions, and stops to ask if it cannot be found.
 9. **Copy or Save:** is "Copy or Save" with the share glyph the right name? Default: yes. "Share" would suggest the macOS share sheet, which Snapmark does not have.
+10. **snap-bmr.14.3 E2E gaps F025/F027/F028/F041/F043 (build, step 15):** PR 79 has no review and no comment (`gh pr view 79 --json reviews,comments` returns both empty), and the bead names only the IDs. Which flows were they? Default taken: smoke covers the session-window rename flows the code shows that had no check: session.md's title follows a rename, ↩ on an emptied field goes back to the bare date, the window title follows a rename (snap-ua7 F8), an editor on an empty session (snap-ua7 F3), Switch Session by last use (snap-ua7 F13), plus F123 and F125–F131. Name the five and they become an ask of milestone 2.
 
 ## Milestone 2 — Capture bar, Settings, Keyboard Shortcuts
 

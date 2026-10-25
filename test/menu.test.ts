@@ -13,9 +13,9 @@ const a = new Proxy({} as MenuActions, {
       calls.push([String(key), ...args].join(':')),
 });
 const base: MenuState = {
-  current: { name: '2026-09-25 12.03', label: '25 Sep 12.03', count: 2 },
+  current: { name: '2026-09-25 12.03', label: '2026-09-25, 12:03', count: 2 },
   sessions: [
-    { name: '2026-09-25 12.03', label: '25 Sep 12.03', count: 2 },
+    { name: '2026-09-25 12.03', label: '2026-09-25, 12:03', count: 2 },
     { name: 'Old', label: 'Old', count: 0 },
   ],
   root: '~/Documents/Snapmark',
@@ -43,7 +43,7 @@ const head = (items: Item[]) => items.find((i) => i.type === 'header')!;
 // Order and labels, as the owner drew it (2026-10-24): capture, the current session, then Session ▸ for the rest
 assert.deepStrictEqual(labels(menu()), [
   'Adding screenshots to',
-  '25 Sep 12.03 · 2 screenshots',
+  '2026-09-25, 12:03 · 2 screenshots',
   'Capture Screenshot…',
   'Capture Last Area',
   'Capture Options',
@@ -140,7 +140,7 @@ assert.strictEqual(calls.pop(), 'openFile:2026-09-25 12.03');
 const ses = sub(find(menu(), 'Session'));
 assert.deepStrictEqual(labels(ses), [
   'Current Session',
-  '25 Sep 12.03',
+  '2026-09-25, 12:03',
   'New Session',
   'Switch Session',
   '—',
@@ -189,7 +189,7 @@ assert.strictEqual(labels(switchOf({ sessions: many(10), current: many(10)[0] })
 // F17 empty: no session, Switch Session greyed
 assert.strictEqual(find(sub(find(menu({ current: null, sessions: [] }), 'Session')), 'Switch Session').enabled, false, 'F17');
 const listed = sub(find(ses, 'Switch Session'));
-assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
+assert.strictEqual(find(listed, '2026-09-25, 12:03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'makeCurrent:Old');
 

@@ -139,7 +139,7 @@ assert.strictEqual(gd.dir, gone);
 assert.deepStrictEqual([gd.kind, gd.session, gd.n], ['shot', rm, 2]);
 assert.ok(path.basename(gone).endsWith(` · ${rm} · screenshot 2`), gone);
 assert.strictEqual(sessions.restoreShot(root, gd), 2);
-assert.deepStrictEqual(sessions.shots(root, rm), [1, 3, 2]);
+assert.deepStrictEqual(sessions.shots(root, rm), [1, 2, 3]); // back in place (F119)
 assert.ok(fs.existsSync(path.join(root, rm, 'img', '002.png')) && !fs.existsSync(gone));
 assert.ok(fs.readFileSync(path.join(root, rm, 'session.md'), 'utf8').includes('Shot 2'));
 
@@ -228,4 +228,35 @@ fs.utimesSync(path.join(root, stale, 'session.md'), new Date(Date.now() - 90 * d
 assert.ok(sessions.olderThan(root, 60, {}).includes(stale), 'untouched for 90 days');
 assert.ok(!sessions.olderThan(root, 60, { [stale]: Date.now() - 10 * day }).includes(stale), 'used 10 days ago');
 assert.ok(!sessions.olderThan(root, 60, {}).includes(a), 'just written');
+// F119 back in place: a removed screenshot that returns under its old number goes before the first higher number;
+// when its number was taken it goes to the end under the next one, as before
+const bp = sessions.create(root, 'back in place');
+[1, 2, 3].forEach((i) => sessions.addShot(root, bp, Buffer.from(String(i)), { caption: `Shot ${i}` }));
+sessions.removeShot(root, bp, 2);
+assert.strictEqual(sessions.restoreShot(root, sessions.discardedIn(root, bp)[0]), 2, 'F119');
+const bpMd = fs.readFileSync(path.join(root, bp, 'session.md'), 'utf8');
+assert.deepStrictEqual(
+  [...bpMd.matchAll(/^## (\d+) · /gm)].map((m) => m[1]),
+  ['001', '002', '003'],
+  'F119 headings in order',
+);
+assert.ok(bpMd.indexOf('Shot 1') < bpMd.indexOf('Shot 2') && bpMd.indexOf('Shot 2') < bpMd.indexOf('Shot 3'), 'F119 text in order');
+assert.ok(!bpMd.includes('\n\n\n'), 'F119 no blank-line pile-up');
+sessions.removeShot(root, bp, 3);
+assert.strictEqual(sessions.addShot(root, bp, Buffer.from('n'), { caption: 'New 3' }), 3); // 3 is taken again
+assert.strictEqual(sessions.restoreShot(root, sessions.discardedIn(root, bp)[0]), 4, 'F119 taken: the next number');
+assert.deepStrictEqual(sessions.shots(root, bp), [1, 2, 3, 4], 'F119 taken: at the end');
+
+// F124 bracket number refused: a name starting with "(n)" would read as the same-minute suffix
+assert.strictEqual(sessions.nameProblem('(2) Ledgerly'), "A name can't start with a number in brackets, like (2).", 'F124');
+assert.strictEqual(sessions.nameProblem('  (12)Ledgerly'), "A name can't start with a number in brackets, like (2).", 'F124');
+assert.strictEqual(sessions.nameProblem('Ledgerly (2)'), null, 'F124');
+assert.strictEqual(sessions.nameProblem('(draft) Ledgerly'), null, 'F124');
+const mainSrc = fs.readFileSync(path.join(__dirname, '../../src/main.ts'), 'utf8');
+// Both renames go through tryRename, which asks nameProblem first
+const tryRenameSrc = mainSrc.slice(mainSrc.indexOf('async function tryRename'), mainSrc.indexOf('\n}\n', mainSrc.indexOf('async function tryRename')));
+assert.ok(tryRenameSrc.includes('sessions.nameProblem(wanted)'), 'F124 tryRename uses nameProblem');
+assert.ok(/'viewer:rename'[\s\S]{0,200}tryRename\(/.test(mainSrc), 'F124 viewer:rename uses it');
+assert.ok(/function renameFromMenu[\s\S]*?tryRename\(/.test(mainSrc), 'F124 renameFromMenu uses it');
+
 console.log('sessions: ok');

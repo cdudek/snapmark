@@ -92,7 +92,7 @@ interface Window {
     viewerInit(): Promise<ViewerInit>;
     viewerSave(from: string, md: string): Promise<boolean>; // refused when session.md is no longer `from`
     viewerExternal(): void; // open session.md in the default Markdown app
-    viewerRemove(n: number): Promise<ViewerInit>;
+    viewerRemove(n: number): Promise<{ data: ViewerInit; dir: string | null }>; // dir: its Discarded folder, for ⌘Z
     viewerEdit(n: number): void; // Edit Again: open entry n in the editor with its marks
     viewerRename(name: string): Promise<string | null>; // null when renamed (or unchanged), else why not
     viewerReopen(dir: string): Promise<ViewerInit>; // a discarded screenshot: back into the session, or into an editor

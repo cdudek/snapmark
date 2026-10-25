@@ -194,20 +194,20 @@ Feature 1.2 — toolbar keys and size:
 
 Feature 1.3 — editor header like the mock:
 
-- [ ] 9. Blocks F113, F114, F118 in `test/menu.test.ts` — proof: `npm test` fails on them.
-- [ ] 10. `editorSessionMenu`, `copyMenu`, Switch Session `enabled` in `src/menu.ts` — proof: those blocks pass.
-- [ ] 11. `openEditor` options, IPC `editor:color`, `editor:sessions-menu`, `editor:share-menu`, `moveEditor`, saved `color` in `src/main.ts`; `src/preload.ts`, `src/shared.d.ts` — proof: `npm run typecheck` exits 0. `grep -n "hiddenInset" src/main.ts` prints 2 lines.
-- [ ] 12. `src/editor.html` title row, icon buttons, `#share`, `#session` button; `src/editor.ts` wiring — proof: `grep -c 'id="copy"\|id="save-as"' src/editor.html` prints 0.
-- [ ] 13. Smoke F111–F117, ⇧⌘S instead of `#save-as` clicks; `docs/ux/sitemap.md` editor lines — proof: `npm run build` exits 0; `grep -n "getElementById('save-as')" test/smoke.ts` prints nothing.
+- [x] 9. Blocks F113, F114, F118 in `test/menu.test.ts` — proof: `npm test` fails on them.
+- [x] 10. `editorSessionMenu`, `copyMenu`, Switch Session `enabled` in `src/menu.ts` — proof: those blocks pass.
+- [x] 11. `openEditor` options, IPC `editor:color`, `editor:sessions-menu`, `editor:share-menu`, `moveEditor`, saved `color` in `src/main.ts`; `src/preload.ts`, `src/shared.d.ts` — proof: `npm run typecheck` exits 0. `grep -n "hiddenInset" src/main.ts` prints 2 lines.
+- [x] 12. `src/editor.html` title row, icon buttons, `#share`, `#session` button; `src/editor.ts` wiring — proof: `grep -c 'id="copy"\|id="save-as"' src/editor.html` prints 0.
+- [x] 13. Smoke F111–F117, ⇧⌘S instead of `#save-as` clicks; `docs/ux/sitemap.md` editor lines — proof: `npm run build` exits 0; `grep -n "getElementById('save-as')" test/smoke.ts` prints nothing.
 
 Feature 1.4 — session window and rename leftovers:
 
-- [ ] 14. Blocks F119, F124 in `test/sessions.test.ts`; fixture `test/menu.test.ts:15` — proof: `npm test` fails on F119 and F124 only.
-- [ ] 15. Read the PR 79 review for E2E gaps F025, F027, F028, F041 and F043. If it cannot be found, write that to questions.md and carry on with the gaps the code shows (spec.md Q8; questions never block). Proof: each gap is named in a smoke check key or listed under `## Revisions` with why.
-- [ ] 16. `restoreShot`, `nameProblem` in `src/sessions.ts` — proof: F119, F124 pass.
-- [ ] 17. `src/main.ts` `openViewer` size, `viewer:remove`, `viewer:rename`, `renameFromMenu`; `src/viewer.ts`, `src/viewer.html`, `src/preload.ts`, `src/shared.d.ts` — proof: `npm run typecheck` exits 0; `grep -n "minWidth: 720" src/main.ts` prints the line.
-- [ ] 18. Smoke F123, F125–F131, F135, and the snap-c5c, snap-ua7 #5 and snap-bmr.14.3 test gaps — proof: `npm run build` exits 0. `grep -n "= true; // nextWindow" test/smoke.ts` prints nothing.
-- [ ] 19. Docs: glossary, guidelines, sitemap words — proof: `grep -rn "Other Session…\|twenty recent\|Capture Same Area" docs/ux/glossary-proposal.md docs/ux/interaction-guidelines.md docs/ux/sitemap.md` prints nothing.
+- [x] 14. Blocks F119, F124 in `test/sessions.test.ts`; fixture `test/menu.test.ts:15` — proof: `npm test` fails on F119 and F124 only.
+- [x] 15. Read the PR 79 review for E2E gaps F025, F027, F028, F041 and F043. If it cannot be found, write that to questions.md and carry on with the gaps the code shows (spec.md Q8; questions never block). Proof: each gap is named in a smoke check key or listed under `## Revisions` with why.
+- [x] 16. `restoreShot`, `nameProblem` in `src/sessions.ts` — proof: F119, F124 pass.
+- [x] 17. `src/main.ts` `openViewer` size, `viewer:remove`, `viewer:rename`, `renameFromMenu`; `src/viewer.ts`, `src/viewer.html`, `src/preload.ts`, `src/shared.d.ts` — proof: `npm run typecheck` exits 0; `grep -n "minWidth: 720" src/main.ts` prints the line.
+- [x] 18. Smoke F123, F125–F131, F135, and the snap-c5c, snap-ua7 #5 and snap-bmr.14.3 test gaps — proof: `npm run build` exits 0. `grep -n "= true; // nextWindow" test/smoke.ts` prints nothing.
+- [x] 19. Docs: glossary, guidelines, sitemap words — proof: `grep -rn "Other Session…\|twenty recent\|Capture Same Area" docs/ux/glossary-proposal.md docs/ux/interaction-guidelines.md docs/ux/sitemap.md` prints nothing.
 
 Feature 1.5 — small fixes:
 
@@ -392,3 +392,8 @@ One goal for the whole change, from the kit's `templates/goal/run.txt`, with thi
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
 
 - 2026-10-25 — before the lock was committed: one facts.md link pointed at a draft file name (`spec.md`); it now points at `spec/capture-and-settings.md`, and the lock was taken again. No fact changed. Example `session.md` image links in `spec/` are written as plain text, and an empty `validation.md` skeleton was added, so the guardrail test reads no missing files.
+- 2026-10-25 — M1.2: the Keyboard Shortcuts HTML moved from `src/main.ts` into `keys.ts` `shortcutsHtml`, so the existing `test/keys.test.ts` F19 check now looks for `shortcutsHtml(TOOLS` in main.ts and the KEY_GROUPS heading in its output, instead of `KEY_GROUPS` in main.ts
+- 2026-10-25 — M1.3: the Copy or Save menu's items reach the page through one more IPC, `editor:share` (`onShare` in `src/preload.ts`), since only the page can flatten the marks; `editorSessionMenu` takes `{ moveTo, newSession }` actions rather than `MenuActions`
+- 2026-10-25 — M1.4 step 15: the PR 79 review report could not be found (no review or comment on the PR), so the five snap-bmr.14.3 E2E gaps are covered by the smoke checks the code shows, keyed `snap-bmr.14.3 gap: …` and `snap-ua7 …` (questions.md M1 Q10)
+- 2026-10-25 — M1.4: `viewer:rename` and `renameFromMenu` share one `tryRename` in `src/main.ts` (nameProblem, empty name, taken, thrown), so the F124 source check reads `tryRename`; the existing `test/sessions.test.ts` restore check now expects `[1, 2, 3]` (F119 puts the entry back in place)
+- 2026-10-25 — M1.4 step 19: beyond the listed lines, every "Capture Same Area" in the three docs became "Capture Last Area" (the step's proof greps the whole files), and the guidelines' and glossary's other ⌃⇧1/⌃⇧2 mentions now name ⌃⇧4, ⌃⇧3 or ⌃⇧N

@@ -33,7 +33,7 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 ├── Capture Screenshot  ⌃⇧4
 │     └──► macOS capture overlay (native): drag a region, or Space + click a window ──► Editor
 │                                          Esc or a failed capture ──► nothing (silent; the two look alike, F028)
-├── Capture Same Area   ⌃⇧3   sub-line "1280 × 720" or "First time: drag the area"
+├── Capture Last Area   ⌃⇧3   sub-line "1280 × 720" or "First time: drag the area"
 │     ├── no area yet, or its display is gone ──► Area picker (display under the pointer, over full-screen apps)
 │     │        drag ≥ 8 × 8, release ──► captured at once ──► Editor · click or sliver ──► starts over · Esc ──► nothing
 │     └── area set ──► captured at once (with any Snapmark window that is over it, F033/F066) ──► Editor
@@ -136,7 +136,7 @@ ENTRY POINTS
 ├── Menu bar icon (shows a brief tick and the count after each Add to session; a key opens it (decision))
 ├── Global keys: capture only, on neighbouring keys, changeable (chosen 2026-10-25: ⌃⇧3, ⌃⇧4, ⌃⇧5 mirror macOS's ⇧⌘3, ⇧⌘4, ⇧⌘5)
 │     ├── Capture Screenshot
-│     └── Capture Same Area
+│     └── Capture Last Area
 ├── ⌘/ in any Snapmark window ──► Keyboard Shortcuts
 ├── Drop an image on the menu bar icon, or paste ──► Editor on that image
 └── Relaunching Snapmark ──► opens its menu
@@ -146,7 +146,7 @@ FIRST CAPTURE without Screen Recording ──► small window: [Open System Sett
 
 MENU (fixed rows in a fixed order; unavailable rows greyed, never hidden; about 11 rows)
 ├── Capture Screenshot                <key>
-├── Capture Same Area                 <key>    sub-line "1280 × 720 · Built-in Display, top left"
+├── Capture Last Area                 <key>    sub-line "1280 × 720 · Built-in Display, top left"
 ├── Choose Area…                      ──► Area picker with the current area drawn, adjustable, then [Capture] (Return)
 ├── ──
 ├── "Checkout review · 7 screenshots"          (header)

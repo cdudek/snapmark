@@ -103,6 +103,14 @@ assert.ok(on.includes('Settings ▸ Single-Key Tools is on: C and 1–7 pick too
 assert.ok(off.includes('<kbd>⌘1</kbd>') && off.includes('<kbd>Esc</kbd>') && off.includes('<kbd>⌘1 again</kbd>'), 'F109 off');
 assert.ok(off.includes('Settings ▸ Single-Key Tools is off: only ⌘1–⌘7 pick tools, and Esc goes back to Select.'), 'F109 off line');
 assert.ok(!off.includes('<kbd>1</kbd>') && !off.includes('<kbd>C'), 'F109 off: no bare key');
+// F19 rows (snap-c5c): every row of the key list is in the window, with its key, name and what, in order
+let from = 0;
+for (const g of KEY_GROUPS)
+  for (const [k, n, w] of g.rows) {
+    const at = on.indexOf(`<tr><td><kbd>${k}</kbd></td><td></td><td><b>${n}</b></td><td>${w}</td></tr>`, from);
+    assert.ok(at >= from, `F19 row ${k} ${n}`);
+    from = at;
+  }
 const setter = main.slice(main.indexOf('function setSingleKeys'), main.indexOf('\n}\n', main.indexOf('function setSingleKeys')));
 assert.ok(setter.includes('shortcutsWin') && setter.includes('loadURL'), 'F109 setSingleKeys redraws an open Keyboard Shortcuts window');
 

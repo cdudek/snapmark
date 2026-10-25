@@ -60,6 +60,11 @@ export function renamedTo(from: string, to: string): string | null {
   return name ? `${kept} ${name}` : kept;
 }
 
+// Why a typed name cannot be a session's name, or null. A leading "(2)" would read as the same-minute suffix.
+export function nameProblem(wanted: string): string | null {
+  return /^\s*\(\d+\)/.test(wanted) ? "A name can't start with a number in brackets, like (2)." : null;
+}
+
 // Writes the flattened PNG and appends an entry to session.md. Returns the entry number.
 export function addShot(root: string, name: string, png: Buffer, text: ShotText = {}): number {
   const dir = path.join(root, name);
@@ -277,8 +282,8 @@ export function discarded(root: string, now = Date.now()): Discarded[] {
 // One session's discarded screenshots: editors closed without saving while it was current, and entries removed from it.
 export const discardedIn = (root: string, session: string, now = Date.now()) => discarded(root, now).filter((d) => d.session === session);
 
-// Puts a removed entry back at the end of its session (recreated if it is gone). Returns its number, which is
-// the old one unless that number was taken in the meantime.
+// Puts a removed entry back in its session (recreated if it is gone): in place, before the first entry with a higher
+// number, or at the end under the next number when its old one was taken in the meantime. Returns its number.
 export function restoreShot(root: string, d: Discarded): number {
   const dir = path.join(root, d.session);
   if (!fs.existsSync(path.join(dir, 'session.md'))) {
@@ -303,7 +308,14 @@ export function restoreShot(root: string, d: Discarded): number {
       fs.readFileSync(path.join(d.dir, 'state.json'), 'utf8'),
     );
   const mdPath = path.join(dir, 'session.md');
-  fs.writeFileSync(mdPath, `${fs.readFileSync(mdPath, 'utf8').trimEnd()}\n\n${text.trim()}\n`);
+  const md = fs.readFileSync(mdPath, 'utf8');
+  const later = [...md.matchAll(/^## (\d+) · /gm)].find((m) => parseInt(m[1], 10) > n);
+  fs.writeFileSync(
+    mdPath,
+    later
+      ? `${md.slice(0, later.index).trimEnd()}\n\n${text.trim()}\n\n${md.slice(later.index)}`
+      : `${md.trimEnd()}\n\n${text.trim()}\n`,
+  );
   fs.rmSync(d.dir, { recursive: true, force: true });
   return n;
 }

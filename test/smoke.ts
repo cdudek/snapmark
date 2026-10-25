@@ -2,7 +2,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { app, BrowserWindow, nativeImage, screen } from 'electron';
+import { app, BrowserWindow, nativeImage, nativeTheme, screen } from 'electron';
 
 const MOCK = `<body style="margin:0;font:16px system-ui;background:#fff;color:#18181b">
   <header style="height:56px;background:#18181b;color:#fff;display:flex;align-items:center;padding:0 24px">Acme Dashboard</header>
@@ -530,14 +530,44 @@ app
         `for (let i = 0; i < 50 && !(background && captionField); i++) await new Promise((r) => setTimeout(r, 100)); await new Promise((r) => setTimeout(r, 300));`,
       );
     const counts = `return JSON.stringify([markers().length, cards().length, canvas.getObjects().filter((o) => links.has(o)).length, captionField.value(), markers().map(noteOf)[0]])`;
+    // F131: ⌘Z after ⌘⌫ puts back the screenshot ⌘⌫ removed, also when a newer discard exists (an editor closed unsaved)
+    await inView(`document.querySelector('#grid .thumb .pic').click(); document.activeElement.blur();`);
+    keyIn('Backspace', ['meta']);
+    const removedOne = await waitFor(`document.querySelectorAll('#grid .thumb').length === 0`);
+    fs.copyFileSync(shotCopy, path.join(root, 'newer.png'));
+    const newer = openEditor(path.join(root, 'newer.png'), { session: 'smoke' });
+    await new Promise<void>((r) => newer.webContents.once('did-finish-load', () => r()));
+    await loaded(newer);
+    newer.close();
+    for (let i = 0; i < 30 && !newer.isDestroyed(); i++) await sleep(100);
+    const newerKept = sessions.discardedIn(root, 'smoke').find((d) => d.kind === 'capture');
+    await inView(`document.activeElement.blur();`);
+    keyIn('z', ['meta']);
+    viewer['F131 ⌘Z puts back the one removed'] =
+      removedOne &&
+      !!newerKept &&
+      (await waitFor(`document.querySelectorAll('#grid .thumb').length === 1 && document.getElementById('count').textContent === '1 of 1'`)) &&
+      JSON.stringify(sessions.shots(root, 'smoke')) === '[1]';
+    if (newerKept) fs.rmSync(newerKept.dir, { recursive: true, force: true }); // the Discarded tab checks below count one
     viewer['Edit Again is offered for a saved screenshot'] = await waitFor(`!document.querySelector('#grid .thumb .edit').hidden`);
     let windows = BrowserWindow.getAllWindows();
+    // The grid's Edit Again button opens the editor too (snap-c5c)
+    await inView(`document.querySelector('#grid .thumb .edit').click();`);
+    const fromGrid = await nextWindow(windows);
+    await new Promise<void>((r) => fromGrid.webContents.once('did-finish-load', () => r()));
+    await loaded(fromGrid);
+    viewer["snap-c5c the grid's Edit Again button opens the editor"] =
+      fromGrid.webContents.getURL().endsWith('editor.html') &&
+      (await inWin(fromGrid, `return document.getElementById('save').textContent`)).startsWith('Save changes');
+    fromGrid.destroy();
+    await sleep(300);
+    windows = BrowserWindow.getAllWindows();
     // F18: ⌘O on the screenshot shown large is Edit Again
     await inView(`document.querySelector('#grid .thumb .pic').click();`);
     keyIn('o', ['meta']);
     const again = await nextWindow(windows);
-    viewer['F18 ⌘O edits again'] = true; // nextWindow throws when no editor opens
     await new Promise<void>((r) => again.webContents.once('did-finish-load', () => r()));
+    viewer['F18 ⌘O edits again'] = again.webContents.getURL().endsWith('editor.html');
     await loaded(again);
     const restored = JSON.parse(await inWin(again, counts));
     viewer['Edit Again restores references, cards, moves, comment and notes'] =
@@ -579,12 +609,29 @@ app
       (await waitFor(`document.getElementById('tab-discarded').hidden && document.querySelectorAll('#grid .thumb').length === 2`)) &&
       smokeMd().includes('Second shot');
     viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke · 2 screenshots');
-    // F15: ↩ with nothing focused starts renaming, as in Finder; Esc cancels it
+    // F135: after ⌘⌫ in the large view, ↩ does not start a rename: the large image has the focus
+    await inView(`document.querySelector('#grid .thumb .pic').click(); document.activeElement.blur();`);
+    keyIn('Backspace', ['meta']);
+    const oneLeft = await waitFor(`document.getElementById('count').textContent === '1 of 1'`);
+    keyIn('Return');
+    await sleep(300);
+    viewer['F135 ↩ after a removal does not rename'] =
+      oneLeft &&
+      (await inView(
+        `return getComputedStyle(document.getElementById('rename')).display === 'none' && document.activeElement === document.getElementById('shot');`,
+      ));
+    keyIn('z', ['meta']);
+    viewer['F119 ⌘Z puts it back in its place'] = await waitFor(
+      `document.querySelectorAll('#grid .thumb').length === 2 && document.getElementById('count').textContent === '1 of 2' && document.getElementById('shot').src.includes('img/001.png')`,
+    );
+    // F15: ↩ with nothing focused starts renaming, as in Finder, also with a screenshot shown large; Esc cancels it
+    const largeShown = await inView(`return !document.getElementById('shots').hidden;`);
     await inView(`document.activeElement.blur();`);
     keyIn('Return');
     viewer['F15 ↩ renames'] = await waitFor(
       `getComputedStyle(document.getElementById('rename')).display !== 'none' && document.activeElement === document.getElementById('rename')`,
     );
+    viewer['snap-c5c F15 ↩ renames with a screenshot shown large'] = largeShown && viewer['F15 ↩ renames'];
     keyIn('Escape');
     await new Promise((r) => setTimeout(r, 200));
     // Rename in place: ↩ saves (the folder moves, the window follows), a taken name keeps the field, Esc cancels
@@ -603,10 +650,48 @@ app
     viewer['a taken name says so and keeps the field'] =
       (await inView(`return ${fieldOpen} && document.getElementById('hint').textContent.includes('already exists');`)) &&
       fs.existsSync(path.join(root, 'smoke'));
+    // F128: typing after a refused name clears the error
+    view.webContents.sendInputEvent({ type: 'char', keyCode: 'x' });
+    viewer['F128 typing clears the error'] = await waitFor(
+      `!document.getElementById('hint').classList.contains('error') && !document.getElementById('hint').textContent.includes('already exists')`,
+    );
+    // F125: a rename that fails (here: no permission) says why under the field
+    const realRename = sessions.rename;
+    (sessions as { rename: typeof realRename }).rename = () => {
+      throw new Error('EACCES');
+    };
+    await rename('smoke elsewhere', 'Return');
+    viewer['F125 a failed rename says why'] = await waitFor(
+      `document.getElementById('hint').textContent === "Couldn't rename: EACCES" && document.getElementById('hint').classList.contains('error')`,
+    );
+    (sessions as { rename: typeof realRename }).rename = realRename;
     await rename('smoke renamed', 'Escape');
     viewer['Esc cancels the rename'] =
       (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
       !fs.existsSync(path.join(root, 'smoke renamed'));
+    // F127: an emptied field and a click away keep the name
+    await inView(`document.getElementById('title').click(); document.getElementById('rename').value = ''; document.getElementById('rename').blur();`);
+    await sleep(300);
+    viewer['F127 an empty field and a click away keep the name'] =
+      (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
+      fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8').startsWith('# smoke\n');
+    // F129: the rename field's placeholder reads at 4.5:1 on the field, light and dark
+    const placeholderContrast = () =>
+      inView(`document.getElementById('title').click(); const f = document.getElementById('rename'); f.value = '';
+        await new Promise((r) => setTimeout(r, 200));
+        const rgb = (c) => c.match(/[\\d.]+/g).slice(0, 3).map(Number);
+        const lum = (c) => c.map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+        const [a, b] = [lum(rgb(getComputedStyle(f, '::placeholder').color)), lum(rgb(getComputedStyle(f).backgroundColor))];
+        f.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);`);
+    nativeTheme.themeSource = 'light';
+    const lightRatio: number = await placeholderContrast();
+    nativeTheme.themeSource = 'dark';
+    const darkRatio: number = await placeholderContrast();
+    nativeTheme.themeSource = 'system';
+    viewer['F129 placeholder contrast'] = lightRatio >= 4.5 && darkRatio >= 4.5;
+    // F130: the session window never shrinks below 720 × 480
+    viewer['F130 minimum size'] = JSON.stringify(view.getMinimumSize()) === JSON.stringify([720, 480]);
     await rename('smoke renamed', 'Return');
     viewer['↩ renames the session folder and the window'] =
       (await waitFor(`!(${fieldOpen}) && document.getElementById('title').textContent === 'smoke renamed'`)) &&
@@ -623,6 +708,17 @@ app
       (await inWin(watching, `const s = document.getElementById('session'); return s.scrollWidth > s.clientWidth && s.title.startsWith(${JSON.stringify(long)});`));
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
+    // F123: at 1100 points a 60-character name leaves "Open in Markdown App" on one line; only the name shortens
+    view.setSize(1100, 900);
+    const sixty = 'Ledgerly Q4 review of checkout, payments and refunds, take 2';
+    await rename(sixty, 'Return');
+    viewer['F123 a long name never wraps the buttons'] =
+      (await waitFor(`document.getElementById('title').textContent === ${JSON.stringify(sixty)}`)) &&
+      (await inView(
+        `const r = document.createRange(); r.selectNodeContents(document.getElementById('external')); const t = document.getElementById('title'); return r.getClientRects().length === 1 && t.scrollWidth > t.clientWidth;`,
+      ));
+    await rename('smoke', 'Return');
+    await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     watching.destroy();
     view.close();
 
@@ -646,15 +742,37 @@ app
       (await inWin(datedEditor, `return document.getElementById('session').textContent`)).startsWith('2026-10-24, 23:38') &&
       datedEditor.getTitle() === 'Snapmark — 2026-10-24, 23:38';
     datedEditor.destroy();
+    // snap-ua7 F3: an editor on an empty dated session shows only its readable name
+    const bare = sessions.create(root, '2026-10-24 09.05');
+    fs.copyFileSync(shotCopy, path.join(root, 'bare.png'));
+    const bareEditor = openEditor(path.join(root, 'bare.png'), { session: bare });
+    await new Promise<void>((r) => bareEditor.webContents.once('did-finish-load', () => r()));
+    await loaded(bareEditor);
+    viewer['snap-ua7 F3 an editor on an empty session shows only its readable name'] =
+      (await inWin(bareEditor, `return document.getElementById('session').textContent`)) === '2026-10-24, 09:05' &&
+      bareEditor.getTitle() === 'Snapmark — 2026-10-24, 09:05';
+    bareEditor.destroy();
     await inDated(`document.getElementById('title').click();`);
+    // F126: renaming a dated session, the hint names the date that stays
+    viewer['F126 the hint names the date'] = await inDated(
+      `return document.getElementById('hint').textContent.startsWith('2026-10-24 stays in front');`,
+    );
     const emptyField = await inDated(`return document.getElementById('rename').value === '';`);
     await inDated(`document.getElementById('rename').value = 'Ledgerly Q4 review';`);
     dated.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
     viewer['F8 a renamed session keeps its date'] =
       (await datedTitle('2026-10-24 · Ledgerly Q4 review')) && fs.existsSync(path.join(root, '2026-10-24 23.38 Ledgerly Q4 review'));
+    viewer['snap-ua7 F8 the window title follows the rename'] = dated.getTitle() === '2026-10-24 · Ledgerly Q4 review — Snapmark';
+    viewer["snap-bmr.14.3 gap: session.md's title follows the rename"] = fs
+      .readFileSync(path.join(root, '2026-10-24 23.38 Ledgerly Q4 review', 'session.md'), 'utf8')
+      .startsWith('# 2026-10-24 · Ledgerly Q4 review\n');
     await inDated(`document.getElementById('title').click();`);
     viewer['F9 the rename field holds only the name'] =
       emptyField && (await inDated(`return document.getElementById('rename').value === 'Ledgerly Q4 review';`));
+    await inDated(`document.getElementById('rename').value = '';`);
+    dated.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
+    viewer['snap-bmr.14.3 gap: ↩ on an emptied field goes back to the bare date'] =
+      (await datedTitle('2026-10-24, 23:38')) && fs.existsSync(path.join(root, '2026-10-24 23.38', 'session.md'));
     dated.close();
 
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks
@@ -979,6 +1097,15 @@ app
     for (let i = 0; i < 30 && sessions.count(root, moved) === 0; i++) await sleep(100);
     inPage['F114 the label switches the session'] =
       movedLabel && movedTitle === 'Snapmark — moved' && nowCurrent === 'moved' && sessions.count(root, moved) === 1;
+    // snap-ua7 F13: the menu's Switch Session lists the sessions by last use
+    setActive('smoke');
+    await sleep(20);
+    setActive(moved);
+    const submenu = (items: Electron.MenuItemConstructorOptions[], label: string) =>
+      items.find((i) => i.label === label)!.submenu as Electron.MenuItemConstructorOptions[];
+    const switchRows = submenu(submenu(menuItems(), 'Session'), 'Switch Session').filter((i) => i.type === 'checkbox');
+    viewer['snap-ua7 F13 Switch Session lists the sessions by last use'] =
+      switchRows[0]?.label === 'moved' && !!switchRows[0]?.checked && switchRows[1]?.label === 'smoke';
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,
