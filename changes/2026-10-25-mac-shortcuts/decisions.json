@@ -1,0 +1,8 @@
+{
+  "size": "M",
+  "kind": "feature",
+  "milestone": { "kind": "new", "slug": "fixes" },
+  "project": { "kind": "existing", "slug": "launch" },
+  "ticket": "snap-bmr.17.1",
+  "design": "docs/designs/2026-10-25-adr-keys-follow-macos.md"
+}
