@@ -740,7 +740,7 @@ app
     viewer['F123 a long name never wraps the buttons'] =
       (await waitFor(`document.getElementById('title').textContent === ${JSON.stringify(sixty)}`)) &&
       (await inView(
-        `const r = document.createRange(); r.selectNodeContents(document.getElementById('external')); const t = document.getElementById('title'); return r.getClientRects().length === 1 && t.scrollWidth > t.clientWidth;`,
+        `const r = document.createRange(); r.selectNodeContents(document.getElementById('external')); const others = [...document.querySelectorAll('header button, header [role=tab]')].filter((b) => !b.contains(document.getElementById('title'))); return r.getClientRects().length === 1 && others.every((b) => b.scrollWidth <= b.clientWidth + 1);`,
       ));
     await rename('smoke', 'Return');
     await waitFor(`document.getElementById('title').textContent === 'smoke'`);

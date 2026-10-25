@@ -38,4 +38,4 @@ Each has a default taken; none blocks the build.
 
 ## Answers
 
-None yet.
+- 2026-10-25, owner, during milestone 1 (became ask A14): "can you make sure all the icons and everything in the top bar have enough spacing? [...] Make it look professional because right now it doesn't. It looks cheap and bad. The quick buttons' shortcut text overlaps or almost touches each other. [...] One icon, instead of having a page, I would just have a foreground and background, kind of like a stack icon, similar to what Snapper has. When you draw it on the canvas you would see it anyway so what's the point?" Taken into milestone 1 before its PR, because milestone 1 is the toolbar and header and has not shipped; logged in plan.md Revisions.
