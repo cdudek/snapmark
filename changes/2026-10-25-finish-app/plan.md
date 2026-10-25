@@ -250,12 +250,12 @@ Feature 2.2 — Settings window (F219–F228):
 
 Feature 2.3 — Keyboard Shortcuts window (F229–F236):
 
-- [ ] 17. Write F229 and F236 in `test/keys.test.ts`, replacing the F19 block, and F233 in `test/menu.test.ts` — proof: `npm test` fails on F229, F233 and F236.
-- [ ] 18. `src/keys.ts` ⌘/ row; `src/menu.ts` `appMenu` Keyboard Shortcuts ⌘/ — proof: F233 and F236 pass.
-- [ ] 19. `src/shortcuts.html`, `src/shortcuts.ts`, `src/preload.ts`, `src/shared.d.ts`, `package.json` build — proof: `npm run build` exits 0 and `ls dist/src/shortcuts.html` prints it.
-- [ ] 20. `src/main.ts`: `showShortcuts` loads the file; delete the HTML string — proof: F229 passes; `grep -n "data:text/html" src/main.ts` prints nothing.
-- [ ] 21. Smoke checks F229–F235 — proof: `npm run build` exits 0. smoke runs once at the milestone.
-- [ ] 22. README, sitemap and setup rows for Keyboard Shortcuts — proof: `grep -n "Settings → Keyboard Shortcuts" README.md docs/ux/setup.md` prints nothing.
+- [x] 17. Write F229 and F236 in `test/keys.test.ts`, replacing the F19 block, and F233 in `test/menu.test.ts` — proof: `npm test` fails on F229, F233 and F236.
+- [x] 18. `src/keys.ts` ⌘/ row; `src/menu.ts` `appMenu` Keyboard Shortcuts ⌘/ — proof: F233 and F236 pass.
+- [x] 19. `src/shortcuts.html`, `src/shortcuts.ts`, `src/preload.ts`, `src/shared.d.ts`, `package.json` build — proof: `npm run build` exits 0 and `ls dist/src/shortcuts.html` prints it.
+- [x] 20. `src/main.ts`: `showShortcuts` loads the file; delete the HTML string — proof: F229 passes; `grep -n "data:text/html" src/main.ts` prints nothing.
+- [x] 21. Smoke checks F229–F235 — proof: `npm run build` exits 0. smoke runs once at the milestone.
+- [x] 22. README, sitemap and setup rows for Keyboard Shortcuts — proof: `grep -n "Settings → Keyboard Shortcuts" README.md docs/ux/setup.md` prints nothing.
 - [ ] 24. Milestone: `npm run smoke:background` once, then the owner's manual checks in facts.md Verification — proof: `smoke: ok` in its log. The owner's answer is quoted under `## Revisions`.
 - [ ] 25. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
 
@@ -410,3 +410,5 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-26 — contrast: the editor's dark --muted goes from #98989d to #a4a4a9, so the "Custom" label is 5.2:1 on the panel (it was 4.5:1). Measured in light / dark: captions 15.7 / 13.9, Discard key 16.8 / 11.9, Add to session key 4.7 / 4.7, Custom label 5.1 / 5.2, "#" 4.7 / 6.1, hex digits 15.7 / 13.9, error 5.6 / 5.1, Custom… 16.8 / 11.9.
 - 2026-10-25 — M2.1: `barOptions` IPC carries the chosen mode, `barOptions(mode, rect)`, and saves it, so the Options menu greys Timer and pointer for the mode on screen; `MODES` holds ids and names only, since the icons are inline SVG in `src/bar.html`; `type: 'panel'` is set on macOS only (Linux has no such window type); `rect` moved from `src/main.ts` into `src/capture.ts`, and an exported `setCapture` in `src/main.ts` serves the Options menu, Settings and smoke
 - 2026-10-25 — M2.2: `SettingsInit.keys` carries the four global keys as rows (keycap, name, taken) in place of a bare `taken` list, so the page holds no key names; `settings:set` and `settings:run` are invoke handlers that answer with a fresh `SettingsInit`, so the window shows a new folder or login state at once; `MenuActions.keyboardShortcuts` stays (plan, for ⌘/) where the spec's Menus section drops it; `loginState` returns a new `LoginState` type since `MenuState.login` is gone; the M1 F110 smoke check calls `setSingleKeys` (what the Settings checkbox calls), since the Settings submenu item it clicked is gone, and F225 clicks the checkbox itself
+- 2026-10-25 — M2.3: the HTML string and `esc` lived in `src/keys.ts` `shortcutsHtml` since M1.2, so that is what goes; `shortcuts:init` answers `{ groups: KEY_GROUPS, singleKeys }`, since F109 (M1) still wants the tool keys of the current mode; those keys and the setting line come from two new pure functions in `src/tools.ts`, `toolKey` and `singleKeysLine`, which the M1 F109 block in `test/keys.test.ts` now checks in place of `shortcutsHtml`; the line names the setting by its new place, "Settings ▸ Shortcuts ▸ Pick tools with single keys is on: …"; an open window redraws by `webContents.reload()`; Esc closes the window from the page (`window.close()`), ⌘W through the stock File menu
+- 2026-10-25 — M2 (owner via the coordinator, 2026-10-25: every top bar professional, even spacing, nothing touching): the capture bar, Settings toolbar and Keyboard Shortcuts sheet use an 8-pt rhythm, 40 × 40 hit targets in the bar, 8 pt around every hairline, keycaps padded 4 × 10 pt (the spec said 3 × 8) with a 16 pt minimum width

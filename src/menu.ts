@@ -168,6 +168,7 @@ export function appMenu(a: Pick<MenuActions, 'settings' | 'keyboardShortcuts'>):
         { role: 'about', label: 'About Snapmark' },
         { type: 'separator' },
         { label: 'Settings…', accelerator: 'Command+,', click: () => a.settings() },
+        { label: 'Keyboard Shortcuts', accelerator: 'Command+/', click: () => a.keyboardShortcuts() },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },

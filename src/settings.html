@@ -29,23 +29,24 @@
       [role='tablist'] {
         display: flex;
         justify-content: center;
-        gap: 4px;
-        padding: 6px 8px 8px;
+        gap: 8px;
+        padding: 8px;
         border-bottom: 1px solid var(--sep);
       }
       [role='tab'] {
         font: inherit;
         font-size: 11px;
         color: inherit;
-        min-width: 76px;
-        padding: 4px 10px;
+        min-width: 72px;
+        min-height: 40px;
+        padding: 6px 12px;
         border: 0;
         border-radius: 6px;
         background: transparent;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 2px;
+        gap: 4px;
       }
       [role='tab'][aria-selected='true'] {
         background: var(--chosen);
@@ -69,7 +70,7 @@
         grid-template-columns: 150px 1fr;
         column-gap: 10px;
         row-gap: 16px;
-        padding: 22px 28px;
+        padding: 24px 32px;
         align-items: baseline;
       }
       .k {
@@ -96,14 +97,17 @@
         margin: 0;
         padding: 0;
         display: grid;
-        gap: 8px;
+        gap: 12px;
       }
       kbd {
         font:
           500 12px -apple-system,
           system-ui,
           sans-serif;
-        padding: 3px 8px;
+        display: inline-block;
+        min-width: 16px;
+        text-align: center;
+        padding: 4px 10px;
         margin-right: 8px;
         border: 1px solid var(--sep);
         border-radius: 6px;

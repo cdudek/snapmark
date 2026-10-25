@@ -96,7 +96,7 @@ The toolbar shows one icon per key: the tool that is on, with its key underneath
 | `⌘W`            | Discard the screenshot (kept 7 days: **Reopen Last Discarded** in the menu)                    |
 | `⌘C`            | Copy Image, when no text has the cursor                                                        |
 
-The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Settings → Keyboard Shortcuts** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
+The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Keyboard Shortcuts** (⌘/ in any Snapmark window, or **Show All Shortcuts** in the Settings window) lists all of this in the app, other keys on the left and the editor tools on the right; Esc closes it. While an editor is open, Snapmark shows its icon in the Dock.
 
 **Cards** are yellow speech bubbles: click to place one and start typing. To point at something, press on it and release where the card should sit; the bubble's tail turns toward it and a line follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 

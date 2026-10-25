@@ -1,13 +1,15 @@
 import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
-import { SHORTCUTS, KEY_GROUPS, shortcutsHtml } from '../src/keys';
+import { SHORTCUTS, KEY_GROUPS } from '../src/keys';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { GROUPS, capFor, tipFor } = require('../src/tools') as {
+const { GROUPS, capFor, tipFor, toolKey, singleKeysLine } = require('../src/tools') as {
   GROUPS: ToolGroup[];
   capFor: (g: ToolGroup, singleKeys: boolean) => string;
   tipFor: (g: ToolGroup, variant: number, singleKeys: boolean) => string;
+  toolKey: (g: ToolGroup, variant: number, singleKeys: boolean) => string;
+  singleKeysLine: (on: boolean) => string;
 };
 
 const root = path.join(__dirname, '../..');
@@ -33,25 +35,48 @@ for (const f of srcFiles) {
 }
 assert.ok(!/['"]Control\+Shift\+\w['"]/.test(main), 'main.ts takes every global key from SHORTCUTS');
 
-// F19 key list: groups by where the key works, in the rows of spec/microcopy.md and spec/capture-and-settings.md
+// F236 key groups (replaces F19): Anywhere, Capture bar, Snapmark windows, Editor and Session window, with the rows of
+// spec/microcopy.md and spec/capture-and-settings.md, in order
 assert.deepStrictEqual(
   KEY_GROUPS.map((g) => g.title),
   ['Anywhere', 'Capture bar', 'Snapmark windows', 'Editor', 'Session window'],
+  'F236',
 );
 const keys = (title: string) => KEY_GROUPS.find((g) => g.title === title)!.rows.map(([k]) => k);
-assert.deepStrictEqual(keys('Anywhere'), ['⌃⇧4', '⌃⇧3', '⌃⇧5', '⌃⇧N', '↩ / Esc']);
-assert.deepStrictEqual(KEY_GROUPS[0].rows[2], [
-  '⌃⇧5',
-  'Capture options',
-  'the capture bar: window, new area, last area or scrolling, and where it goes',
-]);
-assert.deepStrictEqual(keys('Capture bar'), ['← →', '↩', 'Esc']);
-assert.deepStrictEqual(keys('Snapmark windows'), ['⌘,']);
-assert.deepStrictEqual(keys('Editor'), ['Esc', '⌫', '← ↑ → ↓', '⌘A', '⌘1–⌘7', '⌘Z', '⇧⌘Z', '⌘S / ⌘↵', '⌘C / ⇧⌘C', '⇧⌘S', '⌘W']);
-assert.deepStrictEqual(keys('Session window'), ['← →', '↩', '⌘⌫', '⌘O', '⌘Z']);
-for (const g of KEY_GROUPS) for (const r of g.rows) assert.strictEqual(r.length, 3, `${r[0]}: key, name, what`);
-assert.ok(main.includes('shortcutsHtml(TOOLS'), 'the Keyboard Shortcuts window renders shortcutsHtml');
-assert.ok(shortcutsHtml(GROUPS, true).includes('<h2>Session window</h2>'), 'the Keyboard Shortcuts window renders KEY_GROUPS');
+assert.deepStrictEqual(keys('Anywhere'), ['⌃⇧4', '⌃⇧3', '⌃⇧5', '⌃⇧N', '↩ / Esc'], 'F236');
+assert.deepStrictEqual(
+  KEY_GROUPS[0].rows[2],
+  ['⌃⇧5', 'Capture options', 'the capture bar: window, new area, last area or scrolling, and where it goes'],
+  'F236',
+);
+assert.deepStrictEqual(
+  KEY_GROUPS[1].rows,
+  [
+    ['← →', 'Pick a mode', 'Tab moves on to Options and Capture'],
+    ['↩', 'Capture', ''],
+    ['Esc', 'Close', ''],
+  ],
+  'F236 Capture bar',
+);
+assert.deepStrictEqual(
+  KEY_GROUPS[2].rows,
+  [
+    ['⌘,', 'Settings', ''],
+    ['⌘/', 'Keyboard Shortcuts', ''],
+  ],
+  'F236 Snapmark windows',
+);
+assert.deepStrictEqual(keys('Editor'), ['Esc', '⌫', '← ↑ → ↓', '⌘A', '⌘1–⌘7', '⌘Z', '⇧⌘Z', '⌘S / ⌘↵', '⌘C / ⇧⌘C', '⇧⌘S', '⌘W'], 'F236');
+assert.deepStrictEqual(keys('Session window'), ['← →', '↩', '⌘⌫', '⌘O', '⌘Z'], 'F236');
+for (const g of KEY_GROUPS) for (const r of g.rows) assert.strictEqual(r.length, 3, `F236 ${r[0]}: key, name, what`);
+
+// F229 no data URL: the Keyboard Shortcuts window is its own page, src/shortcuts.html, with KEY_GROUPS from shortcuts:init
+assert.ok(!main.includes('data:text/html'), 'F229 no data: URL');
+assert.ok(main.includes("loadFile(path.join(__dirname, 'shortcuts.html'))"), 'F229 loads shortcuts.html');
+assert.ok(main.includes("ipcMain.handle('shortcuts:init', (): ShortcutsInit => ({ groups: KEY_GROUPS, singleKeys }))"), 'F229');
+const page = read('src/shortcuts.html');
+assert.ok(page.indexOf('src="tools.js"') > 0 && page.indexOf('src="tools.js"') < page.indexOf('src="shortcuts.js"'), 'F229 tools.js first');
+assert.ok(page.includes("content=\"default-src 'self'; style-src 'self' 'unsafe-inline'\""), 'F229 CSP as area.html');
 
 // F20 no old key: no screen, hint or doc still tells the owner to press ⌃⇧1
 for (const f of [...srcFiles, 'README.md', 'docs/ux/setup.md']) assert.ok(!read(f).includes('⌃⇧1'), `${f} still names ⌃⇧1`);
@@ -103,21 +128,26 @@ assert.deepStrictEqual(tips(false), [
 ]);
 
 // F109 shortcuts window: the tool keys of the current mode and a line naming the setting; an open window redraws
-const on = shortcutsHtml(GROUPS, true);
-const off = shortcutsHtml(GROUPS, false);
-assert.ok(on.includes('<kbd>1 or ⌘1</kbd>') && on.includes('<kbd>C or Esc</kbd>') && on.includes('<kbd>1 again</kbd>'), 'F109 on');
-assert.ok(on.includes('Settings ▸ Single-Key Tools is on: C and 1–7 pick tools too.'), 'F109 on line');
-assert.ok(off.includes('<kbd>⌘1</kbd>') && off.includes('<kbd>Esc</kbd>') && off.includes('<kbd>⌘1 again</kbd>'), 'F109 off');
-assert.ok(off.includes('Settings ▸ Single-Key Tools is off: only ⌘1–⌘7 pick tools, and Esc goes back to Select.'), 'F109 off line');
-assert.ok(!off.includes('<kbd>1</kbd>') && !off.includes('<kbd>C'), 'F109 off: no bare key');
-// F19 rows (snap-c5c): every row of the key list is in the window, with its key, name and what, in order
-let from = 0;
-for (const g of KEY_GROUPS)
-  for (const [k, n, w] of g.rows) {
-    const at = on.indexOf(`<tr><td><kbd>${k}</kbd></td><td></td><td><b>${n}</b></td><td>${w}</td></tr>`, from);
-    assert.ok(at >= from, `F19 row ${k} ${n}`);
-    from = at;
-  }
+const toolKeys = (on: boolean) => GROUPS.flatMap((g) => g.tools.map((_, v) => toolKey(g, v, on)));
+assert.deepStrictEqual(
+  toolKeys(true),
+  ['C or Esc', '1 or ⌘1', '1', '2 or ⌘2', '2', '3 or ⌘3', '4 or ⌘4', '5 or ⌘5', '5', '6 or ⌘6', '6', '7 or ⌘7', '7'],
+  'F109 on',
+);
+assert.deepStrictEqual(
+  toolKeys(false),
+  ['Esc', '⌘1', '⌘1', '⌘2', '⌘2', '⌘3', '⌘4', '⌘5', '⌘5', '⌘6', '⌘6', '⌘7', '⌘7'],
+  'F109 off: no bare key',
+);
+assert.strictEqual(singleKeysLine(true), 'Settings ▸ Shortcuts ▸ Pick tools with single keys is on: C and 1–7 pick tools too.', 'F109');
+assert.strictEqual(
+  singleKeysLine(false),
+  'Settings ▸ Shortcuts ▸ Pick tools with single keys is off: only ⌘1–⌘7 pick tools, and Esc goes back to Select.',
+  'F109',
+);
+const script = read('src/shortcuts.ts');
+assert.ok(script.includes('toolKey(g, v, singleKeys)') && script.includes('singleKeysLine(singleKeys)'), 'F109 the window uses them');
+
 // F201 ⌃⇧5 opens the bar: the options key opens the capture bar, and the popup menu is gone
 assert.ok(main.includes('[SHORTCUTS.options, () => void openCaptureBar()]'), 'F201 ⌃⇧5 opens the bar');
 assert.ok(!main.includes('popOptions'), 'F201 no popup menu');
@@ -135,6 +165,6 @@ assert.ok(main.includes('[SHORTCUTS.newSession, newSession]'), 'F217 ⌃⇧N');
 assert.ok(main.includes("const capture = () => void (busy() || shoot(['-i']));"), 'F217 ⌃⇧4 is screencapture -i');
 
 const setter = main.slice(main.indexOf('function setSingleKeys'), main.indexOf('\n}\n', main.indexOf('function setSingleKeys')));
-assert.ok(setter.includes('shortcutsWin') && setter.includes('loadURL'), 'F109 setSingleKeys redraws an open Keyboard Shortcuts window');
+assert.ok(setter.includes('shortcutsWin') && setter.includes('reload()'), 'F109 setSingleKeys redraws an open Keyboard Shortcuts window');
 
 console.log('keys: ok');

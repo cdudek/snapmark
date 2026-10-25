@@ -33,7 +33,7 @@ import {
   MenuState,
   SessionInfo,
 } from './menu';
-import { SHORTCUTS, shortcutsHtml } from './keys';
+import { SHORTCUTS, KEY_GROUPS } from './keys';
 import { FIRST, barLabel, barOptions, captureArgs, rect } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
@@ -126,7 +126,7 @@ export function setSingleKeys(on: boolean) {
   singleKeys = on;
   saveState();
   for (const ed of editors.values()) if (!ed.win.isDestroyed()) ed.win.webContents.send('editor:single-keys', on);
-  if (shortcutsWin && !shortcutsWin.isDestroyed()) void shortcutsWin.loadURL(shortcutsUrl());
+  if (shortcutsWin && !shortcutsWin.isDestroyed()) shortcutsWin.webContents.reload();
 }
 
 export function setActive(name: string) {
@@ -1053,15 +1053,30 @@ async function otherSession() {
 }
 
 let shortcutsWin: BrowserWindow | null = null;
-const shortcutsUrl = () => `data:text/html;charset=utf-8,${encodeURIComponent(shortcutsHtml(TOOLS, singleKeys))}`;
 
-// Built from the same tool list as the toolbar (keys.ts), so the two never disagree.
-function showShortcuts() {
-  if (shortcutsWin && !shortcutsWin.isDestroyed()) return shortcutsWin.focus();
-  shortcutsWin = new BrowserWindow({ width: 520, height: 640, title: 'Keyboard shortcuts' });
-  void shortcutsWin.loadURL(shortcutsUrl());
+// The key list (⌘/ in any Snapmark window, Settings ▸ Shortcuts ▸ Show All Shortcuts): src/shortcuts.html draws
+// KEY_GROUPS and the toolbar's own tool list, so the three never disagree. One window, brought forward if open; Esc and
+// ⌘W close it.
+export function showShortcuts(): BrowserWindow {
+  if (shortcutsWin && !shortcutsWin.isDestroyed()) {
+    shortcutsWin.show();
+    focusApp();
+    return shortcutsWin;
+  }
+  const win = (shortcutsWin = new BrowserWindow({
+    width: 980,
+    height: 680,
+    minWidth: 560,
+    minHeight: 400,
+    title: 'Keyboard Shortcuts',
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  }));
+  void win.loadFile(path.join(__dirname, 'shortcuts.html'));
   focusApp();
+  return win;
 }
+
+ipcMain.handle('shortcuts:init', (): ShortcutsInit => ({ groups: KEY_GROUPS, singleKeys }));
 
 // The Settings window (Settings… ⌘,): General, Capture and Shortcuts, as a macOS Settings window. One window, brought
 // forward if open; the page reads its data again whenever it comes forward.

@@ -44,6 +44,7 @@ const {
   openCaptureBar,
   setCapture,
   openSettings,
+  showShortcuts,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -1320,6 +1321,58 @@ app
     const tabMoved = await inWin(set, `return document.querySelector('[aria-selected="true"]').textContent.trim() + '|' + document.activeElement.textContent.trim()`);
     viewer['F228 Settings controls are labelled and reachable'] = named && tabMoved === 'General|General';
     set.destroy();
+
+    // The Keyboard Shortcuts window (F229–F235): its own page, two columns as in the round-1 mock, Esc closes it
+    const keysWin = showShortcuts();
+    viewer['F233 one Keyboard Shortcuts window'] = showShortcuts() === keysWin;
+    for (let i = 0; i < 50 && keysWin.webContents.isLoading(); i++) await sleep(100);
+    await inWin(keysWin, `for (let i = 0; i < 50 && !document.querySelector('#tool-rows tr'); i++) await new Promise((r) => setTimeout(r, 100));`);
+    viewer['F233 one Keyboard Shortcuts window'] &&=
+      BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().endsWith('shortcuts.html')).length === 1;
+    viewer['F229 Keyboard Shortcuts is its own page'] =
+      keysWin.webContents.getURL().endsWith('shortcuts.html') && keysWin.getTitle() === 'Keyboard Shortcuts';
+    keysWin.setSize(980, 680);
+    await sleep(200);
+    const sheet = JSON.parse(
+      await inWin(
+        keysWin,
+        `const [o, t] = ['other', 'tools'].map((id) => document.getElementById(id).getBoundingClientRect());
+        const toolRows = [...document.querySelectorAll('#tool-rows tr')];
+        const cap = (k) => { const c = getComputedStyle(k); return parseFloat(c.borderTopWidth) > 0 && parseFloat(c.borderTopLeftRadius) > 0; };
+        const cells = [...document.querySelectorAll('td.keys')];
+        return JSON.stringify({
+          sameTop: Math.abs(o.top - t.top) <= 2,
+          right: t.left >= o.right,
+          icons: toolRows.length > 0 && toolRows.every((r) => !!r.querySelector('svg')),
+          caps: cells.length > 0 && cells.every((c) => c.querySelectorAll('kbd').length > 0 && [...c.querySelectorAll('kbd')].every(cap)),
+          rows: document.querySelectorAll('tr').length,
+          names: [...document.querySelectorAll('#other table')].flatMap((t) => [...t.querySelectorAll('td.name')].map((n) => t.previousElementSibling.textContent + '|' + n.textContent)),
+          tools: [...document.querySelectorAll('#tool-rows td.name')].map((n) => n.textContent),
+        });`,
+      ),
+    );
+    const { KEY_GROUPS } = require('../src/keys') as typeof import('../src/keys');
+    const { GROUPS: everyTool } = require('../src/tools') as { GROUPS: ToolGroup[] };
+    const keyNames = KEY_GROUPS.flatMap((g) => g.rows.map(([, n]) => `${g.title}|${n}`));
+    const toolNames = everyTool.flatMap((g) => g.tools.map((t) => t.label));
+    viewer['F230 two columns as in the round-1 mock'] = sheet.sameTop && sheet.right && sheet.icons;
+    viewer['F231 every key is a keycap'] = sheet.caps;
+    viewer['F232 every key and tool listed once'] =
+      sheet.rows === keyNames.length + toolNames.length &&
+      JSON.stringify(sheet.names) === JSON.stringify(keyNames) &&
+      JSON.stringify(sheet.tools) === JSON.stringify(toolNames);
+    nativeTheme.themeSource = 'dark';
+    await sleep(300);
+    const darkLum: number = await inWin(
+      keysWin,
+      `const c = getComputedStyle(document.body).backgroundColor.match(/[\\d.]+/g).slice(0, 3).map(Number);
+      return c.map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);`,
+    );
+    nativeTheme.themeSource = 'system';
+    viewer['F235 Keyboard Shortcuts turns dark'] = darkLum < 0.2;
+    keyTo(keysWin, 'Escape');
+    for (let i = 0; i < 30 && !keysWin.isDestroyed(); i++) await sleep(100);
+    viewer['F234 Esc closes Keyboard Shortcuts'] = keysWin.isDestroyed();
 
     // One-shot mode: Beautify instead of References, no Add to session; ⌘C copies the marked screenshot on its
     // backdrop at full resolution; nothing goes into a session; closing keeps it in Discarded; the settings are remembered

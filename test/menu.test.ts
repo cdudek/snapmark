@@ -194,6 +194,13 @@ assert.deepStrictEqual(
   'F219 the Snapmark menu keeps Hide and Quit',
 );
 
+// F233 ⌘/: Keyboard Shortcuts in the app menu, under Settings…
+const appShortcuts = find(snapmark, 'Keyboard Shortcuts');
+assert.strictEqual(appShortcuts.accelerator, 'Command+/', 'F233');
+assert.strictEqual(snapmark.indexOf(appShortcuts), snapmark.indexOf(appSettings) + 1, 'F233');
+appShortcuts.click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'keyboardShortcuts', 'F233');
+
 // F226 Settings…: one row, no Settings submenu, last before Quit
 assert.ok(
   menu().every((i) => !(Array.isArray(i.submenu) && /^Settings/.test(i.label ?? ''))),

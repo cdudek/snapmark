@@ -74,7 +74,7 @@ EDITOR  (one per capture; title "Snapmark"; opens centred, exactly on top of any
 │         session folder gone ──► nothing; button dead (silent, F049)
 ├── ⌘W · Discard · Esc past Select · close button · ⌘R (stock Reload) · Quit anyway · Restart to Update
 │         ──► Discarded, 7 days (silent); an unchanged Edit Again is filed too (F077/F078)
-└── Mac menu bar: Snapmark (About, Settings… ⌘,, Services, Hide, Quit) · File ▸ Close Window ⌘W · Edit ▸ Undo (not the marks) ·
+└── Mac menu bar: Snapmark (About, Settings… ⌘,, Keyboard Shortcuts ⌘/, Services, Hide, Quit) · File ▸ Close Window ⌘W · Edit ▸ Undo (not the marks) ·
     View ▸ Reload ⌘R, Force Reload, Toggle Developer Tools, zoom, Toggle Full Screen ⌃⌘F · Window · no Help
 
 SESSION WINDOW  (title "<folder name> — Snapmark"; 900 × 900; one per session, brought forward if open;
@@ -97,8 +97,10 @@ SETTINGS WINDOW   title names the tab; one window, brought forward if open; read
                   Shortcuts: Pick tools with single keys · the four global keys · Show All Shortcuts ──► KEYBOARD SHORTCUTS WINDOW
 AREA PICKER       see-through, display under the pointer, every Space; hint "Drag over the area to capture.
                   ⌃⇧3 captures it again each time. Esc cancels."
-KEYBOARD SHORTCUTS WINDOW   "Keyboard shortcuts", 520 × 640, read-only, no Dock icon, Esc does nothing;
-                  "Editor tools" (13 rows) then "Other keys" (global and editor keys mixed)
+KEYBOARD SHORTCUTS WINDOW   "Keyboard Shortcuts", src/shortcuts.html, 980 × 680, read-only, no Dock icon; ⌘/ from any
+                  Snapmark window or Settings ▸ Shortcuts ▸ Show All Shortcuts; one window; Esc or ⌘W closes it;
+                  two columns: "Other keys" by where they work (Anywhere, Capture bar, Snapmark windows, Editor,
+                  Session window) · "Editor tools" (13 rows, keys of the current mode)
 NOTIFICATIONS (native)   the only channel for copies, New Session, failures; clicking only "… is no longer in …" does something
 NATIVE PANELS AND DIALOGS   Sessions Folder…, Older Sessions…, Reopen Discarded… (folder panels, "Open"); Rename (AppleScript);
                   Quit sheet

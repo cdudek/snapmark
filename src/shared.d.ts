@@ -99,8 +99,15 @@ interface SettingsInit {
 type SettingsKey = 'login' | 'singleKeys' | 'oneShot' | 'timer' | 'pointer';
 type SettingsRun = 'chooseRoot' | 'clearOld' | 'checkUpdates' | 'loginItems' | 'shortcuts';
 
+// The Keyboard Shortcuts window (shortcuts.html): keys.ts KEY_GROUPS; the tools come from tools.js on the page.
+interface ShortcutsInit {
+  groups: { title: string; rows: [keys: string, name: string, what: string][] }[];
+  singleKeys: boolean; // the tool keys of the current mode
+}
+
 interface Window {
   snapmark: {
+    shortcutsInit(): Promise<ShortcutsInit>;
     settingsInit(): Promise<SettingsInit>;
     settingsSet(key: SettingsKey, value: boolean | number): Promise<SettingsInit>;
     settingsRun(what: SettingsRun): Promise<SettingsInit>; // resolves once it is done (a dialog closed)
