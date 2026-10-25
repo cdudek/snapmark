@@ -891,15 +891,13 @@ const noteOf = (m: Marker) => ready.get(m)?.value() ?? m.note;
 function renderRefs() {
   const list = markers();
   refsLabel.hidden = !list.length; // References appear with the first reference
-  if (!list.length) {
-    shownRefs = [];
-    refsEl.replaceChildren();
-    return;
-  }
   // Same markers in the same order: keep the rows, so a note being typed keeps focus.
   if (list.length === shownRefs.length && list.every((m, i) => m === shownRefs[i])) return;
-  for (const m of shownRefs) m.note = noteOf(m); // rows are rebuilt below: keep what was just typed
+  // Rows are rebuilt or dropped below: keep what was just typed, also when every reference goes at once (⌘A ⌫) and
+  // undo brings them back.
+  for (const m of shownRefs) m.note = noteOf(m);
   shownRefs = list;
+  if (!list.length) return void refsEl.replaceChildren();
   refsEl.replaceChildren(
     ...list.map((m) => {
       const row = document.createElement('div');
