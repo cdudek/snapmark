@@ -4,5 +4,8 @@
   "milestone": { "kind": "new", "slug": "fixes" },
   "project": { "kind": "existing", "slug": "launch" },
   "ticket": "snap-bmr.17.1",
-  "design": "docs/designs/2026-10-25-adr-keys-follow-macos.md"
+  "design": "docs/designs/2026-10-25-adr-keys-follow-macos.md",
+  "skips": {
+    "prototype": "skip -- UI not risky: new keys on existing screens, one native popup menu reusing the Capture Options items (stages.md 2.6; orchestrator, 2026-10-25)"
+  }
 }
