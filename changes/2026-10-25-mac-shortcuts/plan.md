@@ -132,3 +132,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — decisions.json records the prototype skip the guardrail asks for: no risky UI, as spec/validation.md says.
 - 2026-10-25 — Keys window rows under "Anywhere" drop the "anywhere;" prefix, as rows 17–21 drop theirs.
 - 2026-10-25 — README adds one line saying the digits are macOS's own, so the new keys explain themselves.
+- 2026-10-25 — `.gitignore` ignores `__pycache__/`: the gate's own scripts leave it, and the gate refuses uncommitted files.
