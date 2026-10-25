@@ -150,7 +150,7 @@ MENU (fixed rows in a fixed order; unavailable rows greyed, never hidden; about 
 ├── ──
 ├── New Session…                      ──► asks for a name, date and time filled in (decision: no global key)
 ├── Switch Session ▸                  sessions with count and date ──► opens that session's window (current unchanged)
-│                                     · Other Session… (any folder)
+│                                     · Older Sessions… (any folder, only above 10)
 ├── Reopen Last Discarded             (greyed when nothing; says what comes back)
 ├── ──
 ├── Settings ▸  Open at Login · Sessions Folder… (offers to move sessions) · Check for Updates…

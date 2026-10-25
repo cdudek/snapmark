@@ -150,3 +150,5 @@ Feature 2:
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-10-25 — Feature 1 UX review found no Critical or High. Fixed: a committed `.pyc`, two stale "Other Session…" labels. The one-session Low is a beads follow-up.
