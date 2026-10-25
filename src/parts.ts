@@ -19,13 +19,14 @@ export interface Layout {
   parts: { y: number; height: number }[]; // top to bottom, at that width
 }
 
-// Null when fitting the image whole leaves it at least two-thirds as wide as its parts: it is not tall, and is saved
-// as before. Otherwise the fewest parts of one height that cover it, each beginning `overlap` above the end of the part
-// before (more where the last one is pushed up to end at the bottom edge).
+// Null when fitting the image whole, once scaled to the part width, leaves it at least two-thirds as wide as its parts:
+// it is not tall, and is saved as before. Decided on the scaled size, so cutParts on fitForAI's output always agrees.
+// Otherwise the fewest parts of one height that cover it, each beginning `overlap` above the end of the part before
+// (more where the last one is pushed up to end at the bottom edge).
 export function partLayout(width: number, height: number): Layout | null {
   const partWidth = Math.min(width, PART_WIDTH);
-  if (width * fitScale(width, height) >= (2 / 3) * partWidth) return null;
   const h = Math.round((height * partWidth) / width);
+  if (fitScale(partWidth, h) >= 2 / 3) return null;
   const overlap = Math.max(40, Math.round(partWidth / 10)); // taller than a numbered diamond (8 % of the width)
   const most = Math.min(MAX_EDGE, Math.floor(MAX_PIXELS / partWidth));
   const n = Math.ceil((h - overlap) / (most - overlap));

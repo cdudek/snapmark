@@ -69,9 +69,10 @@ assert.ok(
 );
 for (let w = 200; w <= 5120; w++) {
   const unit = Math.max(2, Math.round((2 * w) / 400)); // a tall image: min(height, 2 × width) is 2 × width
-  const partWidth = Math.min(w, PART_WIDTH);
-  const diamond = (16 * unit * partWidth) / w;
-  assert.ok(overlapAt(partWidth) > diamond, `F5 at ${w} px: overlap ${overlapAt(partWidth)} > diamond ${diamond}`);
+  const l = partLayout(w, 20 * w)!; // 20 × w is tall at every width here, and keeps min(height, 2 × width) = 2 × width
+  const overlap = l.parts[0].y + l.parts[0].height - l.parts[1].y; // the overlap partLayout makes
+  const diamond = (16 * unit * l.width) / w;
+  assert.ok(overlap > diamond, `F5 at ${w} px: overlap ${overlap} > diamond ${diamond}`);
 }
 
 // F10 1280×8000: 11 parts of 1280 × 844

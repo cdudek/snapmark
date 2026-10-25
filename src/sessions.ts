@@ -92,7 +92,7 @@ function writeParts(folder: string, parts: Buffer[]) {
 }
 
 // Number from both session.md and img/ so a deleted image never gets its number reused: a part link, a parts folder
-// (img/007/) and one left by a stopped save (img/007.new/) hold their number too.
+// (img/007/) and one left by a stopped save (img/007.new/, img/007.old/) hold their number too.
 function nextNumber(dir: string): number {
   const img = path.join(dir, 'img');
   fs.mkdirSync(img, { recursive: true });
@@ -107,12 +107,7 @@ export const partsLine = (total: number) =>
 
 // One session.md entry: heading, image, then the text. A tall screenshot (parts ≥ 2) has the parts line and its parts,
 // one paragraph each, in place of the one image; the text follows once, after the last part.
-function entry(
-  n: number,
-  time: string,
-  { caption = '', notes = [], cards = [], moves = 0, text = '' }: ShotText,
-  parts = 0,
-): string {
+function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0, text = '' }: ShotText, parts = 0): string {
   const images = parts
     ? [
         partsLine(parts),
@@ -247,9 +242,10 @@ export function saveEdit(root: string, name: string, n: number, original: Buffer
   fs.writeFileSync(f.json, state);
 }
 
-// Replaces entry n's image and text, keeping its number and time. Returns false if the entry is gone. New parts go to
-// img/NNN.new/ first, then the one image and the entry are written, then the folders swap, so the entry never links a
-// missing part; a failed part write removes img/NNN.new/ and leaves the rest as it was. No parts: the old ones go.
+// Replaces entry n's image and text, keeping its number and time. Returns false if the entry is gone. All or nothing:
+// new parts go to img/NNN.new/ first; then the old parts move to img/NNN.old/, the new ones take their place, and the
+// one image and the entry are written; the old parts go last. Any failure puts every file back as it was. No parts:
+// the old ones go.
 export function replaceShot(root: string, name: string, n: number, png: Buffer, text: ShotText, parts: Buffer[] = []): boolean {
   const mdPath = path.join(root, name, 'session.md');
   const md = fs.readFileSync(mdPath, 'utf8');
@@ -257,18 +253,33 @@ export function replaceShot(root: string, name: string, n: number, png: Buffer, 
   if (!at) return false;
   const time = /^## \d+ · (.*)$/m.exec(md.slice(at[0]))![1];
   const folder = path.join(root, name, 'img', pad(n));
+  const one = `${folder}.png`;
   const fresh = `${folder}.new`;
-  fs.rmSync(fresh, { recursive: true, force: true }); // left by a save that stopped midway
+  const old = `${folder}.old`;
+  // Left by a save that stopped midway: old parts whose folder is gone go back; anything else is stale.
+  if (fs.existsSync(old) && !fs.existsSync(folder)) fs.renameSync(old, folder);
+  for (const f of [fresh, old]) fs.rmSync(f, { recursive: true, force: true });
   try {
     writeParts(fresh, parts);
   } catch (err) {
     fs.rmSync(fresh, { recursive: true, force: true });
     throw err;
   }
-  fs.writeFileSync(path.join(root, name, 'img', `${pad(n)}.png`), png);
-  fs.writeFileSync(mdPath, md.slice(0, at[0]) + entry(n, time, text, parts.length) + (at[1] < md.length ? '\n' + md.slice(at[1]) : ''));
-  fs.rmSync(folder, { recursive: true, force: true });
-  if (parts.length) fs.renameSync(fresh, folder);
+  const oneBefore = fs.existsSync(one) ? fs.readFileSync(one) : null;
+  try {
+    if (fs.existsSync(folder)) fs.renameSync(folder, old);
+    if (parts.length) fs.renameSync(fresh, folder);
+    fs.writeFileSync(one, png);
+    fs.writeFileSync(mdPath, md.slice(0, at[0]) + entry(n, time, text, parts.length) + (at[1] < md.length ? '\n' + md.slice(at[1]) : ''));
+  } catch (err) {
+    if (parts.length && !fs.existsSync(fresh)) fs.rmSync(folder, { recursive: true, force: true }); // the new parts were in
+    fs.rmSync(fresh, { recursive: true, force: true });
+    if (fs.existsSync(old)) fs.renameSync(old, folder);
+    if (oneBefore) fs.writeFileSync(one, oneBefore);
+    if (fs.readFileSync(mdPath, 'utf8') !== md) fs.writeFileSync(mdPath, md);
+    throw err;
+  }
+  fs.rmSync(old, { recursive: true, force: true });
   return true;
 }
 
@@ -342,7 +353,8 @@ export function restoreShot(root: string, d: Discarded): number {
   const img = path.join(dir, 'img');
   // A parts folder left behind holds its number too, so moving the parts back can never fail midway.
   const taken =
-    shots(root, d.session).includes(old) || fs.existsSync(path.join(img, `${pad(old)}.png`)) || fs.existsSync(path.join(img, pad(old)));
+    shots(root, d.session).includes(old) ||
+    [`${pad(old)}.png`, pad(old), `${pad(old)}.new`, `${pad(old)}.old`].some((f) => fs.existsSync(path.join(img, f)));
   const n = taken ? nextNumber(dir) : old;
   const text = fs
     .readFileSync(path.join(d.dir, 'entry.md'), 'utf8')

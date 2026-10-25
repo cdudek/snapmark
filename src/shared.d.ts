@@ -39,6 +39,7 @@ interface ViewerInit {
   md: string;
   shots: ViewerShot[]; // the entries in session.md, in order
   discarded: ViewerDiscarded[]; // this session's, newest first
+  images?: boolean; // Edit Again saved: remount even when session.md's text is unchanged
 }
 
 interface ViewerShot {

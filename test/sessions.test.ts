@@ -348,6 +348,11 @@ assert.throws(() => sessions.addShot(root, tl, Buffer.from('x'), {}, broken), 'F
 assert.strictEqual(snapshot(), unchanged, 'F16 failed write: Add to Session leaves everything, no new part file');
 assert.throws(() => sessions.replaceShot(root, tl, 7, Buffer.from('y'), {}, broken), 'F16 failed write: Save changes fails');
 assert.strictEqual(snapshot(), unchanged, 'F16 failed write: Save changes leaves everything, no img/007.new/');
+// session.md cannot be written after the parts swapped in: every file goes back, the old parts included
+fs.chmodSync(path.join(root, tl, 'session.md'), 0o444);
+assert.throws(() => sessions.replaceShot(root, tl, 7, Buffer.from('z'), {}, bufs(3, 'z')), 'all or nothing: Save changes fails');
+fs.chmodSync(path.join(root, tl, 'session.md'), 0o644);
+assert.strictEqual(snapshot(), unchanged, 'all or nothing: the one image, the old parts and session.md as they were');
 
 // F15 Edit Again: 3 new parts over 11 old leave exactly 01.png to 03.png, linked; no img/007.new/ stays
 assert.ok(sessions.replaceShot(root, tl, 7, Buffer.from('one again'), { caption: 'Again' }, bufs(3, 'q')), 'F15 Edit Again');
@@ -370,7 +375,9 @@ assert.ok(sessions.replaceShot(root, tl, 1, Buffer.from('whole page'), {}, bufs(
 const old17 = entryOf(tlMd(), 1);
 assert.ok(
   old17.includes(sessions.partsLine(2)) &&
-    linksIn(old17).map((l) => l.src).join() === 'img/001/01.png,img/001/02.png' &&
+    linksIn(old17)
+      .map((l) => l.src)
+      .join() === 'img/001/01.png,img/001/02.png' &&
     fs.readdirSync(path.join(tlImg, '001')).length === 2,
   'F17 old entry',
 );
@@ -403,7 +410,10 @@ assert.ok(!fs.existsSync(path.join(rtImg, '007')) && !entryOf(rtMd(), 7).include
 // Reopened under its own number, the paths stay
 sessions.removeShot(root, rt, 12);
 assert.strictEqual(sessions.restoreShot(root, sessions.discardedIn(root, rt)[0]), 12, 'F19 own number');
-assert.ok(linksIn(entryOf(rtMd(), 12))[0].src === 'img/012/01.png' && fs.readdirSync(path.join(rtImg, '012')).length === 11, 'F19 own number');
+assert.ok(
+  linksIn(entryOf(rtMd(), 12))[0].src === 'img/012/01.png' && fs.readdirSync(path.join(rtImg, '012')).length === 11,
+  'F19 own number',
+);
 // A leftover img/012/ alone counts as taken
 sessions.removeShot(root, rt, 12);
 fs.mkdirSync(path.join(rtImg, '012'));

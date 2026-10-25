@@ -637,7 +637,8 @@ export function fitForAI(png: Buffer): Buffer {
   const tall = partLayout(width, height);
   const scale = tall ? tall.width / width : fitScale(width, height);
   if (scale === 1) return png;
-  return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
+  const size = tall ?? { width: Math.round(width * scale), height: Math.round(height * scale) }; // tall: the layout's own size
+  return img.resize({ width: size.width, height: size.height, quality: 'best' }).toPNG();
 }
 
 // A tall screenshot's parts, cut top to bottom from its one image (fitForAI's output); [] when it is not tall.
@@ -668,10 +669,12 @@ ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, sta
   const parts = cutParts(out);
   // Edit Again on an entry removed in the meantime adds it back as a new one.
   const n =
-    replace && sessions.replaceShot(into, session, replace, out, text, parts)
-      ? replace
-      : sessions.addShot(into, session, out, text, parts);
+    replace && sessions.replaceShot(into, session, replace, out, text, parts) ? replace : sessions.addShot(into, session, out, text, parts);
   sessions.saveEdit(into, session, n, fs.readFileSync(image), JSON.stringify(state));
+  // Only the marks changed: session.md is the same text, so the watcher never reloads; show the new image anyway (F21).
+  if (n === replace)
+    for (const v of viewers.values())
+      if (v.root === into && v.session === session) v.win.webContents.send('viewer:reload', { ...viewerData(v), images: true });
   tellEditors(into, session);
   used[session] = Date.now();
   saveState();

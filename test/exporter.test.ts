@@ -62,7 +62,9 @@ import { exportZip, sessionHtml } from '../src/exporter';
   oneImageOnly(sessionHtml(tallDir), 'F22 PDF one image after a hand edit');
 
   // F23 ZIP parts: session.md, the one image and every part
-  const tallZip = execFileSync('unzip', ['-Z1', await exportZip(tallDir)], { encoding: 'utf8' }).trim().split('\n');
+  const tallZip = execFileSync('unzip', ['-Z1', await exportZip(tallDir)], { encoding: 'utf8' })
+    .trim()
+    .split('\n');
   for (const f of ['session.md', 'img/001.png', 'img/001/01.png', 'img/001/02.png', 'img/001/03.png'])
     assert.ok(tallZip.includes(f), `F23 ZIP parts: ${f}`);
   console.log('exporter: ok');

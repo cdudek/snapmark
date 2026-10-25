@@ -31,7 +31,7 @@ In build order. `state` is `todo`, `building`, `done <sha>` (a commit on the mil
 | 9   | 2026-10-25-finish-app | M2.3 Keyboard Shortcuts window                 | cb5eec3      | done cb5eec3 |
 | 10  | 2026-10-25-finish-app | M3.1 Parts on save                             | b830a5f      | done b830a5f |
 | 11  | 2026-10-25-finish-app | M3.2 One screenshot everywhere                 | b149f78      | done b149f78 |
-| 12  | 2026-10-25-finish-app | M4.1 Electron 45, vitest 5, Dependabot updates | —            | todo  |
+| 12  | 2026-10-25-finish-app | M4.1 Electron 45, vitest 5, Dependabot updates | —            | todo         |
 
 ## Milestone PRs
 
