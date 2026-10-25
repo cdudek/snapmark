@@ -78,6 +78,9 @@ app
     const key = (k, opts = {}) => document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
     const drag = (k, pts) => { if (k) key(k); ev('mousedown', ...pts[0]); pts.slice(1).forEach((p) => ev('mousemove', ...p)); ev('mouseup', ...pts.at(-1)); };
     const px = (fx, fy) => { canvas.renderAll(); return Array.from(canvas.lowerCanvasEl.getContext('2d').getImageData(Math.round(canvas.width * fx), Math.round(canvas.height * fy), 1, 1).data); };
+    // WCAG contrast of two [r, g, b] colours
+    const lum = (c) => c.slice(0, 3).map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
     // Notes are Markdown fields (contenteditable). A new reference's field is mounted and focused a moment after the click.
     const note = async (text) => { for (let i = 0; i < 50 && !document.activeElement?.closest?.('#refs .md'); i++) await sleep(20); document.execCommand('insertText', false, text); document.activeElement.blur(); };
     const setMd = (el, lines) => { el.querySelector('.ProseMirror').focus(); document.execCommand('selectAll'); lines.forEach((l, i) => { if (i) document.execCommand('insertParagraph'); document.execCommand('insertText', false, l); }); };
@@ -101,6 +104,12 @@ app
     r.cardWithPointer = card instanceof Card && card.text === 'Make this bigger' && !!card.pointAt;
 
     drag('6', [[.25,.3],[.4,.35]]);                   // highlighter
+    const lit = px(.32, .32);
+    r['F102 a highlight over white is as before'] = [253, 232, 150].every((v, i) => Math.abs(lit[i] - v) <= 2);
+    const dark = px(.37, .04);
+    drag(null, [[.30,.02],[.45,.06]]);                // over the mock's dark header
+    r['F101 a highlight over the dark header reads at 3:1'] = contrast(px(.37, .04), dark) >= 3;
+    key('z', { metaKey: true });
     const corner = px(.02, .98);
     drag('6', [[.45,.25],[.55,.35]]);                 // spotlight
     r.spotlightDims = px(.02, .98)[0] < corner[0] * 0.7;

@@ -100,7 +100,11 @@ function drawGlyph(ctx: CanvasRenderingContext2D, kind: GlyphKind, c: string, x:
       break;
     }
     case 'highlight':
-      // Multiply keeps the text underneath readable, like a real highlighter.
+      // A screen pass first lifts dark pixels, so the mark shows on a dark header (3:1); on white it changes nothing.
+      ctx.globalAlpha = 0.5;
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillRect(x, y, w, h);
+      // Then multiply keeps the text underneath readable, like a real highlighter.
       ctx.globalAlpha = 0.45;
       ctx.globalCompositeOperation = 'multiply';
       ctx.fillRect(x, y, w, h);
