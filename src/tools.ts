@@ -131,4 +131,25 @@ const GROUPS: ToolGroup[] = [
   },
 ];
 
-if (typeof module !== 'undefined') module.exports = { GROUPS };
+// The caption under a group's button: the key that always picks it, ⌘1–⌘7. Select has no ⌘ key (snap-bmr.17.3):
+// C while Settings ▸ Single-Key Tools is on, Esc while it is off.
+function capFor(g: ToolGroup, singleKeys: boolean): string {
+  if (g.key === 'c') return singleKeys ? 'C' : 'Esc';
+  return `⌘${g.key}`;
+}
+
+// Every key that picks the group in the current mode: "2 or ⌘2", "⌘2"; Select "C or Esc", "Esc".
+function keysFor(g: ToolGroup, singleKeys: boolean): string {
+  if (!singleKeys) return capFor(g, false);
+  return g.key === 'c' ? 'C or Esc' : `${g.key} or ⌘${g.key}`;
+}
+
+// "Box (2 or ⌘2) · press again for Ellipse"; with single keys off "Box (⌘2) · press ⌘2 again for Ellipse".
+function tipFor(g: ToolGroup, variant: number, singleKeys: boolean): string {
+  const t = g.tools[variant];
+  const next = g.tools[(variant + 1) % g.tools.length];
+  const again = singleKeys ? 'press again' : `press ${capFor(g, false)} again`;
+  return `${t.label} (${keysFor(g, singleKeys)})${t.tip ? `: ${t.tip}` : ''}` + (g.tools.length > 1 ? ` · ${again} for ${next.label}` : '');
+}
+
+if (typeof module !== 'undefined') module.exports = { GROUPS, capFor, tipFor };

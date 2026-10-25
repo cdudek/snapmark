@@ -180,9 +180,9 @@ Words for every string are in the specs; copy them exactly.
 
 Feature 1.1 — Highlighter:
 
-- [ ] 1. Close the done beads: `bd close snap-bmr.17.1`. Note on snap-bmr.17.2, snap-bmr.14.3 and snap-c5c which items closed without code (spec.md table) — proof: `bd show snap-bmr.17.1` prints `CLOSED`.
-- [ ] 2. Smoke F101, F102 — proof: `npm run build` exits 0 (CI's smoke run fails F101 until step 3).
-- [ ] 3. `drawGlyph` highlight: screen at 0.5, then multiply at 0.45 — proof: `grep -n "'screen'" src/editor.ts` prints the line in the `'highlight'` case. `npm run typecheck` exits 0.
+- [x] 1. Close the done beads: `bd close snap-bmr.17.1`. Note on snap-bmr.17.2, snap-bmr.14.3 and snap-c5c which items closed without code (spec.md table) — proof: `bd show snap-bmr.17.1` prints `CLOSED`.
+- [x] 2. Smoke F101, F102 — proof: `npm run build` exits 0 (CI's smoke run fails F101 until step 3).
+- [x] 3. `drawGlyph` highlight: screen at 0.5, then multiply at 0.45 — proof: `grep -n "'screen'" src/editor.ts` prints the line in the `'highlight'` case. `npm run typecheck` exits 0.
 
 Feature 1.2 — toolbar keys and size:
 

@@ -23,7 +23,7 @@ import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, captureOptions, loginState, MenuActions, MenuState, SessionInfo } from './menu';
-import { KEY_GROUPS, SHORTCUTS } from './keys';
+import { SHORTCUTS, shortcutsHtml } from './keys';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { Box, ocrText, OcrLine, recognize } from './ocr';
@@ -101,11 +101,12 @@ function saveState() {
 }
 
 // Settings ▸ Single-Key Tools: plain letters and digits pick tools in the editor. WCAG 2.1.4 asks that such keys can be
-// turned off; ⌘1–⌘7 keep working either way.
-function setSingleKeys(on: boolean) {
+// turned off; ⌘1–⌘7 keep working either way. Open editors redraw their toolbar, an open Keyboard Shortcuts window its keys.
+export function setSingleKeys(on: boolean) {
   singleKeys = on;
   saveState();
   for (const ed of editors.values()) if (!ed.win.isDestroyed()) ed.win.webContents.send('editor:single-keys', on);
+  if (shortcutsWin && !shortcutsWin.isDestroyed()) void shortcutsWin.loadURL(shortcutsUrl());
 }
 
 export function setActive(name: string) {
@@ -750,8 +751,9 @@ function popUp(items: MenuItemConstructorOptions[]) {
   tray?.popUpContextMenu(menu);
 }
 
-// Built on every open, so counts and sessions changed in Finder are never stale.
-const popMenu = () => popUp(menuTemplate(menuState(), actions));
+// The menu bar menu as it is right now; built on every open, so counts and sessions changed in Finder are never stale.
+export const menuItems = () => menuTemplate(menuState(), actions);
+const popMenu = () => popUp(menuItems());
 
 // ⌃⇧5, like macOS's ⇧⌘5: the capture options as a menu at the menu bar icon. Not over a capture or an open menu.
 function popOptions() {
@@ -822,29 +824,14 @@ async function otherSession() {
   setActive(path.basename(dir));
 }
 
-const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 let shortcutsWin: BrowserWindow | null = null;
+const shortcutsUrl = () => `data:text/html;charset=utf-8,${encodeURIComponent(shortcutsHtml(TOOLS, singleKeys))}`;
 
-// Built from the same tool list as the toolbar, so the two never disagree. No script, so the page needs no CSP exception.
+// Built from the same tool list as the toolbar (keys.ts), so the two never disagree.
 function showShortcuts() {
   if (shortcutsWin && !shortcutsWin.isDestroyed()) return shortcutsWin.focus();
-  const row = (keys: string, icon: string, name: string, what: string) =>
-    `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
-  const tools = TOOLS.flatMap((g) =>
-    g.tools.map((t, v) => row(v ? `${g.key.toUpperCase()} again` : g.key.toUpperCase(), t.icon, t.label, t.tip ?? t.means ?? '')),
-  ).join('');
-  // The other keys, grouped by where they work (owner, 2026-10-25), from keys.ts.
-  const other = KEY_GROUPS.map(
-    (g) => `<h2>${esc(g.title)}</h2><table>${g.rows.map(([k, n, w]) => row(k, '', n, w)).join('')}</table>`,
-  ).join('');
-  const html = `<!doctype html><html lang="en"><meta charset="utf-8"><title>Keyboard shortcuts</title><style>
-    :root{color-scheme:light dark;font:13px -apple-system,system-ui,sans-serif}body{margin:16px}
-    h2{font-size:13px;margin:16px 0 6px}table{border-collapse:collapse;width:100%}td{padding:4px 6px;vertical-align:middle}
-    kbd{font:600 11px ui-monospace,monospace;white-space:nowrap}
-    svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    </style><h2>Editor tools</h2><table>${tools}</table>${other}`;
   shortcutsWin = new BrowserWindow({ width: 520, height: 640, title: 'Keyboard shortcuts' });
-  void shortcutsWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  void shortcutsWin.loadURL(shortcutsUrl());
   focusApp();
 }
 

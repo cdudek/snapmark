@@ -25,8 +25,22 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath, pickArea, scrollCapture, desk } =
-  require('../src/main') as typeof import('../src/main');
+// state.json goes to the temp folder, never the dev app's real user data folder (F110)
+app.setPath('userData', path.join(root, 'userData'));
+const {
+  openEditor,
+  openViewer,
+  reopen,
+  setActive,
+  fitForAI,
+  promptFor,
+  sessionMdPath,
+  pickArea,
+  scrollCapture,
+  desk,
+  setSingleKeys,
+  menuItems,
+} = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
 let offered = '';
@@ -142,12 +156,15 @@ app
     const pick = (id) => { group = GROUPS.findIndex((g) => g.tools.some((t) => t.id === id)); variant[group] = GROUPS[group].tools.findIndex((t) => t.id === id); applyTool(); };
     const btns = [...document.querySelectorAll('#tools button')];
     r['toolbar: one icon button per key, C 1-7, no text in the buttons'] = btns.map((b) => b.dataset.group).join('') === 'c1234567' && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '');
-    r['toolbar: key under each button, dots where a key has more tools'] = [...document.querySelectorAll('#tools .cap')].every((c, i) => { const g = GROUPS[i], d = c.querySelector('.dots')?.textContent ?? ''; return c.querySelector('kbd').textContent === g.key.toUpperCase() && (g.tools.length > 1 ? d.length === g.tools.length && d.split('●').length === 2 : d === ''); });
+    r['toolbar: key under each button, dots where a key has more tools'] = [...document.querySelectorAll('#tools .cap')].every((c, i) => { const g = GROUPS[i], d = c.querySelector('.dots')?.textContent ?? ''; return c.querySelector('kbd').textContent === capFor(g, true) && (g.tools.length > 1 ? d.length === g.tools.length && d.split('●').length === 2 : d === ''); });
+    r['F103 captions read C, ⌘1–⌘7'] = [...document.querySelectorAll('#tools .cap kbd')].map((k) => k.textContent).join() === 'C,⌘1,⌘2,⌘3,⌘4,⌘5,⌘6,⌘7';
+    const css = (sel, pseudo) => getComputedStyle(document.querySelector(sel), pseudo);
+    r['F107 toolbar sizes'] = css('#tools svg').width === '22px' && css('#tools svg').height === '22px' && css('#tools button').width === '40px' && css('#tools button').height === '36px' && css('#tools .cap').fontSize === '11px' && css('#tools .cap').color === getComputedStyle(document.body).color;
     pick('box');
     const tb = () => document.querySelector('#tools [data-group="2"]');
     r['toolbar: active button has a blue tint and a blue icon'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(36, 146, 255') && getComputedStyle(tb()).color === 'rgb(36, 146, 255)';
     r['"Add to session" is the darker brand blue, for white text'] = getComputedStyle(document.getElementById('save')).backgroundColor === 'rgb(15, 114, 219)';
-    r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3)';
+    r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2 or ⌘2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3 or ⌘3)';
     key('2');
     r['toolbar: pressing the key again swaps the icon'] = tool() === 'ellipse' && tb().dataset.tool === 'ellipse';
     document.querySelector('#tools [data-group="4"]').click();
@@ -301,6 +318,39 @@ app
     return r;
   })()`;
     const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
+    // F106: Settings ▸ Single-Key Tools redraws an open editor's captions and tooltips, without reopening it
+    const toolbarSays = (cap: string, tip: string) =>
+      win.webContents.executeJavaScript(`(async () => {
+        const ok = () => document.querySelector('#tools .cap kbd').textContent === ${JSON.stringify(cap)} && document.querySelector('#tools [data-group="2"]').title === ${JSON.stringify(tip)};
+        for (let i = 0; i < 10 && !ok(); i++) await new Promise((r) => setTimeout(r, 100));
+        return ok();
+      })()`);
+    setSingleKeys(false);
+    const redrawnOff = await toolbarSays('Esc', 'Box (⌘2) · press ⌘2 again for Ellipse');
+    setSingleKeys(true);
+    inPage['F106 the setting redraws the toolbar'] = redrawnOff && (await toolbarSays('C', 'Box (2 or ⌘2) · press again for Ellipse'));
+    // F110: the menu's Single-Key Tools item saves the setting to state.json in the temp folder and tells the editor
+    const settingsMenu = menuItems().find((i) => i.label === 'Settings')!.submenu as Electron.MenuItemConstructorOptions[];
+    const singleItem = settingsMenu.find((i) => i.label === 'Single-Key Tools')!;
+    singleItem.click!({ checked: false } as never, undefined, {} as never);
+    const stateFile = path.join(root, 'userData', 'state.json');
+    const savedOff = fs.existsSync(stateFile) && JSON.parse(fs.readFileSync(stateFile, 'utf8')).singleKeys === false;
+    const editorOff = await win.webContents.executeJavaScript(
+      `(async () => { for (let i = 0; i < 10 && singleKeys; i++) await new Promise((r) => setTimeout(r, 100)); return singleKeys === false; })()`,
+    );
+    setSingleKeys(true);
+    inPage['F110 the setting reaches state.json and the editor'] = savedOff && editorOff;
+    // F108: at the minimum size the toolbar shows every control without scrolling sideways; the session label shortens
+    const [w0, h0] = win.getSize();
+    win.setSize(820, 520);
+    await new Promise((r) => setTimeout(r, 300));
+    inPage['F108 the toolbar fits at 820 points'] =
+      JSON.stringify(win.getMinimumSize()) === JSON.stringify([820, 520]) &&
+      (await win.webContents.executeJavaScript(
+        `(() => { const h = document.querySelector('header'); return h.scrollWidth <= h.clientWidth && getComputedStyle(document.getElementById('session')).textOverflow === 'ellipsis'; })()`,
+      ));
+    win.setSize(w0, h0);
+    await new Promise((r) => setTimeout(r, 300));
     // Real input events (not synthetic DOM ones) include the browser's default mousedown handling, which moved focus.
     const at = await win.webContents.executeJavaScript(`(() => {
       group = GROUPS.findIndex((g) => g.key === '1'); variant[group] = 0; applyTool();

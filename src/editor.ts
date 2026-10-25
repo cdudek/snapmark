@@ -345,12 +345,12 @@ function cursorFor(t: Tool): string {
 }
 
 // One icon button per key, showing the group's current tool; pressing the key again swaps the icon.
-// Under it: the key, and one dot per tool when the key holds more than one (the filled dot is the current tool).
+// Under it: the key that always works (capFor), and one dot per tool when the key holds more than one (the filled
+// dot is the current tool). Redrawn when Settings ▸ Single-Key Tools changes.
 function renderToolbar() {
   toolsEl.replaceChildren(
     ...GROUPS.map((g, i) => {
       const t = g.tools[variant[i]];
-      const next = g.tools[(variant[i] + 1) % g.tools.length];
       const wrap = document.createElement('div');
       wrap.className = 'group';
       const b = document.createElement('button');
@@ -358,14 +358,13 @@ function renderToolbar() {
       b.dataset.tool = t.id;
       b.setAttribute('aria-label', t.label);
       b.setAttribute('aria-pressed', String(i === group));
-      b.title =
-        `${t.label} (${g.key.toUpperCase()})${t.tip ? `: ${t.tip}` : ''}` + (g.tools.length > 1 ? ` · press again for ${next.label}` : '');
+      b.title = tipFor(g, variant[i], singleKeys);
       b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>`; // static markup from tools.ts
       b.onclick = () => pickGroup(i);
       const cap = document.createElement('div');
       cap.className = 'cap';
       const kbd = document.createElement('kbd');
-      kbd.textContent = g.key.toUpperCase();
+      kbd.textContent = capFor(g, singleKeys);
       cap.append(kbd);
       if (g.tools.length > 1) {
         const dots = document.createElement('span');
@@ -1194,9 +1193,13 @@ new ResizeObserver(fit).observe(mainEl);
 const shotsLabel = (session: string, n: number) => (n ? `${session} · ${n} screenshot${n === 1 ? '' : 's'}` : session);
 
 window.snapmark.onSession((session, count) => ($('session').textContent = shotsLabel(session, count)));
-window.snapmark.onSingleKeys((on) => (singleKeys = on));
+window.snapmark.onSingleKeys((on) => {
+  singleKeys = on;
+  renderToolbar();
+});
 window.snapmark.init().then(async ({ src, session, count, state, replacing, oneShot: one, beautify, singleKeys: keys }) => {
   singleKeys = keys;
+  renderToolbar();
   $('session').textContent = shotsLabel(session, count);
   if (replacing) saveBtn.textContent = `Save changes ⌘↵`;
   if (one) {
