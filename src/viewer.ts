@@ -54,7 +54,7 @@
     const m = { md: d.md };
     mounted = m;
     field = await MdNotes.mount(docEl, d.md, {
-      placeholder: 'This session is empty. Capture a screenshot with ⌃⇧1.',
+      placeholder: 'This session is empty. Capture a screenshot with ⌃⇧4.',
       onChange: (md) => {
         edited = true;
         void window.snapmark.viewerSave(m.md, md).then((ok) => ok && (m.md = md));

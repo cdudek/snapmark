@@ -532,12 +532,13 @@ resolves.
 - **Rule** (agent 4's five points):
   1. Global keys are for capturing only, on neighbouring keys. Actions that change which session is
      current are menu actions; if one gets a key, it sits apart from the capture keys and can be undone.
-     The owner chooses the keys: (a) ⌃⇧1 capture, ⌃⇧2 Capture Same Area, New Session without a key
-     (agents 1 and 6); (b) ⌃⇧1 and ⌃⇧3 as today with ⌃⇧2 left empty as a buffer, New Session optionally
-     ⌃⇧N (agent 4); (c) ⌃⇧4 and ⌃⇧5, mirroring macOS's ⌘⇧4 and ⌘⇧5 (agent 7). All global keys can be
-     changed in the Keyboard Shortcuts window.
+     The owner chose option (c) on 2026-10-25: ⌃⇧4 capture, ⌃⇧3 Capture Last Area and ⌃⇧5 the capture
+     options, mirroring macOS's ⇧⌘4, ⇧⌘3 and ⇧⌘5; New Session stays ⌃⇧N, apart from the digits
+     ([ADR](../designs/2026-10-25-adr-keys-follow-macos.md)). Changing keys in the Keyboard Shortcuts
+     window is not built yet.
   2. Esc steps back inside a surface and stops at its resting state; transient surfaces (the area
      picker, the Keyboard Shortcuts window) close on Esc; discarding or closing a document is ⌘W.
+     Exception (owner, 2026-10-25): one step past Select, Esc still closes the editor to Discarded.
   3. Letter and digit keys act only while no text field has the cursor; ⌘ keys act everywhere, and only
      keys Snapmark defines itself are active (no stock Reload or developer tools in release builds).
   4. Every key is shown in one generated list, grouped by where it works ("Anywhere", "In the editor",

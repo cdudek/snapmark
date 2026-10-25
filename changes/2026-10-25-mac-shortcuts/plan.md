@@ -75,11 +75,11 @@ Words for every string are in [spec/microcopy.md](spec/microcopy.md); copy them 
 
 ## Order of work
 
-- [ ] 1. Write the unit blocks first: `test/keys.test.ts` and F3, F4 in `test/menu.test.ts`. Add the file to `npm test` — proof: `npm test` fails on them.
-- [ ] 2. `src/keys.ts`, `src/menu.ts`, `src/main.ts` (registration, popup, busy check, shortcuts window) — proof: the unit blocks pass; `npm run typecheck` exits 0.
+- [x] 1. Write the unit blocks first: `test/keys.test.ts` and F3, F4 in `test/menu.test.ts`. Add the file to `npm test` — proof: `npm test` fails on them.
+- [x] 2. `src/keys.ts`, `src/menu.ts`, `src/main.ts` (registration, popup, busy check, shortcuts window) — proof: the unit blocks pass; `npm run typecheck` exits 0.
 - [ ] 3. `src/editor.ts` keys and multi-selection — proof: `npm run typecheck` exits 0; smoke checks F7, F9–F14 written.
 - [ ] 4. `src/viewer.ts`, `src/viewer.html` — proof: smoke checks F15–F18 written; `npm run build` exits 0.
-- [ ] 5. README, setup.md, sitemap.md, interaction guidelines — proof: F20 passes.
+- [x] 5. README, setup.md, sitemap.md, interaction guidelines — proof: F20 passes.
 - [ ] 6. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
 - [ ] 7. `python3 scripts/verify_gate.py feature 2026-10-25-mac-shortcuts` — proof: ends `VERIFY PASS`.
 - [ ] 8. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
@@ -128,3 +128,7 @@ Filled from `templates/goal/feature.txt`, turns from `sdlc.json` `goal.featureTu
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
 
 - 2026-10-25 — Step 8 added: subagents are closed when their report is in, never left open (owner).
+- 2026-10-25 — spec/validation.md set to approved; the plan gate covered it, but its status was missed at approval.
+- 2026-10-25 — decisions.json records the prototype skip the guardrail asks for: no risky UI, as spec/validation.md says.
+- 2026-10-25 — Keys window rows under "Anywhere" drop the "anywhere;" prefix, as rows 17–21 drop theirs.
+- 2026-10-25 — README adds one line saying the digits are macOS's own, so the new keys explain themselves.
