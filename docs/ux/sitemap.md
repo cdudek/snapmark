@@ -51,8 +51,8 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 ├── [Export Session ▸ PDF · ZIP]   hidden while empty ──► Finder with the file selected (replaces the last one)
 │                                                       failure: notification with the raw error (silent otherwise)
 ├── ──
-├── Switch Session ▸  up to 20 sessions by last use, bare names, ✓ current (click = make current)
-│                     · Other Session… ──► folder panel (native); wrong pick: notification afterwards
+├── Switch Session ▸  up to 10 sessions by last use, the current one always among them, ✓ current (click = make current); greyed with no session
+│                     · Older Sessions… (only above 10) ──► folder panel (native), "Session folders start with their date."; wrong pick: notification afterwards
 ├── New Session  ⌃⇧2   ──► notification "New session: 2026-09-28 22.15" (or "… is still empty, so new captures keep going there.")
 ├── ──
 ├── Settings ▸  ✓ Open at Login · Sessions Folder… (sub-line ~/Documents/Snapmark) ──► folder panel; sessions left behind
@@ -85,7 +85,7 @@ AREA PICKER       see-through, display under the pointer, every Space; hint "Dra
 KEYBOARD SHORTCUTS WINDOW   "Keyboard shortcuts", 520 × 640, read-only, no Dock icon, Esc does nothing;
                   "Editor tools" (13 rows) then "Other keys" (global and editor keys mixed)
 NOTIFICATIONS (native)   the only channel for copies, New Session, failures; clicking only "… is no longer in …" does something
-NATIVE PANELS AND DIALOGS   Sessions Folder…, Other Session…, Reopen Discarded… (folder panels, "Open"); Rename (AppleScript);
+NATIVE PANELS AND DIALOGS   Sessions Folder…, Older Sessions…, Reopen Discarded… (folder panels, "Open"); Rename (AppleScript);
                   Quit sheet
 FINDER            session folder = session.md · img/NNN.png · .edit/ (clean originals, also of redacted images, F192) ·
                   <name>.pdf · <name>.zip ; sessions folder/.discarded/
