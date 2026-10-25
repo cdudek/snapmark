@@ -217,8 +217,8 @@ Feature 1.5 — small fixes:
 
 Feature 1.6 — own LC_UUID:
 
-- [ ] 23. `test/uuid.test.ts` F122 and the `test` script line — proof: `npm test` fails on it.
-- [ ] 24. `scripts/after-pack.cjs` and `build.afterPack` — proof: F122 passes. `npm run dist` exits 0. `dwarfdump --uuid release/mac-arm64/Snapmark.app/Contents/MacOS/Snapmark` and `dwarfdump --uuid node_modules/electron/dist/Electron.app/Contents/MacOS/Electron` print different UUIDs. `codesign --verify --deep --strict release/mac-arm64/Snapmark.app` exits 0.
+- [x] 23. `test/uuid.test.ts` F122 and the `test` script line — proof: `npm test` fails on it.
+- [x] 24. `scripts/after-pack.cjs` and `build.afterPack` — proof: (proof at milestone: needs `npm run dist`, dwarfdump and codesign) F122 passes. `npm run dist` exits 0. `dwarfdump --uuid release/mac-arm64/Snapmark.app/Contents/MacOS/Snapmark` and `dwarfdump --uuid node_modules/electron/dist/Electron.app/Contents/MacOS/Electron` print different UUIDs. `codesign --verify --deep --strict release/mac-arm64/Snapmark.app` exits 0.
 
 Milestone 1 close (after feature 6):
 
