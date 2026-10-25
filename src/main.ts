@@ -40,6 +40,7 @@ let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
 let area: Area | null = null; // what Capture Last Area captures, in global screen points
+let singleKeys = true; // Settings ▸ Single-Key Tools
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
 let tray: Tray | null = null;
@@ -86,6 +87,7 @@ function loadState() {
     area = state.area ?? null;
     editorSize = state.editorSize ?? null;
     beautify = state.beautify ?? null;
+    singleKeys = state.singleKeys ?? true;
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -95,7 +97,15 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify }));
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys }));
+}
+
+// Settings ▸ Single-Key Tools: plain letters and digits pick tools in the editor. WCAG 2.1.4 asks that such keys can be
+// turned off; ⌘1–⌘7 keep working either way.
+function setSingleKeys(on: boolean) {
+  singleKeys = on;
+  saveState();
+  for (const ed of editors.values()) if (!ed.win.isDestroyed()) ed.win.webContents.send('editor:single-keys', on);
 }
 
 export function setActive(name: string) {
@@ -382,8 +392,8 @@ function editorFor(id: number) {
 ipcMain.handle('editor:init', (e): EditorInit => {
   const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
-  if (oneShot) return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined };
-  return { src, session, count: sessions.count(into, session), state, replacing: replace };
+  if (oneShot) return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined, singleKeys };
+  return { src, session, count: sessions.count(into, session), state, replacing: replace, singleKeys };
 });
 
 ipcMain.on('editor:beautify', (e, settings: Beautify) => {
@@ -715,6 +725,7 @@ function menuState(): MenuState {
     area,
     iconDir: path.join(__dirname, '../../assets'),
     hasDiscarded: sessions.discarded(root).length > 0,
+    singleKeys,
   };
 }
 
@@ -849,6 +860,7 @@ const actions: MenuActions = {
   chooseRoot: () => void chooseRoot(),
   clearOldSessions: () => void clearOldSessions(),
   setLogin: (checked) => app.setLoginItemSettings({ openAtLogin: checked }),
+  setSingleKeys,
   keyboardShortcuts: showShortcuts,
   checkUpdates: () => void checkForUpdatesNow(),
   installUpdate: () => autoUpdater.quitAndInstall(),

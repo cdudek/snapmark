@@ -7,6 +7,7 @@ interface EditorInit {
   replacing?: number; // Edit Again: saving replaces this entry instead of adding one
   oneShot?: boolean; // one-shot mode: Beautify, then copy or save; no session
   beautify?: Beautify; // one-shot: the settings to start from (the reopened discard's, else the last used)
+  singleKeys: boolean; // Settings ▸ Single-Key Tools; off, a plain letter or digit picks no tool and ⌘1–⌘7 still do
 }
 
 // Everything on a screenshot except the screenshot, as plain data (editor.ts writes and reads the items).
@@ -79,6 +80,7 @@ interface Window {
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
     stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
     onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
+    onSingleKeys(cb: (on: boolean) => void): void; // Settings ▸ Single-Key Tools changed while the editor is open
     viewerInit(): Promise<ViewerInit>;
     viewerSave(from: string, md: string): Promise<boolean>; // refused when session.md is no longer `from`
     viewerExternal(): void; // open session.md in the default Markdown app
