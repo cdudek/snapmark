@@ -748,22 +748,25 @@ canvas.on('text:editing:exited', ({ target }) => {
   }
 });
 
-// Undo and redo drop the selection first: inside a multi-selection Fabric keeps its marks' positions relative to it.
+// Undo and redo drop a multi-selection first: inside one Fabric keeps its marks' positions relative to it. A single
+// selection stays: dropping an empty card being typed would remove it with its own step, and undo would take a second.
+const dropGroup = () => canvas.getActiveObject() instanceof fabric.ActiveSelection && canvas.discardActiveObject();
+
 function undo() {
-  canvas.discardActiveObject();
+  dropGroup();
   const step = undoStack.pop();
   step?.undo();
   if (step) redoStack.push(step);
-  canvas.discardActiveObject();
+  dropGroup();
   after();
 }
 
 function redo() {
-  canvas.discardActiveObject();
+  dropGroup();
   const step = redoStack.pop();
   step?.redo();
   if (step) undoStack.push(step);
-  canvas.discardActiveObject();
+  dropGroup();
   after();
 }
 
