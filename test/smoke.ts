@@ -245,6 +245,11 @@ app
     const oneBack = box.left === x0 + dpr && box.top === y0;
     key('z', { metaKey: true });
     r['F10 arrows nudge'] = nudged && oneBack && places() === placed0;
+    canvas.setActiveObject(box);
+    sw.click(); // the palette walks its swatches with the arrows, and they stop there
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    r['palette: arrows never also nudge the selected mark'] = box.left === x0 && undoStack.length === undos0;
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 
     canvas.setActiveObject(box);
     const capText = cap.querySelector('.ProseMirror');

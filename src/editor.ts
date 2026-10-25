@@ -418,13 +418,15 @@ function closePalette(refocus = true) {
 
 swatchBtn.onclick = () => (paletteEl.hidden ? openPalette() : closePalette());
 colorEl.oninput = () => setColor(colorEl.value);
-// Arrows walk the two rows of five. Esc stops here: the editor's own Esc would step back a tool or close the window.
+// Arrows walk the two rows of five and stop here, so they never also nudge the selected mark. Esc stops here too:
+// the editor's own Esc would step back a tool or close the window.
 paletteEl.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') return void (e.stopPropagation(), closePalette());
   const step = ({ ArrowLeft: -1, ArrowRight: 1, ArrowUp: -5, ArrowDown: 5 } as Record<string, number>)[e.key];
   const i = presetBtns.indexOf(document.activeElement as HTMLButtonElement);
   if (!step || i < 0) return;
   e.preventDefault();
+  e.stopPropagation();
   presetBtns[(i + step + presetBtns.length) % presetBtns.length].focus();
 });
 document.addEventListener('mousedown', (e) => {

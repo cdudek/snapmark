@@ -800,7 +800,7 @@ let shortcutsWin: BrowserWindow | null = null;
 function showShortcuts() {
   if (shortcutsWin && !shortcutsWin.isDestroyed()) return shortcutsWin.focus();
   const row = (keys: string, icon: string, name: string, what: string) =>
-    `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
+    `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
   const tools = TOOLS.flatMap((g) =>
     g.tools.map((t, v) => row(v ? `${g.key.toUpperCase()} again` : g.key.toUpperCase(), t.icon, t.label, t.tip ?? t.means ?? '')),
   ).join('');
@@ -808,7 +808,7 @@ function showShortcuts() {
   const other = KEY_GROUPS.map(
     (g) => `<h2>${esc(g.title)}</h2><table>${g.rows.map(([k, n, w]) => row(k, '', n, w)).join('')}</table>`,
   ).join('');
-  const html = `<!doctype html><meta charset="utf-8"><title>Keyboard shortcuts</title><style>
+  const html = `<!doctype html><html lang="en"><meta charset="utf-8"><title>Keyboard shortcuts</title><style>
     :root{color-scheme:light dark;font:13px -apple-system,system-ui,sans-serif}body{margin:16px}
     h2{font-size:13px;margin:16px 0 6px}table{border-collapse:collapse;width:100%}td{padding:4px 6px;vertical-align:middle}
     kbd{font:600 11px ui-monospace,monospace;white-space:nowrap}

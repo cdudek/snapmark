@@ -81,8 +81,8 @@ Words for every string are in [spec/microcopy.md](spec/microcopy.md); copy them 
 - [x] 4. `src/viewer.ts`, `src/viewer.html` — proof: smoke checks F15–F18 written; `npm run build` exits 0.
 - [x] 5. README, setup.md, sitemap.md, interaction guidelines — proof: F20 passes.
 - [x] 6. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
-- [ ] 7. `python3 scripts/verify_gate.py feature 2026-10-25-mac-shortcuts` — proof: ends `VERIFY PASS`.
-- [ ] 8. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
+- [x] 7. `python3 scripts/verify_gate.py feature 2026-10-25-mac-shortcuts` — proof: ends `VERIFY PASS`.
+- [x] 8. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
 
 ## Risks
 
@@ -132,4 +132,6 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — decisions.json records the prototype skip the guardrail asks for: no risky UI, as spec/validation.md says.
 - 2026-10-25 — Keys window rows under "Anywhere" drop the "anywhere;" prefix, as rows 17–21 drop theirs.
 - 2026-10-25 — README adds one line saying the digits are macOS's own, so the new keys explain themselves.
+- 2026-10-25 — UX review of #76: no Critical. Fixed five High: palette arrows nudged the mark, two missing `lang`, a live region for ⌘⌫ and ⌘Z, icons hidden from VoiceOver.
+- 2026-10-25 — UX review leftovers go to beads snap-bmr.17.2: a setting to turn off single-key tools, ⌘Z order, stale key docs.
 - 2026-10-25 — `.gitignore` ignores `__pycache__/`: the gate's own scripts leave it, and the gate refuses uncommitted files.

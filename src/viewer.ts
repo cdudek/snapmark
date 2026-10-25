@@ -137,6 +137,7 @@
     try {
       await load(await window.snapmark.viewerRemove(n));
       lastRemoved = data.discarded.find((d) => d.kind === 'shot')?.dir ?? null; // newest first
+      $('announce').textContent = `Screenshot ${n} moved to Discarded. ⌘Z puts it back.`;
     } finally {
       removing = false;
     }
@@ -150,6 +151,7 @@
     await load(await window.snapmark.viewerReopen(dir));
     index = data.shots.length - 1; // it goes back at the end
     show('shot');
+    $('announce').textContent = `Screenshot ${data.shots[index]?.n ?? ''} is back.`;
   }
 
   function openMenu(at: HTMLElement, n: number) {
