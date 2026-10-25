@@ -44,6 +44,14 @@ Each has a default taken; none blocks the build.
 1. **Edit Again that changes only the marks (build, M3.2):** the session window reloads only when the text of `session.md` changes (`fs.watch` compares it), so a tall screenshot saved again with the same comment and notes keeps showing its old parts in the Document tab and its old thumbnail in the grid until the next change, as a fitting screenshot does today. Default taken: as the plan says, the image cache is cleared when a changed `session.md` mounts (F21); a follow-up bead if the owner sees old parts. The other way: main also reloads the window after every Edit Again save.
 2. **F10's capture (build, M3.1):** the smoke check saves a solid 1280 × 8000 PNG through the real editor and ⌘S, not a stitched scrolling capture (smoke never captures the screen). Default taken: the solid PNG; the layout and the part widths are what F10 measures.
 
+## Milestone 4 — Electron 45 and dependency updates
+
+Each has a default taken; none blocks the build.
+
+1. **Node for the local gate (build, M4.1):** vitest 5 needs Node ≥ 22.12. CI and the Release workflow use Node 22, but this Mac's default nvm Node is 20.19.6, so `npm test` run locally on Node 20 fails at `vitest run`. Default taken: the milestone gate runs with Node 22 on PATH (`~/.nvm/versions/node/v22.21.1/bin`), as `npm install` did; no `.nvmrc` or `engines` added, since neither is in the plan's files.
+2. **Dev-only advisories left (build, M4.1):** after `npm audit fix` (no `--force`), `npm audit` still lists http-cache-semantics, ip-address, postcss-selector-parser, brace-expansion and undici 6 inside `npm@11.20.0`'s own bundle (via semantic-release's `@semantic-release/npm`); bundled packages cannot be fixed by audit. `npm audit --omit=dev --audit-level=high` exits 0 (F404). Default taken: leave them for a later Dependabot bump of semantic-release.
+3. **`test/smoke.ts` does not typecheck (build, M4.1):** `tsc --noEmit` reports 16 errors in `test/smoke.ts` (`tall`, `again`, `t0`, `reopened`, `oneKept` declared twice), from M3.1 commit b830a5f, not from the new typings. Default taken: left for the milestone 3 fix round, since milestone 4 changes only what the Electron 45 and vitest 5 notes name.
+
 ## Answers
 
 - 2026-10-25, owner, during milestone 1 (became ask A14): "can you make sure all the icons and everything in the top bar have enough spacing? [...] Make it look professional because right now it doesn't. It looks cheap and bad. The quick buttons' shortcut text overlaps or almost touches each other. [...] One icon, instead of having a page, I would just have a foreground and background, kind of like a stack icon, similar to what Snapper has. When you draw it on the canvas you would see it anyway so what's the point?" Taken into milestone 1 before its PR, because milestone 1 is the toolbar and header and has not shipped; logged in plan.md Revisions.
