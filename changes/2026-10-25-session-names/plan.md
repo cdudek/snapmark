@@ -4,9 +4,9 @@ type: plan
 change: 2026-10-25-session-names
 design: docs/designs/2026-09-26-adr-menu-rebuilt-from-the-2026-09.md
 author: Calvin Dudek
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-25
 created: 2026-10-25
 ---
 

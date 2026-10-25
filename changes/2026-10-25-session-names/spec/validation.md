@@ -2,7 +2,7 @@
 type: validation
 change: 2026-10-25-session-names
 verdict: ready
-status: draft
+status: approved
 reviewed_by: null
 approved_at: null
 created: 2026-10-25
