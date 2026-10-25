@@ -1159,6 +1159,24 @@ app
         `for (let i = 0; i < 50 && !document.querySelector('[aria-checked="true"]'); i++) await new Promise((r) => setTimeout(r, 100));`,
       );
     };
+    // The Options menu as main builds it: with desk.popup swapped, a click on Options hands over its items (F207, F223)
+    type Item = Electron.MenuItemConstructorOptions;
+    let popped: Item[] = [];
+    const realPopup = desk.popup;
+    desk.popup = (_w, items) => void (popped = items);
+    const optionsOf = async (w: BrowserWindow) => {
+      popped = [];
+      await inWin(w, `document.getElementById('options').click();`);
+      for (let i = 0; i < 20 && !popped.length; i++) await sleep(50);
+      return popped;
+    };
+    const pick = (items: Item[], label: string, checked = true) =>
+      items.find((i) => i.label === label)!.click!({ checked } as Electron.MenuItem, undefined, {} as Electron.KeyboardEvent);
+    const ticked = (items: Item[]) =>
+      items
+        .filter((i) => i.checked)
+        .map((i) => i.label)
+        .join();
     const t0 = Date.now();
     const barWin = openCaptureBar(runner)!;
     const shownIn = await new Promise<number>((r) => barWin.once('ready-to-show', () => r(Date.now() - t0)));
@@ -1190,6 +1208,7 @@ app
         `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.getAttribute('aria-label').split(' · ')[0]`,
       );
     const firstTime = await barSays();
+    const firstOptions = ticked(await optionsOf(barWin));
     const barAgain = openCaptureBar(runner);
     viewer['F206 one bar at a time'] = barAgain === barWin && barUp().length === 1;
     viewer['F208 the bar is on top on every Space'] = barWin.isAlwaysOnTop() && barWin.isVisibleOnAllWorkspaces();
@@ -1207,6 +1226,11 @@ app
       await sleep(80);
       tabs.push(((await barSays()) as string).split('|')[1]);
     }
+    // Save to, Timer and Show Mouse Pointer chosen in the Options menu, as the owner clicks them
+    const chosen = await optionsOf(barWin);
+    pick(chosen, 'One-Shot');
+    pick(chosen, '5 Seconds');
+    pick(chosen, 'Show Mouse Pointer');
     keyTo(barWin, 'Return');
     for (let i = 0; i < 30 && !runs.length; i++) await sleep(100);
     const arrowsOk =
@@ -1229,8 +1253,18 @@ app
     const barReopened = openCaptureBar(runner)!;
     await barReady(barReopened);
     const lastUsed = await inWin(barReopened, `return document.querySelector('[aria-checked="true"]').dataset.mode`);
+    const reLabel = await inWin(barReopened, `return document.getElementById('capture').textContent`);
+    const reOptions = ticked(await optionsOf(barReopened));
+    const saved = JSON.stringify(JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).capture);
+    const lastOpts = JSON.stringify({ mode: 'last', oneShot: true, timer: 5, pointer: true });
     viewer['F207 the bar remembers the last mode'] =
-      firstTime === 'area|Choose New Area' && runs[0]?.o.mode === 'last' && lastUsed === 'last';
+      firstTime === 'area|Choose New Area' &&
+      firstOptions === 'Current Session,None' &&
+      JSON.stringify(runs[0]?.o) === lastOpts &&
+      lastUsed === 'last' &&
+      reLabel === 'Capture One-Shot' &&
+      reOptions === 'One-Shot,5 Seconds,Show Mouse Pointer' &&
+      saved === lastOpts;
     keyTo(barReopened, 'Escape');
     for (let i = 0; i < 30 && !barReopened.isDestroyed(); i++) await sleep(100);
     viewer['F204 arrows pick, Return captures, Esc closes'] =
@@ -1289,16 +1323,36 @@ app
     viewer['F222 a development build greys login and updates'] =
       general.greyed && JSON.stringify(general.notes) === JSON.stringify(['Only in the installed app.', 'Only in the installed app.']);
     // Capture: the bar's options; One-Shot here makes the bar's button read Capture One-Shot
+    // Capture: the bar's options. One-Shot, 10 Seconds and the pointer chosen here reach the bar; chosen back in the bar's
+    // Options menu, Settings shows them when it comes forward (its focus listener, F227)
     await inWin(set, `document.getElementById('tab-capture').click(); document.getElementById('oneshot').click();`);
+    await sleep(200);
+    await inWin(set, `const t = document.getElementById('timer'); t.value = '10'; t.dispatchEvent(new Event('change'));`);
+    await sleep(200);
+    await inWin(set, `document.getElementById('pointer').click();`);
     await sleep(200);
     const oneShotBar = openCaptureBar(runner)!;
     await barReady(oneShotBar);
     const oneShotLabel = await inWin(oneShotBar, `return document.getElementById('capture').textContent`);
-    oneShotBar.destroy();
-    await inWin(set, `document.getElementById('current').click();`);
+    const fromSettings = await optionsOf(oneShotBar);
+    pick(fromSettings, 'Current Session');
+    pick(fromSettings, 'None');
+    pick(fromSettings, 'Show Mouse Pointer', false);
     await sleep(200);
+    const backLabel = await inWin(oneShotBar, `return document.getElementById('capture').textContent`);
+    oneShotBar.destroy();
+    desk.popup = realPopup;
+    await inWin(set, `window.dispatchEvent(new Event('focus'));`);
+    await sleep(200);
+    const settingsShows = await inWin(
+      set,
+      `return [document.getElementById('current').checked, document.getElementById('timer').value, document.getElementById('pointer').checked].join()`,
+    );
     viewer['F223 Capture tab and bar share their options'] =
-      oneShotLabel === 'Capture One-Shot' && (await inWin(set, `return document.getElementById('current').checked`));
+      oneShotLabel === 'Capture One-Shot' &&
+      ticked(fromSettings) === 'One-Shot,10 Seconds,Show Mouse Pointer' &&
+      backLabel === 'Capture' &&
+      settingsShows === 'true,0,false';
     // Shortcuts: the four global keys, each taken here (quiet mode registers none); Show All Shortcuts opens the list
     await inWin(set, `document.getElementById('tab-shortcuts').click();`);
     const keyRows = await inWin(

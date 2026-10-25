@@ -583,9 +583,8 @@ export function moveEditor(win: BrowserWindow, name: string) {
   tellEditors(root, name);
 }
 
-// Native menus under a control in the editor's header; `at` is the control's box in window points.
-const popUnder = (win: BrowserWindow, items: MenuItemConstructorOptions[], at: Area) =>
-  Menu.buildFromTemplate(items).popup({ window: win, x: Math.round(at.x), y: Math.round(at.y + at.height) });
+// Native menus under a control in the editor's header or the capture bar; `at` is the control's box in window points.
+const popUnder = (...a: Parameters<typeof desk.popup>) => desk.popup(...a);
 
 ipcMain.on('editor:sessions-menu', (e, at: Area) => {
   const ed = editors.get(e.sender.id);
@@ -678,9 +677,11 @@ function tellEditors(into: string, name: string) {
 }
 
 // Out of the owner's sight, and swapped by the smoke test, which must not touch the clipboard, the Dock or the screen,
-// show a notification or wait on a dialog, and runs on Linux, where there is no text recognition.
+// show a notification or wait on a dialog or a native menu, and runs on Linux, where there is no text recognition.
 export const desk = {
   recognize,
+  popup: (win: BrowserWindow, items: MenuItemConstructorOptions[], at: Area) =>
+    Menu.buildFromTemplate(items).popup({ window: win, x: Math.round(at.x), y: Math.round(at.y + at.height) }),
   copyImage: (png: Buffer) => clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(png)], { type: 'image/png' }) })]),
   copyText: (text: string): void => void clipboard.writeText(text),
   savePath: (win: BrowserWindow, opts: Electron.SaveDialogOptions) => dialog.showSaveDialog(win, opts),
