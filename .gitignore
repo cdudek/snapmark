@@ -10,3 +10,7 @@ release/
 !.claude/settings.json
 !.claude/hooks/
 !.claude/hooks/*.sh
+# sdlc_status.py: where a change stands, per laptop
+/changes/*/status.json
+# verify_gate.py output; lock.json is committed
+/changes/*/verify/

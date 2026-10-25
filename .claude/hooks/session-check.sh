@@ -38,7 +38,7 @@ fi
 have=$(sdlc_get 'cfg.get("kitTemplates","")' 2>/dev/null || echo "")
 asked=""
 match=""
-for adopt in "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/omr-dev/*/skills/run-sdlc/scripts/adopt.py; do
+for adopt in "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/omr-dev/*/skills/sdlc-run/scripts/adopt.py; do
   [ -f "$adopt" ] || continue
   grep -q -- "--templates-hash" "$adopt" || continue
   want=$(python3 "$adopt" --templates-hash 2>/dev/null || echo "")
@@ -60,7 +60,7 @@ if [ -n "$asked" ]; then
          "because CI runs them where no plugin exists -- so they do not update themselves." \
          "Either the repo is behind the kit, or the plugin cache is behind the repo." \
          "Fix: run \`/reload-plugins\` first, and if this still shows, run" \
-         "\`/omr-dev:run-sdlc adopt\`, which rewrites them and opens a normal PR." \
+         "\`/omr-dev:sdlc-run adopt\`, which rewrites them and opens a normal PR." \
          "Tell the user this, in one line, before starting any change."
   fi
 fi

@@ -17,7 +17,7 @@ base=$(basename "$file")
 while IFS=$'\t' read -r globs command; do
   [ -n "$globs" ] || continue
   for g in $globs; do
-    # shellcheck disable=SC2254 -- the glob must expand as a pattern
+    # shellcheck disable=SC2254
     case "$base" in
       # The path is never interpolated into the command string: `{file}` becomes "$1"
       # and the path travels as an argument, so a name with quotes or `$(` cannot run.

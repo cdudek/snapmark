@@ -1,5 +1,5 @@
 {
-  "_comment": "Read by the run-sdlc skill, the hooks in .claude/hooks/ and the guardrail test. Commands run from the repo root; {file} is the edited file. docs/sdlc.md explains every key. Tracker: Beads (bd), not Linear -- linear.team is empty on purpose.",
+  "_comment": "Read by the run-sdlc skill, the hooks in .claude/hooks/ and the guardrail test. Commands run from the repo root; {file} is the edited file. docs/sdlc.md explains every key. Tracker: Beads (bd). E2E (smoke) runs only in the milestone checks, in the background (owner, 2026-10-25); CI runs it on every PR.",
   "linear": {
     "team": "",
     "project": ""
@@ -35,5 +35,33 @@
   "showChannel": "",
   "keep": [],
   "tiers": false,
-  "kitTemplates": "0decda699258"
+  "kitTemplates": "8c5da08d3374",
+  "tracker": {
+    "kind": "beads",
+    "initiative": "",
+    "project": "snap-bmr"
+  },
+  "product": "Snapmark",
+  "planGate": "owner",
+  "feedback": ["docs/ux/owner-words.md"],
+  "milestones": {
+    "branchPrefix": "milestone/",
+    "rebaseOnDefault": true
+  },
+  "projects": {
+    "branchPrefix": "project/",
+    "rebaseOnDefault": true
+  },
+  "hotfix": true,
+  "goal": {
+    "featureTurns": 40,
+    "milestoneTurns": 30
+  },
+  "languages": ["en"],
+  "responsiveTier": "full",
+  "ux": "on",
+  "checks": {
+    "feature": ["npm run format:check", "npm run lint", "npm run typecheck", "npm test"],
+    "milestone": ["npm run format:check", "npm run lint", "npm run typecheck", "npm test", "npm run smoke:background"]
+  }
 }
