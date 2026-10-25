@@ -24,6 +24,7 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import {
   menuTemplate,
+  appMenu,
   loginState,
   editorSessionMenu,
   copyMenu,
@@ -971,11 +972,6 @@ function menuState(): MenuState {
   return {
     current: active && list.includes(active) ? info(active) : null,
     sessions: sessions.byLastUse(list, used).map(info),
-    root: tilde(root),
-    canChangeRoot: !process.env.SNAPMARK_ROOT,
-    login: loginState(app.isPackaged, app.getLoginItemSettings()),
-    version: app.getVersion(),
-    canUpdate: app.isPackaged,
     updateWaiting,
     shortcuts: {
       capture: registered.has(SHORTCUTS.capture) ? SHORTCUTS.capture : null,
@@ -986,7 +982,6 @@ function menuState(): MenuState {
     area,
     iconDir: path.join(__dirname, '../../assets'),
     hasDiscarded: sessions.discarded(root).length > 0,
-    singleKeys,
   };
 }
 
@@ -1068,6 +1063,66 @@ function showShortcuts() {
   focusApp();
 }
 
+// The Settings window (Settings… ⌘,): General, Capture and Shortcuts, as a macOS Settings window. One window, brought
+// forward if open; the page reads its data again whenever it comes forward.
+let settingsWin: BrowserWindow | null = null;
+export function openSettings(): BrowserWindow {
+  if (settingsWin && !settingsWin.isDestroyed()) {
+    settingsWin.show();
+    focusApp();
+    return settingsWin;
+  }
+  const win = (settingsWin = new BrowserWindow({
+    width: 560,
+    height: 420,
+    useContentSize: true,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    title: 'Settings', // the page names the tab shown
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  }));
+  void win.loadFile(path.join(__dirname, 'settings.html'));
+  focusApp();
+  return win;
+}
+
+const ANYWHERE: [keyof typeof SHORTCUTS, string, string][] = [
+  ['capture', '⌃⇧4', 'Capture Screenshot'],
+  ['area', '⌃⇧3', 'Capture Last Area'],
+  ['options', '⌃⇧5', 'Capture Options'],
+  ['newSession', '⌃⇧N', 'New Session'],
+];
+
+const settingsInit = (): SettingsInit => ({
+  login: loginState(app.isPackaged, app.getLoginItemSettings()),
+  root: tilde(root),
+  canChangeRoot: !process.env.SNAPMARK_ROOT,
+  version: app.getVersion(),
+  canUpdate: app.isPackaged,
+  singleKeys,
+  keys: ANYWHERE.map(([k, cap, name]) => ({ cap, name, taken: !registered.has(SHORTCUTS[k]) })),
+  capture: captureOpts,
+});
+
+ipcMain.handle('settings:init', () => settingsInit());
+ipcMain.handle('settings:set', (_e, key: SettingsKey, value: boolean | number): SettingsInit => {
+  if (key === 'login') app.setLoginItemSettings({ openAtLogin: !!value });
+  else if (key === 'singleKeys') setSingleKeys(!!value); // open editors hear it
+  else if (key === 'oneShot' || key === 'timer' || key === 'pointer') setCapture({ [key]: value } as Partial<CaptureOpts>);
+  return settingsInit();
+});
+// What the Settings submenu's items did, now buttons in the window.
+ipcMain.handle('settings:run', async (_e, what: SettingsRun): Promise<SettingsInit> => {
+  if (what === 'chooseRoot') await chooseRoot();
+  else if (what === 'clearOld') await clearOldSessions();
+  else if (what === 'checkUpdates') await checkForUpdatesNow();
+  else if (what === 'loginItems') await shell.openExternal('x-apple.systempreferences:com.apple.LoginItems-Settings.extension');
+  else if (what === 'shortcuts') showShortcuts();
+  return settingsInit();
+});
+
 const actions: MenuActions = {
   capture,
   captureArea: () => void captureArea(),
@@ -1092,17 +1147,16 @@ const actions: MenuActions = {
   exportAs: (name, kind) => void runExport(kind, dirOf(name)),
   makeCurrent: setActive,
   otherSession: () => void otherSession(),
-  chooseRoot: () => void chooseRoot(),
-  clearOldSessions: () => void clearOldSessions(),
-  setLogin: (checked) => app.setLoginItemSettings({ openAtLogin: checked }),
-  setSingleKeys,
+  settings: () => void openSettings(),
   keyboardShortcuts: showShortcuts,
-  checkUpdates: () => void checkForUpdatesNow(),
   installUpdate: () => autoUpdater.quitAndInstall(),
   quit: () => app.quit(),
 };
 
 app.whenReady().then(() => {
+  // Snapmark's own app menu (Settings… ⌘,), shown while one of its windows is in front; set before the quiet return
+  // so the smoke test has it too.
+  Menu.setApplicationMenu(Menu.buildFromTemplate(appMenu(actions)));
   if (quiet) return void app.setActivationPolicy?.('accessory'); // test harness drives the app itself
   app.dock?.hide();
   loadState();

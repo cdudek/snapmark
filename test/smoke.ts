@@ -43,6 +43,7 @@ const {
   moveEditor,
   openCaptureBar,
   setCapture,
+  openSettings,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -402,10 +403,9 @@ app
     const redrawnOff = await toolbarSays('Esc', 'Box (⌘2) · press ⌘2 again for Ellipse');
     setSingleKeys(true);
     inPage['F106 the setting redraws the toolbar'] = redrawnOff && (await toolbarSays('C', 'Box (2 or ⌘2) · press again for Ellipse'));
-    // F110: the menu's Single-Key Tools item saves the setting to state.json in the temp folder and tells the editor
-    const settingsMenu = menuItems().find((i) => i.label === 'Settings')!.submenu as Electron.MenuItemConstructorOptions[];
-    const singleItem = settingsMenu.find((i) => i.label === 'Single-Key Tools')!;
-    singleItem.click!({ checked: false } as never, undefined, {} as never);
+    // F110: the setting (Settings ▸ Shortcuts ▸ Pick tools with single keys calls setSingleKeys; F225 clicks it) saves
+    // to state.json in the temp folder and tells the editor
+    setSingleKeys(false);
     const stateFile = path.join(root, 'userData', 'state.json');
     const savedOff = fs.existsSync(stateFile) && JSON.parse(fs.readFileSync(stateFile, 'utf8')).singleKeys === false;
     const editorOff = await win.webContents.executeJavaScript(
@@ -1226,6 +1226,100 @@ app
     viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-shot';
     oneShotScroll?.destroy();
     setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false }); // as the first time again
+
+    // The Settings window (F219–F225, F228)
+    const settingsReady = async (w: BrowserWindow) => {
+      for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await sleep(100);
+      await inWin(w, `for (let i = 0; i < 50 && !document.getElementById('version').textContent; i++) await new Promise((r) => setTimeout(r, 100));`);
+    };
+    const firstSettings = openSettings();
+    viewer['F219 one Settings window'] = openSettings() === firstSettings;
+    await settingsReady(firstSettings);
+    viewer['F219 one Settings window'] &&= BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().endsWith('settings.html')).length === 1;
+    const tabNames = await inWin(firstSettings, `return [...document.querySelectorAll('[role=tab]')].map((t) => t.textContent.trim()).join()`);
+    await inWin(firstSettings, `document.getElementById('tab-capture').click();`);
+    await sleep(200);
+    const titled = firstSettings.getTitle();
+    firstSettings.destroy();
+    const set = openSettings();
+    await settingsReady(set);
+    const openedOn = await inWin(set, `return document.querySelector('[aria-selected="true"]').textContent.trim()`);
+    viewer['F220 three tabs; the title names the tab'] =
+      tabNames === 'General,Capture,Shortcuts' && titled === 'Capture' && openedOn === 'Capture' && set.getTitle() === 'Capture';
+    // General: the four settings, in a development build with login and updates greyed
+    await inWin(set, `document.getElementById('tab-general').click();`);
+    const general = JSON.parse(
+      await inWin(
+        set,
+        `const p = document.getElementById('general');
+        const shown = (c) => !c.closest('[hidden]');
+        return JSON.stringify({
+          controls: [...p.querySelectorAll('input, button')].filter(shown).map((c) => (c.labels?.[0] ?? c).textContent.trim()),
+          version: document.getElementById('version').textContent,
+          greyed: document.getElementById('login').disabled && document.getElementById('updates').disabled,
+          notes: [...p.querySelectorAll('#login-dev, #updates-dev')].filter(shown).map((n) => n.textContent.trim()),
+        });`,
+      ),
+    );
+    viewer['F221 General holds the four settings'] =
+      JSON.stringify(general.controls) ===
+        JSON.stringify(['Open Snapmark at login', 'Change…', 'Clear Sessions Older Than 60 Days…', 'Check for Updates…']) &&
+      general.version === `Snapmark ${app.getVersion()}`;
+    viewer['F222 a development build greys login and updates'] =
+      general.greyed && JSON.stringify(general.notes) === JSON.stringify(['Only in the installed app.', 'Only in the installed app.']);
+    // Capture: the bar's options; One-Shot here makes the bar's button read Capture One-Shot
+    await inWin(set, `document.getElementById('tab-capture').click(); document.getElementById('oneshot').click();`);
+    await sleep(200);
+    const oneShotBar = openCaptureBar(runner)!;
+    await barReady(oneShotBar);
+    const oneShotLabel = await inWin(oneShotBar, `return document.getElementById('capture').textContent`);
+    oneShotBar.destroy();
+    await inWin(set, `document.getElementById('current').click();`);
+    await sleep(200);
+    viewer['F223 Capture tab and bar share their options'] =
+      oneShotLabel === 'Capture One-Shot' && (await inWin(set, `return document.getElementById('current').checked`));
+    // Shortcuts: the four global keys, each taken here (quiet mode registers none); Show All Shortcuts opens the list
+    await inWin(set, `document.getElementById('tab-shortcuts').click();`);
+    const keyRows = await inWin(
+      set,
+      `return JSON.stringify([...document.querySelectorAll('#keys li')].map((li) => [li.querySelector('kbd').textContent, li.textContent.includes('Taken by another app')]))`,
+    );
+    const beforeAll = BrowserWindow.getAllWindows();
+    await inWin(set, `document.getElementById('all').click();`);
+    const allKeys = await nextWindow(beforeAll);
+    viewer['F224 Shortcuts tab lists the keys'] =
+      keyRows ===
+        JSON.stringify([
+          ['⌃⇧4', true],
+          ['⌃⇧3', true],
+          ['⌃⇧5', true],
+          ['⌃⇧N', true],
+        ]) && /keyboard shortcuts/i.test(allKeys.getTitle());
+    allKeys.destroy();
+    // Pick tools with single keys off reaches a new editor
+    await inWin(set, `document.getElementById('single').click();`);
+    await sleep(200);
+    fs.copyFileSync(shotCopy, path.join(root, 'single.png'));
+    const singleOff = openEditor(path.join(root, 'single.png'), { session: 'smoke' });
+    await new Promise<void>((r) => singleOff.webContents.once('did-finish-load', () => r()));
+    await loaded(singleOff);
+    viewer['F225 single keys off reaches the editor'] =
+      !(await inWin(set, `return document.getElementById('single').checked`)) && (await inWin(singleOff, `return singleKeys === false`));
+    singleOff.destroy();
+    setSingleKeys(true);
+    // Every control is named and in the Tab order; → moves between tabs, wrapping
+    const named = await inWin(
+      set,
+      `const all = [...document.querySelectorAll('input, select, button')];
+      return all.every((c) => c.labels?.length || (c.getAttribute('aria-label') ?? '').trim() || (c.tagName === 'BUTTON' && c.textContent.trim())) &&
+        all.every((c) => c.tabIndex >= 0 || c.getAttribute('role') === 'tab');`,
+    );
+    await inWin(set, `document.querySelector('[aria-selected="true"]').focus();`);
+    keyTo(set, 'Right');
+    await sleep(100);
+    const tabMoved = await inWin(set, `return document.querySelector('[aria-selected="true"]').textContent.trim() + '|' + document.activeElement.textContent.trim()`);
+    viewer['F228 Settings controls are labelled and reachable'] = named && tabMoved === 'General|General';
+    set.destroy();
 
     // One-shot mode: Beautify instead of References, no Add to session; ⌘C copies the marked screenshot on its
     // backdrop at full resolution; nothing goes into a session; closing keeps it in Discarded; the settings are remembered

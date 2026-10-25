@@ -31,6 +31,10 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
     ],
   },
   {
+    title: 'Snapmark windows',
+    rows: [['⌘,', 'Settings', '']],
+  },
+  {
     title: 'Editor',
     rows: [
       ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],

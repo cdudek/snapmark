@@ -36,7 +36,7 @@ assert.ok(!/['"]Control\+Shift\+\w['"]/.test(main), 'main.ts takes every global 
 // F19 key list: groups by where the key works, in the rows of spec/microcopy.md and spec/capture-and-settings.md
 assert.deepStrictEqual(
   KEY_GROUPS.map((g) => g.title),
-  ['Anywhere', 'Capture bar', 'Editor', 'Session window'],
+  ['Anywhere', 'Capture bar', 'Snapmark windows', 'Editor', 'Session window'],
 );
 const keys = (title: string) => KEY_GROUPS.find((g) => g.title === title)!.rows.map(([k]) => k);
 assert.deepStrictEqual(keys('Anywhere'), ['⌃⇧4', '⌃⇧3', '⌃⇧5', '⌃⇧N', '↩ / Esc']);
@@ -46,6 +46,7 @@ assert.deepStrictEqual(KEY_GROUPS[0].rows[2], [
   'the capture bar: window, new area, last area or scrolling, and where it goes',
 ]);
 assert.deepStrictEqual(keys('Capture bar'), ['← →', '↩', 'Esc']);
+assert.deepStrictEqual(keys('Snapmark windows'), ['⌘,']);
 assert.deepStrictEqual(keys('Editor'), ['Esc', '⌫', '← ↑ → ↓', '⌘A', '⌘1–⌘7', '⌘Z', '⇧⌘Z', '⌘S / ⌘↵', '⌘C / ⇧⌘C', '⇧⌘S', '⌘W']);
 assert.deepStrictEqual(keys('Session window'), ['← →', '↩', '⌘⌫', '⌘O', '⌘Z']);
 for (const g of KEY_GROUPS) for (const r of g.rows) assert.strictEqual(r.length, 3, `${r[0]}: key, name, what`);

@@ -56,15 +56,14 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 │                     · Older Sessions… (only above 10) ──► folder panel (native), "Session folders start with their date."; wrong pick: notification afterwards
 ├── New Session  ⌃⇧N   ──► notification "New session: 2026-09-28 22.15" (or "… is still empty, so new captures keep going there.")
 ├── ──
-├── Settings ▸  ✓ Open at Login · Sessions Folder… (sub-line ~/Documents/Snapmark) ──► folder panel; sessions left behind
-│               · Keyboard Shortcuts ──► Keyboard Shortcuts window · Check for Updates… (sub-line "Snapmark 0.9.0") ──► notification
+├── Settings…  ⌘,              ──► SETTINGS WINDOW (was: Settings ▸ six items)
 └── Quit Snapmark ⌘Q   ──► with unsaved editors: sheet "N screenshots are not in a session yet." [Review] [Quit anyway]
 
 EDITOR  (one per capture; title "Snapmark"; opens centred, exactly on top of any open editor; Dock icon shows;
          from a full-screen app it stays on that Space while the Mac slides to the desktop, F026 / F026)
 ├── Title row: traffic lights · app icon + "Snapmark" (drags the window; the window title stays "Snapmark — <session>")
 ├── Toolbar: C Select · ⌘1 Reference/Card · ⌘2 Box/Ellipse · ⌘3 Arrow · ⌘4 Pen · ⌘5 Cross/Remove area ·
-│            ⌘6 Highlighter/Spotlight · ⌘7 Cut & move/Redact (captions follow Settings ▸ Single-Key Tools: C or Esc) ·
+│            ⌘6 Highlighter/Spotlight · ⌘7 Cut & move/Redact (captions follow Settings ▸ Shortcuts ▸ Pick tools with single keys: C or Esc) ·
 │            colour swatch · Undo (icon) · Redo (icon) · Copy or Save (icon) · "<session> · n screenshots ⌄"
 ├── Copy or Save ──► native menu: Copy Image ⇧⌘C · Save As… ⇧⌘S
 ├── session label ⌄ ──► native menu: the 10 recent sessions (this editor's ticked) · New Session
@@ -75,8 +74,8 @@ EDITOR  (one per capture; title "Snapmark"; opens centred, exactly on top of any
 │         session folder gone ──► nothing; button dead (silent, F049)
 ├── ⌘W · Discard · Esc past Select · close button · ⌘R (stock Reload) · Quit anyway · Restart to Update
 │         ──► Discarded, 7 days (silent); an unchanged Edit Again is filed too (F077/F078)
-└── Mac menu bar (Electron's stock menus): File ▸ Close Window ⌘W · Edit ▸ Undo (not the marks) ·
-    View ▸ Reload ⌘R, Force Reload, Toggle Developer Tools, zoom, Toggle Full Screen ⌃⌘F · Window · no Help, no Settings
+└── Mac menu bar: Snapmark (About, Settings… ⌘,, Services, Hide, Quit) · File ▸ Close Window ⌘W · Edit ▸ Undo (not the marks) ·
+    View ▸ Reload ⌘R, Force Reload, Toggle Developer Tools, zoom, Toggle Full Screen ⌃⌘F · Window · no Help
 
 SESSION WINDOW  (title "<folder name> — Snapmark"; 900 × 900; one per session, brought forward if open;
                  follows outside changes to session.md; reopens on the new name after Rename)
@@ -91,6 +90,11 @@ CAPTURE BAR       bottom centre of the pointer's display, every Space, full scre
                   Capture | Capture One-Shot
                   ↩ ──► bar closes ──► the mode (Timer: seconds beside the menu bar icon, Esc cancels) ──► Editor
                   (session or one-shot) · Esc ──► nothing
+SETTINGS WINDOW   title names the tab; one window, brought forward if open; reads its data again when it comes forward
+                  General: Open Snapmark at login · Sessions folder Change… ──► folder panel · Clear Sessions Older Than 60 Days… ·
+                  Snapmark <version> Check for Updates… ──► notification
+                  Capture: Save to · Timer · Show mouse pointer (the capture bar's options)
+                  Shortcuts: Pick tools with single keys · the four global keys · Show All Shortcuts ──► KEYBOARD SHORTCUTS WINDOW
 AREA PICKER       see-through, display under the pointer, every Space; hint "Drag over the area to capture.
                   ⌃⇧3 captures it again each time. Esc cancels."
 KEYBOARD SHORTCUTS WINDOW   "Keyboard shortcuts", 520 × 640, read-only, no Dock icon, Esc does nothing;

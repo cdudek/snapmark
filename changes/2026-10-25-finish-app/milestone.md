@@ -26,12 +26,12 @@ In build order. `state` is `todo`, `building`, `done <sha>` (a commit on the mil
 | 4   | 2026-10-25-finish-app | M1.4 Session window and rename leftovers       | 5019430      | done 5019430 |
 | 5   | 2026-10-25-finish-app | M1.5 Small fixes                               | 112f8b1      | done 112f8b1 |
 | 6   | 2026-10-25-finish-app | M1.6 Own LC_UUID                               | 0340156      | done 0340156 |
-| 7   | 2026-10-25-finish-app | M2.1 Capture bar                               | —            | todo         |
-| 8   | 2026-10-25-finish-app | M2.2 Settings window                           | —            | todo         |
-| 9   | 2026-10-25-finish-app | M2.3 Keyboard Shortcuts window                 | —            | todo         |
-| 10  | 2026-10-25-finish-app | M3.1 Parts on save                             | —            | todo         |
-| 11  | 2026-10-25-finish-app | M3.2 One screenshot everywhere                 | —            | todo         |
-| 12  | 2026-10-25-finish-app | M4.1 Electron 45, vitest 5, Dependabot updates | —            | todo         |
+| 7   | 2026-10-25-finish-app | M2.1 Capture bar                               | 94e24d8      | done 94e24d8 |
+| 8   | 2026-10-25-finish-app | M2.2 Settings window                           | —            | todo  |
+| 9   | 2026-10-25-finish-app | M2.3 Keyboard Shortcuts window                 | —            | todo  |
+| 10  | 2026-10-25-finish-app | M3.1 Parts on save                             | —            | todo  |
+| 11  | 2026-10-25-finish-app | M3.2 One screenshot everywhere                 | —            | todo  |
+| 12  | 2026-10-25-finish-app | M4.1 Electron 45, vitest 5, Dependabot updates | —            | todo  |
 
 ## Milestone PRs
 

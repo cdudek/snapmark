@@ -4,6 +4,7 @@ import path from 'path';
 import type { MenuItemConstructorOptions as Item } from 'electron';
 import {
   menuTemplate,
+  appMenu,
   loginState,
   editorSessionMenu,
   copyMenu,
@@ -27,17 +28,11 @@ const base: MenuState = {
     { name: '2026-09-25 12.03', label: '2026-09-25, 12:03', count: 2 },
     { name: 'Old', label: 'Old', count: 0 },
   ],
-  root: '~/Documents/Snapmark',
-  canChangeRoot: true,
-  login: { enabled: true, checked: false, needsApproval: false },
-  version: '0.2.0',
-  canUpdate: true,
   updateWaiting: null,
   shortcuts: { capture: 'Control+Shift+4', area: 'Control+Shift+3', options: 'Control+Shift+5', newSession: 'Control+Shift+N' },
   area: null,
   iconDir: '',
   hasDiscarded: false,
-  singleKeys: true,
 };
 const menu = (over: Partial<MenuState> = {}) => menuTemplate({ ...base, ...over }, a);
 const labels = (items: Item[]) => items.filter((i) => i.visible !== false).map((i) => (i.type === 'separator' ? '—' : i.label));
@@ -62,7 +57,7 @@ assert.deepStrictEqual(labels(menu()), [
   '—',
   'Session',
   '—',
-  'Settings',
+  'Settings…',
   'Quit Snapmark',
 ]);
 assert.strictEqual(head(menu()).label, 'Adding screenshots to');
@@ -72,7 +67,7 @@ const depth = (items: Item[]): number => Math.max(1, ...items.map((i) => (Array.
 assert.strictEqual(depth(menu()), 3, 'Session ▸ Switch Session ▸ is the deepest');
 
 // Discarded Screenshots: a submenu before Settings, only when there is something to reopen
-assert.deepStrictEqual(labels(menu({ hasDiscarded: true })).slice(-4), ['Discarded Screenshots', '—', 'Settings', 'Quit Snapmark']);
+assert.deepStrictEqual(labels(menu({ hasDiscarded: true })).slice(-4), ['Discarded Screenshots', '—', 'Settings…', 'Quit Snapmark']);
 const disc = sub(find(menu({ hasDiscarded: true }), 'Discarded Screenshots'));
 find(disc, 'Reopen Last Discarded').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'reopenLast');
@@ -176,27 +171,36 @@ assert.strictEqual(find(listed, '2026-09-25, 12:03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'makeCurrent:Old');
 
-// Settings holds what Help used to: the shortcuts, and the version under Check for Updates (no Help menu, owner 2026-09-26)
-assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
-  'Open at Login',
-  'Sessions Folder…',
-  'Clear Sessions Older Than 60 Days…',
-  'Keyboard Shortcuts',
-  'Single-Key Tools',
-  'Check for Updates…',
-]);
-assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Check for Updates…').sublabel, 'Snapmark 0.2.0');
+// F219 Settings… and ⌘,: the menu row and the app menu open the Settings window; the app menu keeps the stock roles
+const settingsRow = find(menu(), 'Settings…');
+assert.strictEqual(settingsRow.accelerator, 'Command+,', 'F219');
+settingsRow.click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'settings', 'F219');
+const app = appMenu(a);
+assert.strictEqual(app[0].label, 'Snapmark', 'F219 the Snapmark menu first');
+const snapmark = sub(app[0]);
+const appSettings = find(snapmark, 'Settings…');
+assert.strictEqual(appSettings.accelerator, 'Command+,', 'F219');
+appSettings.click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'settings', 'F219');
+assert.deepStrictEqual(
+  app.slice(1).map((i) => i.role),
+  ['fileMenu', 'editMenu', 'viewMenu', 'windowMenu'],
+  'F219 File, Edit, View and Window stay stock, so ⌘C, ⌘V and ⌘W keep working',
+);
+assert.deepStrictEqual(
+  snapmark.filter((i) => i.role).map((i) => i.role),
+  ['about', 'services', 'hide', 'hideOthers', 'unhide', 'quit'],
+  'F219 the Snapmark menu keeps Hide and Quit',
+);
 
-// Single-Key Tools (WCAG 2.1.4, UX review of #76): letters and digits picking tools can be turned off
-const single = find(sub(find(menu(), 'Settings')), 'Single-Key Tools');
-assert.strictEqual(single.type, 'checkbox');
-assert.strictEqual(single.checked, true);
-assert.strictEqual(find(sub(find(menu({ singleKeys: false }), 'Settings')), 'Single-Key Tools').checked, false);
-single.click!({ checked: false } as never, undefined, {} as never);
-assert.strictEqual(calls.pop(), 'setSingleKeys:false');
-find(sub(find(menu(), 'Settings')), 'Clear Sessions Older Than 60 Days…').click!({} as never, undefined, {} as never);
-assert.strictEqual(calls.pop(), 'clearOldSessions');
-assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Sessions Folder…').sublabel, '~/Documents/Snapmark');
+// F226 Settings…: one row, no Settings submenu, last before Quit
+assert.ok(
+  menu().every((i) => !(Array.isArray(i.submenu) && /^Settings/.test(i.label ?? ''))),
+  'F226 no Settings submenu',
+);
+assert.deepStrictEqual(labels(menu()).slice(-2), ['Settings…', 'Quit Snapmark'], 'F226');
+assert.strictEqual(settingsRow.submenu, undefined, 'F226');
 
 // A waiting update comes first; a shortcut is shown only when registered
 const upd = menu({ updateWaiting: '0.4.2' });
@@ -224,14 +228,12 @@ assert.deepStrictEqual(loginState(false, { openAtLogin: true, status: 'enabled' 
   checked: false,
   needsApproval: false,
 });
-const wait = find(
-  sub(find(menu({ login: loginState(true, { openAtLogin: false, status: 'requires-approval' }) }), 'Settings')),
-  'Open at Login',
-);
-assert.strictEqual(wait.checked, false);
-assert.strictEqual(wait.sublabel, 'Allow in System Settings → Login Items');
-const ticked = find(sub(find(menu({ login: loginState(true, { openAtLogin: false, status: 'enabled' }) }), 'Settings')), 'Open at Login');
-assert.strictEqual(ticked.checked, true);
+// F222 approval: while macOS waits for the owner's approval, Settings says so
+assert.deepStrictEqual(loginState(true, { openAtLogin: false, status: 'requires-approval' }), {
+  enabled: true,
+  checked: false,
+  needsApproval: true,
+});
 
 // F113 Copy or Save menu: Copy Image ⇧⌘C and Save As… ⇧⌘S, which do what the two buttons did
 // The same recording proxy, for the editor's own menus

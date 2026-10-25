@@ -85,8 +85,25 @@ interface BarInit extends CaptureOpts {
   last: string; // Capture Last Area's suffix: "1280 × 720" or "First time: drag the area"
 }
 
+// The Settings window (settings.html): what its three tabs show.
+interface SettingsInit {
+  login: { enabled: boolean; checked: boolean; needsApproval: boolean }; // menu.ts loginState
+  root: string; // sessions folder, ~-shortened
+  canChangeRoot: boolean; // false while SNAPMARK_ROOT sets it
+  version: string;
+  canUpdate: boolean; // false in a development build
+  singleKeys: boolean;
+  keys: { cap: string; name: string; taken: boolean }[]; // the four global keys; taken: another app has it
+  capture: CaptureOpts; // the capture bar's options
+}
+type SettingsKey = 'login' | 'singleKeys' | 'oneShot' | 'timer' | 'pointer';
+type SettingsRun = 'chooseRoot' | 'clearOld' | 'checkUpdates' | 'loginItems' | 'shortcuts';
+
 interface Window {
   snapmark: {
+    settingsInit(): Promise<SettingsInit>;
+    settingsSet(key: SettingsKey, value: boolean | number): Promise<SettingsInit>;
+    settingsRun(what: SettingsRun): Promise<SettingsInit>; // resolves once it is done (a dialog closed)
     barInit(): Promise<BarInit>;
     barCapture(mode: CaptureMode): void; // closes the bar, then runs the mode
     barOptions(mode: CaptureMode, at: Area): void; // the Options menu under `at` (window points), for the chosen mode
