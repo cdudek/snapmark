@@ -2,7 +2,7 @@
 id: 2026-10-25-adr-session-folders-keep-their-date-stamp
 title: 'Session folders keep their date stamp; screens show a readable name'
 type: adr
-status: proposed
+status: accepted
 created: 2026-10-25
 supersedes: []
 superseded_by: []

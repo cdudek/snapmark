@@ -90,8 +90,8 @@ Feature 2 (`session-names/2-readable-dates`, cut after feature 1 merges):
 - [x] 7. `src/sessions.ts`: stamp regex, `shortName`, `namePart`, `renamedTo`, `rename`, `saveAsName`, `whenLabel` — proof: the unit blocks pass.
 - [x] 8. `src/exporter.ts` heading — proof: F5 passes.
 - [x] 9. `src/shared.d.ts`, `src/main.ts`, `src/viewer.ts`, `src/viewer.html` — proof: `npm run typecheck` exits 0; `grep -n "notify(" src/main.ts` shows every session name through `sessions.shortName` (F4).
-- [ ] 10. Smoke checks F2, F3, F8, F9 in `test/smoke.ts` — proof: `npm run build` exits 0. CI's smoke run passes them on the PR; never run locally.
-- [ ] 11. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
+- [x] 10. Smoke checks F2, F3, F8, F9 in `test/smoke.ts` — proof: `npm run build` exits 0. CI's smoke run passes them on the PR; never run locally.
+- [x] 11. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
 - [ ] 12. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
 - [ ] 13. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
 
@@ -155,3 +155,5 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — Feature 1 UX review found no Critical or High. Fixed: a committed `.pyc`, two stale "Other Session…" labels. The one-session Low is a beads follow-up.
 - 2026-10-25 — Step 13 added: subagents are closed when their report is in (owner, retro of the mac-shortcuts change).
 - 2026-10-25 — Retro: a Critical or High is never deferred without asking first. Interior branches now wait for CI before auto-merge.
+- 2026-10-25 — The exporter row said `session.md` stays untouched; F19 changed that. `create()`, `rename()` and a recreated `session.md` write the display name as heading.
+- 2026-10-25 — `sessions.renamedTo()` gives the target folder, so the session window and the menu dialog check it before renaming.
