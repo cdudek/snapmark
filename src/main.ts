@@ -88,7 +88,7 @@ const focusApp = () => quiet || app.focus({ steal: true });
 // The Dock icon shows while any Snapmark window is open. A new window turns it on only once it has focus: turned
 // on first, Snapmark becomes a Dock app while another app is full screen, and macOS slides to the desktop, leaving
 // the window behind on the full-screen Space (owner, 2026-09-28).
-const updateDock = () => quiet || (editors.size || viewers.size ? void app.dock?.show() : app.dock?.hide());
+const updateDock = () => desk.dock(editors.size + viewers.size > 0);
 
 function loadState() {
   try {
@@ -170,11 +170,7 @@ async function clearOldSessions() {
 
 const tilde = (p: string) => (p.startsWith(os.homedir()) ? `~${p.slice(os.homedir().length)}` : p);
 
-function notify(body: string, onClick?: () => void) {
-  const n = new Notification({ title: 'Snapmark', body });
-  if (onClick) n.on('click', onClick);
-  n.show();
-}
+const notify = (body: string, onClick?: () => void) => desk.notify(body, onClick);
 
 const dirOf = (name: string) => path.join(root, name);
 
@@ -191,9 +187,16 @@ function shoot(args: string[], oneShot = false) {
   const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
   shooting = true;
   // -x: no sound
-  execFile('screencapture', [...args, '-x', tmp], () => {
+  desk.screencapture([...args, '-x', tmp], (err, stderr) => {
     shooting = false;
-    if (fs.existsSync(tmp)) openEditor(tmp, { oneShot }); // missing file = user pressed Esc
+    if (fs.existsSync(tmp)) return void openEditor(tmp, { oneShot });
+    // No picture. Esc in macOS's overlay (-i) says nothing, and stays quiet; anything else is a failure, said so (F028).
+    const why = stderr.trim() || (args.includes('-i') ? '' : (err?.message ?? 'screencapture made no image'));
+    if (why)
+      notify(
+        `Capture failed: ${why.replace(/\.$/, '')}. No screenshot was added. Click to try again.`,
+        () => busy() || shoot(args, oneShot),
+      );
   });
 }
 
@@ -221,7 +224,8 @@ async function captureArea(choose = false) {
   if (busy()) return; // ⌃⇧3 again while dragging, or while Capture Scrolling runs
   if (choose || !area || !onScreen(area)) {
     picking = true;
-    const picked = await pickArea().finally(() => (picking = false));
+    // F041: the hint says why the picker is back when the area's display is gone
+    const picked = await pickArea(!choose && area ? 'gone' : '').finally(() => (picking = false));
     if (!picked) return;
     area = picked;
     saveState();
@@ -232,8 +236,9 @@ async function captureArea(choose = false) {
 const rect = (a: Area) => [a.x, a.y, a.width, a.height].map(Math.round).join(',');
 
 // `screencapture -i` never says where its region was, so the area to repeat is dragged in Snapmark's own
-// see-through window over the display with the pointer. Resolves once that window is off the screen.
-export function pickArea(scroll = false): Promise<Area | null> {
+// see-through window over the display with the pointer. Resolves once that window is off the screen. `mode` picks the
+// hint: Capture Scrolling's, or the one saying the last area's display is gone.
+export function pickArea(mode: '' | 'scroll' | 'gone' = ''): Promise<Area | null> {
   const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const win = new BrowserWindow({
     ...bounds,
@@ -254,7 +259,7 @@ export function pickArea(scroll = false): Promise<Area | null> {
     win.show();
     focusApp();
   });
-  void win.loadFile(path.join(__dirname, 'area.html'), scroll ? { hash: 'scroll' } : {});
+  void win.loadFile(path.join(__dirname, 'area.html'), mode ? { hash: mode } : {});
   return new Promise((resolve) => {
     let picked: Area | null = null;
     const done = (e: IpcMainEvent, a: Area | null) => {
@@ -276,7 +281,7 @@ export function pickArea(scroll = false): Promise<Area | null> {
 async function captureScrolling() {
   if (busy()) return;
   picking = true;
-  const picked = await pickArea(true).finally(() => (picking = false));
+  const picked = await pickArea('scroll').finally(() => (picking = false));
   if (!picked) return;
   scrolling = true;
   await scrollCapture(picked).finally(() => (scrolling = false));
@@ -541,12 +546,22 @@ function tellEditors(into: string, name: string) {
     }
 }
 
-// Out of the owner's sight, and swapped by the smoke test, which must not touch the clipboard or wait on a dialog, and
-// runs on Linux, where there is no text recognition.
+// Out of the owner's sight, and swapped by the smoke test, which must not touch the clipboard, the Dock or the screen,
+// show a notification or wait on a dialog, and runs on Linux, where there is no text recognition.
 export const desk = {
   recognize,
   copyImage: (png: Buffer) => clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(png)], { type: 'image/png' }) })]),
+  copyText: (text: string): void => void clipboard.writeText(text),
   savePath: (win: BrowserWindow, opts: Electron.SaveDialogOptions) => dialog.showSaveDialog(win, opts),
+  notify: (body: string, onClick?: () => void) => {
+    const n = new Notification({ title: 'Snapmark', body });
+    if (onClick) n.on('click', onClick);
+    n.show();
+  },
+  // The capture itself; `done` gets screencapture's error and what it wrote to stderr.
+  screencapture: (args: string[], done: (err: Error | null, stderr: string) => void): void =>
+    void execFile('screencapture', args, (err, _out, stderr) => done(err, String(stderr ?? ''))),
+  dock: (on: boolean) => quiet || (on ? void app.dock?.show() : app.dock?.hide()),
 };
 
 // Copy Image and Save As…: in session mode the image exactly as Add to session would save it, without adding it to the
@@ -939,11 +954,11 @@ const actions: MenuActions = {
   oneShot: captureOneShot,
   newSession,
   copyPrompt: (name) => {
-    clipboard.writeText(promptFor(dirOf(name)));
+    desk.copyText(promptFor(dirOf(name)));
     notify(`Prompt for ${sessions.shortName(name)} copied. Paste it into your AI agent.`);
   },
   copyPath: (name) => {
-    clipboard.writeText(sessionMdPath(dirOf(name)));
+    desk.copyText(sessionMdPath(dirOf(name)));
     notify(`Path to ${sessions.shortName(name)} copied.`);
   },
   openFile: (name) => exists(name, 'session.md') && void openViewer(name),

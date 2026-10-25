@@ -3,8 +3,9 @@
 // Wrapped in a function so its names stay out of editor.ts's scope.
 (() => {
   const el = (id: string) => document.getElementById(id)!;
-  const [hint, box, size] = [el('hint'), el('box'), el('size')];
+  const [hint, box, size, say] = [el('hint'), el('box'), el('size'), el('say')];
   if (location.hash === '#scroll') hint.textContent = 'Drag over the part that scrolls, then scroll it. Esc cancels.';
+  if (location.hash === '#gone') hint.textContent = 'The last area was on a display that is not connected. Drag a new area. Esc cancels.';
   let start: { x: number; y: number } | null = null;
   let area: Area | null = null;
 
@@ -20,10 +21,14 @@
     Object.assign(box.style, { left: `${x}px`, top: `${y}px`, width: `${area.width}px`, height: `${area.height}px` });
     Object.assign(size.style, { left: `${x}px`, top: `${y + area.height + 6}px` });
     size.textContent = `${area.width} × ${area.height}`;
+    say.textContent = `${area.width} by ${area.height} points`; // F043: a screen reader hears the size as it changes
     box.hidden = size.hidden = false;
   });
   document.addEventListener('mouseup', () => {
-    if (area && area.width >= 8 && area.height >= 8) return window.snapmark.areaDone(area);
+    if (area && area.width >= 8 && area.height >= 8) {
+      say.textContent = `Area set: ${area.width} by ${area.height} points.`;
+      return window.snapmark.areaDone(area);
+    }
     // A click, or a sliver: start over.
     start = area = null;
     box.hidden = size.hidden = true;

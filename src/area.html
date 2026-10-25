@@ -50,6 +50,13 @@
           600 12px ui-monospace,
           monospace;
       }
+      #say {
+        position: fixed;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+      }
       [hidden] {
         display: none;
       }
@@ -59,6 +66,7 @@
     <div id="hint">Drag over the area to capture. ⌃⇧3 captures it again each time. Esc cancels.</div>
     <div id="box" hidden></div>
     <div id="size" hidden></div>
+    <div id="say" aria-live="polite"></div>
     <script src="area.js"></script>
   </body>
 </html>

@@ -52,6 +52,12 @@ desk.savePath = async (_win, opts) => {
   return { canceled: false, filePath: savedAs };
 };
 desk.recognize = async () => null; // as on Linux, where there is no Vision; the auto-redact checks feed their own text
+// Never a notification on the owner's screen, never their clipboard, never a real screencapture: kept here instead.
+const notes: { body: string; onClick?: () => void }[] = [];
+desk.notify = (body, onClick) => void notes.push({ body, onClick });
+let copiedText = '';
+desk.copyText = (text) => void (copiedText = text);
+desk.screencapture = (_args, done) => done(new Error('no screencapture in the smoke test'), '');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -74,6 +80,7 @@ app
     const shotSize = nativeImage.createFromPath(shot).getSize();
     const shotCopy = path.join(root, 'mock-copy.png'); // openEditor deletes its input on close
     fs.copyFileSync(shot, shotCopy);
+    const why: Record<string, unknown> = {}; // what some checks saw, printed when the suite fails
     setActive(sessions.create(root, 'smoke'));
     const win = openEditor(shot);
     win.webContents.on('console-message', (e) => console.log('[page]', (e as unknown as { message: string }).message));
@@ -379,6 +386,45 @@ app
       win.webContents.sendInputEvent({ type: 'keyUp', ...ev }); // or the next typed character counts as ⌘ + that key
       await sleep(200);
     };
+    // snap-c5c F13: two marks dragged with the real mouse move together as one step; one ⌘Z puts both back
+    const pair = await win.webContents.executeJavaScript(`(() => {
+      group = GROUPS.findIndex((g) => g.key === 'c'); variant[group] = 0; applyTool();
+      const two = canvas.getObjects().filter((o) => o instanceof Glyph).slice(0, 2);
+      window.pair = two;
+      const at = JSON.stringify(two.map((o) => [o.left, o.top]));
+      select(two);
+      const c = fabric.util.transformPoint(canvas.getActiveObject().getCenterPoint(), canvas.viewportTransform);
+      const b = document.querySelector('.upper-canvas').getBoundingClientRect(), k = b.width / canvas.getWidth();
+      return { x: Math.round(b.left + c.x * k), y: Math.round(b.top + c.y * k), at, steps: undoStack.length };
+    })()`);
+    win.webContents.sendInputEvent({ type: 'mouseDown', x: pair.x, y: pair.y, button: 'left', clickCount: 1 });
+    for (let i = 1; i <= 5; i++)
+      win.webContents.sendInputEvent({
+        type: 'mouseMove',
+        x: pair.x + i * 8,
+        y: pair.y + i * 6,
+        button: 'left',
+        modifiers: ['leftbuttondown'],
+      });
+    win.webContents.sendInputEvent({ type: 'mouseUp', x: pair.x + 40, y: pair.y + 30, button: 'left', clickCount: 1 });
+    await sleep(300);
+    const pairNow = `(() => { canvas.discardActiveObject(); return JSON.stringify({ at: pair.map((o) => [o.left, o.top]), steps: undoStack.length }); })()`;
+    const dragged2 = JSON.parse(await win.webContents.executeJavaScript(pairNow));
+    const was = JSON.parse(pair.at) as number[][];
+    const [dx, dy] = [dragged2.at[0][0] - was[0][0], dragged2.at[0][1] - was[0][1]];
+    const movedTogether =
+      dx > 0 &&
+      dy > 0 &&
+      dragged2.at.every((p: number[], i: number) => Math.abs(p[0] - was[i][0] - dx) < 0.01 && Math.abs(p[1] - was[i][1] - dy) < 0.01);
+    await cmdZ();
+    const undone2 = JSON.parse(await win.webContents.executeJavaScript(pairNow));
+    why.F13 = { pair, dragged2, undone2 };
+    inPage['snap-c5c F13: two marks dragged with the mouse are one step, one ⌘Z puts both back'] =
+      movedTogether &&
+      dragged2.steps === pair.steps + 1 &&
+      undone2.at.every((p: number[], i: number) => Math.abs(p[0] - was[i][0]) < 0.01 && Math.abs(p[1] - was[i][1]) < 0.01) &&
+      undone2.steps === pair.steps;
+    await win.webContents.executeJavaScript(`group = GROUPS.findIndex((g) => g.key === '1'); variant[group] = 0; applyTool();`);
     await click();
     const placed = await refs();
     await cmdZ();
@@ -689,9 +735,10 @@ app
     viewer['Esc cancels the rename'] =
       (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
       !fs.existsSync(path.join(root, 'smoke renamed'));
-    // F127: an emptied field and a click away keep the name
+    // F127: an emptied field and a click away keep the name. The click away is the field's blur event: blur() does
+    // nothing when another app has taken the focus from this window, as a parallel test run can.
     await inView(
-      `document.getElementById('title').click(); document.getElementById('rename').value = ''; document.getElementById('rename').blur();`,
+      `document.getElementById('title').click(); document.getElementById('rename').value = ''; document.getElementById('rename').dispatchEvent(new FocusEvent('blur'));`,
     );
     await sleep(300);
     viewer['F127 an empty field and a click away keep the name'] =
@@ -843,6 +890,120 @@ app
     const cancelled = await pickWith((w) => w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' }));
     viewer['area picker: Esc gives no area and closes the picker'] =
       cancelled === null && !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('area.html'));
+
+    // snap-bmr.14.3 F027, F028, F041, F043 (UX audit 2026-09-28): the capture items, with screencapture stubbed
+    const shots: string[][] = [];
+    let fail: string | null = null; // what a failing screencapture writes to stderr; '' is Esc in macOS's overlay
+    const dock: boolean[] = [];
+    const dockOnOpen: boolean[] = []; // did opening the editor turn the Dock on, before the editor had focus
+    desk.dock = (on) => void dock.push(on);
+    desk.screencapture = (args, done) => {
+      shots.push(args);
+      if (fail !== null) return done(new Error('Command failed: screencapture'), fail);
+      fs.copyFileSync(shotCopy, args.at(-1)!);
+      const n = dock.length;
+      done(null, ''); // opens the editor, synchronously: no event has reached it yet
+      dockOnOpen.push(dock.length > n);
+    };
+    type Item = Electron.MenuItemConstructorOptions;
+    const item = (label: string, items: Item[] = menuItems()) => items.find((i) => i.label?.startsWith(label))!;
+    const press = (label: string, items?: Item[]) => item(label, items).click!({} as never, undefined, {} as never);
+    const loadedWindow = async (before: BrowserWindow[]) => {
+      const w = await nextWindow(before);
+      for (let i = 0; i < 50 && (w.webContents.isLoading() || !w.webContents.getURL()); i++) await sleep(100);
+      return w;
+    };
+    let spoken = '';
+    const pickerOpen = () => BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('area.html'));
+    // F043: while dragging, a polite live region says the size the label shows. Compared with the label, not with
+    // fixed numbers: the pointer over the see-through picker can move the drag while the page is read.
+    const speaking = await pickWith((w) => {
+      w.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+      void w.webContents
+        .executeJavaScript(
+          `(async () => { const s = document.getElementById('say'); for (let i = 0; i < 30 && !s.textContent; i++) await new Promise((r) => setTimeout(r, 50));
+            return [s.getAttribute('aria-live'), getComputedStyle(s).width, s.textContent === document.getElementById('size').textContent.replace(' × ', ' by ') + ' points', /^\\d+ by \\d+ points$/.test(s.textContent)].join('|'); })()`,
+        )
+        .then((v) => {
+          spoken = v;
+          w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+        });
+    });
+    viewer['snap-bmr.14.3 F043: the area picker speaks the size while dragging'] = speaking === null && spoken === 'polite|1px|true|true';
+    // Choose New Area…: the picker, a drag, then the capture
+    let windowsNow = BrowserWindow.getAllWindows();
+    press('Choose New Area…', item('Capture Options').submenu as Item[]);
+    const chooser = await loadedWindow(windowsNow);
+    windowsNow = BrowserWindow.getAllWindows();
+    chooser.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+    chooser.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+    chooser.webContents.sendInputEvent({ type: 'mouseUp', x: 400, y: 320, button: 'left', clickCount: 1 });
+    const repeats = [await loadedWindow(windowsNow)];
+    // F027: Capture Last Area again and again: the same rectangle at once, no picker, each time an editor that turns the
+    // Dock on only once it has focus (turned on first, macOS leaves a full-screen browser for the desktop)
+    for (let i = 0; i < 2; i++) {
+      windowsNow = BrowserWindow.getAllWindows();
+      press('Capture Last Area');
+      repeats.push(await loadedWindow(windowsNow));
+    }
+    const rects = shots.map((a) => a.slice(0, 3).join(' '));
+    const dockAfterFocus = repeats.every((w) => {
+      const n = dock.length;
+      w.emit('focus'); // what macOS sends when the reviewer gets to it; once only, so no harm if it came already
+      return dock.length > n ? dock.at(-1) === true : dock.includes(true);
+    });
+    viewer['snap-bmr.14.3 F027: Capture Last Area repeats the area at once, the editor waits for focus before the Dock'] =
+      rects.join() ===
+        Array(3)
+          .fill(`-R ${display.x + 100},${display.y + 120},300,200 -x`)
+          .join() &&
+      repeats.every((w) => w.webContents.getURL().endsWith('editor.html')) &&
+      !pickerOpen() &&
+      dockOnOpen.join() === 'false,false,false' &&
+      dockAfterFocus;
+    why.F027 = { rects, urls: repeats.map((w) => w.webContents.getURL()), picker: pickerOpen(), dockOnOpen, dock, dockAfterFocus };
+    repeats.forEach((w) => w.destroy());
+    // F041: with the area's display gone, the picker says so
+    const realDisplays = screen.getAllDisplays; // Electron's screen hands out its methods bound
+    screen.getAllDisplays = () => [];
+    windowsNow = BrowserWindow.getAllWindows();
+    press('Capture Last Area');
+    const gonePicker = await loadedWindow(windowsNow);
+    screen.getAllDisplays = realDisplays;
+    const goneHint = await gonePicker.webContents.executeJavaScript(`document.getElementById('hint').textContent`);
+    const goneClosed = new Promise<void>((r) => gonePicker.once('closed', () => r()));
+    gonePicker.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+    await goneClosed;
+    await sleep(400); // the picker's promise resolves 200 ms after 'closed'; until then a capture key does nothing
+    viewer['snap-bmr.14.3 F041: with the display gone, the picker says why'] =
+      goneHint === 'The last area was on a display that is not connected. Drag a new area. Esc cancels.' && shots.length === 3;
+    // F028: a failed capture says so and offers to try again; Esc in macOS's overlay stays quiet
+    notes.length = 0;
+    windowsNow = BrowserWindow.getAllWindows();
+    fail = 'could not create image from rect\n';
+    press('Capture Last Area');
+    const failed = notes.map((n) => n.body);
+    notes[0]?.onClick?.();
+    const retried = shots.length === 5;
+    fail = '';
+    press('Capture Screenshot');
+    await sleep(300);
+    viewer['snap-bmr.14.3 F028: a failed capture says so and tries again on a click; Esc stays quiet'] =
+      failed.join() === 'Capture failed: could not create image from rect. No screenshot was added. Click to try again.' &&
+      retried &&
+      notes.length === 2 &&
+      shots.at(-1)!.includes('-i') &&
+      BrowserWindow.getAllWindows().length === windowsNow.length;
+    why.F028 = {
+      failed,
+      retried,
+      notes: notes.map((n) => n.body),
+      shots: shots.slice(3),
+      now: BrowserWindow.getAllWindows().length,
+      was: windowsNow.length,
+    };
+    fail = null;
 
     // Capture Scrolling: frames of a synthetic 8200-row page under a fixed header go through the live loop; ↩ in its
     // control stitches them into the editor, which fits the width and scrolls. Esc cancels without an editor.
@@ -1154,6 +1315,16 @@ app
     const switchRows = submenu(submenu(menuItems(), 'Session'), 'Switch Session').filter((i) => i.type === 'checkbox');
     viewer['snap-ua7 F13 Switch Session lists the sessions by last use'] =
       switchRows[0]?.label === 'moved' && !!switchRows[0]?.checked && switchRows[1]?.label === 'smoke';
+    // snap-bmr.14.3 F025 (UX audit 2026-09-28): the hand-off stays a menu item with no global key (ADR 2026-09-25
+    // menu-3); it copies the current session's prompt and names the session
+    const promptItem = menuItems().find((i) => i.label === 'Copy Prompt for AI')!;
+    notes.length = 0;
+    promptItem.click!({} as never, undefined, {} as never);
+    viewer["snap-bmr.14.3 F025: Copy Prompt for AI copies the session's prompt and names it, with no global key"] =
+      !promptItem.accelerator &&
+      promptItem.enabled === true &&
+      copiedText === promptFor(path.join(root, moved)) &&
+      notes.map((n) => n.body).join() === `Prompt for ${moved} copied. Paste it into your AI agent.`;
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,
@@ -1198,6 +1369,7 @@ app
     console.log(`root: ${root}`);
     for (const [name, pass] of Object.entries(checks)) console.log(`${pass ? '✓' : '✗'} ${name}`);
     const ok = Object.values(checks).every(Boolean);
+    if (!ok) console.log('why:', JSON.stringify(why));
     console.log(ok ? 'smoke: ok' : `smoke: FAILED (${[r1, g1, b1]})`);
     app.exit(ok ? 0 : 1);
   })
