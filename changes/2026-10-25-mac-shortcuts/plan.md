@@ -135,4 +135,5 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — UX review of #76: no Critical. Fixed five High: palette arrows nudged the mark, two missing `lang`, a live region for ⌘⌫ and ⌘Z, icons hidden from VoiceOver.
 - 2026-10-25 — UX review leftovers go to beads snap-bmr.17.2: ⌘Z order and stale key docs.
 - 2026-10-25 — The sixth High, single-key tools that cannot be turned off, ships as feature PR 2: Settings ▸ Single-Key Tools. The goal asks every High fixed.
+- 2026-10-25 — #76 merged with that High open. #76 and #77 are reverted and re-land as one PR, reviewed before auto-merge.
 - 2026-10-25 — `.gitignore` ignores `__pycache__/`: the gate's own scripts leave it, and the gate refuses uncommitted files.
