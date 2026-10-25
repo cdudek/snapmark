@@ -284,11 +284,11 @@ Feature 3.2 — one screenshot everywhere:
 
 ### Milestone 4
 
-- [ ] 1. Read the Electron 45 and vitest 5 breaking-change notes; list what touches this code in `## Revisions` — proof: the list is there.
-- [ ] 2. Set the versions in `package.json` (F401–F403) and run `npm install` — proof: the `npm ls` line in F403 prints the targets.
-- [ ] 3. Fix what the notes and the milestone gate name — proof: the gate.
+- [x] 1. Read the Electron 45 and vitest 5 breaking-change notes; list what touches this code in `## Revisions` — proof: the list is there.
+- [x] 2. Set the versions in `package.json` (F401–F403) and run `npm install` — proof: the `npm ls` line in F403 prints the targets.
+- [x] 3. Fix what the notes and the milestone gate name — proof: the gate.
 - [ ] 4. Close Dependabot #63, #70, #71, #72, #73 with a comment naming the milestone PR. Proof: `gh pr list --repo cdudek/snapmark --author app/dependabot --state open` lists none of them.
-- [ ] 5. `npm audit --omit=dev --audit-level=high` — proof: exits 0 (F404).
+- [x] 5. `npm audit --omit=dev --audit-level=high` — proof: exits 0 (F404).
 - [ ] 6. Close snap-p7t once released — proof: `bd show snap-p7t` says closed.
 
 ### Every milestone, at its end
