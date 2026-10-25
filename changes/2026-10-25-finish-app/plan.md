@@ -211,9 +211,9 @@ Feature 1.4 — session window and rename leftovers:
 
 Feature 1.5 — small fixes:
 
-- [ ] 20. Block F121 in `test/menu.test.ts` — proof: `npm test` fails on it.
-- [ ] 21. `quitMessage` in `src/menu.ts`; `shoot`, `busy`, `popUp`, quit warning in `src/main.ts`; `#done` in `src/scroll.html`; `copyImage` reselect in `src/editor.ts` — proof: F121 passes. `grep -n "shooting" src/main.ts` prints the flag, its set, its clear and `busy`.
-- [ ] 22. Smoke F120, F134 — proof: `npm run build` exits 0.
+- [x] 20. Block F121 in `test/menu.test.ts` — proof: `npm test` fails on it.
+- [x] 21. `quitMessage` in `src/menu.ts`; `shoot`, `busy`, `popUp`, quit warning in `src/main.ts`; `#done` in `src/scroll.html`; `copyImage` reselect in `src/editor.ts` — proof: F121 passes. `grep -n "shooting" src/main.ts` prints the flag, its set, its clear and `busy`.
+- [x] 22. Smoke F120, F134 — proof: `npm run build` exits 0.
 
 Feature 1.6 — own LC_UUID:
 

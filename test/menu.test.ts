@@ -2,7 +2,17 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { menuTemplate, captureOptions, loginState, editorSessionMenu, copyMenu, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
+import {
+  menuTemplate,
+  captureOptions,
+  loginState,
+  editorSessionMenu,
+  copyMenu,
+  quitMessage,
+  MenuActions,
+  MenuState,
+  MAX_LISTED,
+} from '../src/menu';
 import type { EditorSessionActions } from '../src/menu';
 
 const calls: string[] = [];
@@ -296,5 +306,12 @@ assert.strictEqual(
 const soloMenu = editorSessionMenu({ ...base, current: only, sessions: [only] }, 'solo', ed);
 assert.deepStrictEqual(labels(soloMenu), ['solo', '—', 'New Session'], 'F118 editor menu');
 assert.ok(soloMenu[0].checked && soloMenu.every((i) => i.enabled !== false), 'F118 the one session ticked, nothing greyed');
+
+// F121 quit warning: one-shot images count as images not copied or saved yet (spec.md Words)
+assert.strictEqual(quitMessage(0, 1), '1 image is not copied or saved yet.', 'F121 one-shot only');
+assert.strictEqual(quitMessage(0, 2), '2 images are not copied or saved yet.', 'F121 one-shot only');
+assert.strictEqual(quitMessage(1, 2), '3 screenshots are not saved yet.', 'F121 mixed');
+assert.strictEqual(quitMessage(2, 0), '2 screenshots are not in a session yet.', 'F121 session only, as today');
+assert.strictEqual(quitMessage(1, 0), '1 screenshot is not in a session yet.', 'F121 session only, as today');
 
 console.log('menu: ok');

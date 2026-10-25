@@ -22,7 +22,17 @@ import { pathToFileURL } from 'url';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
-import { menuTemplate, captureOptions, loginState, editorSessionMenu, copyMenu, MenuActions, MenuState, SessionInfo } from './menu';
+import {
+  menuTemplate,
+  captureOptions,
+  loginState,
+  editorSessionMenu,
+  copyMenu,
+  quitMessage,
+  MenuActions,
+  MenuState,
+  SessionInfo,
+} from './menu';
 import { SHORTCUTS, shortcutsHtml } from './keys';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
@@ -179,16 +189,19 @@ function newSession() {
 
 function shoot(args: string[], oneShot = false) {
   const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
+  shooting = true;
   // -x: no sound
   execFile('screencapture', [...args, '-x', tmp], () => {
+    shooting = false;
     if (fs.existsSync(tmp)) openEditor(tmp, { oneShot }); // missing file = user pressed Esc
   });
 }
 
 let picking = false; // the area picker is open
 let scrolling = false; // Capture Scrolling is grabbing what scrolls under its area
+let shooting = false; // screencapture runs: its crosshair is up, or it is writing the file
 // One capture at a time: a capture key or item while one is running does nothing.
-const busy = () => picking || scrolling;
+const busy = () => picking || scrolling || shooting;
 
 // -i: interactive region (space toggles window mode)
 const capture = () => void (busy() || shoot(['-i']));
@@ -820,6 +833,8 @@ function popUp(items: MenuItemConstructorOptions[]) {
   menu.once('menu-will-close', () => (menuOpen = false));
   menuOpen = true;
   tray?.popUpContextMenu(menu);
+  // On macOS popUpContextMenu returns when the menu closes, so ⌃⇧5 works again even if menu-will-close never came.
+  menuOpen = false;
 }
 
 // The menu bar menu as it is right now; built on every open, so counts and sessions changed in Finder are never stale.
@@ -978,11 +993,11 @@ app.on('before-quit', (e) => {
   first.show();
   first.focus();
   focusApp();
-  const n = open.length;
+  const oneShots = open.filter((ed) => ed.oneShot).length;
   void dialog
     .showMessageBox(first, {
       type: 'warning',
-      message: `${n} screenshot${n === 1 ? ' is' : 's are'} not in a session yet.`,
+      message: quitMessage(open.length - oneShots, oneShots),
       buttons: ['Review', 'Quit anyway'],
       defaultId: 0,
       cancelId: 0,

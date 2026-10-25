@@ -434,6 +434,23 @@ app
     for (let i = 0; i < 30 && !copied; i++) await new Promise((r) => setTimeout(r, 100));
     inPage['F9 ⌘C copies the image'] =
       !!copied && keptMarks > 1 && (await win.webContents.executeJavaScript('canvas.getActiveObjects().length')) === keptMarks;
+    // F134: ⇧⌘C and the Copy or Save menu's Copy Image keep the selected marks selected, as ⌘C does
+    const keepsTwo = async (copy: () => unknown) => {
+      copied = null;
+      await win.webContents.executeJavaScript(
+        `document.activeElement.blur(); select(canvas.getObjects().filter((o) => o.selectable && !isRedaction(o)).slice(0, 2));`,
+      );
+      await copy();
+      for (let i = 0; i < 30 && !copied; i++) await sleep(100);
+      return !!copied && (await win.webContents.executeJavaScript('canvas.getActiveObjects().length')) === 2;
+    };
+    const keptByKeys = await keepsTwo(() =>
+      win.webContents.executeJavaScript(
+        `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
+      ),
+    );
+    const keptByMenu = await keepsTwo(() => win.webContents.send('editor:share', 'copy')); // what the menu item sends
+    await win.webContents.executeJavaScript('canvas.discardActiveObject()');
     copied = shiftCopied; // the ⇧⌘C check below compares that copy
     // F7: ⌘S adds to the session as ⌘↵ does, here while the caption has the cursor
     await win.webContents.executeJavaScript(`(() => {
@@ -832,6 +849,7 @@ app
     const offsets = Array.from({ length: (PH - VIEW) / 400 + 1 }, (_, i) => i * 400);
     const scrollArea = { x: display.x + 100, y: display.y + 100, width: 300, height: 200 };
     let ctlBounds: Electron.Rectangle | null = null;
+    let doneColour = ''; // F120
     const fakeGrab = (frames: number[], key: string) => {
       let [i, sent] = [0, false];
       return async () => {
@@ -841,6 +859,7 @@ app
         if (!sent && i >= frames.length - 1 && ctl && !ctl.webContents.isLoading()) {
           sent = true;
           ctlBounds = ctl.getBounds();
+          doneColour = await ctl.webContents.executeJavaScript(`getComputedStyle(document.getElementById('done')).backgroundColor`);
           ctl.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
         }
         return frame(frames[Math.min(i++, frames.length - 1)]);
@@ -848,6 +867,7 @@ app
     };
     const tall = await scrollCapture(scrollArea, fakeGrab(offsets, 'Return'));
     viewer['Capture Scrolling: ↩ opens the stitched page in the editor'] = !!tall;
+    viewer['F120 Done is the dark blue'] = doneColour === 'rgb(15, 114, 219)';
     if (tall) {
       await new Promise<void>((r) => (tall.webContents.isLoading() ? tall.webContents.once('did-finish-load', () => r()) : r()));
       await loaded(tall);
@@ -965,6 +985,20 @@ app
       !!oneCopy &&
       fs.existsSync(oneSaved) &&
       fs.readFileSync(oneSaved).equals(oneCopy);
+    // F134: one-shot ⌘↵ copies and keeps the selected marks selected
+    got.copy = null;
+    const oneKept = await inWin(
+      one,
+      `canvas.add(new Marker({ x: 40, y: 40 }, '#e5484d')); after();
+      select(canvas.getObjects().filter((o) => o instanceof Marker));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', metaKey: true, bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 500));
+      const n = canvas.getActiveObjects().length;
+      canvas.discardActiveObject();
+      return n;`,
+    );
+    for (let i = 0; i < 30 && !got.copy; i++) await sleep(100);
+    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu && oneKept === 2 && !!got.copy;
     viewer['one-shot: nothing is added to any session'] =
       JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
     for (const key of ['Escape', 'Escape']) {

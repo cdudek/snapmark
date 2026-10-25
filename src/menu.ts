@@ -53,6 +53,15 @@ export interface MenuActions {
 
 export const MAX_LISTED = 10;
 
+// The quit warning: one-shot images are never in a session, so they are counted as not copied or saved.
+export function quitMessage(inSession: number, oneShot: number): string {
+  const n = inSession + oneShot;
+  const is = n === 1 ? 'is' : 'are';
+  if (!oneShot) return `${n} screenshot${n === 1 ? '' : 's'} ${is} not in a session yet.`;
+  if (!inSession) return `${n} image${n === 1 ? '' : 's'} ${is} not copied or saved yet.`;
+  return `${n} screenshots are not saved yet.`;
+}
+
 // The most recently used sessions; the current one takes the last row when it is older than those.
 const recent = (sessions: SessionInfo[], cur: SessionInfo | null) => {
   const top = sessions.slice(0, MAX_LISTED);

@@ -1020,10 +1020,13 @@ window.addEventListener('beforeunload', () => {
   if (!saving && background) window.snapmark.stash(stateOf());
 });
 
+// Every copy (⌘C, ⇧⌘C, the Copy or Save menu, one-shot ⌘↵) keeps the marks that were selected.
 const copyImage = async () => {
   if (!background) return;
+  const kept = canvas.getActiveObjects();
   await redacting;
   window.snapmark.copyImage(flatten());
+  select(kept);
 };
 const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 const saveImageAs = () => void (background && redacting.then(() => window.snapmark.saveImageAs(flatten())));
@@ -1047,8 +1050,7 @@ document.addEventListener('keydown', (e) => {
   // ⌘C copies the image, unless text has the cursor (interaction guidelines, Copy and paste). The selection stays.
   if (e.metaKey && !e.shiftKey && e.key === 'c' && !typing) {
     e.preventDefault();
-    const kept = canvas.getActiveObjects();
-    return void copyImage().then(() => select(kept));
+    return void copyImage();
   }
   // ⌘1–⌘7 pick a tool from anywhere, also while a note or card has the cursor, where the plain digit types.
   const numbered = e.metaKey && /^\d$/.test(e.key) ? GROUPS.findIndex((x) => x.key === e.key) : -1;
