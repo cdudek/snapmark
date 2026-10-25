@@ -16,10 +16,11 @@ export interface MenuState {
   version: string;
   canUpdate: boolean;
   updateWaiting: string | null; // version downloaded and ready to install
-  shortcuts: { capture: string | null; area: string | null; newSession: string | null }; // null = not registered
+  shortcuts: { capture: string | null; area: string | null; options: string | null; newSession: string | null }; // null = not registered
   area: Area | null; // what Capture Last Area captures; null until the first time
   iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
   hasDiscarded: boolean; // something closed without saving, or removed, in the last 7 days
+  singleKeys: boolean; // plain letters and digits pick tools in the editor
 }
 
 export interface MenuActions {
@@ -43,13 +44,21 @@ export interface MenuActions {
   chooseRoot(): void;
   clearOldSessions(): void;
   setLogin(checked: boolean): void;
+  setSingleKeys(on: boolean): void;
   keyboardShortcuts(): void;
   checkUpdates(): void;
   installUpdate(): void;
   quit(): void;
 }
 
-export const MAX_LISTED = 20;
+export const MAX_LISTED = 10;
+
+// The most recently used sessions; the current one takes the last row when it is older than those.
+const recent = (sessions: SessionInfo[], cur: SessionInfo | null) => {
+  const top = sessions.slice(0, MAX_LISTED);
+  const own = cur && sessions.find((s) => s.name === cur.name);
+  return own && !top.includes(own) ? [...top.slice(0, MAX_LISTED - 1), own] : top;
+};
 
 // macOS 13+ registers login items with SMAppService; Electron's openAtLogin can read false there while
 // status is 'enabled', so either one counts. 'requires-approval' means the owner must allow it in System Settings.
@@ -66,6 +75,20 @@ function shortcut(label: string, accelerator: string | null, click: () => void):
 }
 
 const plural = (n: number) => `${n} screenshot${n === 1 ? '' : 's'}`;
+
+// The less frequent ways to capture: the Capture Options submenu, and the menu ⌃⇧5 pops at the menu bar icon.
+export function captureOptions(a: MenuActions): Item[] {
+  return [
+    { label: 'Choose New Area…', click: () => a.chooseArea() },
+    // Click one window: cropped to its edges, without the shadow macOS draws around it.
+    { label: 'Capture Window…', click: () => a.captureWindow() },
+    // Not the default, so no direct shortcut (owner, 2026-10-25): drag an area, scroll it, and get one tall screenshot.
+    { label: 'Capture Scrolling…', click: () => a.captureScrolling() },
+    { type: 'separator' },
+    // The second mode (owner, 2026-10-25): one image to beautify, then copy or save; nothing goes into a session.
+    { label: 'One-Shot Capture…', click: () => a.oneShot() },
+  ];
+}
 
 // Grouped as the owner drew it (2026-10-24): capture on top, the current session's everyday actions next,
 // everything else about sessions under Session. Icons are template images, so macOS tints them for light and dark menus.
@@ -91,18 +114,10 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
       ...icon('area'),
     },
     {
-      label: 'Capture Options',
+      // macOS draws no key on a row that opens a submenu, so ⌃⇧5 is its sublabel.
+      ...(st.shortcuts.options ? { label: 'Capture Options', sublabel: '⌃⇧5' } : { label: 'Capture Options (shortcut unavailable)' }),
       ...icon('choose'),
-      submenu: [
-        { label: 'Choose New Area…', click: () => a.chooseArea() },
-        // Click one window: cropped to its edges, without the shadow macOS draws around it.
-        { label: 'Capture Window…', click: () => a.captureWindow() },
-        // Not the default, so no global shortcut (owner, 2026-10-25): drag an area, scroll it, and get one tall screenshot.
-        { label: 'Capture Scrolling…', click: () => a.captureScrolling() },
-        { type: 'separator' },
-        // The second mode (owner, 2026-10-25): one image to beautify, then copy or save; nothing goes into a session.
-        { label: 'One-Shot Capture…', click: () => a.oneShot() },
-      ],
+      submenu: captureOptions(a),
     },
     { type: 'separator' },
     { label: 'Open Current Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
@@ -116,13 +131,18 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
         { ...shortcut('New Session', st.shortcuts.newSession, () => a.newSession()), ...icon('new') },
         {
           label: 'Switch Session',
+          enabled: st.sessions.length > 0,
           ...icon('switch'),
           submenu: [
-            ...st.sessions
-              .slice(0, MAX_LISTED)
-              .map((s): Item => ({ label: s.label, type: 'checkbox', checked: s.name === cur?.name, click: () => a.makeCurrent(s.name) })),
-            ...(st.sessions.length ? [{ type: 'separator' } as Item] : []),
-            { label: 'Other Session…', click: () => a.otherSession() },
+            ...recent(st.sessions, cur).map((s): Item => ({
+              label: s.label,
+              type: 'checkbox',
+              checked: s.name === cur?.name,
+              click: () => a.makeCurrent(s.name),
+            })),
+            ...(st.sessions.length > MAX_LISTED
+              ? [{ type: 'separator' } as Item, { label: 'Older Sessions…', click: () => a.otherSession() }]
+              : []),
           ],
         },
         { type: 'separator' },
@@ -163,6 +183,14 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
         { label: 'Sessions Folder…', sublabel: st.root, enabled: st.canChangeRoot, click: () => a.chooseRoot() },
         { label: 'Clear Sessions Older Than 60 Days…', click: () => a.clearOldSessions() },
         { label: 'Keyboard Shortcuts', click: () => a.keyboardShortcuts() },
+        // WCAG 2.1.4: keys without a modifier can be turned off. ⌘1–⌘7 still pick tools.
+        {
+          label: 'Single-Key Tools',
+          type: 'checkbox',
+          checked: st.singleKeys,
+          sublabel: 'Off: only ⌘1–⌘7 pick tools',
+          click: (item) => a.setSingleKeys(item.checked),
+        },
         { label: 'Check for Updates…', sublabel: `Snapmark ${st.version}`, enabled: st.canUpdate, click: () => a.checkUpdates() },
       ],
     },

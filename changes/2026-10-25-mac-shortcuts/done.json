@@ -1,0 +1,39 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Tags name the unit test block or the smoke check key (this repo has no tagged E2E titles). Smoke runs in CI only (owner's rule).",
+  "facts": [
+    { "id": "F1", "tag": "test/keys.test.ts › F1 capture key", "screen": "menu", "states": ["default"] },
+    { "id": "F2", "tag": "test/keys.test.ts › F2 unchanged keys", "screen": "menu", "states": ["default"] },
+    { "id": "F3", "tag": "test/menu.test.ts › F3 capture options popup", "screen": "popup", "states": ["open"] },
+    { "id": "F4", "tag": "test/menu.test.ts › F4 options sublabel", "screen": "menu", "states": ["default", "unavailable"] },
+    { "id": "F5", "tag": "test/keys.test.ts › F5 freed keys", "screen": "none", "states": [] },
+    { "id": "F6", "tag": "manual: verifier reads the busy check in src/main.ts", "screen": "global keys", "states": ["busy"] },
+    { "id": "F7", "tag": "smoke editor['F7 ⌘S adds to the session']", "screen": "editor", "states": ["nothing selected", "typing"] },
+    {
+      "id": "F8",
+      "tag": "manual: verifier reads the keydown handler in src/editor.ts",
+      "screen": "one-shot editor",
+      "states": ["default"]
+    },
+    { "id": "F9", "tag": "smoke editor['F9 ⌘C copies the image']", "screen": "editor", "states": ["nothing selected", "many selected"] },
+    { "id": "F10", "tag": "smoke editor['F10 arrows nudge']", "screen": "editor", "states": ["one selected", "many selected"] },
+    { "id": "F11", "tag": "smoke editor['F11 keys stay in the text']", "screen": "editor", "states": ["typing"] },
+    { "id": "F12", "tag": "smoke editor['F12 ⌘A selects all marks']", "screen": "editor", "states": ["empty", "nothing selected"] },
+    { "id": "F13", "tag": "smoke editor['F13 a multi-selection is one step']", "screen": "editor", "states": ["many selected"] },
+    { "id": "F14", "tag": "smoke editor['F14 a selection is dropped before storing']", "screen": "editor", "states": ["many selected"] },
+    { "id": "F15", "tag": "smoke viewer['F15 ↩ renames']", "screen": "session window", "states": ["grid", "one screenshot"] },
+    {
+      "id": "F16",
+      "tag": "smoke viewer['F16 ⌘⌫ removes the open screenshot']",
+      "screen": "session window",
+      "states": ["one screenshot", "grid"]
+    },
+    { "id": "F17", "tag": "smoke viewer['F17 ⌘Z puts it back']", "screen": "session window", "states": ["after a removal"] },
+    { "id": "F18", "tag": "smoke viewer['F18 ⌘O edits again']", "screen": "session window", "states": ["one screenshot"] },
+    { "id": "F19", "tag": "test/keys.test.ts › F19 key list", "screen": "Keyboard Shortcuts window", "states": ["default"] },
+    { "id": "F20", "tag": "test/keys.test.ts › F20 no old key", "screen": "empty session hints", "states": ["empty"] },
+    { "id": "N1", "tag": "smoke: the existing editor checks pass unchanged", "screen": "editor", "states": ["all"] }
+  ],
+  "pages": ["menu bar menu", "capture options popup", "editor", "session window", "Keyboard Shortcuts window"],
+  "widths": { "feature": [1180, 1440], "milestone": "responsiveTier" },
+  "turns": { "feature": 40, "milestone": 30 }
+}

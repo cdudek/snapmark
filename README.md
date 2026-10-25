@@ -12,7 +12,7 @@ When you review a UI with an AI agent (Claude Code, Cursor, Codex), you spend a 
 
 Snapmark is a macOS menu bar app for exactly that loop:
 
-1. Press `⌃⇧1`, drag over the part of the screen you mean.
+1. Press `⌃⇧4`, drag over the part of the screen you mean.
 2. Mark it: a box, an arrow, a cross for "remove this", a freehand pen, references ① ② with a note each.
 3. Press `⌘↵`. The annotated image and your notes are appended to the current session's `session.md`.
 4. Point your agent at the session folder: _"Work through `~/Documents/Snapmark/2026-09-25 14.02/session.md`"_.
@@ -63,33 +63,38 @@ Snapmark lives in the menu bar as the corner-and-dot icon. It shows a Dock icon 
 
 | Shortcut | Anywhere                                                    |
 | -------- | ----------------------------------------------------------- |
-| `⌃⇧1`    | Capture a region into the current session                   |
+| `⌃⇧4`    | Capture a region into the current session                   |
 | `⌃⇧3`    | Capture the last area again (the first time, drag the area) |
+| `⌃⇧5`    | Show the capture options as a menu under the menu bar icon  |
 | `⌃⇧N`    | Start a new session                                         |
+
+The digits are macOS's own: `⇧⌘3`, `⇧⌘4` and `⇧⌘5` with `⌃` in place of `⌘`, which macOS keeps for itself.
 
 In the editor, press a key to pick a tool. Press the same key again to cycle its tools; the top bar shows which one is active.
 
 The toolbar shows one icon per key: the tool that is on, with its key underneath. The colour swatch beside the tools sets the colour of the next marks: ten presets, or **Custom…** for the macOS colour panel (Remove marks are always coral red, highlights yellow). The right side shows the session and how many screenshots it holds. Dots under a key mean it holds more than one tool (the filled dot is the one that is on): press the key again for the next, and the icon changes with it. Hover an icon for its name.
 
-| Key       | Tools                                                                                          |
-| --------- | ---------------------------------------------------------------------------------------------- |
-| `C`       | Select: move, resize or delete (`⌫`) any mark                                                  |
-| `1`       | Reference (a numbered diamond): click, then type its note in the panel → Card: a speech bubble |
-| `2`       | Box → Ellipse                                                                                  |
-| `3`       | Arrow                                                                                          |
-| `4`       | Pen (freehand)                                                                                 |
-| `5`       | Cross → Remove area (hatched), always coral red                                                |
-| `6`       | Highlighter → Spotlight (dims the rest)                                                        |
-| `7`       | Cut & move: drag around an element, then drag it where it should go → Redact (pixelates)       |
-| `Esc`     | Step back: out of the text, then deselect, then back to Select, then close                     |
-| `⌘1`–`⌘7` | Pick a tool, also while typing a note or card (there the plain digit types)                    |
-| `⌘Z`      | Undo: in a note, its typing first, then the marks (a reference placed by mistake goes at once) |
-| `⇧⌘Z`     | Redo                                                                                           |
-| `⌘↵`      | Add to session                                                                                 |
-| `⇧⌘C`     | Copy Image: the marked-up image to the clipboard, without adding it to the session             |
-| `⇧⌘S`     | Save As…: the marked-up image as a PNG wherever you pick, without adding it to the session     |
-| `⌘W`      | Discard the screenshot (kept 7 days: **Reopen Last Discarded** in the menu)                    |
-| `⌘C`      | One-shot mode only: Copy Image, when no text has the cursor                                    |
+| Key             | Tools                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `C`             | Select: move, resize or delete (`⌫`) any mark                                                  |
+| `1`             | Reference (a numbered diamond): click, then type its note in the panel → Card: a speech bubble |
+| `2`             | Box → Ellipse                                                                                  |
+| `3`             | Arrow                                                                                          |
+| `4`             | Pen (freehand)                                                                                 |
+| `5`             | Cross → Remove area (hatched), always coral red                                                |
+| `6`             | Highlighter → Spotlight (dims the rest)                                                        |
+| `7`             | Cut & move: drag around an element, then drag it where it should go → Redact (pixelates)       |
+| `Esc`           | Step back: out of the text, then deselect, then back to Select, then close                     |
+| `←` `↑` `→` `↓` | Nudge the selected marks 1 point; with `⇧`, 10 points                                          |
+| `⌘A`            | Select every mark except redactions, to move or delete them together                           |
+| `⌘1`–`⌘7`       | Pick a tool, also while typing a note or card (there the plain digit types)                    |
+| `⌘Z`            | Undo: in a note, its typing first, then the marks (a reference placed by mistake goes at once) |
+| `⇧⌘Z`           | Redo                                                                                           |
+| `⌘S` / `⌘↵`     | Add to session (in one-shot, `⌘S` is Save As… and `⌘↵` Copy Image)                             |
+| `⇧⌘C`           | Copy Image: the marked-up image to the clipboard, without adding it to the session             |
+| `⇧⌘S`           | Save As…: the marked-up image as a PNG wherever you pick, without adding it to the session     |
+| `⌘W`            | Discard the screenshot (kept 7 days: **Reopen Last Discarded** in the menu)                    |
+| `⌘C`            | Copy Image, when no text has the cursor                                                        |
 
 The side panel starts with a one-line comment field. References appear there once you add the first one, and every field grows with its text. The comment and reference notes take Markdown as you type, like Notion: `# ` makes a heading, `- ` a list, `**bold**` bold; `session.md` keeps it as Markdown. **Settings → Keyboard Shortcuts** in the menu lists all of this in the app. While an editor is open, Snapmark shows its icon in the Dock.
 
@@ -97,24 +102,25 @@ The side panel starts with a one-line comment field. References appear there onc
 
 **Auto-redact.** When a screenshot opens in the editor, Snapmark reads its text and pixelates email addresses, API keys and tokens (`sk-…`, `ghp_…`, `github_pat_…`, `xoxb-…`, `AKIA…`, JWTs, other long random strings), private key headers, card numbers and IBANs, with the same Redact marks you draw yourself. The side panel says _Redacted 2 sensitive items · ⌘Z to undo_; one ⌘Z takes them all back, and a single mark can be selected and deleted. Add to session, Copy Image and Save As… wait for it, so none of it leaves your Mac, and text under any Redact mark is written to `session.md` as `[redacted]`. Edit Again does not redact a screenshot a second time. Text recognition runs on your Mac; nothing is uploaded.
 
-**Copy Image** (⇧⌘C) and **Save As…** (⇧⌘S), beside Undo and Redo, take the marked-up image out without adding it to the session: to the clipboard, or to a PNG wherever you pick (the name follows the entry it would become, for example `Ledgerly Q4 review 013.png`). It is the exact image **Add to session** saves, within the AI's size limits. ⇧⌘C works inside a note too; plain ⌘C there still copies the text. **Add to session** stays the main action.
+**Copy Image** (⇧⌘C) and **Save As…** (⇧⌘S), beside Undo and Redo, take the marked-up image out without adding it to the session: to the clipboard, or to a PNG wherever you pick (the name follows the entry it would become, for example `Ledgerly Q4 review 013.png`). It is the exact image **Add to session** saves, within the AI's size limits. Outside a note, plain ⌘C copies the image too. Inside a note, ⌘C copies the text and ⇧⌘C still copies the image. **Add to session** stays the main action.
 
 Click the menu bar icon for the menu. It is built fresh each time it opens, and every item has an icon:
 
 - **Adding screenshots to** shows the current session and how many screenshots it holds.
-- **Capture Screenshot…** (⌃⇧1). A shortcut another app already owns shows as "(shortcut unavailable)".
+- **Capture Screenshot…** (⌃⇧4). A shortcut another app already owns shows as "(shortcut unavailable)".
 - **Capture Last Area** (⌃⇧3) captures the same part of the screen each time, for example the page in your browser. The first time the screen dims and you drag the area; after that every press captures it at once and opens the editor. **Capture Options** ▸ **Choose New Area…** picks another one. Snapmark remembers the area after a restart, and asks again if the display it was on is gone.
-- **Capture Options** ▸ **Capture Window…** captures one window: the pointer becomes a camera, click the window, and it opens in the editor cropped to the window's edges, without the shadow macOS draws around it. Esc cancels. No shortcut, like Capture Scrolling.
-- **Capture Options** ▸ **Capture Scrolling…** takes a page taller than the screen in one screenshot. The screen dims and you drag over the part that scrolls, for example a browser's page. Then scroll it down at your own pace: a small bar under the area counts the frames and the height so far. Press **Done** (↩) to open the stitched screenshot in the editor, or **Cancel** (Esc). The editor fits a tall screenshot to the window's width and scrolls. Snapmark stitches by matching each new view against the last one, keeps a sticky header and footer once, and stops at 20,000 px. Like every screenshot it is saved within the AI's size limits (1568 px on the long edge), so a page much taller than two screens arrives narrow and hard for the model to read. Scroll down only and not too fast: if a step goes further than the area's height, the bar says so, and scrolling back up a little picks up again. Content that moves by itself (animations, video, carousels), lazy-loaded images that appear late, and sideways scrolling come out wrong. There is no shortcut, on purpose: it is not the everyday capture.
-- **Capture Options** ▸ **One-Shot Capture…** is the second mode, for an image that goes to people rather than an AI, for example into slides. Drag a region as usual; the editor opens with the same tools, but the side panel shows **Beautify** instead of the comment and References: **Padding**, **Rounded corners** and **Shadow** sliders, a **Background** (the logo's gradient, pink, violet, teal, amber, graphite, a soft light gradient, white, **None** for transparent, or a custom colour), and a **Ratio** for the whole image (Auto, 4:3, 3:2, 16:9, 1:1; the screenshot stays centred and the padding grows to fill). The canvas shows the result as you change it. **Copy Image** (⌘C, or ⇧⌘C) is the main button, and **Save As…** (⇧⌘S) suggests `Snapmark 2026-10-25 14.03.12.png`; both give the beautified image at full Retina resolution, not the AI size. There is no Add to session, and nothing is written to a session. Closing it (Discard, ⌘W, Esc) keeps it in Discarded like any screenshot, and it reopens in one-shot mode. Snapmark remembers the last settings for the next one-shot. No shortcut.
-- **Open Current Session** opens the session in Snapmark's own window. Its header shows the session's name and how many screenshots it has; click the name (or the pencil) to rename it in place: ↩ saves, Esc cancels, and a name that is taken says so under the field. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** is a grid of every screenshot with its heading and note count; hover one for **Edit Again**, which reopens it in the editor with its marks and text (saving replaces it in place), and **…** ▸ **Remove from Session**. Click a thumbnail to see it large: ← and → flip through them, Esc or **‹ All Screenshots** goes back to the grid. **Discarded** (shown when there is something) lists this session's screenshots closed without saving or removed in the last 7 days, each with **Reopen**. **Open in Markdown App** opens `session.md` in your default app.
+- **Capture Options** holds the less frequent ways to capture. ⌃⇧5 shows the same items as a menu under the menu bar icon, from any app.
+- **Capture Options** ▸ **Capture Window…** captures one window: the pointer becomes a camera, click the window, and it opens in the editor cropped to the window's edges, without the shadow macOS draws around it. Esc cancels. No direct shortcut, like Capture Scrolling; ⌃⇧5 shows it.
+- **Capture Options** ▸ **Capture Scrolling…** takes a page taller than the screen in one screenshot. The screen dims and you drag over the part that scrolls, for example a browser's page. Then scroll it down at your own pace: a small bar under the area counts the frames and the height so far. Press **Done** (↩) to open the stitched screenshot in the editor, or **Cancel** (Esc). The editor fits a tall screenshot to the window's width and scrolls. Snapmark stitches by matching each new view against the last one, keeps a sticky header and footer once, and stops at 20,000 px. Like every screenshot it is saved within the AI's size limits (1568 px on the long edge), so a page much taller than two screens arrives narrow and hard for the model to read. Scroll down only and not too fast: if a step goes further than the area's height, the bar says so, and scrolling back up a little picks up again. Content that moves by itself (animations, video, carousels), lazy-loaded images that appear late, and sideways scrolling come out wrong. There is no direct shortcut, on purpose: it is not the everyday capture. ⌃⇧5 shows it.
+- **Capture Options** ▸ **One-Shot Capture…** is the second mode, for an image that goes to people rather than an AI, for example into slides. Drag a region as usual; the editor opens with the same tools, but the side panel shows **Beautify** instead of the comment and References: **Padding**, **Rounded corners** and **Shadow** sliders, a **Background** (the logo's gradient, pink, violet, teal, amber, graphite, a soft light gradient, white, **None** for transparent, or a custom colour), and a **Ratio** for the whole image (Auto, 4:3, 3:2, 16:9, 1:1; the screenshot stays centred and the padding grows to fill). The canvas shows the result as you change it. **Copy Image** (⌘C, or ⇧⌘C) is the main button, and **Save As…** (⌘S or ⇧⌘S) suggests `Snapmark 2026-10-25 14.03.12.png`; both give the beautified image at full Retina resolution, not the AI size. There is no Add to session, and nothing is written to a session. Closing it (Discard, ⌘W, Esc) keeps it in Discarded like any screenshot, and it reopens in one-shot mode. Snapmark remembers the last settings for the next one-shot. No direct shortcut; ⌃⇧5 shows it.
+- **Open Current Session** opens the session in Snapmark's own window. Its header shows the session's name and how many screenshots it has; click the name (or the pencil), or press ↩, to rename it in place: ↩ saves, Esc cancels, and a name that is taken says so under the field. **Document** shows `session.md` with its screenshots inline, and you edit it in place, like Notion. **Screenshots** is a grid of every screenshot with its heading and note count; hover one for **Edit Again**, which reopens it in the editor with its marks and text (saving replaces it in place), and **…** ▸ **Remove from Session**. Click a thumbnail to see it large: ← and → flip through them, Esc or **‹ All Screenshots** goes back to the grid. There, ⌘O is **Edit Again** and ⌘⌫ is **Remove from Session**; ⌘Z puts the last removed screenshot back. **Discarded** (shown when there is something) lists this session's screenshots closed without saving or removed in the last 7 days, each with **Reopen**. **Open in Markdown App** opens `session.md` in your default app.
 - **Copy Prompt for AI** puts a ready instruction on the clipboard: the path to `session.md` plus what the marks mean. Paste it into Claude Code or any agent.
 - **Session** ▸ everything else about sessions, under the current one's name:
   - **New Session** (⌃⇧N) starts a new session; while the current one is still empty, it keeps using that one.
-  - **Switch Session** ▸ lists sessions by last use; click one to make it current. **Other Session…** reaches any beyond the 20 shown.
+  - **Switch Session** ▸ lists the 10 most recently used sessions, the current one always among them; click one to make it current. **Older Sessions…** (shown when there are more) opens the sessions folder to pick any other.
   - **Rename Session…**, **Export Session** ▸ PDF or ZIP (see below; shown once the session has a screenshot), **Show Session in Finder**, and **Copy Session File Path**, which puts the full path to `session.md` on the clipboard.
 - **Discarded Screenshots** ▸ **Reopen Last Discarded** and **Reopen Discarded…** appears when something was thrown away in the last 7 days. That covers an editor closed without saving (Discard, ⌘W, Esc, the close button) and a screenshot removed from a session. A closed editor reopens with its marks; a removed screenshot goes back into its session. The menu covers every session; the session window's **Discarded** tab shows one session's. They live in `.discarded/` in the sessions folder and are deleted after 7 days, and follow a session when it is renamed.
-- **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Clear Sessions Older Than 60 Days… (asks first, moves them to the Trash; never the current session or one that is open), Keyboard Shortcuts, Check for Updates… (with the version under it). **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
+- **Settings** ▸ Open at Login, Sessions Folder… (where sessions are saved), Clear Sessions Older Than 60 Days… (asks first, moves them to the Trash; never the current session or one that is open), Keyboard Shortcuts, Single-Key Tools (on by default; off, plain letters and digits pick no tool and only `⌘1`–`⌘7` do), Check for Updates… (with the version under it). **Quit Snapmark** asks first if an editor still has marks or text that are not in a session.
 
 Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.
 

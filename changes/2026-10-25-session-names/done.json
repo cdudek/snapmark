@@ -1,0 +1,59 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Tags name the unit test block or the smoke check key (this repo has no tagged E2E titles). Smoke runs in CI only (owner's rule).",
+  "facts": [
+    {
+      "id": "F1",
+      "tag": "test/sessions.test.ts › F1 display name",
+      "screen": "menu",
+      "states": ["header", "Current Session line", "Switch Session rows"]
+    },
+    {
+      "id": "F2",
+      "tag": "smoke viewer['F2 the session window shows the readable date']",
+      "screen": "session window",
+      "states": ["default"]
+    },
+    {
+      "id": "F3",
+      "tag": "smoke viewer['F3 an open editor shows the readable name']",
+      "screen": "editor",
+      "states": ["empty", "with screenshots"]
+    },
+    {
+      "id": "F4",
+      "tag": "manual: verifier reads notify( in src/main.ts",
+      "screen": "notifications",
+      "states": ["new session", "still empty", "reopened", "missing", "clear old sessions"]
+    },
+    { "id": "F5", "tag": "test/exporter.test.ts › F5 PDF heading", "screen": "PDF export", "states": ["named session"] },
+    { "id": "F6", "tag": "test/sessions.test.ts › F6 whenLabel", "screen": "session window", "states": ["Discarded tab"] },
+    { "id": "N1", "tag": "test/sessions.test.ts › N1 no colon", "screen": "none", "states": [] },
+    {
+      "id": "F7",
+      "tag": "test/sessions.test.ts › F7 rename keeps the stamp",
+      "screen": "session window",
+      "states": ["rename field saved"]
+    },
+    { "id": "F8", "tag": "smoke viewer['F8 a renamed session keeps its date']", "screen": "session window", "states": ["saved"] },
+    {
+      "id": "F9",
+      "tag": "smoke viewer['F9 the rename field holds only the name']",
+      "screen": "session window",
+      "states": ["editing, unnamed", "editing, named"]
+    },
+    { "id": "F10", "tag": "test/sessions.test.ts › F10 typed date", "screen": "session window", "states": ["rename field saved"] },
+    { "id": "F11", "tag": "test/sessions.test.ts › F11 empty name", "screen": "session window", "states": ["name removed"] },
+    { "id": "F12", "tag": "test/sessions.test.ts › F12 no stamp", "screen": "every screen", "states": ["legacy session"] },
+    { "id": "F19", "tag": "test/sessions.test.ts › F19 heading", "screen": "session.md", "states": ["created", "renamed"] },
+    { "id": "N2", "tag": "test/sessions.test.ts › N2 old folders untouched", "screen": "none", "states": [] },
+    { "id": "F13", "tag": "test/menu.test.ts › F13 ten rows", "screen": "menu ▸ Switch Session", "states": ["default"] },
+    { "id": "F14", "tag": "test/menu.test.ts › F14 current listed", "screen": "menu ▸ Switch Session", "states": ["current not recent"] },
+    { "id": "F15", "tag": "test/menu.test.ts › F15 Older Sessions", "screen": "menu ▸ Switch Session", "states": ["default"] },
+    { "id": "F16", "tag": "test/menu.test.ts › F16 no older", "screen": "menu ▸ Switch Session", "states": ["partial"] },
+    { "id": "F17", "tag": "test/menu.test.ts › F17 empty", "screen": "menu ▸ Session", "states": ["empty"] },
+    { "id": "F18", "tag": "manual: verifier reads otherSession() in src/main.ts", "screen": "folder panel", "states": ["open"] }
+  ],
+  "pages": ["menu bar menu", "session window", "editor", "notifications", "PDF export"],
+  "widths": { "feature": [1180, 1440], "milestone": "responsiveTier" },
+  "turns": { "feature": 40, "milestone": 30 }
+}

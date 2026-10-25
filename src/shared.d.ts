@@ -7,6 +7,7 @@ interface EditorInit {
   replacing?: number; // Edit Again: saving replaces this entry instead of adding one
   oneShot?: boolean; // one-shot mode: Beautify, then copy or save; no session
   beautify?: Beautify; // one-shot: the settings to start from (the reopened discard's, else the last used)
+  singleKeys: boolean; // Settings ▸ Single-Key Tools; off, a plain letter or digit picks no tool and ⌘1–⌘7 still do
 }
 
 // Everything on a screenshot except the screenshot, as plain data (editor.ts writes and reads the items).
@@ -28,7 +29,10 @@ interface EditorSave {
 
 // The session window (viewer.html): session.md rendered and editable, its screenshots, and what was discarded from it.
 interface ViewerInit {
-  session: string;
+  session: string; // folder name
+  label: string; // display name: "2026-10-24, 23:38" or "2026-10-24 · Ledgerly Q4 review"
+  name: string; // what the rename field starts with: the owner's name for it, empty for a bare date stamp
+  stamped: boolean; // the folder starts with its date stamp, which a rename keeps
   base: string; // file:// URL of the session folder, ending in "/", so img/NNN.png resolves
   md: string;
   shots: ViewerShot[]; // the entries in session.md, in order
@@ -79,6 +83,7 @@ interface Window {
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
     stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
     onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
+    onSingleKeys(cb: (on: boolean) => void): void; // Settings ▸ Single-Key Tools changed while the editor is open
     viewerInit(): Promise<ViewerInit>;
     viewerSave(from: string, md: string): Promise<boolean>; // refused when session.md is no longer `from`
     viewerExternal(): void; // open session.md in the default Markdown app

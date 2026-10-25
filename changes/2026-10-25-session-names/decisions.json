@@ -1,0 +1,11 @@
+{
+  "size": "M",
+  "kind": "feature",
+  "milestone": { "kind": "new", "slug": "session-names" },
+  "project": { "kind": "new", "slug": "launch" },
+  "ticket": "snap-bmr.14",
+  "design": "docs/designs/2026-09-26-adr-menu-rebuilt-from-the-2026-09.md",
+  "skips": {
+    "prototype": "skip -- UI not risky: new words, one list length and one rename rule on existing native menus and fields (stages.md 2.6; orchestrator, 2026-10-25)"
+  }
+}

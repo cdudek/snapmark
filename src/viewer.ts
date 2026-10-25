@@ -14,7 +14,7 @@
   const views = { doc: $('doc-page'), grid: $('grid-view'), shot: shotsEl, discarded: $('discarded') };
   type View = keyof typeof views;
 
-  let data: ViewerInit = { session: '', base: '', md: '', shots: [], discarded: [] };
+  let data: ViewerInit = { session: '', label: '', name: '', stamped: false, base: '', md: '', shots: [], discarded: [] };
   let field: import('./md-notes').MdField | null = null;
   let mounted = { md: '' }; // the session.md text the field was mounted with or last saved
   let edited = false; // the owner typed since the last load
@@ -32,8 +32,8 @@
   async function load(d: ViewerInit) {
     data = d;
     version++;
-    document.title = `${d.session} — Snapmark`;
-    $('title').textContent = d.session;
+    document.title = `${d.label} — Snapmark`;
+    $('title').textContent = d.label;
     $('total').textContent = d.shots.length ? `· ${plural(d.shots.length, 'screenshot')}` : '';
     $('tab-discarded').hidden = !d.discarded.length;
     $('discarded-count').textContent = String(d.discarded.length);
@@ -54,7 +54,7 @@
     const m = { md: d.md };
     mounted = m;
     field = await MdNotes.mount(docEl, d.md, {
-      placeholder: 'This session is empty. Capture a screenshot with ⌃⇧1.',
+      placeholder: 'This session is empty. Capture a screenshot with ⌃⇧4.',
       onChange: (md) => {
         edited = true;
         void window.snapmark.viewerSave(m.md, md).then((ok) => ok && (m.md = md));
@@ -129,9 +129,30 @@
     renderShot();
   };
 
+  let removing = false; // one removal at a time, so a held ⌘⌫ never takes a second screenshot
+  let lastRemoved: string | null = null; // its Discarded folder, for ⌘Z
   const remove = async (n: number | undefined) => {
-    if (n) await load(await window.snapmark.viewerRemove(n));
+    if (!n || removing) return;
+    removing = true;
+    try {
+      await load(await window.snapmark.viewerRemove(n));
+      lastRemoved = data.discarded.find((d) => d.kind === 'shot')?.dir ?? null; // newest first
+      $('announce').textContent = `Screenshot ${n} moved to Discarded. ⌘Z puts it back.`;
+    } finally {
+      removing = false;
+    }
   };
+
+  // ⌘Z, as in Finder after ⌘⌫: the last removed screenshot comes back, shown large. Once.
+  async function putBack() {
+    const dir = lastRemoved;
+    lastRemoved = null;
+    if (!dir || !data.discarded.some((d) => d.dir === dir)) return;
+    await load(await window.snapmark.viewerReopen(dir));
+    index = data.shots.length - 1; // it goes back at the end
+    show('shot');
+    $('announce').textContent = `Screenshot ${data.shots[index]?.n ?? ''} is back.`;
+  }
 
   function openMenu(at: HTMLElement, n: number) {
     const r = at.getBoundingClientRect();
@@ -144,8 +165,8 @@
 
   // Rename in place: the title becomes a field; ↩ or clicking away saves, Esc cancels. A refused name keeps the field.
   function startRename() {
-    input.value = data.session;
-    hint.textContent = '↩ to save · Esc to cancel';
+    input.value = data.name; // only the name: the date stays in front either way
+    hint.textContent = data.stamped ? 'The date stays · ↩ to save · Esc to cancel' : '↩ to save · Esc to cancel';
     hint.classList.remove('error');
     nameEl.classList.add('editing');
     input.focus();
@@ -164,11 +185,16 @@
 
   $('title').onclick = startRename;
   $('pencil').onclick = startRename;
+  // ↩ and Esc hand focus back to the title; a click away leaves it where the click put it.
   input.onkeydown = (e) => {
-    if (e.key === 'Enter') void saveRename();
+    if (e.key === 'Enter')
+      void saveRename().then(() => {
+        if (!nameEl.classList.contains('editing')) $('title').focus();
+      });
     if (e.key === 'Escape') {
       e.stopPropagation();
       endRename();
+      $('title').focus();
     }
   };
   input.onblur = () => void saveRename();
@@ -185,10 +211,25 @@
   $('menu-remove').onclick = () => remove(menuFor);
   document.addEventListener('click', (e) => {
     if (!menu.contains(e.target as Node)) menu.hidden = true;
+    // A button clicked with the pointer lets go of the focus, so ↩ renames instead of clicking it again.
+    if (e.detail > 0) (e.target as Element).closest('button')?.blur();
   });
   document.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLElement && (e.target.isContentEditable || e.target === input)) return;
-    if (e.key === 'Escape' && !menu.hidden) menu.hidden = true;
+    const shown = view === 'shot' ? data.shots[index] : undefined; // the screenshot shown large
+    // Finder's keys: ↩ renames, ⌘⌫ removes, ⌘Z puts back, ⌘O opens (here: Edit Again).
+    const cmd = e.metaKey && !e.shiftKey && !e.repeat;
+    if (e.key === 'Enter' && (e.target === document.body || e.target === document.documentElement)) {
+      e.preventDefault();
+      startRename();
+    } else if (cmd && e.key === 'Backspace' && shown) void remove(shown.n);
+    else if (cmd && e.key === 'z') {
+      e.preventDefault();
+      void putBack();
+    } else if (cmd && e.key === 'o' && shown?.editable) {
+      e.preventDefault();
+      window.snapmark.viewerEdit(shown.n);
+    } else if (e.key === 'Escape' && !menu.hidden) menu.hidden = true;
     else if (e.key === 'Escape' && view === 'shot') show('grid');
     else if (view === 'shot' && e.key === 'ArrowLeft') step(-1);
     else if (view === 'shot' && e.key === 'ArrowRight') step(1);

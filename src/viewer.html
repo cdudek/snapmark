@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data: file:; style-src 'self' 'unsafe-inline'" />
@@ -19,6 +19,8 @@
         --accent: #2492ff; /* tints, outlines, focus rings, icons */
         --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
         --annot: #e5484d;
+        --error: #cf222e; /* small text on the header: --annot is 3.7:1 there */
+        --focus: #0f72db; /* focus rings: --accent is 3:1 on the light header */
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -29,6 +31,8 @@
           --muted: #98989d;
           --line: #3a3a3d;
           --soft: rgb(255 255 255 / 0.07);
+          --error: #ff7b72;
+          --focus: #2492ff;
         }
       }
       * {
@@ -50,7 +54,7 @@
         display: none !important;
       }
       :focus-visible {
-        outline: 2px solid var(--accent);
+        outline: 2px solid var(--focus);
         outline-offset: 2px;
       }
       button {
@@ -135,12 +139,16 @@
         font: inherit;
         font-size: 15px;
         width: 240px;
+        min-width: 0; /* a narrow window shrinks the field instead of pushing the header off screen */
         padding: 3px 6px;
         border: 1px solid var(--accent);
         border-radius: 5px;
         outline: 3px solid rgb(36 146 255 / 0.35);
         background: var(--panel);
         color: inherit;
+      }
+      #rename::placeholder {
+        color: var(--muted);
       }
       #rename::selection {
         background: var(--accent-fill);
@@ -152,10 +160,11 @@
         left: 6px;
         font-size: 11px;
         color: var(--muted);
-        white-space: nowrap;
+        width: max-content;
+        max-width: calc(100vw - 120px); /* wraps in a narrow window rather than running off it */
       }
       #hint.error {
-        color: var(--annot);
+        color: var(--error);
       }
       .name.editing #title,
       .name.editing #pencil,
@@ -472,11 +481,11 @@
         </g>
       </svg>
       <div class="name" id="name">
-        <button id="title" title="Rename"></button>
-        <button id="pencil" title="Rename" aria-label="Rename session">
+        <button id="title" title="Rename (↩)"></button>
+        <button id="pencil" title="Rename (↩)" aria-label="Rename session">
           <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" /></svg>
         </button>
-        <input id="rename" aria-label="Session name" spellcheck="false" />
+        <input id="rename" aria-label="Session name" aria-describedby="hint" placeholder="Name this session" spellcheck="false" />
         <div id="hint" role="status"></div>
       </div>
       <span id="total"></span>
@@ -492,7 +501,7 @@
       <section id="grid-view" hidden>
         <h2>Screenshots</h2>
         <div id="grid"></div>
-        <p class="empty" id="grid-empty">No screenshots yet. Capture one with ⌃⇧1.</p>
+        <p class="empty" id="grid-empty">No screenshots yet. Capture one with ⌃⇧4.</p>
       </section>
       <section id="shots" hidden>
         <div class="stage"><img id="shot" alt="" /></div>
@@ -502,8 +511,8 @@
           <span id="count"></span>
           <button id="next" title="Next (→)">→</button>
           <span class="end">
-            <button id="edit" class="primary" title="Open it in the editor with its marks">Edit Again</button>
-            <button id="remove">Remove from Session</button>
+            <button id="edit" class="primary" title="Open it in the editor with its marks (⌘O)">Edit Again</button>
+            <button id="remove" title="Move it to Discarded for 7 days (⌘⌫)">Remove from Session</button>
           </span>
         </div>
       </section>
@@ -513,6 +522,13 @@
         <div id="discarded-list"></div>
       </section>
     </main>
+    <!-- Says what ⌘⌫, Remove from Session and ⌘Z did, for VoiceOver; nothing on screen. Outside every view, so a hidden
+         view never silences it. -->
+    <p
+      id="announce"
+      role="status"
+      style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0"
+    ></p>
     <div class="menu" id="menu" role="menu" hidden><button id="menu-remove" role="menuitem">Remove from Session</button></div>
     <template id="thumb-t">
       <div class="thumb">

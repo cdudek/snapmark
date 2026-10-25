@@ -22,7 +22,9 @@ import { pathToFileURL } from 'url';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
-import { menuTemplate, loginState, MenuActions, MenuState, SessionInfo } from './menu';
+import { menuTemplate, captureOptions, loginState, MenuActions, MenuState, SessionInfo } from './menu';
+import { KEY_GROUPS, SHORTCUTS } from './keys';
+import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { Box, ocrText, OcrLine, recognize } from './ocr';
 import { secretBoxes } from './redact';
@@ -31,10 +33,6 @@ import { secretBoxes } from './redact';
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
 
 const DEFAULT_ROOT = path.join(os.homedir(), 'Documents', 'Snapmark');
-// No ⌘: ⌘ keys belong to the app in front, and ⇧⌘1 sat next to Chrome's ⌘1 for tab 1 (owner, 2026-09-28).
-const SHORTCUT_CAPTURE = 'Control+Shift+1';
-const SHORTCUT_NEW = 'Control+Shift+N';
-const SHORTCUT_AREA = 'Control+Shift+3';
 
 const statePath = () => path.join(app.getPath('userData'), 'state.json');
 // SNAPMARK_ROOT (tests, dev) wins over the folder chosen in the menu.
@@ -42,6 +40,7 @@ let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
 let area: Area | null = null; // what Capture Last Area captures, in global screen points
+let singleKeys = true; // Settings ▸ Single-Key Tools
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
 let tray: Tray | null = null;
@@ -88,6 +87,7 @@ function loadState() {
     area = state.area ?? null;
     editorSize = state.editorSize ?? null;
     beautify = state.beautify ?? null;
+    singleKeys = state.singleKeys ?? true;
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -97,7 +97,15 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify }));
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys }));
+}
+
+// Settings ▸ Single-Key Tools: plain letters and digits pick tools in the editor. WCAG 2.1.4 asks that such keys can be
+// turned off; ⌘1–⌘7 keep working either way.
+function setSingleKeys(on: boolean) {
+  singleKeys = on;
+  saveState();
+  for (const ed of editors.values()) if (!ed.win.isDestroyed()) ed.win.webContents.send('editor:single-keys', on);
 }
 
 export function setActive(name: string) {
@@ -161,8 +169,9 @@ function newSession() {
   // Pressing ⌃⇧N twice must not leave empty sessions behind.
   if (active && fs.existsSync(dirOf(active)) && sessions.count(root, active) === 0)
     return notify(`${sessions.shortName(active)} is still empty, so new captures keep going there.`);
-  setActive(sessions.create(root));
-  notify(`New session: ${active}`);
+  const made = sessions.create(root);
+  setActive(made);
+  notify(`New session: ${sessions.shortName(made)}`);
 }
 
 function shoot(args: string[], oneShot = false) {
@@ -173,15 +182,18 @@ function shoot(args: string[], oneShot = false) {
   });
 }
 
+let picking = false; // the area picker is open
+let scrolling = false; // Capture Scrolling is grabbing what scrolls under its area
+// One capture at a time: a capture key or item while one is running does nothing.
+const busy = () => picking || scrolling;
+
 // -i: interactive region (space toggles window mode)
-const capture = () => shoot(['-i']);
+const capture = () => void (busy() || shoot(['-i']));
 // One-Shot Capture…: the same region capture, opened in one-shot mode
-const captureOneShot = () => shoot(['-i'], true);
+const captureOneShot = () => void (busy() || shoot(['-i'], true));
 // -w: only windows, so a click takes the window under the pointer; -o: without its shadow, a clean crop to the window's
 // edges (the shadow is transparent padding the marks and the AI do not need)
-const captureWindow = () => shoot(['-i', '-w', '-o']);
-
-let picking = false;
+const captureWindow = () => void (busy() || shoot(['-i', '-w', '-o']));
 
 // The same area every time, e.g. the page in a browser. The first time, after Choose New Area, or when the display
 // it was on is gone, the owner drags it first.
@@ -190,8 +202,8 @@ async function captureArea(choose = false) {
     screen
       .getAllDisplays()
       .some(({ bounds: b }) => a.x >= b.x && a.y >= b.y && a.x + a.width <= b.x + b.width && a.y + a.height <= b.y + b.height);
+  if (busy()) return; // ⌃⇧3 again while dragging, or while Capture Scrolling runs
   if (choose || !area || !onScreen(area)) {
-    if (picking) return; // ⌃⇧3 again while dragging
     picking = true;
     const picked = await pickArea().finally(() => (picking = false));
     if (!picked) return;
@@ -246,10 +258,12 @@ export function pickArea(scroll = false): Promise<Area | null> {
 // Capture Scrolling (Capture Options ▸): the owner drags an area, then scrolls what is under it while Snapmark grabs
 // the area again and again and stitches what scrolled in onto one tall screenshot (stitch.ts). Done opens the editor.
 async function captureScrolling() {
-  if (picking) return;
+  if (busy()) return;
   picking = true;
   const picked = await pickArea(true).finally(() => (picking = false));
-  if (picked) await scrollCapture(picked);
+  if (!picked) return;
+  scrolling = true;
+  await scrollCapture(picked).finally(() => (scrolling = false));
 }
 
 // One frame of the area, as `screencapture -R` gives it: Retina displays give 2x pixels.
@@ -347,7 +361,7 @@ export function openEditor(
     y: Math.round(wa.y + (wa.height - height) / 2),
     width,
     height,
-    title: `Snapmark — ${oneShot ? 'One-shot' : session}`,
+    title: `Snapmark — ${oneShot ? 'One-shot' : sessions.shortName(session)}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
@@ -355,6 +369,7 @@ export function openEditor(
   const text = desk.recognize(image);
   editors.set(id, { image, text, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot });
   win.once('focus', updateDock);
+  win.on('page-title-updated', (e) => e.preventDefault()); // editor.html's <title> would replace the session name
   win.on('resized', () => {
     const [w, h] = win.getSize();
     editorSize = { width: w, height: h };
@@ -379,8 +394,8 @@ function editorFor(id: number) {
 ipcMain.handle('editor:init', (e): EditorInit => {
   const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
-  if (oneShot) return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined };
-  return { src, session, count: sessions.count(into, session), state, replacing: replace };
+  if (oneShot) return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined, singleKeys };
+  return { src, session: sessions.shortName(session), count: sessions.count(into, session), state, replacing: replace, singleKeys };
 });
 
 ipcMain.on('editor:beautify', (e, settings: Beautify) => {
@@ -442,8 +457,8 @@ ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, sta
 function tellEditors(into: string, name: string) {
   for (const ed of editors.values())
     if (ed.root === into && ed.session === name && !ed.win.isDestroyed()) {
-      ed.win.setTitle(`Snapmark — ${name}`);
-      ed.win.webContents.send('editor:session', name, sessions.count(into, name));
+      ed.win.setTitle(`Snapmark — ${sessions.shortName(name)}`);
+      ed.win.webContents.send('editor:session', sessions.shortName(name), sessions.count(into, name));
     }
 }
 
@@ -502,7 +517,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
   const win = new BrowserWindow({
     width: 1100,
     height: 900,
-    title: `${name} — Snapmark`,
+    title: `${sessions.shortName(name)} — Snapmark`,
     // The header holds the title, the tabs and the traffic lights, like a native macOS window.
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 19 },
@@ -546,7 +561,17 @@ function viewerData(v: { root: string; session: string; known: string }): Viewer
     kind: d.kind,
     when: sessions.whenLabel(d.at),
   }));
-  return { session: v.session, base: `${pathToFileURL(dir).href}/`, md: v.known, shots, discarded };
+  const name = sessions.namePart(v.session);
+  return {
+    session: v.session,
+    label: sessions.shortName(v.session),
+    name,
+    stamped: name !== v.session, // the date stays when it is renamed
+    base: `${pathToFileURL(dir).href}/`,
+    md: v.known,
+    shots,
+    discarded,
+  };
 }
 
 function viewerFor(id: number) {
@@ -593,11 +618,11 @@ ipcMain.handle('viewer:remove', async (e, n: number): Promise<ViewerInit> => {
 });
 ipcMain.handle('viewer:rename', async (e, wanted: string): Promise<string | null> => {
   const v = viewerFor(e.sender.id);
-  const name = wanted.trim();
-  if (!name) return 'Enter a name.';
-  if (name === v.session) return null;
+  const to = sessions.renamedTo(v.session, wanted);
+  if (!to) return 'Enter a name.'; // only a session without a date stamp can end up with no name
+  if (to === v.session) return null;
   await flushViewer(v); // the title line in session.md changes
-  return renameSession(v.session, name, v.root) ? null : `A session named ${name} already exists.`;
+  return renameSession(v.session, wanted, v.root) ? null : `${sessions.shortName(to)} already exists. Choose another name.`;
 });
 ipcMain.handle('viewer:reopen', async (e, dir: string): Promise<ViewerInit> => {
   const v = viewerFor(e.sender.id);
@@ -704,19 +729,33 @@ function menuState(): MenuState {
     canUpdate: app.isPackaged,
     updateWaiting,
     shortcuts: {
-      capture: registered.has(SHORTCUT_CAPTURE) ? SHORTCUT_CAPTURE : null,
-      area: registered.has(SHORTCUT_AREA) ? SHORTCUT_AREA : null,
-      newSession: registered.has(SHORTCUT_NEW) ? SHORTCUT_NEW : null,
+      capture: registered.has(SHORTCUTS.capture) ? SHORTCUTS.capture : null,
+      area: registered.has(SHORTCUTS.area) ? SHORTCUTS.area : null,
+      options: registered.has(SHORTCUTS.options) ? SHORTCUTS.options : null,
+      newSession: registered.has(SHORTCUTS.newSession) ? SHORTCUTS.newSession : null,
     },
     area,
     iconDir: path.join(__dirname, '../../assets'),
     hasDiscarded: sessions.discarded(root).length > 0,
+    singleKeys,
   };
 }
 
+let menuOpen = false;
+
+function popUp(items: MenuItemConstructorOptions[]) {
+  const menu = Menu.buildFromTemplate(items);
+  menu.once('menu-will-close', () => (menuOpen = false));
+  menuOpen = true;
+  tray?.popUpContextMenu(menu);
+}
+
 // Built on every open, so counts and sessions changed in Finder are never stale.
-function popMenu() {
-  tray?.popUpContextMenu(Menu.buildFromTemplate(menuTemplate(menuState(), actions)));
+const popMenu = () => popUp(menuTemplate(menuState(), actions));
+
+// ⌃⇧5, like macOS's ⇧⌘5: the capture options as a menu at the menu bar icon. Not over a capture or an open menu.
+function popOptions() {
+  if (!busy() && !menuOpen) popUp(captureOptions(actions));
 }
 
 // A session moved or deleted outside Snapmark: say so instead of doing nothing.
@@ -749,17 +788,22 @@ function renameSession(name: string, wanted: string, into = root): string | null
 }
 
 // Rename Session… in the menu: native text prompt; Cancel makes osascript exit non-zero, which changes nothing.
+// Prompt and default answer go in as argv, never into the script text, so no session name can break the script.
 function renameFromMenu(name: string) {
+  const stamped = sessions.namePart(name) !== name;
+  const prompt = stamped ? `Name this session. The date ${name.slice(0, 10)} stays in front.` : 'Rename session';
   const script = [
     'on run argv',
-    'text returned of (display dialog "Rename session" default answer (item 1 of argv) buttons {"Cancel", "Rename"} default button "Rename")',
+    'text returned of (display dialog (item 1 of argv) default answer (item 2 of argv) buttons {"Cancel", "Rename"} default button "Rename")',
     'end run',
   ];
-  execFile('osascript', [...script.flatMap((l) => ['-e', l]), name], async (err, stdout) => {
-    const wanted = stdout?.trim();
-    if (err || !wanted || wanted === name) return;
+  execFile('osascript', [...script.flatMap((l) => ['-e', l]), prompt, sessions.namePart(name)], async (err, stdout) => {
+    if (err) return;
+    const wanted = stdout?.trim() ?? '';
+    const to = sessions.renamedTo(name, wanted);
+    if (!to || to === name) return;
     for (const v of viewers.values()) if (v.root === root && v.session === name) await flushViewer(v);
-    if (!renameSession(name, wanted)) notify(`A session named ${wanted} already exists.`);
+    if (!renameSession(name, wanted)) notify(`${sessions.shortName(name)} keeps its name: ${sessions.shortName(to)} already exists.`);
   });
 }
 
@@ -767,6 +811,7 @@ async function otherSession() {
   focusApp();
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Choose a session',
+    message: 'Session folders start with their date.',
     defaultPath: root,
     properties: ['openDirectory'],
   });
@@ -784,35 +829,20 @@ let shortcutsWin: BrowserWindow | null = null;
 function showShortcuts() {
   if (shortcutsWin && !shortcutsWin.isDestroyed()) return shortcutsWin.focus();
   const row = (keys: string, icon: string, name: string, what: string) =>
-    `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
+    `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
   const tools = TOOLS.flatMap((g) =>
     g.tools.map((t, v) => row(v ? `${g.key.toUpperCase()} again` : g.key.toUpperCase(), t.icon, t.label, t.tip ?? t.means ?? '')),
   ).join('');
-  const other = [
-    ['⌃⇧1', 'Capture region', 'anywhere'],
-    ['⌃⇧3', 'Capture last area', 'anywhere; the first time, drag the area'],
-    ['⌃⇧N', 'New session', 'anywhere'],
-    ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (menu: Capture Options)'],
-    ['Esc', 'Step back', 'out of the text, then deselect, then back to Select, then close'],
-    ['⌫', 'Delete', 'the selected mark'],
-    ['⌘1–⌘7', 'Pick a tool', 'also while typing a note or card, where the plain digit types'],
-    ['⌘Z', 'Undo', 'in a note, its typing first, then the marks'],
-    ['⇧⌘Z', 'Redo', ''],
-    ['⌘↵', 'Add to session', ''],
-    ['⇧⌘C', 'Copy Image', 'the marked-up image, without adding it to the session'],
-    ['⇧⌘S', 'Save As…', 'the marked-up image as a PNG wherever you pick, without adding it to the session'],
-    ['⌘C', 'Copy Image (one-shot)', 'the beautified image at full resolution, when no text has the cursor; ⇧⌘C works too'],
-    ['⌘W', 'Discard', 'the screenshot; Reopen Last Discarded in the menu brings it back'],
-    ['← →', 'Flip screenshots', 'in the session window, one at a time; Esc goes back to the grid'],
-  ]
-    .map(([k, n, w]) => row(k, '', n, w))
-    .join('');
-  const html = `<!doctype html><meta charset="utf-8"><title>Keyboard shortcuts</title><style>
+  // The other keys, grouped by where they work (owner, 2026-10-25), from keys.ts.
+  const other = KEY_GROUPS.map(
+    (g) => `<h2>${esc(g.title)}</h2><table>${g.rows.map(([k, n, w]) => row(k, '', n, w)).join('')}</table>`,
+  ).join('');
+  const html = `<!doctype html><html lang="en"><meta charset="utf-8"><title>Keyboard shortcuts</title><style>
     :root{color-scheme:light dark;font:13px -apple-system,system-ui,sans-serif}body{margin:16px}
     h2{font-size:13px;margin:16px 0 6px}table{border-collapse:collapse;width:100%}td{padding:4px 6px;vertical-align:middle}
     kbd{font:600 11px ui-monospace,monospace;white-space:nowrap}
     svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    </style><h2>Editor tools</h2><table>${tools}</table><h2>Other keys</h2><table>${other}</table>`;
+    </style><h2>Editor tools</h2><table>${tools}</table>${other}`;
   shortcutsWin = new BrowserWindow({ width: 520, height: 640, title: 'Keyboard shortcuts' });
   void shortcutsWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
   focusApp();
@@ -848,6 +878,7 @@ const actions: MenuActions = {
   chooseRoot: () => void chooseRoot(),
   clearOldSessions: () => void clearOldSessions(),
   setLogin: (checked) => app.setLoginItemSettings({ openAtLogin: checked }),
+  setSingleKeys,
   keyboardShortcuts: showShortcuts,
   checkUpdates: () => void checkForUpdatesNow(),
   installUpdate: () => autoUpdater.quitAndInstall(),
@@ -869,9 +900,10 @@ app.whenReady().then(() => {
     setInterval(checkForUpdates, 24 * 60 * 60 * 1000); // a menu bar app runs for days: check once a day, not only at start
   }
   for (const [key, fn] of [
-    [SHORTCUT_CAPTURE, capture],
-    [SHORTCUT_AREA, () => void captureArea()],
-    [SHORTCUT_NEW, newSession],
+    [SHORTCUTS.capture, capture],
+    [SHORTCUTS.area, () => void captureArea()],
+    [SHORTCUTS.options, popOptions],
+    [SHORTCUTS.newSession, newSession],
   ] as const) {
     if (globalShortcut.register(key, fn)) registered.add(key);
     else notify(`${key} is taken by another app`);

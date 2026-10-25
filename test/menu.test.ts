@@ -2,7 +2,7 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { menuTemplate, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
+import { menuTemplate, captureOptions, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
 
 const calls: string[] = [];
 const a = new Proxy({} as MenuActions, {
@@ -23,10 +23,11 @@ const base: MenuState = {
   version: '0.2.0',
   canUpdate: true,
   updateWaiting: null,
-  shortcuts: { capture: 'Control+Shift+1', area: 'Control+Shift+3', newSession: 'Control+Shift+N' },
+  shortcuts: { capture: 'Control+Shift+4', area: 'Control+Shift+3', options: 'Control+Shift+5', newSession: 'Control+Shift+N' },
   area: null,
   iconDir: '',
   hasDiscarded: false,
+  singleKeys: true,
 };
 const menu = (over: Partial<MenuState> = {}) => menuTemplate({ ...base, ...over }, a);
 const labels = (items: Item[]) => items.filter((i) => i.visible !== false).map((i) => (i.type === 'separator' ? '—' : i.label));
@@ -100,8 +101,27 @@ const oneShot = find(sub(find(menu(), 'Capture Options')), 'One-Shot Capture…'
 assert.strictEqual(oneShot.accelerator, undefined);
 oneShot.click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'oneShot');
-assert.strictEqual(find(menu(), 'Capture Screenshot…').accelerator, 'Control+Shift+1');
+assert.strictEqual(find(menu(), 'Capture Screenshot…').accelerator, 'Control+Shift+4');
 assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, area: null } })[3].label, 'Capture Last Area (shortcut unavailable)');
+
+// F3 capture options popup: ⌃⇧5 shows the Capture Options items, and each does what it does in the menu
+assert.deepStrictEqual(labels(captureOptions(a)), labels(sub(find(menu(), 'Capture Options'))));
+for (const [label, action] of [
+  ['Choose New Area…', 'chooseArea'],
+  ['Capture Window…', 'captureWindow'],
+  ['Capture Scrolling…', 'captureScrolling'],
+  ['One-Shot Capture…', 'oneShot'],
+]) {
+  find(captureOptions(a), label).click!({} as never, undefined, {} as never);
+  assert.strictEqual(calls.pop(), action, label);
+}
+
+// F4 options sublabel: Capture Options names its key; a key another app owns says so instead
+assert.strictEqual(find(menu(), 'Capture Options').sublabel, '⌃⇧5');
+const noOptions = menu({ shortcuts: { ...base.shortcuts, options: null } })[4];
+assert.strictEqual(noOptions.label, 'Capture Options (shortcut unavailable)');
+assert.strictEqual(noOptions.sublabel, undefined);
+assert.ok(Array.isArray(noOptions.submenu), 'the options stay reachable from the menu');
 
 // The session line: singular, no count when empty; without a session the session actions are disabled
 assert.strictEqual(menu({ current: { name: 'x', label: 'x', count: 1 } })[1].label, 'x · 1 screenshot');
@@ -140,11 +160,33 @@ assert.strictEqual(find(sub(find(menu({ current: { name: 'e', label: 'e', count:
 find(sub(find(ses, 'Export Session')), 'PDF').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'exportAs:2026-09-25 12.03:PDF');
 
-// Switch Session: the list (current ticked, click switches), capped, then Other Session…
-const many = Array.from({ length: 25 }, (_, i) => ({ name: `s${i}`, label: `s${i}`, count: 1 }));
-const ss = sub(find(sub(find(menu({ sessions: many }), 'Session')), 'Switch Session'));
-assert.strictEqual(ss.filter((i) => i.type === 'checkbox').length, MAX_LISTED);
-assert.deepStrictEqual(labels(ss).slice(-2), ['—', 'Other Session…']);
+// Switch Session: the 10 most recently used (current ticked, click switches), then Older Sessions… (owner, 2026-10-25)
+const many = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `s${i}`, label: `s${i}`, count: 1 }));
+const switchOf = (over: Partial<MenuState>) => sub(find(sub(find(menu(over), 'Session')), 'Switch Session'));
+// F13 ten rows: at most 10, in last-use order
+const twelve = switchOf({ sessions: many(12), current: many(12)[0] });
+assert.strictEqual(MAX_LISTED, 10);
+assert.deepStrictEqual(
+  twelve.filter((i) => i.type === 'checkbox').map((i) => i.label),
+  many(10).map((s) => s.label),
+  'F13',
+);
+// F14 current listed: a current session 12th by last use is the 10th row, ticked
+const late = switchOf({ sessions: many(12), current: many(12)[11] });
+const rows = late.filter((i) => i.type === 'checkbox');
+assert.strictEqual(rows.length, 10, 'F14');
+assert.strictEqual(rows[9].label, 's11', 'F14');
+assert.strictEqual(rows[9].checked, true, 'F14');
+assert.strictEqual(rows.filter((i) => i.checked).length, 1, 'F14');
+// F15 Older Sessions: the last item above 10 sessions, opening the folder panel
+assert.deepStrictEqual(labels(twelve).slice(-2), ['—', 'Older Sessions…'], 'F15');
+find(twelve, 'Older Sessions…').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'otherSession', 'F15');
+// F16 no older: 10 or fewer sessions show no Older Sessions… and no separator
+assert.deepStrictEqual(labels(switchOf({ sessions: many(3), current: many(3)[0] })), ['s0', 's1', 's2'], 'F16');
+assert.strictEqual(labels(switchOf({ sessions: many(10), current: many(10)[0] })).length, 10, 'F16');
+// F17 empty: no session, Switch Session greyed
+assert.strictEqual(find(sub(find(menu({ current: null, sessions: [] }), 'Session')), 'Switch Session').enabled, false, 'F17');
 const listed = sub(find(ses, 'Switch Session'));
 assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);
@@ -156,9 +198,18 @@ assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
   'Sessions Folder…',
   'Clear Sessions Older Than 60 Days…',
   'Keyboard Shortcuts',
+  'Single-Key Tools',
   'Check for Updates…',
 ]);
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Check for Updates…').sublabel, 'Snapmark 0.2.0');
+
+// Single-Key Tools (WCAG 2.1.4, UX review of #76): letters and digits picking tools can be turned off
+const single = find(sub(find(menu(), 'Settings')), 'Single-Key Tools');
+assert.strictEqual(single.type, 'checkbox');
+assert.strictEqual(single.checked, true);
+assert.strictEqual(find(sub(find(menu({ singleKeys: false }), 'Settings')), 'Single-Key Tools').checked, false);
+single.click!({ checked: false } as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'setSingleKeys:false');
 find(sub(find(menu(), 'Settings')), 'Clear Sessions Older Than 60 Days…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'clearOldSessions');
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Sessions Folder…').sublabel, '~/Documents/Snapmark');
