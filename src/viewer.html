@@ -506,12 +506,6 @@
             <button id="remove" title="Move it to Discarded for 7 days (⌘⌫)">Remove from Session</button>
           </span>
         </div>
-        <!-- Says what ⌘⌫ and ⌘Z did, for VoiceOver; nothing on screen. -->
-        <p
-          id="announce"
-          role="status"
-          style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0"
-        ></p>
       </section>
       <section class="page" id="discarded" hidden>
         <h2>Discarded</h2>
@@ -519,6 +513,13 @@
         <div id="discarded-list"></div>
       </section>
     </main>
+    <!-- Says what ⌘⌫, Remove from Session and ⌘Z did, for VoiceOver; nothing on screen. Outside every view, so a hidden
+         view never silences it. -->
+    <p
+      id="announce"
+      role="status"
+      style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0"
+    ></p>
     <div class="menu" id="menu" role="menu" hidden><button id="menu-remove" role="menuitem">Remove from Session</button></div>
     <template id="thumb-t">
       <div class="thumb">
