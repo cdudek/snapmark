@@ -82,7 +82,7 @@ Feature 1 (`session-names/1-older-sessions`):
 - [x] 2. Change `menuTemplate()` in `src/menu.ts` — proof: F13–F17 pass in `npm test`.
 - [x] 3. Add the panel message in `otherSession()` — proof: `grep -n "Session folders start with their date" src/main.ts` prints one line (F18).
 - [x] 4. Update the two Switch Session lines in `docs/ux/sitemap.md` — proof: `grep -c "Other Session" docs/ux/sitemap.md` drops by two.
-- [ ] 5. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
+- [x] 5. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
 
 Feature 2 (`session-names/2-readable-dates`, cut after feature 1 merges):
 
