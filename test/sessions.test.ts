@@ -26,17 +26,74 @@ assert.ok(!md3.includes('- Card: \n'), 'blank cards are skipped');
 // Menu helpers
 assert.strictEqual(sessions.count(root, a), 2); // 001.png was deleted; 002 and 003 remain
 assert.strictEqual(sessions.count(root, 'nope'), 0);
-assert.strictEqual(sessions.shortName('2026-09-25 12.03'), '25 Sep 12.03');
-assert.strictEqual(sessions.shortName('2026-01-05 09.14 (2)'), '5 Jan 09.14 (2)');
-assert.strictEqual(sessions.shortName('Checkout review'), 'Checkout review');
 assert.strictEqual(sessions.saveAsName(root, a), 'demo 004.png'); // the next entry: 001–003 are taken
 assert.strictEqual(sessions.saveAsName(root, a, 2), 'demo 002.png'); // Edit Again: the entry it replaces
-assert.strictEqual(sessions.saveAsName(root, sessions.create(root, '2026-09-25 12.03')), '25 Sep 12.03 001.png');
 assert.strictEqual(sessions.rename(root, 'demo (2)', '  '), null);
 assert.strictEqual(sessions.rename(root, 'demo (2)', 'demo'), null); // taken
 assert.strictEqual(sessions.rename(root, 'demo (2)', 'Checkout/review'), 'Checkout-review');
 assert.match(fs.readFileSync(path.join(root, 'Checkout-review', 'session.md'), 'utf8'), /^# Checkout-review\n/);
 assert.deepStrictEqual(sessions.byLastUse(['c', 'b', 'a'], { a: 2, b: 1 }), ['a', 'b', 'c']);
+
+// F1 display name: year first with a clock time, the same-minute suffix kept
+assert.strictEqual(sessions.shortName('2026-10-24 23.38'), '2026-10-24, 23:38');
+assert.strictEqual(sessions.shortName('2026-10-24 23.38 (2)'), '2026-10-24, 23:38 (2)');
+assert.strictEqual(sessions.shortName('2026-10-24 23.38 Ledgerly Q4 review'), '2026-10-24 · Ledgerly Q4 review'); // F8
+assert.strictEqual(sessions.shortName('2026-10-24 23.38 (2) Ledgerly Q4 review'), '2026-10-24 · Ledgerly Q4 review');
+assert.strictEqual(sessions.namePart('2026-10-24 23.38'), ''); // F9: the rename field starts empty
+assert.strictEqual(sessions.namePart('2026-10-24 23.38 (2) Ledgerly Q4 review'), 'Ledgerly Q4 review');
+
+// F12 no stamp: a folder renamed before this change shows as it is, and keeps working
+assert.strictEqual(sessions.shortName('Checkout review'), 'Checkout review');
+assert.strictEqual(sessions.namePart('Checkout review'), 'Checkout review');
+assert.strictEqual(sessions.renamedTo('Checkout review', ''), null); // no stamp to fall back on: "Enter a name."
+assert.strictEqual(sessions.renamedTo('Checkout review', 'Checkout v2'), 'Checkout v2');
+
+// F19 heading: session.md starts with the display name, from create and from rename
+const st = sessions.create(root, '2026-10-24 23.38');
+const head = (n: string) => fs.readFileSync(path.join(root, n, 'session.md'), 'utf8').split('\n')[0];
+assert.strictEqual(head(st), '# 2026-10-24, 23:38');
+sessions.addShot(root, st, Buffer.from('p'), { caption: 'Body stays' });
+
+// F7 rename keeps the stamp, and its same-minute suffix
+const st2 = sessions.create(root, '2026-10-24 23.38');
+assert.strictEqual(st2, '2026-10-24 23.38 (2)');
+assert.strictEqual(sessions.rename(root, st, 'Ledgerly Q4 review'), '2026-10-24 23.38 Ledgerly Q4 review');
+assert.strictEqual(head('2026-10-24 23.38 Ledgerly Q4 review'), '# 2026-10-24 · Ledgerly Q4 review'); // F19
+assert.ok(fs.readFileSync(path.join(root, '2026-10-24 23.38 Ledgerly Q4 review', 'session.md'), 'utf8').includes('Body stays'));
+
+// F10 typed date: the typed text is the name; the session's own stamp stays in front
+assert.strictEqual(sessions.rename(root, st2, '2026-10-25 Ledgerly'), '2026-10-24 23.38 (2) 2026-10-25 Ledgerly');
+assert.strictEqual(sessions.shortName('2026-10-24 23.38 (2) 2026-10-25 Ledgerly'), '2026-10-24 · 2026-10-25 Ledgerly');
+
+// F11 empty name: a named stamped session goes back to its bare stamp; an unnamed one is unchanged
+assert.strictEqual(sessions.rename(root, '2026-10-24 23.38 Ledgerly Q4 review', '  '), '2026-10-24 23.38');
+assert.strictEqual(head('2026-10-24 23.38'), '# 2026-10-24, 23:38');
+assert.strictEqual(sessions.rename(root, '2026-10-24 23.38', ''), null);
+
+// F19 only a title on the first line is replaced; a "# " line the owner wrote further down stays
+const own = sessions.create(root, '2026-10-24 07.00');
+fs.writeFileSync(path.join(root, own, 'session.md'), 'Intro\n\n# My own heading\n');
+assert.strictEqual(sessions.rename(root, own, 'Mine'), '2026-10-24 07.00 Mine');
+assert.strictEqual(fs.readFileSync(path.join(root, '2026-10-24 07.00 Mine', 'session.md'), 'utf8'), 'Intro\n\n# My own heading\n');
+
+// A change of case only is a rename, not "already exists" (macOS's disk ignores case)
+assert.strictEqual(sessions.rename(root, '2026-10-24 07.00 Mine', 'mine'), '2026-10-24 07.00 mine');
+assert.ok(sessions.list(root).includes('2026-10-24 07.00 mine'));
+
+// N1 no colon: in a folder from rename, or a file name from Save As…
+assert.strictEqual(sessions.rename(root, '2026-10-24 23.38', 'Review: 10:30'), '2026-10-24 23.38 Review- 10-30');
+assert.strictEqual(
+  sessions.saveAsName(root, '2026-10-24 23.38 (2) 2026-10-25 Ledgerly'),
+  '2026-10-24 23.38 (2) 2026-10-25 Ledgerly 001.png',
+);
+assert.strictEqual(sessions.saveAsName(root, sessions.create(root, '2026-10-24 09.14')), '2026-10-24 09.14 001.png');
+assert.ok(!sessions.list(root).some((n) => n.includes(':')));
+
+// N2 old folders untouched: listing, sorting and naming never rename a folder
+const listed = sessions.list(root);
+sessions.byLastUse(listed, {});
+listed.forEach((n) => sessions.shortName(n));
+assert.deepStrictEqual(sessions.list(root), listed);
 
 // Markdown notes that span lines stay inside their numbered item
 const nm = sessions.create(root, 'md-notes');
@@ -156,12 +213,12 @@ assert.deepStrictEqual(
   ],
 );
 
-// "Today, 22:10", "Yesterday, 18:02", "Mon, 09:41", and a date once the weekday would repeat
+// F6 whenLabel: "Today, 22:10", "Yesterday, 18:02", "Mon, 09:41", and a year-first date once the weekday would repeat
 const now = new Date(2026, 9, 25, 23, 0).getTime(); // Sun 25 Oct 2026
 assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 25, 22, 10).getTime(), now), 'Today, 22:10');
 assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 24, 18, 2).getTime(), now), 'Yesterday, 18:02');
 assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 19, 9, 41).getTime(), now), 'Mon, 09:41');
-assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 18, 9, 41).getTime(), now), '18 Oct, 09:41');
+assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 18, 9, 41).getTime(), now), '2026-10-18, 09:41');
 assert.strictEqual(sessions.whenLabel(new Date(2026, 9, 24, 23, 59).getTime(), new Date(2026, 9, 25, 0, 1).getTime()), 'Yesterday, 23:59');
 
 // olderThan: by the later of last use and session.md's last change

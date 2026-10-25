@@ -28,7 +28,10 @@ interface EditorSave {
 
 // The session window (viewer.html): session.md rendered and editable, its screenshots, and what was discarded from it.
 interface ViewerInit {
-  session: string;
+  session: string; // folder name
+  label: string; // display name: "2026-10-24, 23:38" or "2026-10-24 · Ledgerly Q4 review"
+  name: string; // what the rename field starts with: the owner's name for it, empty for a bare date stamp
+  stamped: boolean; // the folder starts with its date stamp, which a rename keeps
   base: string; // file:// URL of the session folder, ending in "/", so img/NNN.png resolves
   md: string;
   shots: ViewerShot[]; // the entries in session.md, in order

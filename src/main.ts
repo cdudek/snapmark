@@ -161,8 +161,9 @@ function newSession() {
   // Pressing ⌃⇧N twice must not leave empty sessions behind.
   if (active && fs.existsSync(dirOf(active)) && sessions.count(root, active) === 0)
     return notify(`${sessions.shortName(active)} is still empty, so new captures keep going there.`);
-  setActive(sessions.create(root));
-  notify(`New session: ${active}`);
+  const made = sessions.create(root);
+  setActive(made);
+  notify(`New session: ${sessions.shortName(made)}`);
 }
 
 function shoot(args: string[], oneShot = false) {
@@ -347,7 +348,7 @@ export function openEditor(
     y: Math.round(wa.y + (wa.height - height) / 2),
     width,
     height,
-    title: `Snapmark — ${oneShot ? 'One-shot' : session}`,
+    title: `Snapmark — ${oneShot ? 'One-shot' : sessions.shortName(session)}`,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
@@ -355,6 +356,7 @@ export function openEditor(
   const text = desk.recognize(image);
   editors.set(id, { image, text, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot });
   win.once('focus', updateDock);
+  win.on('page-title-updated', (e) => e.preventDefault()); // editor.html's <title> would replace the session name
   win.on('resized', () => {
     const [w, h] = win.getSize();
     editorSize = { width: w, height: h };
@@ -380,7 +382,7 @@ ipcMain.handle('editor:init', (e): EditorInit => {
   const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
   if (oneShot) return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined };
-  return { src, session, count: sessions.count(into, session), state, replacing: replace };
+  return { src, session: sessions.shortName(session), count: sessions.count(into, session), state, replacing: replace };
 });
 
 ipcMain.on('editor:beautify', (e, settings: Beautify) => {
@@ -442,8 +444,8 @@ ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, sta
 function tellEditors(into: string, name: string) {
   for (const ed of editors.values())
     if (ed.root === into && ed.session === name && !ed.win.isDestroyed()) {
-      ed.win.setTitle(`Snapmark — ${name}`);
-      ed.win.webContents.send('editor:session', name, sessions.count(into, name));
+      ed.win.setTitle(`Snapmark — ${sessions.shortName(name)}`);
+      ed.win.webContents.send('editor:session', sessions.shortName(name), sessions.count(into, name));
     }
 }
 
@@ -502,7 +504,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
   const win = new BrowserWindow({
     width: 1100,
     height: 900,
-    title: `${name} — Snapmark`,
+    title: `${sessions.shortName(name)} — Snapmark`,
     // The header holds the title, the tabs and the traffic lights, like a native macOS window.
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 19 },
@@ -546,7 +548,17 @@ function viewerData(v: { root: string; session: string; known: string }): Viewer
     kind: d.kind,
     when: sessions.whenLabel(d.at),
   }));
-  return { session: v.session, base: `${pathToFileURL(dir).href}/`, md: v.known, shots, discarded };
+  const name = sessions.namePart(v.session);
+  return {
+    session: v.session,
+    label: sessions.shortName(v.session),
+    name,
+    stamped: name !== v.session, // the date stays when it is renamed
+    base: `${pathToFileURL(dir).href}/`,
+    md: v.known,
+    shots,
+    discarded,
+  };
 }
 
 function viewerFor(id: number) {
@@ -593,11 +605,11 @@ ipcMain.handle('viewer:remove', async (e, n: number): Promise<ViewerInit> => {
 });
 ipcMain.handle('viewer:rename', async (e, wanted: string): Promise<string | null> => {
   const v = viewerFor(e.sender.id);
-  const name = wanted.trim();
-  if (!name) return 'Enter a name.';
-  if (name === v.session) return null;
+  const to = sessions.renamedTo(v.session, wanted);
+  if (!to) return 'Enter a name.'; // only a session without a date stamp can end up with no name
+  if (to === v.session) return null;
   await flushViewer(v); // the title line in session.md changes
-  return renameSession(v.session, name, v.root) ? null : `A session named ${name} already exists.`;
+  return renameSession(v.session, wanted, v.root) ? null : `${sessions.shortName(to)} already exists. Choose another name.`;
 });
 ipcMain.handle('viewer:reopen', async (e, dir: string): Promise<ViewerInit> => {
   const v = viewerFor(e.sender.id);
@@ -749,17 +761,22 @@ function renameSession(name: string, wanted: string, into = root): string | null
 }
 
 // Rename Session… in the menu: native text prompt; Cancel makes osascript exit non-zero, which changes nothing.
+// Prompt and default answer go in as argv, never into the script text, so no session name can break the script.
 function renameFromMenu(name: string) {
+  const stamped = sessions.namePart(name) !== name;
+  const prompt = stamped ? `Name this session. The date ${name.slice(0, 10)} stays in front.` : 'Rename session';
   const script = [
     'on run argv',
-    'text returned of (display dialog "Rename session" default answer (item 1 of argv) buttons {"Cancel", "Rename"} default button "Rename")',
+    'text returned of (display dialog (item 1 of argv) default answer (item 2 of argv) buttons {"Cancel", "Rename"} default button "Rename")',
     'end run',
   ];
-  execFile('osascript', [...script.flatMap((l) => ['-e', l]), name], async (err, stdout) => {
-    const wanted = stdout?.trim();
-    if (err || !wanted || wanted === name) return;
+  execFile('osascript', [...script.flatMap((l) => ['-e', l]), prompt, sessions.namePart(name)], async (err, stdout) => {
+    if (err) return;
+    const wanted = stdout?.trim() ?? '';
+    const to = sessions.renamedTo(name, wanted);
+    if (!to || to === name) return;
     for (const v of viewers.values()) if (v.root === root && v.session === name) await flushViewer(v);
-    if (!renameSession(name, wanted)) notify(`A session named ${wanted} already exists.`);
+    if (!renameSession(name, wanted)) notify(`${sessions.shortName(name)} keeps its name: ${sessions.shortName(to)} already exists.`);
   });
 }
 
@@ -767,6 +784,7 @@ async function otherSession() {
   focusApp();
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Choose a session',
+    message: 'Session folders start with their date.',
     defaultPath: root,
     properties: ['openDirectory'],
   });

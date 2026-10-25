@@ -440,6 +440,37 @@ app
     watching.destroy();
     view.close();
 
+    // A date-stamped session reads as a date, and a rename keeps the date in front
+    const stamped = sessions.create(root, '2026-10-24 23.38');
+    sessions.addShot(root, stamped, fs.readFileSync(out), { caption: 'Dated shot' });
+    const dated = openViewer(stamped, root);
+    await new Promise<void>((r) => dated.webContents.once('did-finish-load', () => r()));
+    const inDated = (js: string) => dated.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    const datedTitle = (text: string) =>
+      inDated(
+        `for (let i = 0; i < 50 && document.getElementById('title').textContent !== ${JSON.stringify(text)}; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('title').textContent === ${JSON.stringify(text)};`,
+      );
+    viewer['F2 the session window shows the readable date'] =
+      (await datedTitle('2026-10-24, 23:38')) && dated.getTitle() === '2026-10-24, 23:38 — Snapmark';
+    fs.copyFileSync(shotCopy, path.join(root, 'dated.png'));
+    const datedEditor = openEditor(path.join(root, 'dated.png'), { session: stamped });
+    await new Promise<void>((r) => datedEditor.webContents.once('did-finish-load', () => r()));
+    await loaded(datedEditor);
+    viewer['F3 an open editor shows the readable name'] =
+      (await inWin(datedEditor, `return document.getElementById('session').textContent`)).startsWith('2026-10-24, 23:38') &&
+      datedEditor.getTitle() === 'Snapmark — 2026-10-24, 23:38';
+    datedEditor.destroy();
+    await inDated(`document.getElementById('title').click();`);
+    const emptyField = await inDated(`return document.getElementById('rename').value === '';`);
+    await inDated(`document.getElementById('rename').value = 'Ledgerly Q4 review';`);
+    dated.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
+    viewer['F8 a renamed session keeps its date'] =
+      (await datedTitle('2026-10-24 · Ledgerly Q4 review')) && fs.existsSync(path.join(root, '2026-10-24 23.38 Ledgerly Q4 review'));
+    await inDated(`document.getElementById('title').click();`);
+    viewer['F9 the rename field holds only the name'] =
+      emptyField && (await inDated(`return document.getElementById('rename').value === 'Ledgerly Q4 review';`));
+    dated.close();
+
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks
     fs.copyFileSync(shotCopy, path.join(root, 'discard.png'));
     const gone = openEditor(path.join(root, 'discard.png'));

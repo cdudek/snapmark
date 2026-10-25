@@ -49,7 +49,14 @@ export interface MenuActions {
   quit(): void;
 }
 
-export const MAX_LISTED = 20;
+export const MAX_LISTED = 10;
+
+// The most recently used sessions; the current one takes the last row when it is older than those.
+const recent = (sessions: SessionInfo[], cur: SessionInfo | null) => {
+  const top = sessions.slice(0, MAX_LISTED);
+  const own = cur && sessions.find((s) => s.name === cur.name);
+  return own && !top.includes(own) ? [...top.slice(0, MAX_LISTED - 1), own] : top;
+};
 
 // macOS 13+ registers login items with SMAppService; Electron's openAtLogin can read false there while
 // status is 'enabled', so either one counts. 'requires-approval' means the owner must allow it in System Settings.
@@ -116,13 +123,18 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
         { ...shortcut('New Session', st.shortcuts.newSession, () => a.newSession()), ...icon('new') },
         {
           label: 'Switch Session',
+          enabled: st.sessions.length > 0,
           ...icon('switch'),
           submenu: [
-            ...st.sessions
-              .slice(0, MAX_LISTED)
-              .map((s): Item => ({ label: s.label, type: 'checkbox', checked: s.name === cur?.name, click: () => a.makeCurrent(s.name) })),
-            ...(st.sessions.length ? [{ type: 'separator' } as Item] : []),
-            { label: 'Other Session…', click: () => a.otherSession() },
+            ...recent(st.sessions, cur).map((s): Item => ({
+              label: s.label,
+              type: 'checkbox',
+              checked: s.name === cur?.name,
+              click: () => a.makeCurrent(s.name),
+            })),
+            ...(st.sessions.length > MAX_LISTED
+              ? [{ type: 'separator' } as Item, { label: 'Older Sessions…', click: () => a.otherSession() }]
+              : []),
           ],
         },
         { type: 'separator' },

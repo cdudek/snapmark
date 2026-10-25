@@ -29,8 +29,35 @@ export function create(root: string, name = stamp()): string {
   let dir = path.join(root, name);
   for (let i = 2; fs.existsSync(dir); i++) dir = path.join(root, `${name} (${i})`);
   fs.mkdirSync(path.join(dir, 'img'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'session.md'), `# ${path.basename(dir)}\n`);
+  fs.writeFileSync(path.join(dir, 'session.md'), `# ${shortName(path.basename(dir))}\n`);
   return path.basename(dir);
+}
+
+// A session folder starts with its date stamp, "2026-10-24 23.38", plus " (2)" when two began in one minute; a name
+// the owner gave follows it. Folders renamed before 2026-10-25 have no stamp (ADR: session folders keep their date stamp).
+const STAMPED = /^((\d{4}-\d{2}-\d{2}) (\d{2})\.(\d{2})( \(\d+\))?)(?: (.+))?$/;
+
+// What every screen calls a session: "2026-10-24, 23:38", "2026-10-24, 23:38 (2)" or "2026-10-24 · Ledgerly Q4 review".
+export function shortName(folder: string): string {
+  const m = STAMPED.exec(folder);
+  if (!m) return folder;
+  const [, , date, h, min, same = '', name] = m;
+  return name ? `${date} · ${name}` : `${date}, ${h}:${min}${same}`;
+}
+
+// The part the owner named, which the rename field shows: empty for a bare stamp, the whole folder name without one.
+export const namePart = (folder: string) => {
+  const m = STAMPED.exec(folder);
+  return m ? (m[6] ?? '') : folder;
+};
+
+// The folder a rename to `to` gives: the stamp stays in front, and an empty name leaves the bare stamp. Null when a
+// session without a stamp gets an empty name. No "/" or ":" in a folder name: Finder shows ":" as "/".
+export function renamedTo(from: string, to: string): string | null {
+  const name = to.trim().replace(/[/:]/g, '-');
+  const kept = STAMPED.exec(from)?.[1];
+  if (!kept) return name || null;
+  return name ? `${kept} ${name}` : kept;
 }
 
 // Writes the flattened PNG and appends an entry to session.md. Returns the entry number.
@@ -88,36 +115,38 @@ export function count(root: string, name: string): number {
   return fs.existsSync(img) ? fs.readdirSync(img).filter((f) => f.endsWith('.png')).length : 0;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const ymd = (d: Date) => `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
 
-// "Today, 22:10", "Yesterday, 18:02", "Mon, 09:41"; a week back or more "18 Oct, 09:41", so no weekday repeats.
+// "Today, 22:10", "Yesterday, 18:02", "Mon, 09:41"; a week back or more "2026-10-18, 09:41", so no weekday repeats.
 export function whenLabel(at: number, now = Date.now()): string {
   const d = new Date(at);
   const midnight = (t: Date) => new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
   const days = Math.round((midnight(new Date(now)) - midnight(d)) / 86_400_000); // round: DST days are 23 or 25 h
-  const day = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : days < 7 ? DAYS[d.getDay()] : `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  const day = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : days < 7 ? DAYS[d.getDay()] : ymd(d);
   return `${day}, ${two(d.getHours())}:${two(d.getMinutes())}`;
 }
 
-// "2026-09-25 12.03 (2)" → "25 Sep 12.03 (2)"; a name the owner gave stays as it is.
-export function shortName(name: string): string {
-  const m = /^\d{4}-(\d{2})-(\d{2}) (\d{2}\.\d{2})( \(\d+\))?$/.exec(name);
-  return m ? `${Number(m[2])} ${MONTHS[Number(m[1]) - 1]} ${m[3]}${m[4] ?? ''}` : name;
-}
-
-// Save As…'s suggested file name, after the entry the screenshot would become (n, or the next one): "Ledgerly Q4 review 013.png".
+// Save As…'s suggested file name, after the folder and the entry the screenshot would become (n, or the next one):
+// "2026-10-24 23.38 Ledgerly Q4 review 013.png". The folder name, not the display name: no colon in a file name.
 export function saveAsName(root: string, name: string, n?: number): string {
-  return `${shortName(name)} ${pad(n ?? nextNumber(path.join(root, name)))}.png`;
+  return `${name} ${pad(n ?? nextNumber(path.join(root, name)))}.png`;
 }
 
-// Renames the folder and the session.md title. Returns the new name, or null if it is empty, unchanged or taken.
+// Renames the folder, keeping its date stamp, and the session.md title. Returns the new name, or null if it is empty,
+// unchanged or taken.
 export function rename(root: string, from: string, to: string): string | null {
-  const name = to.trim().replace(/[/:]/g, '-');
-  if (!name || name === from || fs.existsSync(path.join(root, name))) return null;
+  const name = renamedTo(from, to);
+  // A change of case only is not taken: macOS's disk ignores case, so the folder found is this session's own.
+  if (!name || name === from) return null;
+  if (name.toLowerCase() !== from.toLowerCase() && fs.existsSync(path.join(root, name))) return null;
   fs.renameSync(path.join(root, from), path.join(root, name));
   const md = path.join(root, name, 'session.md');
-  fs.writeFileSync(md, fs.readFileSync(md, 'utf8').replace(/^# .*$/m, `# ${name}`));
+  fs.writeFileSync(
+    md,
+    // Only a heading on the first line is the title: a "# " line further down is the owner's own.
+    fs.readFileSync(md, 'utf8').replace(/^# .*/, () => `# ${shortName(name)}`),
+  );
   // Its discarded screenshots go with it: they stay in its Discarded tab, and Reopen puts them back here.
   for (const d of discardedIn(root, from)) {
     const meta = path.join(d.dir, 'meta.json');
@@ -254,7 +283,7 @@ export function restoreShot(root: string, d: Discarded): number {
   const dir = path.join(root, d.session);
   if (!fs.existsSync(path.join(dir, 'session.md'))) {
     fs.mkdirSync(path.join(dir, 'img'), { recursive: true });
-    fs.writeFileSync(path.join(dir, 'session.md'), `# ${d.session}\n`);
+    fs.writeFileSync(path.join(dir, 'session.md'), `# ${shortName(d.session)}\n`);
   }
   const old = d.n!;
   const taken = shots(root, d.session).includes(old) || fs.existsSync(path.join(dir, 'img', `${pad(old)}.png`));
