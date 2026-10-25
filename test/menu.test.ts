@@ -140,11 +140,33 @@ assert.strictEqual(find(sub(find(menu({ current: { name: 'e', label: 'e', count:
 find(sub(find(ses, 'Export Session')), 'PDF').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'exportAs:2026-09-25 12.03:PDF');
 
-// Switch Session: the list (current ticked, click switches), capped, then Other Session…
-const many = Array.from({ length: 25 }, (_, i) => ({ name: `s${i}`, label: `s${i}`, count: 1 }));
-const ss = sub(find(sub(find(menu({ sessions: many }), 'Session')), 'Switch Session'));
-assert.strictEqual(ss.filter((i) => i.type === 'checkbox').length, MAX_LISTED);
-assert.deepStrictEqual(labels(ss).slice(-2), ['—', 'Other Session…']);
+// Switch Session: the 10 most recently used (current ticked, click switches), then Older Sessions… (owner, 2026-10-25)
+const many = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `s${i}`, label: `s${i}`, count: 1 }));
+const switchOf = (over: Partial<MenuState>) => sub(find(sub(find(menu(over), 'Session')), 'Switch Session'));
+// F13 ten rows: at most 10, in last-use order
+const twelve = switchOf({ sessions: many(12), current: many(12)[0] });
+assert.strictEqual(MAX_LISTED, 10);
+assert.deepStrictEqual(
+  twelve.filter((i) => i.type === 'checkbox').map((i) => i.label),
+  many(10).map((s) => s.label),
+  'F13',
+);
+// F14 current listed: a current session 12th by last use is the 10th row, ticked
+const late = switchOf({ sessions: many(12), current: many(12)[11] });
+const rows = late.filter((i) => i.type === 'checkbox');
+assert.strictEqual(rows.length, 10, 'F14');
+assert.strictEqual(rows[9].label, 's11', 'F14');
+assert.strictEqual(rows[9].checked, true, 'F14');
+assert.strictEqual(rows.filter((i) => i.checked).length, 1, 'F14');
+// F15 Older Sessions: the last item above 10 sessions, opening the folder panel
+assert.deepStrictEqual(labels(twelve).slice(-2), ['—', 'Older Sessions…'], 'F15');
+find(twelve, 'Older Sessions…').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'otherSession', 'F15');
+// F16 no older: 10 or fewer sessions show no Older Sessions… and no separator
+assert.deepStrictEqual(labels(switchOf({ sessions: many(3), current: many(3)[0] })), ['s0', 's1', 's2'], 'F16');
+assert.strictEqual(labels(switchOf({ sessions: many(10), current: many(10)[0] })).length, 10, 'F16');
+// F17 empty: no session, Switch Session greyed
+assert.strictEqual(find(sub(find(menu({ current: null, sessions: [] }), 'Session')), 'Switch Session').enabled, false, 'F17');
 const listed = sub(find(ses, 'Switch Session'));
 assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);

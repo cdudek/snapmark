@@ -767,6 +767,7 @@ async function otherSession() {
   focusApp();
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Choose a session',
+    message: 'Session folders start with their date.',
     defaultPath: root,
     properties: ['openDirectory'],
   });
