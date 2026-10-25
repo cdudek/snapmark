@@ -82,6 +82,7 @@ Words for every string are in [spec/microcopy.md](spec/microcopy.md); copy them 
 - [ ] 5. README, setup.md, sitemap.md, interaction guidelines — proof: F20 passes.
 - [ ] 6. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
 - [ ] 7. `python3 scripts/verify_gate.py feature 2026-10-25-mac-shortcuts` — proof: ends `VERIFY PASS`.
+- [ ] 8. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
 
 ## Risks
 
@@ -125,3 +126,5 @@ Filled from `templates/goal/feature.txt`, turns from `sdlc.json` `goal.featureTu
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-10-25 — Step 8 added: subagents are closed when their report is in, never left open (owner).
