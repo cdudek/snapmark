@@ -5,6 +5,7 @@ node_modules/
 dist/
 release/
 __pycache__/
+.impeccable/hook.cache.json
 
 # the SDLC hooks are the repo's, not the laptop's
 !.claude/

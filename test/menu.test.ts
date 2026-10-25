@@ -2,7 +2,7 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { menuTemplate, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
+import { menuTemplate, captureOptions, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
 
 const calls: string[] = [];
 const a = new Proxy({} as MenuActions, {
@@ -23,10 +23,11 @@ const base: MenuState = {
   version: '0.2.0',
   canUpdate: true,
   updateWaiting: null,
-  shortcuts: { capture: 'Control+Shift+1', area: 'Control+Shift+3', newSession: 'Control+Shift+N' },
+  shortcuts: { capture: 'Control+Shift+4', area: 'Control+Shift+3', options: 'Control+Shift+5', newSession: 'Control+Shift+N' },
   area: null,
   iconDir: '',
   hasDiscarded: false,
+  singleKeys: true,
 };
 const menu = (over: Partial<MenuState> = {}) => menuTemplate({ ...base, ...over }, a);
 const labels = (items: Item[]) => items.filter((i) => i.visible !== false).map((i) => (i.type === 'separator' ? '—' : i.label));
@@ -100,8 +101,27 @@ const oneShot = find(sub(find(menu(), 'Capture Options')), 'One-Shot Capture…'
 assert.strictEqual(oneShot.accelerator, undefined);
 oneShot.click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'oneShot');
-assert.strictEqual(find(menu(), 'Capture Screenshot…').accelerator, 'Control+Shift+1');
+assert.strictEqual(find(menu(), 'Capture Screenshot…').accelerator, 'Control+Shift+4');
 assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, area: null } })[3].label, 'Capture Last Area (shortcut unavailable)');
+
+// F3 capture options popup: ⌃⇧5 shows the Capture Options items, and each does what it does in the menu
+assert.deepStrictEqual(labels(captureOptions(a)), labels(sub(find(menu(), 'Capture Options'))));
+for (const [label, action] of [
+  ['Choose New Area…', 'chooseArea'],
+  ['Capture Window…', 'captureWindow'],
+  ['Capture Scrolling…', 'captureScrolling'],
+  ['One-Shot Capture…', 'oneShot'],
+]) {
+  find(captureOptions(a), label).click!({} as never, undefined, {} as never);
+  assert.strictEqual(calls.pop(), action, label);
+}
+
+// F4 options sublabel: Capture Options names its key; a key another app owns says so instead
+assert.strictEqual(find(menu(), 'Capture Options').sublabel, '⌃⇧5');
+const noOptions = menu({ shortcuts: { ...base.shortcuts, options: null } })[4];
+assert.strictEqual(noOptions.label, 'Capture Options (shortcut unavailable)');
+assert.strictEqual(noOptions.sublabel, undefined);
+assert.ok(Array.isArray(noOptions.submenu), 'the options stay reachable from the menu');
 
 // The session line: singular, no count when empty; without a session the session actions are disabled
 assert.strictEqual(menu({ current: { name: 'x', label: 'x', count: 1 } })[1].label, 'x · 1 screenshot');
@@ -156,9 +176,18 @@ assert.deepStrictEqual(labels(sub(find(menu(), 'Settings'))), [
   'Sessions Folder…',
   'Clear Sessions Older Than 60 Days…',
   'Keyboard Shortcuts',
+  'Single-Key Tools',
   'Check for Updates…',
 ]);
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Check for Updates…').sublabel, 'Snapmark 0.2.0');
+
+// Single-Key Tools (WCAG 2.1.4, UX review of #76): letters and digits picking tools can be turned off
+const single = find(sub(find(menu(), 'Settings')), 'Single-Key Tools');
+assert.strictEqual(single.type, 'checkbox');
+assert.strictEqual(single.checked, true);
+assert.strictEqual(find(sub(find(menu({ singleKeys: false }), 'Settings')), 'Single-Key Tools').checked, false);
+single.click!({ checked: false } as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'setSingleKeys:false');
 find(sub(find(menu(), 'Settings')), 'Clear Sessions Older Than 60 Days…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'clearOldSessions');
 assert.strictEqual(find(sub(find(menu(), 'Settings')), 'Sessions Folder…').sublabel, '~/Documents/Snapmark');

@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data: file:; style-src 'self' 'unsafe-inline'" />
@@ -472,8 +472,8 @@
         </g>
       </svg>
       <div class="name" id="name">
-        <button id="title" title="Rename"></button>
-        <button id="pencil" title="Rename" aria-label="Rename session">
+        <button id="title" title="Rename (↩)"></button>
+        <button id="pencil" title="Rename (↩)" aria-label="Rename session">
           <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" /></svg>
         </button>
         <input id="rename" aria-label="Session name" spellcheck="false" />
@@ -492,7 +492,7 @@
       <section id="grid-view" hidden>
         <h2>Screenshots</h2>
         <div id="grid"></div>
-        <p class="empty" id="grid-empty">No screenshots yet. Capture one with ⌃⇧1.</p>
+        <p class="empty" id="grid-empty">No screenshots yet. Capture one with ⌃⇧4.</p>
       </section>
       <section id="shots" hidden>
         <div class="stage"><img id="shot" alt="" /></div>
@@ -502,8 +502,8 @@
           <span id="count"></span>
           <button id="next" title="Next (→)">→</button>
           <span class="end">
-            <button id="edit" class="primary" title="Open it in the editor with its marks">Edit Again</button>
-            <button id="remove">Remove from Session</button>
+            <button id="edit" class="primary" title="Open it in the editor with its marks (⌘O)">Edit Again</button>
+            <button id="remove" title="Move it to Discarded for 7 days (⌘⌫)">Remove from Session</button>
           </span>
         </div>
       </section>
@@ -513,6 +513,13 @@
         <div id="discarded-list"></div>
       </section>
     </main>
+    <!-- Says what ⌘⌫, Remove from Session and ⌘Z did, for VoiceOver; nothing on screen. Outside every view, so a hidden
+         view never silences it. -->
+    <p
+      id="announce"
+      role="status"
+      style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0"
+    ></p>
     <div class="menu" id="menu" role="menu" hidden><button id="menu-remove" role="menuitem">Remove from Session</button></div>
     <template id="thumb-t">
       <div class="thumb">
