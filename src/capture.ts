@@ -13,6 +13,17 @@ export const MODES: { id: CaptureMode; name: string }[] = [
 // The first time the bar opens (F207).
 export const FIRST: CaptureOpts = { mode: 'area', oneShot: false, timer: 0, pointer: false };
 
+// Capture options as they arrive from a renderer or state.json: each field kept only if valid, else `was`'s (M2-3).
+export function checkedCapture(c: Partial<Record<keyof CaptureOpts, unknown>> | undefined, was = FIRST): CaptureOpts {
+  const bool = (v: unknown, or: boolean) => (typeof v === 'boolean' ? v : or);
+  return {
+    mode: MODES.find((m) => m.id === c?.mode)?.id ?? was.mode,
+    oneShot: bool(c?.oneShot, was.oneShot),
+    timer: TIMERS.find(([s]) => s === c?.timer)?.[0] ?? was.timer,
+    pointer: bool(c?.pointer, was.pointer),
+  };
+}
+
 export const rect = (a: Area) => [a.x, a.y, a.width, a.height].map(Math.round).join(',');
 
 // Timer and Show Mouse Pointer need the area known before `screencapture` runs: Snapmark's own picker gives it.
@@ -70,9 +81,7 @@ export function barOptions(st: OptionsState, a: OptionsActions): Item[] {
     },
     { type: 'separator' },
     { label: areas ? 'Timer' : 'Timer (areas only)', type: 'header' },
-    ...TIMERS.map(
-      ([s, label]): Item => ({ label, type: 'radio', checked: st.timer === s, enabled: areas, click: () => a.setTimer(s) }),
-    ),
+    ...TIMERS.map(([s, label]): Item => ({ label, type: 'radio', checked: st.timer === s, enabled: areas, click: () => a.setTimer(s) })),
     { type: 'separator' },
     { label: 'Options', type: 'header' },
     {

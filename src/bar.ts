@@ -25,7 +25,10 @@
   const render = (s: BarInit) => {
     capture.textContent = s.label;
     name(capture, s.label);
-    name(modes.find((b) => b.dataset.mode === 'last')!, `Capture Last Area · ${s.last}`);
+    name(
+      modes.find((b) => b.dataset.mode === 'last')!,
+      `Capture Last Area · ${s.last}`,
+    );
   };
 
   void window.snapmark.barInit().then((s) => {
@@ -42,9 +45,9 @@
   };
   document.addEventListener('keydown', (e) => {
     const at = modes.indexOf(document.activeElement as HTMLButtonElement);
+    const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number | undefined>)[e.key]; // as a radio group
     if (e.key === 'Escape') window.snapmark.barClose();
-    else if (at >= 0 && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))
-      choose(modes[(at + (e.key === 'ArrowRight' ? 1 : modes.length - 1)) % modes.length].dataset.mode as CaptureMode);
+    else if (at >= 0 && step) choose(modes[(at + step + modes.length) % modes.length].dataset.mode as CaptureMode);
     else if (at >= 0 && e.key === 'Enter') window.snapmark.barCapture(mode);
     else return; // Space chooses a mode, ↩ and Space press Close, Options and Capture: the buttons' own behaviour
     e.preventDefault();

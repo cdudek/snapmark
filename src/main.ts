@@ -22,19 +22,9 @@ import { pathToFileURL } from 'url';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
-import {
-  menuTemplate,
-  appMenu,
-  loginState,
-  editorSessionMenu,
-  copyMenu,
-  quitMessage,
-  MenuActions,
-  MenuState,
-  SessionInfo,
-} from './menu';
+import { menuTemplate, appMenu, loginState, editorSessionMenu, copyMenu, quitMessage, MenuActions, MenuState, SessionInfo } from './menu';
 import { SHORTCUTS, KEY_GROUPS } from './keys';
-import { FIRST, barLabel, barOptions, captureArgs, rect } from './capture';
+import { FIRST, barLabel, barOptions, captureArgs, checkedCapture, rect } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { Box, ocrText, OcrLine, recognize } from './ocr';
@@ -104,7 +94,7 @@ function loadState() {
     singleKeys = state.singleKeys ?? true;
     color = state.color ?? null;
     customColors = state.customColors ?? [];
-    captureOpts = { ...FIRST, ...state.capture };
+    captureOpts = checkedCapture(state.capture);
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -334,12 +324,11 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
   if (busy()) return null;
   runBar = run;
   const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  const [W, H] = [520, 52];
+  const H = 56; // 8 + the 40 pt targets + 8
+  // Bottom centre, 24 pt above the work area's bottom, clear of the Dock.
+  const at = (w: number) => ({ x: Math.round(wa.x + (wa.width - w) / 2), y: Math.round(wa.y + wa.height - 24 - H), width: w, height: H });
   const win = new BrowserWindow({
-    x: Math.round(wa.x + (wa.width - W) / 2),
-    y: Math.round(wa.y + wa.height - 24 - H), // 24 pt above the work area's bottom, clear of the Dock
-    width: W,
-    height: H,
+    ...at(520), // until the page reports its width
     title: 'Capture Options',
     frame: false,
     transparent: true,
@@ -354,9 +343,11 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
     vibrancy: 'popover', // follows light and dark mode; 'hud' is always dark
     visualEffectState: 'active',
     show: false,
-    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), enablePreferredSizeMode: true },
   });
   bar = win;
+  // As wide as its content, so every gap stays 8 pt, also when the Capture label changes (F212).
+  win.webContents.on('preferred-size-changed', (_e, { width }) => win.setBounds(at(width)));
   win.setContentProtection(true); // belt and braces: it closes before every capture
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
@@ -376,8 +367,8 @@ const barInit = (): BarInit => ({
 });
 
 // The bar's Options menu and the Settings window's Capture tab change the same options; an open bar shows them.
-export function setCapture(change: Partial<CaptureOpts>) {
-  captureOpts = { ...captureOpts, ...change };
+export function setCapture(change: Partial<Record<keyof CaptureOpts, unknown>>) {
+  captureOpts = checkedCapture({ ...captureOpts, ...change }, captureOpts); // a bad value from a renderer is dropped
   saveState();
   if (bar && barOpen()) bar.webContents.send('bar:state', barInit());
 }
@@ -1121,15 +1112,24 @@ const settingsInit = (): SettingsInit => ({
   capture: captureOpts,
 });
 
+// Every window shares one preload: only the Settings window may change settings (M2-3).
+const fromSettings = (e: { sender: Electron.WebContents }) =>
+  !!settingsWin && !settingsWin.isDestroyed() && e.sender === settingsWin.webContents;
 ipcMain.handle('settings:init', () => settingsInit());
-ipcMain.handle('settings:set', (_e, key: SettingsKey, value: boolean | number): SettingsInit => {
-  if (key === 'login') app.setLoginItemSettings({ openAtLogin: !!value });
-  else if (key === 'singleKeys') setSingleKeys(!!value); // open editors hear it
-  else if (key === 'oneShot' || key === 'timer' || key === 'pointer') setCapture({ [key]: value } as Partial<CaptureOpts>);
+ipcMain.handle('settings:set', (e, key: SettingsKey, value: unknown): SettingsInit => {
+  if (!fromSettings(e)) return settingsInit();
+  if (key === 'oneShot' || key === 'timer' || key === 'pointer')
+    setCapture({ [key]: value }); // drops a bad value
+  else if (typeof value !== 'boolean') return settingsInit();
+  else if (key === 'singleKeys')
+    setSingleKeys(value); // open editors hear it
+  // Never in a development build: it would register the bare Electron binary (loginState).
+  else if (key === 'login' && app.isPackaged) app.setLoginItemSettings({ openAtLogin: value });
   return settingsInit();
 });
 // What the Settings submenu's items did, now buttons in the window.
-ipcMain.handle('settings:run', async (_e, what: SettingsRun): Promise<SettingsInit> => {
+ipcMain.handle('settings:run', async (e, what: SettingsRun): Promise<SettingsInit> => {
+  if (!fromSettings(e)) return settingsInit();
   if (what === 'chooseRoot') await chooseRoot();
   else if (what === 'clearOld') await clearOldSessions();
   else if (what === 'checkUpdates') await checkForUpdatesNow();

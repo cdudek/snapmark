@@ -20,7 +20,7 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
       ['⌃⇧3', 'Capture last area', 'the first time, drag the area'],
       ['⌃⇧5', 'Capture options', 'the capture bar: window, new area, last area or scrolling, and where it goes'],
       ['⌃⇧N', 'New session', ''],
-      ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (menu: Capture Options)'],
+      ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (capture bar, ⌃⇧5)'],
     ],
   },
   {

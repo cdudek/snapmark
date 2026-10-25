@@ -1,6 +1,6 @@
 import assert from 'assert';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { MODES, FIRST, captureArgs, appliesToArea, barLabel, barOptions } from '../src/capture';
+import { MODES, FIRST, captureArgs, appliesToArea, barLabel, barOptions, checkedCapture } from '../src/capture';
 import type { OptionsActions, OptionsState } from '../src/capture';
 
 const calls: string[] = [];
@@ -104,15 +104,32 @@ assert.deepStrictEqual(
 );
 for (const mode of ['window', 'scroll'] as const) {
   const items = opts({ mode });
-  assert.ok(items.some((i) => i.type === 'header' && i.label === 'Timer (areas only)'), `F216 ${mode} header`);
-  for (const l of ['None', '5 Seconds', '10 Seconds', 'Show Mouse Pointer']) assert.strictEqual(find(items, l).enabled, false, `F216 ${mode} ${l}`);
+  assert.ok(
+    items.some((i) => i.type === 'header' && i.label === 'Timer (areas only)'),
+    `F216 ${mode} header`,
+  );
+  for (const l of ['None', '5 Seconds', '10 Seconds', 'Show Mouse Pointer'])
+    assert.strictEqual(find(items, l).enabled, false, `F216 ${mode} ${l}`);
   assert.strictEqual(find(items, 'Show Mouse Pointer').sublabel, 'Areas only', `F216 ${mode}`);
   for (const l of ['Current Session', 'One-Shot', 'New Session']) assert.notStrictEqual(find(items, l).enabled, false, `F216 ${mode} ${l}`);
 }
 for (const mode of ['area', 'last'] as const) {
   const items = opts({ mode });
-  for (const l of ['None', '5 Seconds', '10 Seconds', 'Show Mouse Pointer']) assert.strictEqual(find(items, l).enabled, true, `F216 ${mode} ${l}`);
+  for (const l of ['None', '5 Seconds', '10 Seconds', 'Show Mouse Pointer'])
+    assert.strictEqual(find(items, l).enabled, true, `F216 ${mode} ${l}`);
   assert.strictEqual(find(items, 'Show Mouse Pointer').sublabel, undefined, `F216 ${mode}`);
 }
+
+// M2-3 checked options: what a renderer or state.json sends is kept only if valid (timer 0, 5 or 10; booleans; a known mode)
+const was: CaptureOpts = { mode: 'last', oneShot: true, timer: 5, pointer: true };
+assert.deepStrictEqual(checkedCapture(undefined), FIRST, 'M2-3 no state');
+assert.deepStrictEqual(
+  checkedCapture({ mode: 'scroll', oneShot: false, timer: 10, pointer: false }, was),
+  { mode: 'scroll', oneShot: false, timer: 10, pointer: false },
+  'M2-3 valid',
+);
+assert.deepStrictEqual(checkedCapture({ mode: 'everything', oneShot: 1, timer: 3600, pointer: 'yes' }, was), was, 'M2-3 invalid');
+assert.deepStrictEqual(checkedCapture({ timer: -5 }), FIRST, 'M2-3 negative timer');
+assert.deepStrictEqual(checkedCapture({ timer: '5' }), FIRST, 'M2-3 timer string');
 
 console.log('capture: ok');

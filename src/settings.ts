@@ -34,9 +34,12 @@
   for (const t of tabs) t.onclick = () => show(t);
   el('tabs').addEventListener('keydown', (e) => {
     const at = tabs.indexOf(document.activeElement as HTMLButtonElement);
-    if (at < 0 || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+    const to = (
+      { ArrowRight: at + 1, ArrowLeft: at - 1 + tabs.length, Home: 0, End: tabs.length - 1 } as Record<string, number | undefined>
+    )[e.key];
+    if (at < 0 || to === undefined) return;
     e.preventDefault();
-    show(tabs[(at + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length], true);
+    show(tabs[to % tabs.length], true);
   });
 
   const render = (d: SettingsInit) => {

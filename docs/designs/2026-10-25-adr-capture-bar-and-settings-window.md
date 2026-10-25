@@ -51,9 +51,9 @@ The bar is a non-activating panel at the bottom centre of the display with the p
 
 - fixes: changes/2026-10-25-finish-app (milestone 2)
 
-| Date       | Decision                                       | Answer (quoted)                                             | By whom   |
-| ---------- | ---------------------------------------------- | ----------------------------------------------------------- | --------- |
-| 2026-10-25 | Capture bar on ⌃⇧5, as macOS's own (A5)        | "Can we have it more like this, with a menu on the screen?" | the owner |
-| 2026-10-25 | Settings as a window (A6)                      | "...so we can have proper settings and everything."         | the owner |
-| 2026-10-25 | Keyboard Shortcuts as the round-1 design (A7)  | "I want the proper UI that we were promised"                | the owner |
-| 2026-10-25 | The plan of changes/2026-10-25-finish-app      | approved                                                    | Calvin Dudek |
+| Date       | Decision                                      | Answer (quoted)                                             | By whom      |
+| ---------- | --------------------------------------------- | ----------------------------------------------------------- | ------------ |
+| 2026-10-25 | Capture bar on ⌃⇧5, as macOS's own (A5)       | "Can we have it more like this, with a menu on the screen?" | the owner    |
+| 2026-10-25 | Settings as a window (A6)                     | "...so we can have proper settings and everything."         | the owner    |
+| 2026-10-25 | Keyboard Shortcuts as the round-1 design (A7) | "I want the proper UI that we were promised"                | the owner    |
+| 2026-10-25 | The plan of changes/2026-10-25-finish-app     | approved                                                    | Calvin Dudek |

@@ -9,7 +9,6 @@
         color-scheme: light dark;
         --sep: light-dark(#d8d9dd, #48484c);
         --note: light-dark(#6e6e73, #a1a1a6); /* 4.5:1 on the background, where GrayText is not */
-        --chosen: light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.12));
       }
       html,
       body {
@@ -25,7 +24,7 @@
       [hidden] {
         display: none !important;
       }
-      /* The toolbar under the title bar: icon over label, the chosen tab on a grey rounded background. */
+      /* The toolbar under the title bar: icon over label, the chosen tab on an accent fill with white icon and label. */
       [role='tablist'] {
         display: flex;
         justify-content: center;
@@ -39,7 +38,7 @@
         color: inherit;
         min-width: 72px;
         min-height: 40px;
-        padding: 6px 12px;
+        padding: 8px 16px;
         border: 0;
         border-radius: 6px;
         background: transparent;
@@ -48,8 +47,10 @@
         align-items: center;
         gap: 4px;
       }
+      /* #0f72db: 4.7:1 on white, 4.0:1 on dark Canvas (#121212); white label 4.7:1 on it (WCAG 1.4.11, 1.4.3). */
       [role='tab'][aria-selected='true'] {
-        background: var(--chosen);
+        background: #0f72db;
+        color: #fff;
       }
       [role='tab'] svg {
         width: 24px;
@@ -62,13 +63,13 @@
       }
       :focus-visible {
         outline: 2px solid #0f72db;
-        outline-offset: 1px;
+        outline-offset: 2px; /* clear of the chosen tab's fill */
       }
       /* A two-column form: labels right-aligned, controls on the second column's left edge, a grey note under. */
       .form {
         display: grid;
         grid-template-columns: 150px 1fr;
-        column-gap: 10px;
+        column-gap: 8px;
         row-gap: 16px;
         padding: 24px 32px;
         align-items: baseline;
@@ -82,7 +83,7 @@
         color: var(--note);
       }
       .note button {
-        margin-top: 6px;
+        margin-top: 8px;
         display: block;
       }
       button,
@@ -90,7 +91,7 @@
         font: inherit;
       }
       #root {
-        margin-right: 6px;
+        margin-right: 8px;
       }
       #keys {
         list-style: none;
@@ -114,7 +115,7 @@
         box-shadow: 0 1px 0 var(--sep);
       }
       #keys .taken {
-        margin-left: 6px;
+        margin-left: 8px;
         font-size: 11px;
         color: var(--note);
       }
@@ -128,9 +129,7 @@
       <button role="tab" id="tab-general" aria-controls="general" aria-selected="true">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="3" />
-          <path
-            d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"
-          /></svg
+          <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></svg
         >General
       </button>
       <button role="tab" id="tab-capture" aria-controls="capture" aria-selected="false" tabindex="-1">
