@@ -16,3 +16,4 @@ __pycache__/
 /changes/*/status.json
 # verify_gate.py output; lock.json is committed
 /changes/*/verify/
+__pycache__/
