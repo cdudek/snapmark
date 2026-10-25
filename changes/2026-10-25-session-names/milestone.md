@@ -22,7 +22,7 @@ In merge order. `state` is `todo`, `building`, `merged` or `blocked: <reason>`.
 | #   | Change                                   | Feature                                                                                                    | PR                                         | State  |
 | --- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ------ |
 | 1   | 2026-10-25-session-names (snap-bmr.14.1) | Switch Session lists 10, the current one always, then "Older Sessions…" (`session-names/1-older-sessions`) | https://github.com/cdudek/snapmark/pull/74 | merged |
-| 2   | 2026-10-25-session-names (snap-bmr.14.2) | Readable dates everywhere, and a rename keeps the date (`session-names/2-readable-dates`)                  | https://github.com/cdudek/snapmark/pull/79 | open   |
+| 2   | 2026-10-25-session-names (snap-bmr.14.2) | Readable dates everywhere, and a rename keeps the date (`session-names/2-readable-dates`)                  | https://github.com/cdudek/snapmark/pull/79 | merged |
 
 ## Done
 
