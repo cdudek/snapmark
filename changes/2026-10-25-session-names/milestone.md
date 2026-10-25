@@ -4,7 +4,9 @@ change: 2026-10-25-session-names
 milestone: session-names
 branch: milestone/session-names
 linear_milestone: snap-bmr.16 (beads)
-status: building
+status: merged
+pr: https://github.com/cdudek/snapmark/pull/81
+merged_at: 2026-10-25
 created: 2026-10-25
 ---
 
@@ -30,6 +32,14 @@ In merge order. `state` is `todo`, `building`, `merged` or `blocked: <reason>`.
 - `python3 scripts/verify_gate.py milestone 2026-10-25-session-names` ends `VERIFY PASS milestone`.
 - `findings.md` has no open blocking item after the one fix round.
 - One PR from `milestone/session-names` to `project/launch`, auto-merge armed.
+
+## Milestone PR
+
+https://github.com/cdudek/snapmark/pull/81 into `project/launch`, merged 2026-10-25 as a7338b4 with auto-merge on green CI.
+
+- **Gate:** `VERIFY PASS milestone 2026-10-25-session-names 99f5c82` on the milestone head, then again on this record commit.
+- **Findings:** [findings.md](findings.md): 8 blocking items fixed in the one round (5 WCAG High, 3 Medium), none open. Advisory leftovers in snap-ua7 and snap-bmr.14.3.
+- **Visual pass:** blocked by the owner's rules (no app launch, no screen capture); every UX verdict is from code.
 
 ## Outcome
 
