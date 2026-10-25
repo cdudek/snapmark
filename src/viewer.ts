@@ -164,11 +164,16 @@
 
   $('title').onclick = startRename;
   $('pencil').onclick = startRename;
+  // ↩ and Esc hand focus back to the title; a click away leaves it where the click put it.
   input.onkeydown = (e) => {
-    if (e.key === 'Enter') void saveRename();
+    if (e.key === 'Enter')
+      void saveRename().then(() => {
+        if (!nameEl.classList.contains('editing')) $('title').focus();
+      });
     if (e.key === 'Escape') {
       e.stopPropagation();
       endRename();
+      $('title').focus();
     }
   };
   input.onblur = () => void saveRename();

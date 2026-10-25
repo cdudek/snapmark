@@ -137,12 +137,15 @@ export function saveAsName(root: string, name: string, n?: number): string {
 // unchanged or taken.
 export function rename(root: string, from: string, to: string): string | null {
   const name = renamedTo(from, to);
-  if (!name || name === from || fs.existsSync(path.join(root, name))) return null;
+  // A change of case only is not taken: macOS's disk ignores case, so the folder found is this session's own.
+  if (!name || name === from) return null;
+  if (name.toLowerCase() !== from.toLowerCase() && fs.existsSync(path.join(root, name))) return null;
   fs.renameSync(path.join(root, from), path.join(root, name));
   const md = path.join(root, name, 'session.md');
   fs.writeFileSync(
     md,
-    fs.readFileSync(md, 'utf8').replace(/^# .*$/m, () => `# ${shortName(name)}`),
+    // Only a heading on the first line is the title: a "# " line further down is the owner's own.
+    fs.readFileSync(md, 'utf8').replace(/^# .*/, () => `# ${shortName(name)}`),
   );
   // Its discarded screenshots go with it: they stay in its Discarded tab, and Reopen puts them back here.
   for (const d of discardedIn(root, from)) {

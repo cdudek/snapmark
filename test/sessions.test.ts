@@ -70,6 +70,16 @@ assert.strictEqual(sessions.rename(root, '2026-10-24 23.38 Ledgerly Q4 review', 
 assert.strictEqual(head('2026-10-24 23.38'), '# 2026-10-24, 23:38');
 assert.strictEqual(sessions.rename(root, '2026-10-24 23.38', ''), null);
 
+// F19 only a title on the first line is replaced; a "# " line the owner wrote further down stays
+const own = sessions.create(root, '2026-10-24 07.00');
+fs.writeFileSync(path.join(root, own, 'session.md'), 'Intro\n\n# My own heading\n');
+assert.strictEqual(sessions.rename(root, own, 'Mine'), '2026-10-24 07.00 Mine');
+assert.strictEqual(fs.readFileSync(path.join(root, '2026-10-24 07.00 Mine', 'session.md'), 'utf8'), 'Intro\n\n# My own heading\n');
+
+// A change of case only is a rename, not "already exists" (macOS's disk ignores case)
+assert.strictEqual(sessions.rename(root, '2026-10-24 07.00 Mine', 'mine'), '2026-10-24 07.00 mine');
+assert.ok(sessions.list(root).includes('2026-10-24 07.00 mine'));
+
 // N1 no colon: in a folder from rename, or a file name from Save As…
 assert.strictEqual(sessions.rename(root, '2026-10-24 23.38', 'Review: 10:30'), '2026-10-24 23.38 Review- 10-30');
 assert.strictEqual(

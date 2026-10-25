@@ -20,6 +20,7 @@
         --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
         --annot: #e5484d;
         --error: #cf222e; /* small text on the header: --annot is 3.7:1 there */
+        --focus: #0f72db; /* focus rings: --accent is 3:1 on the light header */
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -31,6 +32,7 @@
           --line: #3a3a3d;
           --soft: rgb(255 255 255 / 0.07);
           --error: #ff7b72;
+          --focus: #2492ff;
         }
       }
       * {
@@ -52,7 +54,7 @@
         display: none !important;
       }
       :focus-visible {
-        outline: 2px solid var(--accent);
+        outline: 2px solid var(--focus);
         outline-offset: 2px;
       }
       button {
@@ -137,12 +139,16 @@
         font: inherit;
         font-size: 15px;
         width: 240px;
+        min-width: 0; /* a narrow window shrinks the field instead of pushing the header off screen */
         padding: 3px 6px;
         border: 1px solid var(--accent);
         border-radius: 5px;
         outline: 3px solid rgb(36 146 255 / 0.35);
         background: var(--panel);
         color: inherit;
+      }
+      #rename::placeholder {
+        color: var(--muted);
       }
       #rename::selection {
         background: var(--accent-fill);
@@ -154,7 +160,8 @@
         left: 6px;
         font-size: 11px;
         color: var(--muted);
-        white-space: nowrap;
+        width: max-content;
+        max-width: calc(100vw - 120px); /* wraps in a narrow window rather than running off it */
       }
       #hint.error {
         color: var(--error);
