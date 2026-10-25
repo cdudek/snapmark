@@ -1,5 +1,5 @@
 ---
-linear: null
+linear: none
 type: intent
 change: 2026-10-25-session-names
 design: docs/designs/2026-09-26-adr-menu-rebuilt-from-the-2026-09.md
@@ -71,3 +71,7 @@ Snapmark has no analytics, so the measure is the owner's own check after install
 
 1. Date format: "2026-10-24, 23:38" (owner, 2026-10-25).
 2. Label: "Older Sessions…" (owner, 2026-10-25).
+
+## Open questions
+
+None. Both decisions are recorded above.
