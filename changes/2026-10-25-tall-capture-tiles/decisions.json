@@ -1,0 +1,8 @@
+{
+  "size": "M",
+  "kind": "feature",
+  "milestone": { "kind": "existing", "slug": "fixes" },
+  "project": { "kind": "existing", "slug": "launch" },
+  "ticket": "snap-bmr.10",
+  "design": "none"
+}
