@@ -21,7 +21,7 @@ In build order. `state` is `todo`, `building`, `done <sha>` (a commit on the mil
 | #   | Change                | Feature                                        | PR or commit | State |
 | --- | --------------------- | ---------------------------------------------- | ------------ | ----- |
 | 1   | 2026-10-25-finish-app | M1.1 Highlighter shows on dark screens         | c02e5a7      | done c02e5a7 |
-| 2   | 2026-10-25-finish-app | M1.2 Toolbar keys and size                     | —            | todo  |
+| 2   | 2026-10-25-finish-app | M1.2 Toolbar keys and size                     | 873a777      | done 873a777 |
 | 3   | 2026-10-25-finish-app | M1.3 Editor header like the mock               | —            | todo  |
 | 4   | 2026-10-25-finish-app | M1.4 Session window and rename leftovers       | —            | todo  |
 | 5   | 2026-10-25-finish-app | M1.5 Small fixes                               | —            | todo  |

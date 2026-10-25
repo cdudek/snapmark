@@ -186,11 +186,11 @@ Feature 1.1 — Highlighter:
 
 Feature 1.2 — toolbar keys and size:
 
-- [ ] 4. Blocks F103, F104, F105, F109 in `test/keys.test.ts` — proof: `npm test` fails on them.
-- [ ] 5. `capFor`, `tipFor` in `src/tools.ts`; `shortcutsHtml` in `src/keys.ts` — proof: those blocks pass.
-- [ ] 6. `renderToolbar` and `onSingleKeys` redraw; `showShortcuts` and `setSingleKeys` in `src/main.ts`; sizes in `src/editor.html` — proof: `npm run typecheck` exits 0. `grep -n "renderToolbar()" src/editor.ts` prints the `onSingleKeys` line.
-- [ ] 7. Smoke: `userData` in the temp folder, F103, F106, F107, F108, F110, updated toolbar checks — proof: `npm run build` exits 0. `grep -n "setPath('userData'" test/smoke.ts` prints a line before `require('../src/main')`.
-- [ ] 8. Guideline A12 text and enforcement row — proof: `grep -n "cannot be switched off" docs/ux/interaction-guidelines.md` prints nothing.
+- [x] 4. Blocks F103, F104, F105, F109 in `test/keys.test.ts` — proof: `npm test` fails on them.
+- [x] 5. `capFor`, `tipFor` in `src/tools.ts`; `shortcutsHtml` in `src/keys.ts` — proof: those blocks pass.
+- [x] 6. `renderToolbar` and `onSingleKeys` redraw; `showShortcuts` and `setSingleKeys` in `src/main.ts`; sizes in `src/editor.html` — proof: `npm run typecheck` exits 0. `grep -n "renderToolbar()" src/editor.ts` prints the `onSingleKeys` line.
+- [x] 7. Smoke: `userData` in the temp folder, F103, F106, F107, F108, F110, updated toolbar checks — proof: `npm run build` exits 0. `grep -n "setPath('userData'" test/smoke.ts` prints a line before `require('../src/main')`.
+- [x] 8. Guideline A12 text and enforcement row — proof: `grep -n "cannot be switched off" docs/ux/interaction-guidelines.md` prints nothing.
 
 Feature 1.3 — editor header like the mock:
 

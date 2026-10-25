@@ -22,7 +22,7 @@ import { pathToFileURL } from 'url';
 import { autoUpdater } from 'electron-updater';
 import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
-import { menuTemplate, captureOptions, loginState, MenuActions, MenuState, SessionInfo } from './menu';
+import { menuTemplate, captureOptions, loginState, editorSessionMenu, copyMenu, MenuActions, MenuState, SessionInfo } from './menu';
 import { SHORTCUTS, shortcutsHtml } from './keys';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
@@ -41,6 +41,7 @@ let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
 let area: Area | null = null; // what Capture Last Area captures, in global screen points
 let singleKeys = true; // Settings ▸ Single-Key Tools
+let color: string | null = null; // the annotation colour last picked; every new editor starts with it
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
 let tray: Tray | null = null;
@@ -88,6 +89,7 @@ function loadState() {
     editorSize = state.editorSize ?? null;
     beautify = state.beautify ?? null;
     singleKeys = state.singleKeys ?? true;
+    color = state.color ?? null;
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -97,7 +99,7 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys }));
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys, color }));
 }
 
 // Settings ▸ Single-Key Tools: plain letters and digits pick tools in the editor. WCAG 2.1.4 asks that such keys can be
@@ -362,7 +364,13 @@ export function openEditor(
     y: Math.round(wa.y + (wa.height - height) / 2),
     width,
     height,
+    // At the minimum size the toolbar still fits on one line (F108).
+    minWidth: 820,
+    minHeight: 520,
     title: `Snapmark — ${oneShot ? 'One-shot' : sessions.shortName(session)}`,
+    // The page draws its own title row, with the traffic lights in it, like the session window.
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 10 },
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
@@ -395,8 +403,55 @@ function editorFor(id: number) {
 ipcMain.handle('editor:init', (e): EditorInit => {
   const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
-  if (oneShot) return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined, singleKeys };
-  return { src, session: sessions.shortName(session), count: sessions.count(into, session), state, replacing: replace, singleKeys };
+  const picked = color ?? undefined;
+  if (oneShot)
+    return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined, singleKeys, color: picked };
+  return { src, session: sessions.shortName(session), count: sessions.count(into, session), state, replacing: replace, singleKeys, color: picked };
+});
+
+ipcMain.on('editor:color', (_e, c: string) => {
+  color = c;
+  saveState();
+});
+
+// Moves an open editor's screenshot to another session, which becomes the current one: the session label's menu.
+export function moveEditor(win: BrowserWindow, name: string) {
+  const ed = editors.get(win.webContents.id);
+  if (!ed || ed.oneShot || ed.replace) return; // Edit Again and one-shot have no session menu
+  ed.root = root;
+  ed.session = name;
+  setActive(name);
+  tellEditors(root, name);
+}
+
+// Native menus under a control in the editor's header; `at` is the control's box in window points.
+const popUnder = (win: BrowserWindow, items: MenuItemConstructorOptions[], at: Area) =>
+  Menu.buildFromTemplate(items).popup({ window: win, x: Math.round(at.x), y: Math.round(at.y + at.height) });
+
+ipcMain.on('editor:sessions-menu', (e, at: Area) => {
+  const ed = editors.get(e.sender.id);
+  if (!ed || ed.oneShot || ed.replace) return;
+  const moveTo = (name: string) => moveEditor(ed.win, name);
+  popUnder(
+    ed.win,
+    editorSessionMenu(menuState(), ed.session, {
+      moveTo,
+      // As the menu bar's New Session; an empty current session is kept, and the editor moves to it either way.
+      newSession: () => {
+        newSession();
+        if (active) moveTo(active);
+      },
+    }),
+    at,
+  );
+});
+
+// Copy or Save: the page copies or saves, since only it can flatten the marks.
+ipcMain.on('editor:share-menu', (e, at: Area) => {
+  const ed = editors.get(e.sender.id);
+  if (!ed) return;
+  const send = (what: 'copy' | 'saveAs') => () => void (ed.win.isDestroyed() || ed.win.webContents.send('editor:share', what));
+  popUnder(ed.win, copyMenu({ copyImage: send('copy'), saveAs: send('saveAs') }), at);
 });
 
 ipcMain.on('editor:beautify', (e, settings: Beautify) => {

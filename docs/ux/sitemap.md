@@ -62,8 +62,13 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 
 EDITOR  (one per capture; title "Snapmark"; opens centred, exactly on top of any open editor; Dock icon shows;
          from a full-screen app it stays on that Space while the Mac slides to the desktop, F026 / F026)
-├── Toolbar: C Select · 1 Reference/Card · 2 Box/Ellipse · 3 Arrow · 4 Pen · 5 Cross/Remove area ·
-│            6 Highlighter/Spotlight · 7 Cut & move/Redact · colour well · Undo ⌘Z · Redo ⇧⌘Z · "→ <folder name>" (text)
+├── Title row: traffic lights · app icon + "Snapmark" (drags the window; the window title stays "Snapmark — <session>")
+├── Toolbar: C Select · ⌘1 Reference/Card · ⌘2 Box/Ellipse · ⌘3 Arrow · ⌘4 Pen · ⌘5 Cross/Remove area ·
+│            ⌘6 Highlighter/Spotlight · ⌘7 Cut & move/Redact (captions follow Settings ▸ Single-Key Tools: C or Esc) ·
+│            colour swatch · Undo (icon) · Redo (icon) · Copy or Save (icon) · "<session> · n screenshots ⌄"
+├── Copy or Save ──► native menu: Copy Image ⇧⌘C · Save As… ⇧⌘S
+├── session label ⌄ ──► native menu: the 10 recent sessions (this editor's ticked) · New Session
+│         a pick ──► the editor saves there, and it becomes the current session (plain text in Edit Again and one-shot)
 ├── Canvas (fitted, no zoom)
 ├── Side panel: comment ("Add a comment…") · References (after the first) · [Discard ⌘W] [Add to session ⌘↵ | Save changes ⌘↵]
 ├── ⌘↵ ──► entry added (or replaced, Edit Again) ──► window closes (silent; no route to the session)

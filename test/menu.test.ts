@@ -2,7 +2,8 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { menuTemplate, captureOptions, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
+import { menuTemplate, captureOptions, loginState, editorSessionMenu, copyMenu, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
+import type { EditorSessionActions } from '../src/menu';
 
 const calls: string[] = [];
 const a = new Proxy({} as MenuActions, {
@@ -248,5 +249,52 @@ assert.strictEqual(wait.checked, false);
 assert.strictEqual(wait.sublabel, 'Allow in System Settings → Login Items');
 const ticked = find(sub(find(menu({ login: loginState(true, { openAtLogin: false, status: 'enabled' }) }), 'Settings')), 'Open at Login');
 assert.strictEqual(ticked.checked, true);
+
+// F113 Copy or Save menu: Copy Image ⇧⌘C and Save As… ⇧⌘S, which do what the two buttons did
+// The same recording proxy, for the editor's own menus
+const ed = a as unknown as EditorSessionActions & { copyImage(): void; saveAs(): void };
+const share = copyMenu(ed);
+assert.deepStrictEqual(
+  share.map((i) => [i.label, i.accelerator, i.registerAccelerator]),
+  [
+    ['Copy Image', 'Shift+Command+C', false],
+    ['Save As…', 'Shift+Command+S', false],
+  ],
+  'F113',
+);
+share[0].click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'copyImage', 'F113');
+share[1].click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'saveAs', 'F113');
+
+// F114 editor session menu: at most 10 sessions, this editor's ticked, then a separator and New Session
+const edMenu = editorSessionMenu({ ...base, sessions: [...many(12).slice(0, 1), { name: 'b', label: 'B', count: 3 }, ...many(12).slice(1)] }, 'b', ed);
+const edRows = edMenu.filter((i) => i.type === 'checkbox');
+assert.strictEqual(edRows.length, 10, 'F114 at most 10');
+assert.deepStrictEqual(
+  edRows.filter((i) => i.checked).map((i) => i.label),
+  ['B'],
+  'F114 b ticked',
+);
+assert.deepStrictEqual(labels(edMenu).slice(-2), ['—', 'New Session'], 'F114');
+find(edMenu, 'B').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'moveTo:b', 'F114 a pick moves the editor');
+find(edMenu, 'New Session').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'newSession', 'F114');
+// The editor's session 15th by last use still shows, ticked, as the 10th row
+const lateEd = editorSessionMenu({ ...base, sessions: many(15) }, 's14', ed).filter((i) => i.type === 'checkbox');
+assert.deepStrictEqual([lateEd.length, lateEd[9].label, lateEd[9].checked], [10, 's14', true], 'F114');
+
+// F118 one session: Switch Session is greyed while no session other than the current one exists
+const only = { name: 'solo', label: 'solo', count: 1 };
+assert.strictEqual(find(sub(find(menu({ current: only, sessions: [only] }), 'Session')), 'Switch Session').enabled, false, 'F118');
+assert.strictEqual(
+  find(sub(find(menu({ current: only, sessions: [only, { name: 'two', label: 'two', count: 0 }] }), 'Session')), 'Switch Session').enabled,
+  true,
+  'F118',
+);
+const soloMenu = editorSessionMenu({ ...base, current: only, sessions: [only] }, 'solo', ed);
+assert.deepStrictEqual(labels(soloMenu), ['solo', '—', 'New Session'], 'F118 editor menu');
+assert.ok(soloMenu[0].checked && soloMenu.every((i) => i.enabled !== false), 'F118 the one session ticked, nothing greyed');
 
 console.log('menu: ok');

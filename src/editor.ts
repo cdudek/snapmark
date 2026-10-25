@@ -398,10 +398,12 @@ const presetBtns = PALETTE.map(([name, c]) => {
 });
 presetsEl.replaceChildren(...presetBtns);
 
-function setColor(c: string) {
+// keep: the owner picked it, so the next editor starts with it (not the start-up colour or the saved one)
+function setColor(c: string, keep = true) {
   colorEl.value = c;
   swatchBtn.querySelector('i')!.style.background = c;
   for (const b of presetBtns) b.setAttribute('aria-pressed', String(b.dataset.color === c));
+  if (keep) window.snapmark.color(c);
   applyTool();
 }
 
@@ -1095,8 +1097,14 @@ let captionField: import('./md-notes').MdField | null = null; // mounted once in
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
 saveBtn.onclick = () => (oneShot ? copyImage() : void save());
-$<HTMLButtonElement>('copy').onclick = copyImage;
-$<HTMLButtonElement>('save-as').onclick = saveImageAs;
+// Native menus under their control, in window points (plain numbers: a DOMRect does not cross IPC).
+const boxOf = (el: HTMLElement): Area => {
+  const r = el.getBoundingClientRect();
+  return { x: r.left, y: r.top, width: r.width, height: r.height };
+};
+const shareBtn = $<HTMLButtonElement>('share');
+shareBtn.onclick = () => window.snapmark.shareMenu(boxOf(shareBtn));
+window.snapmark.onShare((what) => void (what === 'copy' ? copyImage() : saveImageAs()));
 $<HTMLButtonElement>('cancel').onclick = () => window.close();
 
 // Backing store at the screenshot's full resolution, displayed scaled down to fit the window. An image so tall that
@@ -1192,22 +1200,36 @@ new ResizeObserver(fit).observe(mainEl);
 // "Ledgerly Q4 review · 12 screenshots"; only the name while the session is empty.
 const shotsLabel = (session: string, n: number) => (n ? `${session} · ${n} screenshot${n === 1 ? '' : 's'}` : session);
 
-window.snapmark.onSession((session, count) => ($('session').textContent = shotsLabel(session, count)));
+// The session label: a button that opens the session menu, with a chevron; plain text in Edit Again and one-shot.
+const sessionEl = $<HTMLButtonElement>('session');
+const chevron = sessionEl.querySelector('.chevron')!;
+let switchable = false; // session mode, not Edit Again
+function showSession(session: string, count: number) {
+  sessionEl.replaceChildren(shotsLabel(session, count), ...(switchable ? [chevron] : []));
+  sessionEl.title = switchable ? `${session} · Switch Session` : session; // the full name, also when it shortens
+  sessionEl.disabled = !switchable;
+}
+sessionEl.onclick = () => window.snapmark.sessionsMenu(boxOf(sessionEl));
+
+window.snapmark.onSession(showSession);
 window.snapmark.onSingleKeys((on) => {
   singleKeys = on;
   renderToolbar();
 });
-window.snapmark.init().then(async ({ src, session, count, state, replacing, oneShot: one, beautify, singleKeys: keys }) => {
+window.snapmark.init().then(async ({ src, session, count, state, replacing, oneShot: one, beautify, singleKeys: keys, color: saved }) => {
   singleKeys = keys;
+  if (saved) setColor(saved, false); // also draws the toolbar
   renderToolbar();
-  $('session').textContent = shotsLabel(session, count);
+  switchable = !replacing && !one;
+  showSession(session, count);
   if (replacing) saveBtn.textContent = `Save changes ⌘↵`;
   if (one) {
     oneShot = true;
     beauty = { ...DEFAULT_BEAUTY, ...beautify };
     document.body.classList.add('one-shot');
     $('beautify').hidden = false;
-    $('session').textContent = 'One-shot · not in a session';
+    sessionEl.replaceChildren('One-shot · not in a session');
+    sessionEl.title = 'One-shot · not in a session';
     saveBtn.textContent = 'Copy Image ⌘C';
     saveBtn.title = 'Copy the image with its background, at full resolution';
     renderBeauty();
@@ -1226,4 +1248,4 @@ window.snapmark.init().then(async ({ src, session, count, state, replacing, oneS
   redacted = !!state?.redacted;
   if (!redacted) redacting = autoRedact();
 });
-setColor(colorEl.value); // shows it on the swatch and draws the toolbar
+setColor(colorEl.value, false); // shows it on the swatch and draws the toolbar

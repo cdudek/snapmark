@@ -40,6 +40,7 @@ const {
   desk,
   setSingleKeys,
   menuItems,
+  moveEditor,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -99,6 +100,10 @@ app
     const note = async (text) => { for (let i = 0; i < 50 && !document.activeElement?.closest?.('#refs .md'); i++) await sleep(20); document.execCommand('insertText', false, text); document.activeElement.blur(); };
     const setMd = (el, lines) => { el.querySelector('.ProseMirror').focus(); document.execCommand('selectAll'); lines.forEach((l, i) => { if (i) document.execCommand('insertParagraph'); document.execCommand('insertText', false, l); }); };
     const r = {};
+    // Header like the mock (F111–F113): a title row that drags, icon Undo and Redo, one Copy or Save button
+    r['F111 title row'] = (() => { const t = document.querySelector('.titlebar'); return !!t && t.textContent.trim() === 'Snapmark' && !!t.querySelector('svg') && getComputedStyle(t).getPropertyValue('-webkit-app-region') === 'drag'; })();
+    r['F112 Undo and Redo are icons'] = [['undo', 'Undo (⌘Z)'], ['redo', 'Redo (⇧⌘Z)']].every(([id, name]) => { const b = document.getElementById(id); return !!b.querySelector('svg') && b.textContent.trim() === '' && b.title === name && b.getAttribute('aria-label') === name; });
+    r['F113 one Copy or Save button'] = !document.getElementById('copy') && !document.getElementById('save-as') && !!document.getElementById('share');
     r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs .md');
     key('a', { metaKey: true });
     const emptyRefused = !canvas.getActiveObject(); // F12: ⌘A with no marks does nothing
@@ -318,6 +323,7 @@ app
     return r;
   })()`;
     const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
+    inPage['F111 title row'] &&= win.getTitle() === 'Snapmark — smoke'; // the window title stays, for the Window menu
     // F106: Settings ▸ Single-Key Tools redraws an open editor's captions and tooltips, without reopening it
     const toolbarSays = (cap: string, tip: string) =>
       win.webContents.executeJavaScript(`(async () => {
@@ -407,11 +413,13 @@ app
     win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
     fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
-    // Copy Image (⇧⌘C, from inside the note) and Save As… (its button): the image Add to session saves, and no entry
+    // Copy Image (⇧⌘C, from inside the note) and Save As… (⇧⌘S): the image Add to session saves, and no entry
     await win.webContents.executeJavaScript(
       `document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
     );
-    await win.webContents.executeJavaScript(`document.getElementById('save-as').click()`);
+    await win.webContents.executeJavaScript(
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
+    );
     for (let i = 0; i < 30 && !(copied && fs.existsSync(savedAs)); i++) await new Promise((r) => setTimeout(r, 100));
     const notAdded = sessions.count(root, 'smoke') === 0;
     // F9: plain ⌘C outside the text copies the image too, and the marks stay selected
@@ -539,6 +547,10 @@ app
     viewer['Edit Again says it saves changes'] = (await inWin(again, `return document.getElementById('save').textContent`)).startsWith(
       'Save changes',
     );
+    // F115: Edit Again (and one-shot, below) shows the session as plain text, with no chevron and no menu
+    const noSessionMenu = (w: BrowserWindow) =>
+      inWin(w, `const s = document.getElementById('session'); return s.disabled && !s.querySelector('.chevron');`);
+    const noMenuAgain = await noSessionMenu(again);
     await inWin(again, `captionField.focus();`);
     for (const ch of 'Edited ') again.webContents.sendInputEvent({ type: 'char', keyCode: ch });
     await new Promise((r) => setTimeout(r, 300));
@@ -603,6 +615,12 @@ app
       view.getTitle() === 'smoke renamed — Snapmark';
     viewer['an open editor follows the rename'] =
       (await label('smoke renamed · 2 screenshots')) && watching.getTitle() === 'Snapmark — smoke renamed';
+    // F116: a long name shortens with "…" in an open editor's label; its tooltip has the full name
+    const long = 'Ledgerly Q4 review of checkout, payments, refunds and the new order page, take 2';
+    await rename(long, 'Return');
+    inPage['F116 a long name shortens'] =
+      (await label(`${long} · 2 screenshots`)) &&
+      (await inWin(watching, `const s = document.getElementById('session'); return s.scrollWidth > s.clientWidth && s.title.startsWith(${JSON.stringify(long)});`));
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     watching.destroy();
@@ -782,6 +800,7 @@ app
       ),
     );
     viewer['one-shot: the Beautify panel replaces References and the comment'] = panel.beautify && panel.noRefs;
+    inPage['F115 no session menu in Edit Again or one-shot'] = noMenuAgain && (await noSessionMenu(one));
     viewer['one-shot: no Add to session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
     viewer['one-shot: sliders show their values; 10 backgrounds; Auto 4:3 3:2 16:9 1:1'] =
       panel.values === '64=64,12=12,40=40' && panel.backdrops === 10 && panel.ratios === 'Auto,4:3,3:2,16:9,1:1';
@@ -821,7 +840,7 @@ app
       !!oneCopy && near(pixel(oneFile, 0, 0, 2, 2), [18, 52, 86]) && near(pixel(oneFile, 1, 1, -3, -3), [18, 52, 86]);
     viewer['one-shot: the screenshot and its marks sit centred on it'] =
       !!oneCopy && red(pixel(oneFile, (L.x + shotSize.width / 2) / L.width, (L.y + shotSize.height / 2) / L.height, -shotUnit * 8 * 0.45));
-    await inWin(one, `document.getElementById('save-as').click();`);
+    await inWin(one, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`);
     for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
     viewer['one-shot: Save As… writes the same image, named Snapmark <date time>'] =
       /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(got.offered) &&
@@ -923,6 +942,43 @@ app
       await textView.webContents.executeJavaScript(`MdNotes.fieldAt(document.getElementById('doc')).value()`)
     ).includes(block);
     textView.close();
+    // An editor on a copy of the mock, loaded
+    const openOn = async (file: string, opts: Parameters<typeof openEditor>[1] = {}) => {
+      fs.copyFileSync(shotCopy, path.join(root, file));
+      const w = openEditor(path.join(root, file), opts);
+      await new Promise<void>((r) => w.webContents.once('did-finish-load', () => r()));
+      await loaded(w);
+      return w;
+    };
+    // F117: the colour picked in one editor is the next editor's, also after a restart (state.json)
+    const firstColour = await openOn('colour-1.png', { session: 'smoke' });
+    await inWin(
+      firstColour,
+      `document.getElementById('swatch').click(); [...document.querySelectorAll('#presets button')].find((b) => b.title === 'Violet').click();`,
+    );
+    await sleep(200); // the pick reaches the main process before the window goes
+    firstColour.destroy();
+    const nextColour = await openOn('colour-2.png', { session: 'smoke' });
+    inPage['F117 the next editor keeps the colour'] =
+      (await inWin(nextColour, `return colorEl.value`)) === '#8b3dff' &&
+      JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).color === '#8b3dff';
+    await inWin(nextColour, `setColor('#e5484d');`); // back to coral red
+    await sleep(200);
+    nextColour.destroy();
+    // F114: the session label's menu moves the editor to another session, which becomes current; ⌘S saves there
+    const moved = sessions.create(root, 'moved');
+    const mover = await openOn('move.png', { session: 'smoke' });
+    moveEditor(mover, moved);
+    const movedLabel = await inWin(
+      mover,
+      `for (let i = 0; i < 30 && document.getElementById('session').textContent !== 'moved'; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('session').textContent === 'moved';`,
+    );
+    const movedTitle = mover.getTitle();
+    const nowCurrent = (menuItems()[1] as { label?: string }).label;
+    await inWin(mover, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true, cancelable: true }));`);
+    for (let i = 0; i < 30 && sessions.count(root, moved) === 0; i++) await sleep(100);
+    inPage['F114 the label switches the session'] =
+      movedLabel && movedTitle === 'Snapmark — moved' && nowCurrent === 'moved' && sessions.count(root, moved) === 1;
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,

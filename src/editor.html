@@ -44,7 +44,7 @@
         margin: 0;
         height: 100vh;
         display: grid;
-        grid-template: auto 1fr / 1fr 320px;
+        grid-template: auto auto 1fr / 1fr 320px;
         font:
           13px -apple-system,
           system-ui,
@@ -56,6 +56,23 @@
         outline: 2px solid var(--focus);
         outline-offset: 1px;
       }
+      /* The title row: the traffic lights sit in it (titleBarStyle hiddenInset), so it drags the window. */
+      .titlebar {
+        grid-column: 1 / -1;
+        height: 32px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        background: var(--panel);
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+      .titlebar svg {
+        width: 16px;
+        height: 16px;
+      }
       header {
         grid-column: 1 / -1;
         /* One line, always: a wrapping toolbar would shift the canvas under the pointer when tool labels change. */
@@ -63,9 +80,14 @@
         display: flex;
         gap: 8px;
         align-items: center;
-        padding: 8px 12px;
+        min-height: 52px;
+        padding: 2px 12px 6px;
         border-bottom: 1px solid var(--line);
         background: var(--panel);
+        -webkit-app-region: drag; /* between the controls */
+      }
+      header button {
+        -webkit-app-region: no-drag;
       }
       header button,
       .actions button {
@@ -150,11 +172,56 @@
         font-size: 11px;
         margin-left: 4px;
       }
-      header .session {
+      /* Undo, Redo and Copy or Save: icons; the name and key are in the tooltip and the accessible name. */
+      header .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+      }
+      header .icon-btn svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* The session label: opens the session menu; only the name shortens, with "…". Plain text in Edit Again and
+         one-shot. The chevron sits in the right padding, so the ellipsis never hides it. */
+      header #session {
+        position: relative;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 260px;
         margin-left: auto;
-        padding-left: 12px;
+        padding: 5px 24px 5px 10px;
+        overflow: hidden;
         white-space: nowrap;
+        text-overflow: ellipsis;
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
         color: var(--muted);
+      }
+      header #session:disabled {
+        opacity: 1;
+        padding-right: 10px;
+      }
+      #session .chevron {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        width: 10px;
+        height: 10px;
+        margin-top: -5px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
       }
       /* The annotation colour: a swatch, and a popover of presets with Custom… (the macOS colour panel). */
       #swatch {
@@ -263,8 +330,7 @@
       }
       .one-shot #caption,
       .one-shot #refs,
-      .one-shot #refs-label,
-      .one-shot #copy {
+      .one-shot #refs-label {
         display: none !important;
       }
       /* Beautify (one-shot mode): sliders with their values, background swatches, ratio as a segmented control. */
@@ -494,6 +560,33 @@
     </style>
   </head>
   <body>
+    <div class="titlebar">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="cool" x1="0" y1="0" x2=".85" y2="1">
+            <stop stop-color="#20F4EC" />
+            <stop offset=".45" stop-color="#2492FF" />
+            <stop offset="1" stop-color="#8B3DFF" />
+          </linearGradient>
+          <linearGradient id="pink" x1="0" y1="0" x2=".8" y2="1">
+            <stop stop-color="#FA6CFF" />
+            <stop offset="1" stop-color="#EF28A7" />
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1c20" />
+        <g transform="translate(14 14) scale(.72)">
+          <path
+            d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63"
+            fill="none"
+            stroke="url(#cool)"
+            stroke-width="12"
+            stroke-linecap="round"
+          />
+          <rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#pink)" />
+        </g>
+      </svg>
+      Snapmark
+    </div>
     <header>
       <span id="tools"></span>
       <button
@@ -506,11 +599,21 @@
       >
         <i></i>
       </button>
-      <button id="undo" disabled>Undo<kbd>⌘Z</kbd></button>
-      <button id="redo" disabled>Redo<kbd>⇧⌘Z</kbd></button>
-      <button id="copy" title="Copy the marked-up image, without adding it to the session">Copy Image<kbd>⇧⌘C</kbd></button>
-      <button id="save-as" title="Save the marked-up image as a PNG, without adding it to the session">Save As…<kbd>⇧⌘S</kbd></button>
-      <span class="session" id="session"></span>
+      <button id="undo" class="icon-btn" title="Undo (⌘Z)" aria-label="Undo (⌘Z)" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></svg>
+      </button>
+      <button id="redo" class="icon-btn" title="Redo (⇧⌘Z)" aria-label="Redo (⇧⌘Z)" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5" /><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" /></svg>
+      </button>
+      <button id="share" class="icon-btn" title="Copy Image or Save As…" aria-label="Copy or Save" aria-haspopup="menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3v12M8 7l4-4 4 4" />
+          <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
+        </svg>
+      </button>
+      <button id="session" aria-haspopup="menu" disabled>
+        <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
+      </button>
     </header>
     <div id="palette" role="dialog" aria-label="Annotation colour" hidden>
       <div id="presets"></div>
