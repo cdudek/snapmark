@@ -15,7 +15,7 @@ payload=$(cat)
 
 cd "$SDLC_ROOT" || exit 0
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
-verify=$(sdlc_get 'cfg["verify"]') || exit 0
+verify=$(sdlc_get 'cfg.get("verifyStop") or cfg["verify"]') || exit 0
 globs=$(sdlc_get '" ".join(cfg["verifyDirty"])') || exit 0
 
 dirty=""
@@ -27,7 +27,7 @@ done
 
 out=$(eval "$verify" 2>&1) && exit 0
 {
-  echo "verify FAILED (\`$verify\`) with uncommitted source changes -- fix the code, not the test, then stop again:"
+  echo "verify-on-stop FAILED (\`$verify\`) with uncommitted source changes -- fix the code, not the test, then stop again:"
   printf '%s\n' "$out" | tail -40
 } >&2
 exit 2

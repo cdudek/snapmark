@@ -2,111 +2,378 @@
 # PreToolUse hook on Edit|Write: the chain's gates, enforced where they can still change
 # the outcome -- before the write, never as a test after the work is done.
 #
-# Until this existed, exactly one gate in the chain was wired to something the harness
-# fires: PermissionRequest on ExitPlanMode, which hands plan.md to plannotator. The ticket
-# decision, the intent interview, the facts review and the /goal handover were sentences in
-# SKILL.md, and a skipped one left no trace anywhere -- not in the folder, not in the PR,
-# not in the guardrail test, which reads `status` only from plan.md. Three of the four
-# decisions in a change were the agent's, silently.
+# Until 2026-09-20 exactly one gate was wired to something the harness fires (plan-gate on
+# ExitPlanMode); the ticket, intent, facts and /goal steps were sentences, and a skipped one
+# left no trace. Refusals, in the order a change meets them:
 #
-# Four refusals, in the order a change meets them:
+#   1. anything under <changesDir>/<id>/  -- needs decisions.json (the Stage 1.1 dialog)
+#   2. spec/** (v3)                      -- needs intent.md with a non-empty ## Asks
+#   3. facts.md                          -- needs the interview or a recorded skip; v3 also needs
+#                                           brief..conformance done or skipped
+#   4. plan.md                           -- needs facts.md approved; v3 also an approved, ready
+#                                           validation (or its skip)
+#   5. source outside changes/ + docs/   -- needs an approved plan with a filled handover;
+#                                           v3 prototypeDirs are open during Design
+#   6. tests while testLocked (v3 bug)   -- refused unless testEdit records the user's OK
 #
-#   1. anything under <changesDir>/<id>/  -- needs decisions.json (the step-0.5 dialog)
-#   2. facts.md                           -- needs the intent interview, or a recorded skip
-#   3. plan.md                            -- needs facts.md at `status: approved`
-#   4. any path outside changes/ + docs/  -- needs an approved plan with a filled handover
+# The milestone process (approved 2026-10-09; decisions.json has `milestone`) replaces 2-5:
+#   2. spec/** and facts.md              -- need intent.md `status: approved` (touchpoint one);
+#                                           facts also need the UX plan done or skipped
+#   4. plan.md                           -- needs facts.md (one gate approves all three)
+#   5. source                            -- needs an approved plan, lock.json, a filled ## Goal,
+#                                           and an active /goal in the transcript
+#   7. protected paths after approval    -- facts.md, done.json, lock.json, sdlc.json and the
+#                                           `protected` globs, unless protectedEdit quotes the engineer
 #
-# Rule 4 fires ONLY when the checked-out branch has a change folder. No folder, no opinion:
-# a quick fix, a repo mid-adoption and the chain's own "never stop because there is no
-# ticket" rule all keep working. Exit 2 blocks the call and sends stderr to Claude, which
-# then tells the user the route. A block explains itself (playbook rule).
+# v3 = decisions.json has `size`; v2 folders keep the v2 rules, v3 folders without `milestone`
+# keep the v3 rules, so in-flight changes finish on the process they started. Rules 5-7 fire
+# only when the checked-out branch has a change folder: no folder, no opinion. Bash wrapper,
+# Python engine.
 set -uo pipefail
 . "$(dirname "$0")/sdlc-config.sh"
 
 payload=$(cat)
 file=$(sdlc_field "$payload" file_path)
 [ -n "$file" ] || exit 0
-changes=$(sdlc_get 'cfg["changesDir"]') || changes="changes"
-designs=$(sdlc_get 'cfg["designsDir"]') || designs="docs/designs"
-docs=$(sdlc_get 'cfg["docs"]') || docs="docs/sdlc.md"
+[ -f "$SDLC_JSON" ] || exit 0
+transcript=$(printf '%s' "$payload" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("transcript_path") or "")' 2>/dev/null || true)
 
-case "$file" in /*) rel=${file#"$SDLC_ROOT"/} ;; *) rel=$file ;; esac
-case "$rel" in /*) exit 0 ;; esac   # outside the repo entirely -- not ours to police
+python3 - "$SDLC_ROOT" "$SDLC_JSON" "$file" "$transcript" <<'PY'
+from __future__ import annotations
 
-deny() {
-  printf 'BLOCKED: %s\n(%s)\n' "$1" "$docs" >&2
-  exit 2
-}
+import fnmatch
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
 
-# The value of one frontmatter key, or "" when the file or the key is missing.
-fm() { [ -f "$1" ] && sed -n "s/^$2: *//p" "$1" | head -1; }
+root = Path(sys.argv[1]).resolve()
+cfg_path = Path(sys.argv[2])
+file_arg = sys.argv[3]
+transcript = sys.argv[4] if len(sys.argv) > 4 else ""
+cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+changes = cfg.get("changesDir", "changes")
+designs = cfg.get("designsDir", "docs/designs")
+docs = cfg.get("docs", "docs/sdlc.md")
 
-# Non-blank body of a `## <heading>` section, stopping at the next `## `.
-section() {
-  [ -f "$1" ] || return 0
-  awk -v want="## $2" '
-    $0 == want { inside = 1; next }
-    inside && /^## / { exit }
-    inside && NF { print }
-  ' "$1"
-}
+path = Path(file_arg)
+try:
+    rel = str(path.resolve().relative_to(root)) if path.is_absolute() else file_arg
+except ValueError:
+    sys.exit(0)
+while rel.startswith("./"):
+    rel = rel[2:]
+if rel.startswith("../") or rel.startswith("/"):
+    sys.exit(0)
 
-# --- inside a change folder -----------------------------------------------------------
-case "$rel" in
-  "$changes"/archive/*) exit 0 ;;   # history is evidence, never a target
-  "$changes"/*/*)
-    id=${rel#"$changes"/}
-    id=${id%%/*}
-    dir="$SDLC_ROOT/$changes/$id"
-    base=${rel##*/}
 
-    # decisions.json is the dialog's own output, so it can never require itself.
-    [ "$base" = "decisions.json" ] && exit 0
-    [ -f "$dir/decisions.json" ] || deny "the step-0.5 dialog has not run for $id. Ask the three forks with AskUserQuestion -- ticket (search Linear first), intent, design -- and write the answers to $changes/$id/decisions.json before anything else in the folder."
+def deny(message: str) -> None:
+    print(f"BLOCKED: {message}\n({docs})", file=sys.stderr)
+    sys.exit(2)
 
-    case "$base" in
-      facts.md)
-        intent=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("intent",""))' "$dir/decisions.json" 2>/dev/null || true)
-        case "$intent" in
-          skip*) ;;   # "skip -- the ticket states it": a recorded decision, not a silence
-          "") deny "decisions.json for $id records no intent decision. It is either a skip with its reason, or an interview." ;;
-          *) [ -f "$dir/interview-result.json" ] || deny "the intent interview has not run for $id. plannotator setup-goal interview $changes/$id/interview.json --json | tee $changes/$id/interview-result.json" ;;
-        esac
-        ;;
-      plan.md)
-        [ -f "$dir/facts.md" ] || deny "$changes/$id/facts.md does not exist yet. Facts come before a plan -- a plan against unreviewed facts is a plan against a guess."
-        [ "$(fm "$dir/facts.md" status)" = "approved" ] || deny "$changes/$id/facts.md is not approved. Take it through plannotator setup-goal facts, then set status: approved. A draft fact sheet has never been reviewed by anyone."
-        ;;
-    esac
-    exit 0
-    ;;
-esac
 
-# --- outside a change folder ----------------------------------------------------------
-# Documents are how the chain gets written in the first place, so they are never gated.
-case "$rel" in
-  docs/*|"$designs"/*|.claude/*|*.md) exit 0 ;;
-esac
+def fm(path: Path, key: str) -> str:
+    if not path.exists():
+        return ""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith(f"{key}:"):
+            return line.split(":", 1)[1].strip()
+    return ""
 
-# symbolic-ref, not rev-parse: on a repo whose first commit is not made yet HEAD is
-# unborn, rev-parse fails, and the gate would quietly open on exactly the repo most
-# likely to be mid-adoption.
-branch=$(git -C "$SDLC_ROOT" symbolic-ref --short -q HEAD 2>/dev/null) \
-  || branch=$(git -C "$SDLC_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
-[ -n "$branch" ] || exit 0
 
-# The change for this branch, by slug -- the same match status.sh --current uses.
-for d in "$SDLC_ROOT/$changes"/*/; do
-  [ -d "$d" ] || continue
-  id=$(basename "$d")
-  [ "$id" = "archive" ] && continue
-  slug=${id#????-??-??-}
-  case "$slug" in [A-Z]*-[0-9]*-*) slug=${slug#*-*-} ;; esac
-  case "$branch" in *"$slug"*) ;; *) continue ;; esac
+def section(path: Path, heading: str) -> str:
+    if not path.exists():
+        return ""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    inside = False
+    body: list[str] = []
+    for line in lines:
+        if line == f"## {heading}":
+            inside = True
+            continue
+        if inside and line.startswith("## "):
+            break
+        if inside:
+            body.append(line)
+    return "\n".join(line for line in body if line.strip())
 
-  [ -f "$d/plan.md" ] || deny "$changes/$id has no plan.md, and this branch is its branch. Write the plan and gate it: plannotator annotate $changes/$id/plan.md --gate"
-  [ "$(fm "$d/plan.md" status)" = "approved" ] || deny "$changes/$id/plan.md is not approved. Gate it before you write code: plannotator annotate $changes/$id/plan.md --gate"
-  [ -n "$(section "$d/plan.md" "Goal handover")" ] || deny "$changes/$id/plan.md has an empty ## Goal handover. Write the /goal there before building, or 'none -- <why>' when the artifact is the diff itself."
-  exit 0
-done
-exit 0
+
+def load_decisions(change_dir: Path) -> dict:
+    path = change_dir / "decisions.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def is_v3(decisions: dict) -> bool:
+    return "size" in decisions
+
+
+def is_milestone(decisions: dict) -> bool:
+    return "milestone" in decisions
+
+
+PROTECTED_FILES = ("facts.md", "done.json", "lock.json")
+PROTECTED_GLOBS = ["sdlc.json", "**/*-snapshots/**", "**/__screenshots__/**", "**/*allowlist*"]
+
+
+def goal_active(path: str) -> bool | None:
+    """True/False from the last goal_status entry of the transcript; None when unreadable.
+
+    The entry is undocumented: {"type":"attachment","attachment":{"type":"goal_status",
+    "met":false,...}}. Unreadable fails open with a warning rather than blocking every edit.
+    """
+    try:
+        lines = Path(path).read_text(encoding="utf-8").splitlines()
+    except (OSError, ValueError):
+        return None
+    parsed, last = 0, None
+    for line in lines:
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        parsed += 1
+        att = entry.get("attachment") if isinstance(entry, dict) else None
+        if isinstance(att, dict) and att.get("type") == "goal_status":
+            last = att
+    if not parsed:
+        return None
+    return last is not None and last.get("met") is False
+
+
+def skipped(decisions: dict, activity: str) -> bool:
+    value = decisions.get("skips", {}).get(activity, "")
+    return isinstance(value, str) and value.startswith("skip")
+
+
+def activity_done(change_dir: Path, decisions: dict, activity: str) -> bool:
+    files = {
+        "brief": change_dir / "spec" / "brief.md",
+        "ia": change_dir / "spec" / "ia.md",
+        "interaction": change_dir / "spec" / "interaction.md",
+        "screens": change_dir / "spec" / "screens.md",
+        "prototype": change_dir / "spec" / "prototype" / "index.md",
+        "conformance": change_dir / "spec" / "conformance.md",
+        "validation": change_dir / "spec" / "validation.md",
+    }
+    return skipped(decisions, activity) or files[activity].exists()
+
+
+def validation_ready(change_dir: Path, decisions: dict) -> bool:
+    if skipped(decisions, "validation"):
+        return True
+    validation = change_dir / "spec" / "validation.md"
+    return fm(validation, "verdict") == "ready" and fm(validation, "status") == "approved"
+
+
+def has_asks(change_dir: Path) -> bool:
+    body = section(change_dir / "intent.md", "Asks")
+    return bool(re.search(r"\|\s*A\d+\s*\|", body))
+
+
+def branch_name() -> str:
+    for cmd in (
+        ["git", "-C", str(root), "symbolic-ref", "--short", "-q", "HEAD"],
+        ["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"],
+    ):
+        out = subprocess.run(cmd, capture_output=True, text=True)
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout.strip()
+    return ""
+
+
+def branch_change() -> tuple[str, Path, dict] | None:
+    branch = branch_name()
+    if not branch:
+        return None
+    base = root / changes
+    if not base.is_dir():
+        return None
+    for d in sorted(base.iterdir()):
+        if not d.is_dir() or d.name == "archive":
+            continue
+        slug = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", d.name)
+        slug = re.sub(r"^[A-Z][A-Z0-9]+-\d+-", "", slug)
+        if slug and slug in branch:
+            return d.name, d, load_decisions(d)
+    return None
+
+
+def match_any(path: str, patterns: list[str]) -> bool:
+    return any(
+        fnmatch.fnmatchcase(path, pat) or fnmatch.fnmatchcase(path, pat.removeprefix("**/"))
+        for pat in patterns
+    )
+
+
+parts = rel.split("/")
+if len(parts) >= 3 and parts[0] == changes:
+    if len(parts) >= 2 and parts[1] == "archive":
+        sys.exit(0)
+    change_id = parts[1]
+    change_dir = root / changes / change_id
+    base = parts[-1]
+    inside = "/".join(parts[2:])
+
+    if base == "decisions.json":
+        sys.exit(0)
+    if not (change_dir / "decisions.json").exists():
+        deny(
+            f"the Stage 1.1 dialog has not run for {change_id}. AskUserQuestion must ask ticket "
+            f"(search Linear first), intent, design file, size and kind; then write "
+            f"{changes}/{change_id}/decisions.json."
+        )
+
+    decisions = load_decisions(change_dir)
+    v3 = is_v3(decisions)
+
+    if is_milestone(decisions):
+        if inside in PROTECTED_FILES and (change_dir / "lock.json").exists():
+            if decisions.get("protectedEdit"):
+                sys.exit(0)
+            deny(
+                f"{changes}/{change_id}/{inside} is locked since the engineer approved the plan. "
+                "Stop and ask; record their words as `protectedEdit` in decisions.json first."
+            )
+        if (inside.startswith("spec/") or base == "facts.md") and fm(
+            change_dir / "intent.md", "status"
+        ) != "approved":
+            deny(
+                f"{changes}/{change_id}/intent.md is not approved. Draft it (asks, job stories, "
+                "success measure) and have the engineer confirm it first."
+            )
+        if base == "facts.md" and decisions.get("size") != "none" and cfg.get("ux", "on") != "off":
+            needed = ["conformance"] + (["validation"] if decisions.get("size") in ("M", "L") else [])
+            missing = [a for a in needed if not activity_done(change_dir, decisions, a)]
+            if missing:
+                deny(
+                    f"{changes}/{change_id}/facts.md comes after the UX plan: {', '.join(missing)} "
+                    f"missing. Run omr-ux:conformance spec {change_id}"
+                    + (f" and one pass of omr-ux:validate spec {change_id}." if "validation" in missing else ".")
+                )
+        if base == "plan.md" and not (change_dir / "facts.md").exists():
+            deny(f"{changes}/{change_id}/facts.md does not exist yet. Facts come before a plan.")
+        sys.exit(0)
+
+    if v3 and inside.startswith("spec/") and not has_asks(change_dir):
+        deny(
+            f"{changes}/{change_id}/intent.md needs a non-empty ## Asks table before spec files. "
+            f"Run Stage 1.3 and write the A<n> table, then continue with omr-ux:design {change_id}."
+        )
+
+    if base == "facts.md":
+        # The intent decision comes first, v2 and v3 alike: a skip with its reason, or the interview.
+        intent = str(decisions.get("intent", ""))
+        if not intent:
+            deny(
+                f"decisions.json for {change_id} records no intent decision. Record a skip with "
+                "its reason, or run the interview."
+            )
+        if not intent.startswith("skip") and not (change_dir / "interview-result.json").exists():
+            deny(
+                f"the intent interview has not run for {change_id}. Run: plannotator "
+                f"setup-goal interview {changes}/{change_id}/interview.json --json | "
+                f"tee {changes}/{change_id}/interview-result.json"
+            )
+        if v3:
+            missing = [
+                a
+                for a in ("brief", "ia", "interaction", "screens", "prototype", "conformance")
+                if not activity_done(change_dir, decisions, a)
+            ]
+            if missing:
+                commands = []
+                if any(a != "conformance" for a in missing):
+                    commands.append(f"omr-ux:design {change_id}")
+                if "conformance" in missing:
+                    commands.append(f"omr-ux:conformance spec {change_id}")
+                deny(
+                    f"{changes}/{change_id}/facts.md needs design activities done or skipped first: "
+                    f"{', '.join(missing)}. Run {'; '.join(commands)}."
+                )
+
+    if base == "plan.md":
+        if not (change_dir / "facts.md").exists():
+            deny(f"{changes}/{change_id}/facts.md does not exist yet. Facts come before a plan.")
+        if fm(change_dir / "facts.md", "status") != "approved":
+            deny(
+                f"{changes}/{change_id}/facts.md is not approved. Run the facts/spec gate before "
+                "writing the plan."
+            )
+        if v3 and not validation_ready(change_dir, decisions):
+            deny(
+                f"{changes}/{change_id}/spec/validation.md must have verdict: ready and "
+                f"status: approved, or validation must be skipped. Run omr-ux:validate spec "
+                f"{change_id}, then get the owner gate."
+            )
+    sys.exit(0)
+
+if rel.startswith("docs/") or rel.startswith(f"{designs}/") or rel.startswith(".claude/") or rel.endswith(".md"):
+    sys.exit(0)
+
+current = branch_change()
+if not current:
+    sys.exit(0)
+change_id, change_dir, decisions = current
+v3 = is_v3(decisions)
+
+if v3 and decisions.get("kind") == "bug" and decisions.get("testLocked") is True and not decisions.get("testEdit"):
+    test_globs = cfg.get(
+        "testGlobs",
+        ["**/*.test.*", "**/*.spec.*", "**/test_*.py", "**/tests/**", "**/e2e/**"],
+    )
+    if match_any(rel, test_globs):
+        deny(
+            "fix the code, not the test; if the test is wrong, ask the user and record "
+            "`testEdit` with their words."
+        )
+
+if v3 and not skipped(decisions, "prototype"):
+    for proto in cfg.get("prototypeDirs", []):
+        p = proto.rstrip("/")
+        if rel == p or rel.startswith(p + "/"):
+            sys.exit(0)
+
+if is_milestone(decisions):
+    locked = (change_dir / "lock.json").exists()
+    if locked and match_any(rel, cfg.get("protected", PROTECTED_GLOBS)) and not decisions.get("protectedEdit"):
+        deny(
+            f"{rel} is a protected path since the plan was approved. Stop and ask; record the "
+            f"engineer's words as `protectedEdit` in {changes}/{change_id}/decisions.json first."
+        )
+    if fm(change_dir / "plan.md", "status") != "approved" or not locked:
+        deny(
+            f"{changes}/{change_id} is not approved yet. One gate approves UX plan, facts and plan: "
+            f"plannotator annotate {changes}/{change_id}/plan.md --gate, then "
+            f"python3 scripts/verify_gate.py approve {change_id}."
+        )
+    if not section(change_dir / "plan.md", "Goal handover"):
+        deny(f"{changes}/{change_id}/plan.md has an empty ## Goal handover. Write the /goal there first.")
+    active = goal_active(transcript)
+    if active is None:
+        print("chain-gate: transcript unreadable, cannot check for an active /goal; allowing.", file=sys.stderr)
+    elif not active:
+        deny(
+            "building happens inside /goal. Start it with the condition in "
+            f"{changes}/{change_id}/plan.md ## Goal handover, then edit again."
+        )
+    sys.exit(0)
+
+if not (change_dir / "plan.md").exists():
+    deny(
+        f"{changes}/{change_id} has no plan.md, and this branch is its branch. Write the plan "
+        f"and gate it: plannotator annotate {changes}/{change_id}/plan.md --gate"
+    )
+if fm(change_dir / "plan.md", "status") != "approved":
+    deny(
+        f"{changes}/{change_id}/plan.md is not approved. Gate it before writing source: "
+        f"plannotator annotate {changes}/{change_id}/plan.md --gate"
+    )
+if not section(change_dir / "plan.md", "Goal handover"):
+    deny(
+        f"{changes}/{change_id}/plan.md has an empty ## Goal handover. Write the /goal there "
+        "before building, or `none -- <why>` when the artifact is the diff itself."
+    )
+PY

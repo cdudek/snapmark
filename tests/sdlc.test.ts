@@ -47,6 +47,9 @@ const TIERS = (
 
 const INTENT_SECTIONS = ['## Problem', '## Proposed outcome', '## Affected users and systems', '## Constraints', '## Open questions'];
 const PLAN_SECTIONS = ['## Order of work', '## Done', '## Revisions'];
+const V3_SIZES = new Set(['none', 'S', 'M', 'L']);
+const V3_KINDS = new Set(['feature', 'bug', 'refactor', 'docs', 'chore']);
+const V3_ACTIVITIES = ['brief', 'ia', 'interaction', 'screens', 'prototype', 'conformance', 'validation'];
 // <created>-<KEY>-<slug>, and <created>-<slug> when the change has no Linear issue.
 // Open and archived folders have the same shape: archiving moves the folder, it never renames it.
 const CHANGE_DIR = /^(\d{4}-\d{2}-\d{2})-(?:([A-Z][A-Z0-9]+-\d+)-)?([a-z0-9][a-z0-9-]*)$/;
@@ -85,6 +88,79 @@ function frontmatter(path: string): Record<string, string> {
     if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim();
   }
   return out;
+}
+
+function section(text: string, heading: string): string {
+  const marker = `## ${heading}`;
+  if (!text.includes(marker)) return '';
+  return text.split(marker)[1].split(/^## /m)[0];
+}
+
+function markdownTargets(text: string): string[] {
+  return [...text.matchAll(/!?\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)].map((m) => m[1].replace(/^<|>$/g, ''));
+}
+
+function resourceCells(intent: string): string[] {
+  const rows = section(intent, 'Asks')
+    .split('\n')
+    .filter((l) => l.trim().startsWith('|'))
+    .map((l) =>
+      l
+        .trim()
+        .replace(/^\||\|$/g, '')
+        .split('|')
+        .map((c) => c.trim()),
+    );
+  const header = rows.find((r) => r[0] === '#') ?? [];
+  expect(header, 'intent.md ## Asks table is missing Resources').toContain('Resources');
+  const index = header.indexOf('Resources');
+  return rows.filter((r) => /^A\d+$/.test(r[0]) && r.length > index).map((r) => r[index]);
+}
+
+function assertRepoRelativeTarget(repo: string, markdownFile: string, target: string) {
+  const cleaned = target.trim().replace(/^['"]|['"]$/g, '');
+  if (!cleaned || cleaned.startsWith('#')) return;
+  // A web link is reachable by every reader; a path on one machine is not.
+  if (/^(https?|mailto):/i.test(cleaned)) return;
+  expect(
+    !(cleaned.startsWith('/') || cleaned.startsWith('~/') || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(cleaned)),
+    `${markdownFile.replace(`${repo}/`, '')} links outside the repo: ${cleaned}`,
+  ).toBe(true);
+  const path = cleaned.split('#')[0];
+  if (!path) return;
+  const candidates = [resolve(markdownFile, '..', path), resolve(repo, path)];
+  for (const candidate of candidates) {
+    if (candidate.startsWith(resolve(repo)) && existsSync(candidate)) return;
+  }
+  throw new Error(`${markdownFile.replace(`${repo}/`, '')} links to missing resource: ${cleaned}`);
+}
+
+function walkMarkdown(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walkMarkdown(path));
+    else if (entry.isFile() && entry.name.endsWith('.md')) out.push(path);
+  }
+  return out;
+}
+
+function assertChangeResourcesStayInRepo(repo: string, change: string) {
+  for (const markdownFile of walkMarkdown(change)) {
+    for (const target of markdownTargets(readFileSync(markdownFile, 'utf8'))) {
+      assertRepoRelativeTarget(repo, markdownFile, target);
+    }
+  }
+  const intent = join(change, 'intent.md');
+  if (!existsSync(intent)) return;
+  for (const cell of resourceCells(readFileSync(intent, 'utf8'))) {
+    if (['', 'none'].includes(cell.trim().toLowerCase())) continue;
+    const targets = markdownTargets(cell);
+    const values = targets.length ? targets : cell.split(/\s*(?:,|<br\s*\/?>)\s*/);
+    for (const target of values.filter((t) => t && t.toLowerCase() !== 'none')) {
+      assertRepoRelativeTarget(repo, intent, target);
+    }
+  }
 }
 
 /**
@@ -214,6 +290,54 @@ function checkChange(parent: string, id: string, archived: boolean) {
     const design = readFileSync(join(ROOT, fm.design), 'utf8');
     expect(design.includes(slug), `${fm.design} does not mention ${slug}`).toBe(true);
   });
+  it(`${id}: v3 approved plans satisfy the spec guardrails`, () => {
+    if (archived || !existsSync(join(dir, 'decisions.json'))) return;
+    const decisions = JSON.parse(readFileSync(join(dir, 'decisions.json'), 'utf8')) as {
+      size?: string;
+      kind?: string;
+      skips?: Record<string, string>;
+      testLocked?: boolean;
+    };
+    if (!('size' in decisions)) return;
+    if (frontmatter(join(dir, 'plan.md')).status !== 'approved') return;
+    expect(V3_SIZES.has(decisions.size ?? ''), `${id}: size`).toBe(true);
+    expect(V3_KINDS.has(decisions.kind ?? ''), `${id}: kind`).toBe(true);
+    const skips = decisions.skips ?? {};
+    const files: Record<string, string> = {
+      brief: join(dir, 'spec', 'brief.md'),
+      ia: join(dir, 'spec', 'ia.md'),
+      interaction: join(dir, 'spec', 'interaction.md'),
+      screens: join(dir, 'spec', 'screens.md'),
+      prototype: join(dir, 'spec', 'prototype', 'index.md'),
+      conformance: join(dir, 'spec', 'conformance.md'),
+      validation: join(dir, 'spec', 'validation.md'),
+    };
+    for (const activity of V3_ACTIVITIES) {
+      const skipped = String(skips[activity] ?? '').startsWith('skip');
+      expect(skipped || existsSync(files[activity]), `${id}: ${activity}`).toBe(true);
+    }
+    if (!String(skips.validation ?? '').startsWith('skip')) {
+      const fm = frontmatter(join(dir, 'spec', 'validation.md'));
+      expect(fm.verdict).toBe('ready');
+      expect(fm.status).toBe('approved');
+    }
+    assertChangeResourcesStayInRepo(ROOT, dir);
+    // A recorded intent skip means there is no intent.md to read, and the test two blocks
+    // up has already accepted that. Reading it here regardless crashed with a raw ENOENT
+    // — not an assertion message, just a stack trace naming a file the chain said need
+    // not exist (omr-leadhub, two changes, 2026-10-17). Guard it the same way the
+    // validation check above guards on its own skip. Everything after this block still
+    // runs: a skipped intent says nothing about whether a bug locked its test.
+    if (existsSync(join(dir, 'intent.md'))) {
+      const asks = Array.from(
+        new Set([...section(readFileSync(join(dir, 'intent.md'), 'utf8'), 'Asks').matchAll(/\|\s*(A\d+)\s*\|/g)].map((m) => m[1])),
+      );
+      expect(asks.length, `${id}: ## Asks has no A<n>`).toBeGreaterThan(0);
+      const facts = readFileSync(join(dir, 'facts.md'), 'utf8');
+      expect(asks.filter((a) => !new RegExp(`\\b${a}\\b`).test(facts))).toEqual([]);
+    }
+    if (decisions.kind === 'bug') expect(decisions.testLocked, `${id}: bug must lock the failing test`).toBe(true);
+  });
 }
 
 describe('changes', () => {
@@ -225,6 +349,15 @@ describe('changes', () => {
   it('keeps no plans or handovers in .claude/plans', () => {
     const plans = join(ROOT, '.claude', 'plans');
     expect(!existsSync(plans) || readdirSync(plans).length === 0, '.claude/plans/ is scratch; use the change folder').toBe(true);
+  });
+  // One line per design and decision, so an agent reads the index and opens one file, not
+  // every design. A stale index hides the newest decision from exactly that reader.
+  it('keeps the design index current', () => {
+    const r = spawnSync('python3', [join(ROOT, 'scripts', 'design_index.py'), 'check'], {
+      encoding: 'utf8',
+      cwd: ROOT,
+    });
+    expect(r.status, r.stdout + r.stderr).toBe(0);
   });
 });
 
@@ -385,7 +518,7 @@ describe('verify-on-stop', () => {
     writeFileSync(join(dir, 'x.ts'), 'export const x = 1;\n');
     const r = runHook('verify-on-stop.sh', { stop_hook_active: false }, { CLAUDE_PROJECT_DIR: dir });
     expect(r.status).toBe(2);
-    expect(r.stderr).toContain('verify FAILED');
+    expect(r.stderr).toContain('verify-on-stop FAILED');
     expect(r.stderr).toContain('fix the code, not the test');
   });
   it('passes when verify passes', () => {
@@ -397,6 +530,180 @@ describe('verify-on-stop', () => {
     const dir = repo(1);
     writeFileSync(join(dir, 'x.ts'), 'export const x = 1;\n');
     expect(runHook('verify-on-stop.sh', { stop_hook_active: true }, { CLAUDE_PROJECT_DIR: dir }).status).toBe(0);
+  });
+});
+
+function chainRepo(
+  name: string,
+  decisions: Record<string, unknown>,
+  opts: {
+    asks?: boolean;
+    resourceTarget?: string;
+    designDone?: boolean;
+    validation?: string;
+    factsStatus?: string;
+    plan?: boolean;
+  } = {},
+): [string, string] {
+  const dir = tmp(`chain-${name}`);
+  const env = envWith({});
+  spawnSync('git', ['init', '-q', '-b', 'feature/v3-change'], { cwd: dir, env });
+  writeFileSync(
+    join(dir, 'sdlc.json'),
+    JSON.stringify({
+      changesDir: 'changes',
+      docs: 'docs/sdlc.md',
+      verify: 'true',
+      verifyDirty: ['*.ts'],
+      prototypeDirs: ['proto'],
+      testGlobs: ['**/*.test.ts', 'tests/**'],
+    }),
+  );
+  const change = '2026-10-06-v3-change';
+  const cdir = join(dir, 'changes', change);
+  mkdirSync(join(cdir, 'spec'), { recursive: true });
+  writeFileSync(join(cdir, 'decisions.json'), JSON.stringify(decisions));
+  const resourceTarget = opts.resourceTarget ?? 'asks/2026-10-06/session.md';
+  if (
+    opts.asks !== false &&
+    resourceTarget &&
+    !(
+      resourceTarget.startsWith('/') ||
+      resourceTarget.startsWith('~/') ||
+      resourceTarget.startsWith('file://') ||
+      /^[A-Za-z][A-Za-z0-9+.-]*:/.test(resourceTarget)
+    )
+  ) {
+    mkdirSync(resolve(cdir, resourceTarget, '..'), { recursive: true });
+    writeFileSync(join(cdir, resourceTarget), 'owner feedback\n');
+  }
+  const asks =
+    opts.asks === false
+      ? '## Asks\n\nnone\n'
+      : `## Asks\n\n| # | Date | Source | Words | Screen | Resources |\n|---|---|---|---|---|---|\n| A1 | 2026-10-06 | owner, chat | "do it" | Screen | [session](${resourceTarget}) |\n`;
+  writeFileSync(join(cdir, 'intent.md'), `---\ntype: intent\n---\n\n# Intent\n\n${asks}`);
+  if (opts.designDone) {
+    for (const activity of ['brief', 'ia', 'interaction', 'screens', 'conformance'])
+      writeFileSync(join(cdir, 'spec', `${activity}.md`), `# ${activity}\n`);
+    mkdirSync(join(cdir, 'spec', 'prototype'));
+    writeFileSync(join(cdir, 'spec', 'prototype', 'index.md'), '# prototype\n');
+  }
+  if (opts.validation) writeFileSync(join(cdir, 'spec', 'validation.md'), opts.validation);
+  writeFileSync(
+    join(cdir, 'facts.md'),
+    `---\ntype: facts\nstatus: ${opts.factsStatus ?? 'approved'}\n---\n\n# Facts\n\n- [ ] **F1** (A1) When x, the system shall y.\n`,
+  );
+  if (opts.plan !== false)
+    writeFileSync(join(cdir, 'plan.md'), '---\ntype: plan\nstatus: approved\n---\n\n# Plan\n\n## Goal handover\n\n/goal x\n');
+  return [dir, change];
+}
+
+function runChain(repo: string, filePath: string) {
+  return runHook('chain-gate.sh', { tool_input: { file_path: filePath } }, { CLAUDE_PROJECT_DIR: repo });
+}
+
+describe('chain-gate v3', () => {
+  it('refuses spec writes before asks', () => {
+    const [repo, change] = chainRepo('asks', { size: 'M', kind: 'feature', skips: {} }, { asks: false });
+    const r = runChain(repo, `changes/${change}/spec/screens.md`);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('## Asks');
+  });
+  it('refuses facts before design', () => {
+    const [repo, change] = chainRepo('facts', {
+      size: 'M',
+      kind: 'feature',
+      intent: 'skip -- ticket',
+      skips: {},
+    });
+    const r = runChain(repo, `changes/${change}/facts.md`);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('omr-ux:design');
+  });
+  it('refuses plan before validation approval', () => {
+    const [repo, change] = chainRepo(
+      'validation',
+      { size: 'M', kind: 'feature', skips: {} },
+      { designDone: true, validation: '---\ntype: validation\nverdict: not-ready\nstatus: draft\n---\n' },
+    );
+    const r = runChain(repo, `changes/${change}/plan.md`);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('omr-ux:validate spec');
+  });
+  it('allows prototypeDirs before the plan', () => {
+    const [repo] = chainRepo('proto', { size: 'L', kind: 'feature', skips: {} }, { plan: false });
+    expect(runChain(repo, 'proto/draft.ts').status).toBe(0);
+    const r = runChain(repo, 'src/feature.ts');
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('has no plan.md');
+  });
+  it('locks bug tests', () => {
+    let [repo] = chainRepo('lock', { size: 'none', kind: 'bug', skips: {}, testLocked: true });
+    const r = runChain(repo, 'tests/bug.test.ts');
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('fix the code, not the test');
+    [repo] = chainRepo('unlock', {
+      size: 'none',
+      kind: 'bug',
+      skips: {},
+      testLocked: true,
+      testEdit: 'owner OK',
+    });
+    expect(runChain(repo, 'tests/bug.test.ts').status).toBe(0);
+  });
+  it('refuses v3 facts until the intent decision is met', () => {
+    const [repo, change] = chainRepo(
+      'facts-intent',
+      { size: 'M', kind: 'feature', intent: 'interview -- owner', skips: {} },
+      { designDone: true },
+    );
+    const r = runChain(repo, `changes/${change}/facts.md`);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('interview');
+  });
+  it('keeps dot directories exempt', () => {
+    const [repo] = chainRepo('dot-dirs', { size: 'M', kind: 'feature', intent: 'skip -- ticket', skips: {} }, { plan: false });
+    expect(runChain(repo, '.claude/settings.json').status).toBe(0);
+    expect(runChain(repo, 'src/app.ts').status).toBe(2);
+  });
+  it('locks root-level test files', () => {
+    const [repo] = chainRepo('root-lock', {
+      size: 'none',
+      kind: 'bug',
+      intent: 'skip -- t',
+      skips: {},
+      testLocked: true,
+    });
+    expect(runChain(repo, 'app.test.ts').status).toBe(2);
+  });
+  it('does not apply the v3 spec rule to v2 folders', () => {
+    const [repo, change] = chainRepo('v2', { intent: 'skip -- old folder' }, { asks: false });
+    expect(runChain(repo, `changes/${change}/spec/screens.md`).status).toBe(0);
+  });
+  it('accepts web links in v3 ask rows', () => {
+    const [repo, change] = chainRepo(
+      'resource-web',
+      { size: 'none', kind: 'feature', skips: { validation: 'skip -- no interface change' } },
+      { resourceTarget: 'https://github.com/org/repo/blob/abc123/docs/x.md' },
+    );
+    assertChangeResourcesStayInRepo(repo, join(repo, 'changes', change));
+  });
+
+  it('rejects local resource links in v3 ask rows', () => {
+    const [repo, change] = chainRepo(
+      'resource-local',
+      { size: 'none', kind: 'feature', skips: { validation: 'skip -- no interface change' } },
+      { resourceTarget: '/Users/calvin/Desktop/session.md' },
+    );
+    expect(() => assertChangeResourcesStayInRepo(repo, join(repo, 'changes', change))).toThrow('outside the repo');
+  });
+  it('accepts repo resource links in v3 ask rows', () => {
+    const [repo, change] = chainRepo('resource-repo', {
+      size: 'none',
+      kind: 'feature',
+      skips: { validation: 'skip -- no interface change' },
+    });
+    expect(() => assertChangeResourcesStayInRepo(repo, join(repo, 'changes', change))).not.toThrow();
   });
 });
 
