@@ -356,6 +356,7 @@ export function openEditor(
   const text = desk.recognize(image);
   editors.set(id, { image, text, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot });
   win.once('focus', updateDock);
+  win.on('page-title-updated', (e) => e.preventDefault()); // editor.html's <title> would replace the session name
   win.on('resized', () => {
     const [w, h] = win.getSize();
     editorSize = { width: w, height: h };

@@ -157,3 +157,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — Retro: a Critical or High is never deferred without asking first. Interior branches now wait for CI before auto-merge.
 - 2026-10-25 — The exporter row said `session.md` stays untouched; F19 changed that. `create()`, `rename()` and a recreated `session.md` write the display name as heading.
 - 2026-10-25 — `sessions.renamedTo()` gives the target folder, so the session window and the menu dialog check it before renaming.
+- 2026-10-25 — CI smoke failed F3: `editor.html`'s `<title>` replaced the editor window title on load, so it never showed the session. The editor window now keeps the title main gives it.
