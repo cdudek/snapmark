@@ -263,14 +263,14 @@ Feature 2.3 — Keyboard Shortcuts window (F229–F236):
 
 Feature 3.1 — parts on save:
 
-- [ ] 1. Write `test/parts.test.ts` (F2, F3, F4, F5, F10, N2) and add it to the `test` script — proof: `npm test` fails on them.
-- [ ] 2. Write `src/parts.ts` — proof: the `test/parts.test.ts` blocks pass.
-- [ ] 3. Write the F1, F6, F7, F8, F11, F12, F13, F15, F16, F17 blocks in `test/sessions.test.ts` — proof: `npm test` fails on them.
-- [ ] 4. `src/sessions.ts`: `entry`, `addShot`, `replaceShot` — proof: those blocks pass.
-- [ ] 5. `src/main.ts`: `fitForAI`, `cutParts`, `editor:save` — proof: `npm run typecheck` exits 0; `grep -n "cutParts(out)" src/main.ts` prints the save line (F9); `outImage` still calls `fitForAI` (F24).
-- [ ] 6. Smoke checks F10, F14, N1 in `test/smoke.ts` — proof: `npm run build` exits 0. smoke runs once at the milestone.
-- [ ] 7. FINDER line in `docs/ux/sitemap.md` — proof: `grep -n "img/NNN/" docs/ux/sitemap.md` prints it.
-- [ ] 8. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
+- [x] 1. Write `test/parts.test.ts` (F2, F3, F4, F5, F10, N2) and add it to the `test` script — proof: `npm test` fails on them.
+- [x] 2. Write `src/parts.ts` — proof: the `test/parts.test.ts` blocks pass.
+- [x] 3. Write the F1, F6, F7, F8, F11, F12, F13, F15, F16, F17 blocks in `test/sessions.test.ts` — proof: `npm test` fails on them.
+- [x] 4. `src/sessions.ts`: `entry`, `addShot`, `replaceShot` — proof: those blocks pass.
+- [x] 5. `src/main.ts`: `fitForAI`, `cutParts`, `editor:save` — proof: `npm run typecheck` exits 0; `grep -n "cutParts(out)" src/main.ts` prints the save line (F9); `outImage` still calls `fitForAI` (F24).
+- [x] 6. Smoke checks F10, F14, N1 in `test/smoke.ts` — proof: `npm run build` exits 0. smoke runs once at the milestone.
+- [x] 7. FINDER line in `docs/ux/sitemap.md` — proof: `grep -n "img/NNN/" docs/ux/sitemap.md` prints it.
+- [x] 8. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
 
 Feature 3.2 — one screenshot everywhere:
 
@@ -414,3 +414,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — M2 (owner via the coordinator, 2026-10-25: every top bar professional, even spacing, nothing touching): the capture bar, Settings toolbar and Keyboard Shortcuts sheet use an 8-pt rhythm, 40 × 40 hit targets in the bar, 8 pt around every hairline, keycaps padded 4 × 10 pt (the spec said 3 × 8) with a 16 pt minimum width
 - 2026-10-26 — M2 gate: F123's smoke check failed here for the reason milestone 1's fix round logged (it also required the 60-character name to be cut, which the fact does not ask; the name fits whole at 1100 points). That fix is not on this branch, so the same check is applied: "Open in Markdown App" stays on one line and no other header control is clipped.
 - 2026-10-26 — M2 on main: the Settings Shortcuts tab and the Keyboard Shortcuts window take milestone 1's one keycap style (A18): 11 px, weight 500, system font, tabular digits, the text's colour, no wrap (they had 12 px). They keep the cap's border, radius and 4 × 10 pt padding, which F231 asks for. The capture bar shows no keys. Milestone 2 was rebased onto main after milestone 1 merged: `state.json` keeps both `customColors` and `capture`, `src/tools.ts` exports both sides' helpers, and `npm test` runs both `capture.test` and `colour.test`.
+- 2026-10-25 — M3.1: `src/parts.ts` also exports `fitScale` (the fit-whole scale `fitForAI` used inline) and `MAX_PARTS`, and `src/sessions.ts` exports `partsLine`, so the tests read the words from one place; `nextNumber` also counts a part link (`img/007/…`) in `session.md` as taken; step 8 needed no edit: the ADR and `docs/designs/INDEX.md` already said `accepted`

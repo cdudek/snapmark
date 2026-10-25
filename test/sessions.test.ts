@@ -262,4 +262,117 @@ assert.ok(tryRenameSrc.includes('sessions.nameProblem(wanted)'), 'F124 tryRename
 assert.ok(/'viewer:rename'[\s\S]{0,200}tryRename\(/.test(mainSrc), 'F124 viewer:rename uses it');
 assert.ok(/function renameFromMenu[\s\S]*?tryRename\(/.test(mainSrc), 'F124 renameFromMenu uses it');
 
+// ---------- Milestone 3: a tall screenshot is saved as its one image plus parts ----------
+const tl = sessions.create(root, 'tall');
+const tlImg = path.join(root, tl, 'img');
+const tlMd = () => fs.readFileSync(path.join(root, tl, 'session.md'), 'utf8');
+const bufs = (k: number, tag: string) => Array.from({ length: k }, (_, i) => Buffer.from(`${tag}${i + 1}`));
+const names = (k: number) => Array.from({ length: k }, (_, i) => `${String(i + 1).padStart(2, '0')}.png`);
+const entryOf = (md: string, n: number) => {
+  const from = md.indexOf(`## ${String(n).padStart(3, '0')} · `);
+  const next = md.indexOf('\n## ', from + 1);
+  return md.slice(from, next < 0 ? md.length : next);
+};
+const linksIn = (md: string) => [...md.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)].map((m) => ({ alt: m[1], src: m[2] }));
+for (let i = 1; i <= 6; i++) sessions.addShot(root, tl, Buffer.from(`fit${i}`));
+const tallText = { caption: 'Pricing table overflows.', notes: ['Cut off here', 'Should be bold'], cards: ['Bigger'], text: 'Sign in' };
+assert.strictEqual(sessions.addShot(root, tl, Buffer.from('one'), tallText, bufs(11, 'p')), 7);
+const seven = entryOf(tlMd(), 7);
+
+// F1 tall entry: its parts are img/007/01.png onward, linked in order, one paragraph each
+assert.deepStrictEqual(fs.readdirSync(path.join(tlImg, '007')).sort(), names(11), 'F1 tall entry: the part files');
+assert.strictEqual(fs.readFileSync(path.join(tlImg, '007', '11.png'), 'utf8'), 'p11', 'F1 tall entry: in order');
+assert.deepStrictEqual(
+  linksIn(seven).map((l) => l.src),
+  names(11).map((f) => `img/007/${f}`),
+  'F1 tall entry: linked in order',
+);
+assert.ok(/\.png\)\n\n!\[Screenshot 7, part 2 of 11\]/.test(seven), 'F1 tall entry: one paragraph each');
+assert.strictEqual(fs.readFileSync(path.join(tlImg, '007.png'), 'utf8'), 'one', 'F1 tall entry: the one image beside them');
+
+// F6 parts line: the paragraph after the heading names the number of parts
+const LINE_11 =
+  'This screenshot is tall, so it comes in 11 parts. Read them top to bottom as one image; each part repeats a strip from the bottom of the part before.';
+assert.strictEqual(seven.split('\n\n')[1], LINE_11, 'F6 parts line');
+assert.strictEqual(sessions.partsLine(2), LINE_11.replace('11 parts', '2 parts'), 'F6 parts line with 2');
+
+// F7 alt text: "Screenshot 7, part 1 of 11" to "Screenshot 7, part 11 of 11"
+assert.deepStrictEqual(
+  linksIn(seven).map((l) => l.alt),
+  Array.from({ length: 11 }, (_, i) => `Screenshot 7, part ${i + 1} of 11`),
+  'F7 alt text',
+);
+
+// F8 text once: comment, notes, cards and the recognised text once each, after the last part; only notes count as notes
+const afterParts = seven.indexOf('img/007/11.png');
+for (const s of ['Pricing table overflows.', '1. Cut off here\n2. Should be bold', '- Card: Bigger', 'Text in the screenshot']) {
+  assert.strictEqual(seven.split(s).length, 2, `F8 text once: ${s}`);
+  assert.ok(seven.indexOf(s) > afterParts, `F8 text once, after the last part: ${s}`);
+}
+assert.strictEqual(sessions.entries(tlMd()).find((e) => e.n === 7)!.notes, 2, 'F8 text once: entries() counts the notes only');
+sessions.addShot(root, tl, Buffer.from('one'), { caption: 'No text found' }, bufs(2, 'n'));
+assert.ok(!entryOf(tlMd(), 8).includes('<details>') && entryOf(tlMd(), 8).includes('No text found'), 'F8 text once: tall with no text');
+
+// F11 fits unchanged: without parts, today's entry exactly, and no parts folder
+const fit = sessions.create(root, 'fits');
+sessions.addShot(root, fit, Buffer.from('f'), { caption: 'Fits', notes: ['a'] });
+const fitMd = fs.readFileSync(path.join(root, fit, 'session.md'), 'utf8');
+const fitTime = /^## 001 · (\d\d:\d\d)$/m.exec(fitMd)![1];
+assert.strictEqual(fitMd, `# fits\n\n## 001 · ${fitTime}\n\n![Screenshot 1](img/001.png)\n\nFits\n\n1. a\n`, 'F11 fits unchanged');
+assert.deepStrictEqual(fs.readdirSync(path.join(root, fit, 'img')), ['001.png'], 'F11 fits unchanged: no parts folder');
+
+// F12 counted once: one fitting and one tall screenshot are 2
+const both = sessions.create(root, 'counted');
+sessions.addShot(root, both, Buffer.from('f'));
+sessions.addShot(root, both, Buffer.from('t'), {}, bufs(3, 't'));
+assert.strictEqual(sessions.count(root, both), 2, 'F12 counted once');
+
+// F13 number kept: with img/001.png deleted and img/001/ kept, the next number is 2
+const kept13 = sessions.create(root, 'kept');
+sessions.addShot(root, kept13, Buffer.from('t'), {}, bufs(2, 'k'));
+fs.rmSync(path.join(root, kept13, 'img', '001.png'));
+fs.writeFileSync(path.join(root, kept13, 'session.md'), '# kept\n'); // no link to go by either
+assert.strictEqual(sessions.addShot(root, kept13, Buffer.from('n')), 2, 'F13 number kept');
+
+// F16 failed write: a part that cannot be written leaves session.md, the one image and the old parts as they were
+const broken = [Buffer.from('a'), undefined as unknown as Buffer];
+const snapshot = () =>
+  JSON.stringify([
+    tlMd(),
+    fs.readdirSync(tlImg).sort(),
+    fs.readFileSync(path.join(tlImg, '007.png'), 'utf8'),
+    fs.readdirSync(path.join(tlImg, '007')).map((f) => fs.readFileSync(path.join(tlImg, '007', f), 'utf8')),
+  ]);
+const unchanged = snapshot();
+assert.throws(() => sessions.addShot(root, tl, Buffer.from('x'), {}, broken), 'F16 failed write: Add to Session fails');
+assert.strictEqual(snapshot(), unchanged, 'F16 failed write: Add to Session leaves everything, no new part file');
+assert.throws(() => sessions.replaceShot(root, tl, 7, Buffer.from('y'), {}, broken), 'F16 failed write: Save changes fails');
+assert.strictEqual(snapshot(), unchanged, 'F16 failed write: Save changes leaves everything, no img/007.new/');
+
+// F15 Edit Again: 3 new parts over 11 old leave exactly 01.png to 03.png, linked; no img/007.new/ stays
+assert.ok(sessions.replaceShot(root, tl, 7, Buffer.from('one again'), { caption: 'Again' }, bufs(3, 'q')), 'F15 Edit Again');
+assert.deepStrictEqual(fs.readdirSync(path.join(tlImg, '007')).sort(), names(3), 'F15 Edit Again: only the new parts');
+assert.strictEqual(fs.readFileSync(path.join(tlImg, '007', '01.png'), 'utf8'), 'q1', 'F15 Edit Again: the new parts');
+assert.deepStrictEqual(
+  linksIn(entryOf(tlMd(), 7)).map((l) => l.src),
+  names(3).map((f) => `img/007/${f}`),
+  'F15 Edit Again: the entry links 3',
+);
+assert.ok(entryOf(tlMd(), 7).includes(sessions.partsLine(3)) && !fs.existsSync(path.join(tlImg, '007.new')), 'F15 Edit Again: no .new');
+assert.deepStrictEqual(sessions.shots(root, tl), [1, 2, 3, 4, 5, 6, 7, 8], 'F15 Edit Again keeps the other entries');
+// Saved again so it now fits: the old parts go with it
+assert.ok(sessions.replaceShot(root, tl, 8, Buffer.from('fits now'), {}));
+assert.ok(!fs.existsSync(path.join(tlImg, '008')) && entryOf(tlMd(), 8).includes('![Screenshot 8](img/008.png)'), 'tall → fits');
+
+// F17 old entry: an entry with only the one-image link gets the parts line and parts when saved again as tall
+assert.ok(entryOf(tlMd(), 1).includes('![Screenshot 1](img/001.png)'));
+assert.ok(sessions.replaceShot(root, tl, 1, Buffer.from('whole page'), {}, bufs(2, 'o')), 'F17 old entry');
+const old17 = entryOf(tlMd(), 1);
+assert.ok(
+  old17.includes(sessions.partsLine(2)) &&
+    linksIn(old17).map((l) => l.src).join() === 'img/001/01.png,img/001/02.png' &&
+    fs.readdirSync(path.join(tlImg, '001')).length === 2,
+  'F17 old entry',
+);
+
 console.log('sessions: ok');

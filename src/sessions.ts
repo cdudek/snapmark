@@ -65,27 +65,61 @@ export function nameProblem(wanted: string): string | null {
   return /^\s*\(\d+\)/.test(wanted) ? "A name can't start with a number in brackets, like (2)." : null;
 }
 
-// Writes the flattened PNG and appends an entry to session.md. Returns the entry number.
-export function addShot(root: string, name: string, png: Buffer, text: ShotText = {}): number {
+// Writes the flattened PNG and appends an entry to session.md. Returns the entry number. A tall screenshot's parts
+// (parts.ts) go to img/NNN/ first: when a write fails, what it wrote is removed and session.md is left as it was.
+export function addShot(root: string, name: string, png: Buffer, text: ShotText = {}, parts: Buffer[] = []): number {
   const dir = path.join(root, name);
   const n = nextNumber(dir);
-  fs.writeFileSync(path.join(dir, 'img', `${pad(n)}.png`), png);
-  fs.appendFileSync(path.join(dir, 'session.md'), `\n${entry(n, new Date().toTimeString().slice(0, 5), text)}`);
+  const one = path.join(dir, 'img', `${pad(n)}.png`);
+  const folder = path.join(dir, 'img', pad(n));
+  try {
+    writeParts(folder, parts);
+    fs.writeFileSync(one, png);
+    fs.appendFileSync(path.join(dir, 'session.md'), `\n${entry(n, new Date().toTimeString().slice(0, 5), text, parts.length)}`);
+  } catch (err) {
+    fs.rmSync(folder, { recursive: true, force: true });
+    fs.rmSync(one, { force: true });
+    throw err;
+  }
   return n;
 }
 
-// Number from both session.md and img/ so a deleted image never gets its number reused.
+// img/NNN/01.png onward, in order. Nothing for a screenshot that is not tall.
+function writeParts(folder: string, parts: Buffer[]) {
+  if (!parts.length) return;
+  fs.mkdirSync(folder, { recursive: true });
+  parts.forEach((p, i) => fs.writeFileSync(path.join(folder, `${two(i + 1)}.png`), p));
+}
+
+// Number from both session.md and img/ so a deleted image never gets its number reused: a part link, a parts folder
+// (img/007/) and one left by a stopped save (img/007.new/) hold their number too.
 function nextNumber(dir: string): number {
   const img = path.join(dir, 'img');
   fs.mkdirSync(img, { recursive: true });
   const existing = fs.readFileSync(path.join(dir, 'session.md'), 'utf8');
-  const used = [...[...existing.matchAll(/img\/(\d+)\.png/g)].map((m) => m[1]), ...fs.readdirSync(img)];
+  const used = [...[...existing.matchAll(/img\/(\d+)(?:\.png|\/)/g)].map((m) => m[1]), ...fs.readdirSync(img)];
   return Math.max(0, ...used.map((s) => parseInt(s, 10) || 0)) + 1;
 }
 
-// One session.md entry: heading, image, then the text.
-function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0, text = '' }: ShotText): string {
-  let md = `## ${pad(n)} · ${time}\n\n![Screenshot ${n}](img/${pad(n)}.png)\n`;
+// The paragraph before a tall screenshot's parts, for the agent (spec/microcopy.md).
+export const partsLine = (total: number) =>
+  `This screenshot is tall, so it comes in ${total} parts. Read them top to bottom as one image; each part repeats a strip from the bottom of the part before.`;
+
+// One session.md entry: heading, image, then the text. A tall screenshot (parts ≥ 2) has the parts line and its parts,
+// one paragraph each, in place of the one image; the text follows once, after the last part.
+function entry(
+  n: number,
+  time: string,
+  { caption = '', notes = [], cards = [], moves = 0, text = '' }: ShotText,
+  parts = 0,
+): string {
+  const images = parts
+    ? [
+        partsLine(parts),
+        ...Array.from({ length: parts }, (_, i) => `![Screenshot ${n}, part ${i + 1} of ${parts}](img/${pad(n)}/${two(i + 1)}.png)`),
+      ]
+    : [`![Screenshot ${n}](img/${pad(n)}.png)`];
+  let md = `## ${pad(n)} · ${time}\n\n${images.join('\n\n')}\n`;
   if (caption.trim()) md += `\n${caption.trim()}\n`;
   // A note is Markdown and may span lines (a heading, a list): indent its continuation lines under the
   // number, so they stay inside that numbered item.
@@ -213,15 +247,28 @@ export function saveEdit(root: string, name: string, n: number, original: Buffer
   fs.writeFileSync(f.json, state);
 }
 
-// Replaces entry n's image and text, keeping its number and time. Returns false if the entry is gone.
-export function replaceShot(root: string, name: string, n: number, png: Buffer, text: ShotText): boolean {
+// Replaces entry n's image and text, keeping its number and time. Returns false if the entry is gone. New parts go to
+// img/NNN.new/ first, then the one image and the entry are written, then the folders swap, so the entry never links a
+// missing part; a failed part write removes img/NNN.new/ and leaves the rest as it was. No parts: the old ones go.
+export function replaceShot(root: string, name: string, n: number, png: Buffer, text: ShotText, parts: Buffer[] = []): boolean {
   const mdPath = path.join(root, name, 'session.md');
   const md = fs.readFileSync(mdPath, 'utf8');
   const at = section(md, n);
   if (!at) return false;
   const time = /^## \d+ · (.*)$/m.exec(md.slice(at[0]))![1];
+  const folder = path.join(root, name, 'img', pad(n));
+  const fresh = `${folder}.new`;
+  fs.rmSync(fresh, { recursive: true, force: true }); // left by a save that stopped midway
+  try {
+    writeParts(fresh, parts);
+  } catch (err) {
+    fs.rmSync(fresh, { recursive: true, force: true });
+    throw err;
+  }
   fs.writeFileSync(path.join(root, name, 'img', `${pad(n)}.png`), png);
-  fs.writeFileSync(mdPath, md.slice(0, at[0]) + entry(n, time, text) + (at[1] < md.length ? '\n' + md.slice(at[1]) : ''));
+  fs.writeFileSync(mdPath, md.slice(0, at[0]) + entry(n, time, text, parts.length) + (at[1] < md.length ? '\n' + md.slice(at[1]) : ''));
+  fs.rmSync(folder, { recursive: true, force: true });
+  if (parts.length) fs.renameSync(fresh, folder);
   return true;
 }
 

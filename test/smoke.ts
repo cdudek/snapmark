@@ -33,6 +33,7 @@ const {
   reopen,
   setActive,
   fitForAI,
+  cutParts,
   promptFor,
   sessionMdPath,
   pickArea,
@@ -1726,6 +1727,29 @@ app
       promptItem.enabled === true &&
       copiedText === promptFor(path.join(root, moved)) &&
       notes.map((n) => n.body).join() === `Prompt for ${moved} copied. Paste it into your AI agent.`;
+    // Milestone 3, tall captures: in their own session, so the smoke session's counts stay as they are
+    const tall = sessions.create(root, 'smoke-tall');
+    setActive(tall);
+    fs.writeFileSync(path.join(root, 'tall.png'), big(1280, 8000));
+    const tallEd = openEditor(path.join(root, 'tall.png'), { session: tall });
+    await new Promise<void>((r) => tallEd.webContents.once('did-finish-load', () => r()));
+    await loaded(tallEd);
+    await inWin(tallEd, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true, cancelable: true }));`);
+    for (let i = 0; i < 100 && sessions.count(root, tall) === 0; i++) await sleep(100);
+    await sleep(300);
+    const tallMd = () => fs.readFileSync(path.join(root, tall, 'session.md'), 'utf8');
+    const sizeOf = (f: string) => nativeImage.createFromPath(path.join(root, tall, f)).getSize();
+    const linked = [...tallMd().matchAll(/!\[[^\]]*\]\((img\/[^)]+)\)/g)].map((m) => m[1]);
+    viewer['F10 a saved 1280×8000 capture links parts at least 1000 px wide'] =
+      linked.length === 11 && linked.every((f) => f.startsWith('img/001/') && sizeOf(f).width >= 1000);
+    viewer['F14 the one image is the whole page at 1280 px'] = JSON.stringify(sizeOf('img/001.png')) === '{"width":1280,"height":8000}';
+    const page = big(2560, 20_000);
+    const t0 = performance.now();
+    const cut = cutParts(fitForAI(page));
+    const ms = Math.round(performance.now() - t0);
+    console.log(`N1 scaled and cut 2560 × 20000 into ${cut.length} parts in ${ms} ms`);
+    viewer['N1 a 2560×20000 capture is cut in under 1 s'] = cut.length === 13 && ms < 1000;
+    setActive(moved);
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,
