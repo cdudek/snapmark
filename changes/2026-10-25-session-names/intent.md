@@ -63,7 +63,8 @@ Snapmark has no analytics, so the measure is the owner's own check after install
 
 ## Constraints
 
-- **Must not change:** existing sessions open, sort and export as before; no bulk folder renames; the session.md heading follows the folder name as today.
+- **Must not change:** existing sessions open, sort and export as before. No bulk folder renames.
+- **Heading:** `session.md` starts with the readable display name (owner, plan gate, 2026-10-25).
 - **Deadline:** none
 - **Rules that apply:** owner's words (docs/ux/owner-words.md); menu ADR 2026-09-26 "Menu labels name their object".
 
