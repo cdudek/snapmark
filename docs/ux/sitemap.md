@@ -22,15 +22,14 @@ _(native)_ are macOS's own; _(silent)_ gives the reviewer no sign.
 ENTRY POINTS
 ├── Menu bar icon (corner and dot; tooltip "Snapmark"; click or right-click opens the same menu;
 │   keyboard: only macOS's ⌃F8, mentioned nowhere)
-├── ⌃⇧4  Capture Screenshot     (works in every app; "(shortcut unavailable)" if another app owns it)
-├── ⌃⇧5  Capture Options        (a menu at the menu bar icon: the Capture Options items)
-├── ⌃⇧3  Capture Last Area
-├── ⌃⇧N  New Session
+├── ⌃⇧1  Capture Screenshot     (works in every app; "(shortcut unavailable)" if another app owns it)
+├── ⌃⇧2  New Session            (between the two capture keys)
+├── ⌃⇧3  Capture Same Area
 └── Relaunching Snapmark from Applications or Spotlight: nothing happens (F217)
 
 MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-level rows)
 ├── [Restart to Update to <v>]              only when an update waits ──► all windows close, no question (F212)
-├── Capture Screenshot  ⌃⇧4
+├── Capture Screenshot  ⌃⇧1
 │     └──► macOS capture overlay (native): drag a region, or Space + click a window ──► Editor
 │                                          Esc or a failed capture ──► nothing (silent; the two look alike, F028)
 ├── Capture Same Area   ⌃⇧3   sub-line "1280 × 720" or "First time: drag the area"
@@ -54,7 +53,7 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 ├── ──
 ├── Switch Session ▸  up to 20 sessions by last use, bare names, ✓ current (click = make current)
 │                     · Other Session… ──► folder panel (native); wrong pick: notification afterwards
-├── New Session  ⌃⇧N   ──► notification "New session: 2026-09-28 22.15" (or "… is still empty, so new captures keep going there.")
+├── New Session  ⌃⇧2   ──► notification "New session: 2026-09-28 22.15" (or "… is still empty, so new captures keep going there.")
 ├── ──
 ├── Settings ▸  ✓ Open at Login · Sessions Folder… (sub-line ~/Documents/Snapmark) ──► folder panel; sessions left behind
 │               · Keyboard Shortcuts ──► Keyboard Shortcuts window · Check for Updates… (sub-line "Snapmark 0.9.0") ──► notification
@@ -95,7 +94,7 @@ FIRST LAUNCH      no window, no hint; Screen Recording asked at the first captur
 
 ### Named or reachable two ways
 
-- The editor: ⌃⇧4, ⌃⇧3, ⌃⇧5, Choose New Area…, Reopen Last Discarded, Reopen Discarded…, Edit Again.
+- The editor: ⌃⇧1, ⌃⇧3, Choose New Area…, Reopen Last Discarded, Reopen Discarded…, Edit Again.
 - The session window: Open Session; restoring a removed screenshot.
 - "Discard" (editor) and "Remove from Session" (session window) end in one store; "Reopen" brings back both
   with different results (F223).
@@ -129,7 +128,7 @@ on an open decision are marked _(decision)_; the options are in the guidelines.
 ```
 ENTRY POINTS
 ├── Menu bar icon (shows a brief tick and the count after each Add to session; a key opens it (decision))
-├── Global keys: capture only, on neighbouring keys, changeable (chosen 2026-10-25: ⌃⇧3, ⌃⇧4, ⌃⇧5 mirror macOS's ⇧⌘3, ⇧⌘4, ⇧⌘5)
+├── Global keys: capture only, on neighbouring keys, changeable (decision: ⌃⇧1 + ⌃⇧2 · ⌃⇧1 + ⌃⇧3 with ⌃⇧2 empty · ⌃⇧4 + ⌃⇧5)
 │     ├── Capture Screenshot
 │     └── Capture Same Area
 ├── ⌘/ in any Snapmark window ──► Keyboard Shortcuts

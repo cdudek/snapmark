@@ -6,7 +6,7 @@ One line: title · status · date · tags. Newest first within each type.
 
 ## adr (38)
 
-- [Keys follow macOS: ⌃⇧ plus the screenshot digits, Preview and Finder keys in the windows](2026-10-25-adr-keys-follow-macos.md) · accepted · 2026-10-25 · ux, keys
+- [Keys follow macOS: ⌃⇧ plus the screenshot digits, Preview and Finder keys in the windows](2026-10-25-adr-keys-follow-macos.md) · proposed · 2026-10-25 · ux, keys
 - [Updates](2026-09-26-adr-updates.md) · accepted · 2026-09-26 · ux
 - [Toolbar](2026-09-26-adr-toolbar.md) · accepted · 2026-09-26 · ux
 - ["Open Session" opens Snapmark''s own session viewer](2026-09-26-adr-open-session-opens-snapmark-s-own.md) · open · 2026-09-26 · ux

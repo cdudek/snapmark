@@ -10,7 +10,6 @@ const api: Window['snapmark'] = {
   dirty: (value) => ipcRenderer.send('editor:dirty', value),
   stash: (state) => void ipcRenderer.sendSync('editor:stash', state),
   onSession: (cb) => void ipcRenderer.on('editor:session', (_e, session: string, count: number) => cb(session, count)),
-  onSingleKeys: (cb) => void ipcRenderer.on('editor:single-keys', (_e, on: boolean) => cb(on)),
   viewerInit: () => ipcRenderer.invoke('viewer:init'),
   viewerSave: (from, md) => ipcRenderer.invoke('viewer:save', from, md),
   viewerExternal: () => ipcRenderer.send('viewer:external'),

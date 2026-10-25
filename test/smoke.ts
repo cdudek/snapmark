@@ -83,8 +83,6 @@ app
     const setMd = (el, lines) => { el.querySelector('.ProseMirror').focus(); document.execCommand('selectAll'); lines.forEach((l, i) => { if (i) document.execCommand('insertParagraph'); document.execCommand('insertText', false, l); }); };
     const r = {};
     r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs .md');
-    key('a', { metaKey: true });
-    const emptyRefused = !canvas.getActiveObject(); // F12: ⌘A with no marks does nothing
 
     drag(null, [[.05,.05],[.2,.2]]);                  // box (the starting tool)
     drag('2', [[.22,.05],[.35,.2]]);                  // 2 again -> ellipse
@@ -229,65 +227,6 @@ app
     r['icon cursor for Pen, crosshair for Box'] = penCursor.startsWith('url(') && canvas.defaultCursor === 'crosshair';
     key('c');
 
-    // F10–F14: arrows, ⌘A and a multi-selection, each taken back with ⌘Z so the saved image stays as drawn
-    const dpr = window.devicePixelRatio;
-    const marks = () => canvas.getObjects().filter((o) => o.selectable && !isRedaction(o));
-    const round = (v) => Math.round(v * 100) / 100;
-    const places = () => JSON.stringify(canvas.getObjects().map((o) => [round(o.left), round(o.top)]));
-    canvas.discardActiveObject();
-    const placed0 = places(), nums = markers().map((m) => m.n).join();
-    const box = marks().find((o) => o instanceof Glyph);
-    const [x0, y0, undos0] = [box.left, box.top, undoStack.length];
-    canvas.setActiveObject(box);
-    key('ArrowRight'); key('ArrowDown', { shiftKey: true });
-    const nudged = box.left === x0 + dpr && box.top === y0 + 10 * dpr && undoStack.length === undos0 + 2;
-    key('z', { metaKey: true });
-    const oneBack = box.left === x0 + dpr && box.top === y0;
-    key('z', { metaKey: true });
-    r['F10 arrows nudge'] = nudged && oneBack && places() === placed0;
-    canvas.setActiveObject(box);
-    sw.click(); // the palette walks its swatches with the arrows, and they stop there
-    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
-    r['palette: arrows never also nudge the selected mark'] = box.left === x0 && undoStack.length === undos0;
-    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-
-    canvas.setActiveObject(box);
-    const capText = cap.querySelector('.ProseMirror');
-    capText.focus();
-    const inText = (k, o = {}) => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...o }));
-    inText('ArrowRight'); inText('a', { metaKey: true });
-    r['F11 keys stay in the text'] = box.left === x0 && canvas.getActiveObject() === box;
-    capText.blur();
-
-    // Settings ▸ Single-Key Tools off (WCAG 2.1.4): a plain digit picks no tool, ⌘ with it still does
-    singleKeys = false;
-    const t0 = tool();
-    key('3');
-    const plainIgnored = tool() === t0;
-    key('3', { metaKey: true });
-    r['Single-Key Tools off: only ⌘1–⌘7 pick tools'] = plainIgnored && tool() === 'arrow';
-    singleKeys = true;
-    key('c');
-
-    key('5'); // a drawing tool: ⌘A switches to Select
-    key('a', { metaKey: true });
-    const all = canvas.getActiveObject();
-    r['F12 ⌘A selects all marks'] = emptyRefused && tool() === 'select' && all instanceof fabric.ActiveSelection &&
-      all.getObjects().length === marks().length && !all.getObjects().some(isRedaction) && canvas.getObjects().some(isRedaction);
-
-    const undos1 = undoStack.length;
-    key('ArrowRight');
-    const groupStep = undoStack.length === undos1 + 1;
-    const stored = stateOf().items;
-    r['F14 a selection is dropped before storing'] = !canvas.getActiveObject() &&
-      stored.some((i) => i.t === 'glyph' && round(i.left) === round(x0 + dpr) && round(i.top) === round(y0));
-    key('z', { metaKey: true });
-    const movedBack = places() === placed0;
-    key('a', { metaKey: true }); key('Backspace');
-    const removed = marks().length === 0 && undoStack.length === undos1 + 1;
-    key('z', { metaKey: true });
-    r['F13 a multi-selection is one step'] = groupStep && movedBack && removed && places() === placed0 && markers().map((m) => m.n).join() === nums;
-
     setMd(cap, ['Smoke test caption']); document.activeElement.blur();
     return r;
   })()`;
@@ -355,26 +294,7 @@ app
     await win.webContents.executeJavaScript(`document.getElementById('save-as').click()`);
     for (let i = 0; i < 30 && !(copied && fs.existsSync(savedAs)); i++) await new Promise((r) => setTimeout(r, 100));
     const notAdded = sessions.count(root, 'smoke') === 0;
-    // F9: plain ⌘C outside the text copies the image too, and the marks stay selected
-    const shiftCopied = copied;
-    copied = null;
-    const keptMarks: number = await win.webContents.executeJavaScript(`(() => {
-      document.activeElement.blur();
-      select(canvas.getObjects().filter((o) => o.selectable && !isRedaction(o)));
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));
-      return canvas.getActiveObjects().length;
-    })()`);
-    for (let i = 0; i < 30 && !copied; i++) await new Promise((r) => setTimeout(r, 100));
-    inPage['F9 ⌘C copies the image'] =
-      !!copied && keptMarks > 1 && (await win.webContents.executeJavaScript('canvas.getActiveObjects().length')) === keptMarks;
-    copied = shiftCopied; // the ⇧⌘C check below compares that copy
-    // F7: ⌘S adds to the session as ⌘↵ does, here while the caption has the cursor
-    await win.webContents.executeJavaScript(`(() => {
-      document.querySelector('#caption .ProseMirror').focus();
-      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true, cancelable: true }));
-    })()`);
-    for (let i = 0; i < 30 && sessions.count(root, 'smoke') === 0; i++) await new Promise((r) => setTimeout(r, 100));
-    inPage['F7 ⌘S adds to the session'] = sessions.count(root, 'smoke') === 1;
+    await win.webContents.executeJavaScript(`document.getElementById('save').click()`);
     await new Promise((r) => setTimeout(r, 800));
     const md = fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8');
     const out = path.join(root, 'smoke', 'img', '001.png');
@@ -429,24 +349,6 @@ app
     viewer['the removed screenshot is kept in .discarded'] =
       !smokeMd().includes('Second shot') &&
       fs.readdirSync(path.join(root, '.discarded')).some((d) => d.endsWith(' · smoke · screenshot 2'));
-    // Finder's keys in the session window, as real key events (F17, F16; F18 opens Edit Again below)
-    const keyIn = (keyCode: string, modifiers: Electron.KeyboardInputEvent['modifiers'] = []) => {
-      view.webContents.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
-      view.webContents.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
-    };
-    const thumbs = () => inView(`return document.querySelectorAll('#grid .thumb').length`);
-    await inView(`document.activeElement.blur();`);
-    keyIn('z', ['meta']);
-    const putBack = await waitFor(`document.getElementById('count').textContent === '2 of 2' && !document.getElementById('shots').hidden`);
-    keyIn('z', ['meta']); // once only
-    await new Promise((r) => setTimeout(r, 300));
-    viewer['F17 ⌘Z puts it back'] = putBack && smokeMd().includes('Second shot') && (await thumbs()) === 2;
-    keyIn('Backspace', ['meta']);
-    const removedByKey = (await waitFor(`document.getElementById('count').textContent === '1 of 1'`)) && !smokeMd().includes('Second shot');
-    keyIn('Escape');
-    keyIn('Backspace', ['meta']); // the grid has no screenshot shown large
-    await new Promise((r) => setTimeout(r, 300));
-    viewer['F16 ⌘⌫ removes the open screenshot'] = removedByKey && (await thumbs()) === 1;
     // Edit Again: the saved screenshot reopens with its marks, and saving replaces the entry
     const nextWindow = async (before: BrowserWindow[]) => {
       for (let i = 0; i < 50; i++) {
@@ -465,11 +367,8 @@ app
     const counts = `return JSON.stringify([markers().length, cards().length, canvas.getObjects().filter((o) => links.has(o)).length, captionField.value(), markers().map(noteOf)[0]])`;
     viewer['Edit Again is offered for a saved screenshot'] = await waitFor(`!document.querySelector('#grid .thumb .edit').hidden`);
     let windows = BrowserWindow.getAllWindows();
-    // F18: ⌘O on the screenshot shown large is Edit Again
-    await inView(`document.querySelector('#grid .thumb .pic').click();`);
-    keyIn('o', ['meta']);
+    await inView(`document.querySelector('#grid .thumb .edit').click();`);
     const again = await nextWindow(windows);
-    viewer['F18 ⌘O edits again'] = true; // nextWindow throws when no editor opens
     await new Promise<void>((r) => again.webContents.once('did-finish-load', () => r()));
     await loaded(again);
     const restored = JSON.parse(await inWin(again, counts));
@@ -508,14 +407,6 @@ app
       (await waitFor(`document.getElementById('tab-discarded').hidden && document.querySelectorAll('#grid .thumb').length === 2`)) &&
       smokeMd().includes('Second shot');
     viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke · 2 screenshots');
-    // F15: ↩ with nothing focused starts renaming, as in Finder; Esc cancels it
-    await inView(`document.activeElement.blur();`);
-    keyIn('Return');
-    viewer['F15 ↩ renames'] = await waitFor(
-      `getComputedStyle(document.getElementById('rename')).display !== 'none' && document.activeElement === document.getElementById('rename')`,
-    );
-    keyIn('Escape');
-    await new Promise((r) => setTimeout(r, 200));
     // Rename in place: ↩ saves (the folder moves, the window follows), a taken name keeps the field, Esc cancels
     sessions.create(root, 'taken');
     const rename = async (to: string, key: 'Return' | 'Escape') => {
