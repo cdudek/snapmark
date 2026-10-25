@@ -6,7 +6,7 @@ One line: title · status · date · tags. Newest first within each type.
 
 ## adr (38)
 
-- [Session folders keep their date stamp; screens show a readable name](2026-10-25-adr-session-folders-keep-their-date-stamp.md) · proposed · 2026-10-25 · ux, sessions, menu
+- [Session folders keep their date stamp; screens show a readable name](2026-10-25-adr-session-folders-keep-their-date-stamp.md) · accepted · 2026-10-25 · ux, sessions, menu
 - [Updates](2026-09-26-adr-updates.md) · accepted · 2026-09-26 · ux
 - [Toolbar](2026-09-26-adr-toolbar.md) · accepted · 2026-09-26 · ux
 - ["Open Session" opens Snapmark''s own session viewer](2026-09-26-adr-open-session-opens-snapmark-s-own.md) · open · 2026-09-26 · ux

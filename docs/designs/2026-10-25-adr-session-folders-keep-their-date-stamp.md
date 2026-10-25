@@ -2,7 +2,7 @@
 id: 2026-10-25-adr-session-folders-keep-their-date-stamp
 title: 'Session folders keep their date stamp; screens show a readable name'
 type: adr
-status: proposed
+status: accepted
 created: 2026-10-25
 supersedes: []
 superseded_by: []
@@ -12,7 +12,7 @@ tags: [ux, sessions, menu]
 
 # Session folders keep their date stamp; screens show a readable name
 
-Status `proposed` until the owner approves the plan of `changes/2026-10-25-session-names`.
+Accepted on 2026-10-25 with the plan of `changes/2026-10-25-session-names`.
 
 ## Context
 
@@ -26,7 +26,7 @@ A session is a folder under the sessions folder. Snapmark names a new one after 
 4. **Rename never changes the stamp.** The stamp is `YYYY-MM-DD HH.MM` with its same-minute suffix ` (2)` when there is one, so `2026-10-24 23.38 (2)` renamed becomes `2026-10-24 23.38 (2) Ledgerly Q4 review`. Typed text that starts with a date is part of the name. An empty name on a stamped session gives the date-only session back.
 5. **Screens show the display name:** `2026-10-24, 23:38` for an unnamed session, `2026-10-24 · Ledgerly Q4 review` for a named one, `2026-10-24, 23:38 (2)` for a same-minute twin.
 6. **A folder with no stamp** (renamed before this change) shows its folder name, with no date. A folder date is not used: syncing through iCloud Drive or Google Drive resets it, and a wrong date is worse than none.
-7. **Files keep the folder name:** `session.md`'s first line, Save As…, PDF and ZIP file names. macOS shows a colon in a file name as "/", so "23:38" never goes into one. The PDF's rendered first heading shows the display name.
+7. **File names keep the folder name:** Save As…, PDF and ZIP. `session.md`'s first line is the display name (F19). macOS shows a colon in a file name as "/", so "23:38" never goes into one. The PDF's rendered first heading shows the display name.
 
 ## Rejected
 
@@ -41,8 +41,8 @@ A session is a folder under the sessions folder. Snapmark names a new one after 
 - Two sessions of one day given the same name read the same in the menu ("2026-10-24 · Ledgerly Q4 review"); their folders differ by time. Accepted: rare, and the owner chose the names.
 - The glossary proposal's "28 Sep 14:32" row and the guideline proposal's "twenty recent sessions plus Other Session…" are stale; the next `omr-ux:guidelines` round takes this ADR.
 
-| Date       | Decision                                                                                  | Answer (quoted)                                                      | By whom   |
-| ---------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------- |
-| 2026-10-25 | Date format "2026-10-24, 23:38"                                                           | intent.md, Decisions at confirmation 1                               | the owner |
-| 2026-10-25 | Renaming keeps the timestamp                                                              | "Write down that renaming a session would still keep the timestamp." | the owner |
-| 2026-10-25 | Folder form `<stamp> <name>`, stamp-less folders show no date, files keep the folder name | pending: plan gate of changes/2026-10-25-session-names               | the owner |
+| Date       | Decision                                                                                                | Answer (quoted)                                                      | By whom   |
+| ---------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------- |
+| 2026-10-25 | Date format "2026-10-24, 23:38"                                                                         | intent.md, Decisions at confirmation 1                               | the owner |
+| 2026-10-25 | Renaming keeps the timestamp                                                                            | "Write down that renaming a session would still keep the timestamp." | the owner |
+| 2026-10-25 | Folder form `<stamp> <name>`, stamp-less folders show no date, `session.md` heading is the display name | plan approved at the gate of changes/2026-10-25-session-names        | the owner |

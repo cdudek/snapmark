@@ -86,12 +86,12 @@ Feature 1 (`session-names/1-older-sessions`):
 
 Feature 2 (`session-names/2-readable-dates`, cut after feature 1 merges):
 
-- [ ] 6. Write the F1, F6, F7, F10, F11, F12, F19, N1, N2 blocks in `test/sessions.test.ts` and F5 in `test/exporter.test.ts` — proof: `npm test` fails on them.
-- [ ] 7. `src/sessions.ts`: stamp regex, `shortName`, `namePart`, `renamedTo`, `rename`, `saveAsName`, `whenLabel` — proof: the unit blocks pass.
-- [ ] 8. `src/exporter.ts` heading — proof: F5 passes.
-- [ ] 9. `src/shared.d.ts`, `src/main.ts`, `src/viewer.ts`, `src/viewer.html` — proof: `npm run typecheck` exits 0; `grep -n "notify(" src/main.ts` shows every session name through `sessions.shortName` (F4).
-- [ ] 10. Smoke checks F2, F3, F8, F9 in `test/smoke.ts` — proof: `npm run build` exits 0. CI's smoke run passes them on the PR; never run locally.
-- [ ] 11. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
+- [x] 6. Write the F1, F6, F7, F10, F11, F12, F19, N1, N2 blocks in `test/sessions.test.ts` and F5 in `test/exporter.test.ts` — proof: `npm test` fails on them.
+- [x] 7. `src/sessions.ts`: stamp regex, `shortName`, `namePart`, `renamedTo`, `rename`, `saveAsName`, `whenLabel` — proof: the unit blocks pass.
+- [x] 8. `src/exporter.ts` heading — proof: F5 passes.
+- [x] 9. `src/shared.d.ts`, `src/main.ts`, `src/viewer.ts`, `src/viewer.html` — proof: `npm run typecheck` exits 0; `grep -n "notify(" src/main.ts` shows every session name through `sessions.shortName` (F4).
+- [x] 10. Smoke checks F2, F3, F8, F9 in `test/smoke.ts` — proof: `npm run build` exits 0. CI's smoke run passes them on the PR; never run locally.
+- [x] 11. ADR to `accepted`, `python3 scripts/design_index.py write` — proof: `python3 scripts/design_index.py check` exits 0.
 - [ ] 12. `python3 scripts/verify_gate.py feature 2026-10-25-session-names` — proof: ends `VERIFY PASS`.
 - [ ] 13. Close each subagent once its report is in — proof: `ListAgents` lists none before the report to the owner.
 
@@ -155,3 +155,7 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — Feature 1 UX review found no Critical or High. Fixed: a committed `.pyc`, two stale "Other Session…" labels. The one-session Low is a beads follow-up.
 - 2026-10-25 — Step 13 added: subagents are closed when their report is in (owner, retro of the mac-shortcuts change).
 - 2026-10-25 — Retro: a Critical or High is never deferred without asking first. Interior branches now wait for CI before auto-merge.
+- 2026-10-25 — The exporter row said `session.md` stays untouched; F19 changed that. `create()`, `rename()` and a recreated `session.md` write the display name as heading.
+- 2026-10-25 — `sessions.renamedTo()` gives the target folder, so the session window and the menu dialog check it before renaming.
+- 2026-10-25 — CI smoke failed F3: `editor.html`'s `<title>` replaced the editor window title on load, so it never showed the session. The editor window now keeps the title main gives it.
+- 2026-10-25 — Feature 2 UX review: 0 Critical, 4 High (all older than this PR). Fixed: `lang="en"` on the editor, session window and PDF HTML; an `--error` token for the rename error (4.5:1); `aria-describedby` on the rename field. Also fixed F005 (ADR rule 7), F009 and F024 (the PDF replaces only a leading heading, `$` in a name stays). Mediums and Lows went to snap-bmr.14.3.

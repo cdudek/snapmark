@@ -14,7 +14,7 @@
   const views = { doc: $('doc-page'), grid: $('grid-view'), shot: shotsEl, discarded: $('discarded') };
   type View = keyof typeof views;
 
-  let data: ViewerInit = { session: '', base: '', md: '', shots: [], discarded: [] };
+  let data: ViewerInit = { session: '', label: '', name: '', stamped: false, base: '', md: '', shots: [], discarded: [] };
   let field: import('./md-notes').MdField | null = null;
   let mounted = { md: '' }; // the session.md text the field was mounted with or last saved
   let edited = false; // the owner typed since the last load
@@ -32,8 +32,8 @@
   async function load(d: ViewerInit) {
     data = d;
     version++;
-    document.title = `${d.session} — Snapmark`;
-    $('title').textContent = d.session;
+    document.title = `${d.label} — Snapmark`;
+    $('title').textContent = d.label;
     $('total').textContent = d.shots.length ? `· ${plural(d.shots.length, 'screenshot')}` : '';
     $('tab-discarded').hidden = !d.discarded.length;
     $('discarded-count').textContent = String(d.discarded.length);
@@ -144,8 +144,8 @@
 
   // Rename in place: the title becomes a field; ↩ or clicking away saves, Esc cancels. A refused name keeps the field.
   function startRename() {
-    input.value = data.session;
-    hint.textContent = '↩ to save · Esc to cancel';
+    input.value = data.name; // only the name: the date stays in front either way
+    hint.textContent = data.stamped ? 'The date stays · ↩ to save · Esc to cancel' : '↩ to save · Esc to cancel';
     hint.classList.remove('error');
     nameEl.classList.add('editing');
     input.focus();
