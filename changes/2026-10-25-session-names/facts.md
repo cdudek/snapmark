@@ -28,6 +28,7 @@ The system is Snapmark. "Display name" and "stamp" are defined in [spec/ia.md](s
 - [ ] **F4** (A2) Every notification and dialog that names a session shall use its display name. Screen/state: notifications, Clear Sessions Older Than 60 Days…. Tag: manual, verifier.
 - [ ] **F5** (A2) The PDF export shall show the display name as its first heading. Screen/state: PDF export. Tag: `test/exporter.test.ts` › "F5 PDF heading".
 - [ ] **F6** (A2) Where a discarded item is 7 or more days old, the Discarded tab shall label it "2026-10-18, 09:41". Screen/state: session window, Discarded tab. Tag: `test/sessions.test.ts` › "F6 whenLabel".
+- [ ] **F19** (A2) The first heading of `session.md` shall be the session's display name, written when the session is created and when it is renamed. Screen/state: session.md, Document tab. Tag: `test/sessions.test.ts` › "F19 heading". (Owner at the plan gate, 2026-10-25: "Readable name".)
 - [ ] **N1** (A2) The system shall never write a colon into a file or folder name. Tag: `test/sessions.test.ts` › "N1 no colon".
 
 <details>
@@ -37,7 +38,8 @@ The system is Snapmark. "Display name" and "stamp" are defined in [spec/ia.md](s
 - F2 — smoke: a session made as `2026-10-24 23.38` opens with header "2026-10-24, 23:38" and title "2026-10-24, 23:38 — Snapmark".
 - F3 — smoke: the editor on that session reads "2026-10-24, 23:38" and its title "Snapmark — 2026-10-24, 23:38".
 - F4 — manual: the `omr-dev:verifier` reads every `notify(` and `showMessageBox` in `src/main.ts`; each session name goes through `sessions.shortName`.
-- F5 — `test/exporter.test.ts`: `sessionHtml` of `2026-10-24 23.38 Ledgerly Q4 review` has `<h1>2026-10-24 · Ledgerly Q4 review</h1>`; `session.md` still starts `# 2026-10-24 23.38 Ledgerly Q4 review`.
+- F5 — `test/exporter.test.ts`: `sessionHtml` of `2026-10-24 23.38 Ledgerly Q4 review` has `<h1>2026-10-24 · Ledgerly Q4 review</h1>`.
+- F19 — `test/sessions.test.ts`: `create(root)` at 2026-10-24 23:38 writes `# 2026-10-24, 23:38`. After `rename(…, 'Ledgerly Q4 review')` the first line is `# 2026-10-24 · Ledgerly Q4 review`. The rest of `session.md` is unchanged.
 - F6 — `test/sessions.test.ts`: `whenLabel` 7 days back reads "2026-10-18, 09:41"; Today, Yesterday and weekday labels unchanged.
 - N1 — `test/sessions.test.ts`: names from `create()`, `rename()` and `saveAsName()` contain no ":"; Save As… suggests "2026-10-24 23.38 001.png".
 
@@ -108,11 +110,12 @@ Scenario: a same-minute session renamed with a typed date — proves F7, F10
 ## Out of scope
 
 - A5 — "put this in the backlog for the milestones": a process request, done in Stage 1 (Beads snap-bmr.14, milestone `session-names`).
-- Changing `session.md`'s first line, or PDF and ZIP file names: they keep the folder name (intent constraint; no colon in file names).
+- PDF and ZIP file names: they keep the folder name (no colon in file names).
+- Rewriting the heading of `session.md` in sessions that are not renamed: only create and rename write it (N2).
 - Bulk-renaming old folders, or inventing a date for folders with no stamp (ADR 2026-10-25).
 - Sorting by anything but last use, a search in the menu, and counts in Switch Session rows.
 - The window title order of the editor and the session window.
 
 ## Open questions
 
-None open. Two answers wait for the owner at the plan gate, with recommendations in [spec/validation.md](spec/validation.md). First: `session.md` keeps its folder-name heading. Second: stamp-less sessions show no date.
+None open. The owner answered both on 2026-10-25. The heading is the readable name (F19). Stamp-less sessions show no date (F12).

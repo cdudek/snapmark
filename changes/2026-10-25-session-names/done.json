@@ -44,6 +44,7 @@
     { "id": "F10", "tag": "test/sessions.test.ts › F10 typed date", "screen": "session window", "states": ["rename field saved"] },
     { "id": "F11", "tag": "test/sessions.test.ts › F11 empty name", "screen": "session window", "states": ["name removed"] },
     { "id": "F12", "tag": "test/sessions.test.ts › F12 no stamp", "screen": "every screen", "states": ["legacy session"] },
+    { "id": "F19", "tag": "test/sessions.test.ts › F19 heading", "screen": "session.md", "states": ["created", "renamed"] },
     { "id": "N2", "tag": "test/sessions.test.ts › N2 old folders untouched", "screen": "none", "states": [] },
     { "id": "F13", "tag": "test/menu.test.ts › F13 ten rows", "screen": "menu ▸ Switch Session", "states": ["default"] },
     { "id": "F14", "tag": "test/menu.test.ts › F14 current listed", "screen": "menu ▸ Switch Session", "states": ["current not recent"] },
