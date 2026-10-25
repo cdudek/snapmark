@@ -2,7 +2,7 @@
 id: 2026-10-25-adr-keys-follow-macos
 title: 'Keys follow macOS: ⌃⇧ plus the screenshot digits, Preview and Finder keys in the windows'
 type: adr
-status: proposed
+status: accepted
 created: 2026-10-25
 supersedes: []
 superseded_by: []

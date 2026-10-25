@@ -2,8 +2,8 @@
 type: validation
 change: 2026-10-25-mac-shortcuts
 verdict: ready
-status: draft
-reviewed_by: null
+status: approved
+reviewed_by: Calvin Dudek
 approved_at: null
 created: 2026-10-25
 ---

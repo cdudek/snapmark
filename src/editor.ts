@@ -418,13 +418,15 @@ function closePalette(refocus = true) {
 
 swatchBtn.onclick = () => (paletteEl.hidden ? openPalette() : closePalette());
 colorEl.oninput = () => setColor(colorEl.value);
-// Arrows walk the two rows of five. Esc stops here: the editor's own Esc would step back a tool or close the window.
+// Arrows walk the two rows of five and stop here, so they never also nudge the selected mark. Esc stops here too:
+// the editor's own Esc would step back a tool or close the window.
 paletteEl.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') return void (e.stopPropagation(), closePalette());
   const step = ({ ArrowLeft: -1, ArrowRight: 1, ArrowUp: -5, ArrowDown: 5 } as Record<string, number>)[e.key];
   const i = presetBtns.indexOf(document.activeElement as HTMLButtonElement);
   if (!step || i < 0) return;
   e.preventDefault();
+  e.stopPropagation();
   presetBtns[(i + step + presetBtns.length) % presetBtns.length].focus();
 });
 document.addEventListener('mousedown', (e) => {
@@ -639,17 +641,83 @@ function remove(obj: FObject) {
   });
 }
 
+// Several marks as one step (⌘A, then ⌫). Undo puts each back at its old place in the stack, so references keep
+// their numbers.
+function removeAll(objs: FObject[]) {
+  canvas.discardActiveObject();
+  const all = objs.flatMap((o) => [...(links.get(o) ?? []), o]);
+  const at = all.map((o) => [canvas.getObjects().indexOf(o), o] as const).sort(([a], [b]) => a - b);
+  canvas.remove(...all);
+  record({
+    undo: () => {
+      for (const [i, o] of at) canvas.insertAt(i, o);
+      objs.forEach(relink);
+    },
+    redo: () => canvas.remove(...all),
+  });
+}
+
+// Moves marks by (dx, dy) image pixels, as one step. Never applied inside a multi-selection: undo and redo drop it first.
+const shift = (objs: FObject[], dx: number, dy: number) => () => {
+  for (const o of objs) {
+    o.set({ left: o.left + dx, top: o.top + dy });
+    o.setCoords();
+    relink(o);
+  }
+};
+
+const isRedaction = (o: FObject) => o instanceof fabric.FabricImage && !links.has(o); // pinned: moving it uncovers what it hides
+
+// One mark selected normally; several as a selection that moves and deletes but never resizes or rotates, since undo
+// records a move only.
+function select(objs: FObject[]) {
+  if (!objs.length) return;
+  canvas.setActiveObject(objs.length === 1 ? objs[0] : new fabric.ActiveSelection(objs, { canvas, hasControls: false }));
+  canvas.requestRenderAll();
+}
+
+// ⌘A: every mark but redactions, on the Select tool.
+function selectAll() {
+  const marks = canvas.getObjects().filter((o) => o.selectable && !isRedaction(o));
+  if (!marks.length) return;
+  if (tool() !== 'select') {
+    group = GROUPS.findIndex((g) => g.key === 'c');
+    applyTool();
+  }
+  select(marks);
+}
+
+// Arrow keys: the selected marks by 1 point (⇧: 10), one undo step per press.
+function nudge(dx: number, dy: number) {
+  const active = canvas.getActiveObject();
+  if (!active || isRedaction(active)) return;
+  const objs = canvas.getActiveObjects();
+  if (active instanceof fabric.ActiveSelection) {
+    active.set({ left: active.left + dx, top: active.top + dy });
+    active.setCoords();
+    objs.forEach(relink);
+  } else shift(objs, dx, dy)();
+  record({ undo: shift(objs, -dx, -dy), redo: shift(objs, dx, dy) });
+}
+
 let before: Record<string, unknown> | null = null;
 // Position and size only: a Line's x1..y2 go stale once it is moved, so they are never restored.
 const PROPS = ['left', 'top', 'width', 'height', 'scaleX', 'scaleY', 'angle'] as const;
 const place = (obj: object) => Object.fromEntries(PROPS.filter((k) => k in obj).map((k) => [k, (obj as Record<string, unknown>)[k]]));
 canvas.on('before:transform', ({ transform }) => (before = place(transform.target)));
+// A cut piece's arrow follows it inside a multi-selection too, where the piece's own 'moving' never fires.
+canvas.on('object:moving', ({ target }) => target instanceof fabric.ActiveSelection && target.getObjects().forEach(relink));
 canvas.on('object:modified', ({ target }) => {
   if (target instanceof Glyph) {
     target.set({ width: target.width * target.scaleX, height: target.height * target.scaleY, scaleX: 1, scaleY: 1 });
     target.setCoords();
   }
-  if (before) {
+  if (before && target instanceof fabric.ActiveSelection) {
+    // A multi-selection only moves: one step that moves each of its marks back by the same distance.
+    const [dx, dy] = [target.left - (before.left as number), target.top - (before.top as number)];
+    const objs = target.getObjects();
+    record({ undo: shift(objs, -dx, -dy), redo: shift(objs, dx, dy) });
+  } else if (before) {
     const put = (p: Record<string, unknown>) => () => {
       target.set(p as Partial<FObject>);
       target.setCoords();
@@ -679,7 +747,9 @@ canvas.on('text:editing:exited', ({ target }) => {
   }
 });
 
+// Undo and redo drop the selection first: inside a multi-selection Fabric keeps its marks' positions relative to it.
 function undo() {
+  canvas.discardActiveObject();
   const step = undoStack.pop();
   step?.undo();
   if (step) redoStack.push(step);
@@ -688,6 +758,7 @@ function undo() {
 }
 
 function redo() {
+  canvas.discardActiveObject();
   const step = redoStack.pop();
   step?.redo();
   if (step) undoStack.push(step);
@@ -771,6 +842,8 @@ function itemOf(o: FObject): Item | null {
 }
 
 function stateOf(): EditState {
+  // A multi-selection holds its marks' positions relative to itself; dropping it puts them back on the image.
+  if (canvas.getActiveObject() instanceof fabric.ActiveSelection) canvas.discardActiveObject();
   const extras = new Set(canvas.getObjects().flatMap((o) => links.get(o) ?? [])); // a cut's outline and arrow
   const items = canvas
     .getObjects()
@@ -913,6 +986,7 @@ function beautified(shot: HTMLCanvasElement): HTMLCanvasElement {
 }
 
 async function save() {
+  if (saving || !background) return; // ⌘S, ⌘↵ and the button: one save, and only once the image is there
   saveBtn.disabled = true;
   saving = true;
   await redacting;
@@ -939,7 +1013,12 @@ window.addEventListener('beforeunload', () => {
   if (!saving && background) window.snapmark.stash(stateOf());
 });
 
-const copyImage = () => void (background && redacting.then(() => window.snapmark.copyImage(flatten())));
+const copyImage = async () => {
+  if (!background) return;
+  await redacting;
+  window.snapmark.copyImage(flatten());
+};
+const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 const saveImageAs = () => void (background && redacting.then(() => window.snapmark.saveImageAs(flatten())));
 
 document.addEventListener('keydown', (e) => {
@@ -950,12 +1029,19 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     return (k === 'c' ? copyImage : saveImageAs)();
   }
+  // ⌘S, as in Preview: add to the session; one-shot mode has no session, so Save As…. Also while typing.
+  if (e.metaKey && !e.shiftKey && e.key === 's') {
+    e.preventDefault();
+    return oneShot ? saveImageAs() : void save();
+  }
   if (e.metaKey && e.key === 'w') return window.close();
   const typing = e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable);
-  // One-shot: plain ⌘C copies the image too, unless text has the cursor (interaction guidelines, Copy and paste).
-  if (oneShot && e.metaKey && !e.shiftKey && e.key === 'c' && !typing) {
+  const field = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement; // a slider or the colour well
+  // ⌘C copies the image, unless text has the cursor (interaction guidelines, Copy and paste). The selection stays.
+  if (e.metaKey && !e.shiftKey && e.key === 'c' && !typing) {
     e.preventDefault();
-    return copyImage();
+    const kept = canvas.getActiveObjects();
+    return void copyImage().then(() => select(kept));
   }
   // ⌘1–⌘7 pick a tool from anywhere, also while a note or card has the cursor, where the plain digit types.
   const numbered = e.metaKey && /^\d$/.test(e.key) ? GROUPS.findIndex((x) => x.key === e.key) : -1;
@@ -970,6 +1056,17 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   const active = canvas.getActiveObject();
+  // A slider or the colour well keeps its own arrows and ⌘A.
+  if (e.metaKey && e.key === 'a' && !field) {
+    e.preventDefault(); // nor the Edit menu's Select All
+    return selectAll();
+  }
+  const arrow = ARROWS[e.key];
+  if (arrow && active && !field) {
+    e.preventDefault(); // nor scroll a tall screenshot
+    const by = (e.shiftKey ? 10 : 1) * window.devicePixelRatio; // points; the canvas is at device resolution
+    return nudge(arrow[0] * by, arrow[1] * by);
+  }
   // Esc steps back one level: a text field (above), then the selection, then the tool itself.
   if (e.key === 'Escape') {
     if (active) return void (canvas.discardActiveObject(), canvas.requestRenderAll());
@@ -980,7 +1077,8 @@ document.addEventListener('keydown', (e) => {
     }
     return window.close(); // one step past Select: close, recoverable from Discarded
   }
-  if ((e.key === 'Backspace' || e.key === 'Delete') && active) return remove(active);
+  if ((e.key === 'Backspace' || e.key === 'Delete') && active)
+    return active instanceof fabric.ActiveSelection ? removeAll(canvas.getActiveObjects()) : remove(active);
   const g = GROUPS.findIndex((x) => x.key === e.key.toLowerCase());
   if (!e.metaKey && g >= 0) pickGroup(g);
 });

@@ -4,6 +4,7 @@ node_modules/
 .DS_Store
 dist/
 release/
+__pycache__/
 
 # the SDLC hooks are the repo's, not the laptop's
 !.claude/
