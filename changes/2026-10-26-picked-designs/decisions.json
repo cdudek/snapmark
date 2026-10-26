@@ -1,0 +1,18 @@
+{
+  "size": "L",
+  "kind": "feature",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "new",
+    "slug": "picked-designs"
+  },
+  "milestones": [
+    { "n": 1, "slug": "picked-designs-1", "title": "Capture bar, keys and countdown" },
+    { "n": 2, "slug": "picked-designs-2", "title": "Editor destination, notes, hex field, session window size" },
+    { "n": 3, "slug": "picked-designs-3", "title": "GIF recording with key frames" },
+    { "n": 4, "slug": "picked-designs-4", "title": "Capture Scrolling scrolls by itself" }
+  ],
+  "milestoneNote": "2026-10-26: ticket snap-bmr.24, kind feature, size L and several milestones from the owner's 1.1 dialog. Project none: milestones go straight to main (owner rule, release per milestone). Stacked on milestone/monorepo-private-1 because the app moved into snapmark-app/ there; rebase onto main when PR #97 merges.",
+  "ticket": "snap-bmr.24",
+  "design": "none"
+}
