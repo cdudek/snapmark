@@ -204,7 +204,7 @@ app
     // A15: the hex field takes a code with or without "#", 3 or 6 digits, any case, spaces around it; Enter or leaving it
     // applies it; a bad code says so and changes nothing, and keys typed there never pick a tool
     const hex = document.getElementById('hex'), hexErr = document.getElementById('hex-error');
-    const typeHex = (v, enter) => { hex.focus(); hex.value = v; hex.dispatchEvent(new Event('input', { bubbles: true })); if (enter) hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); else hex.blur(); };
+    const typeHex = (v, enter) => { hex.focus(); hex.value = v; hex.dispatchEvent(new Event('input', { bubbles: true })); if (enter) hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); else { hex.blur(); hex.dispatchEvent(new FocusEvent('blur')); } };
     const customRow = () => [...document.querySelectorAll('#customs button')].map((b) => b.dataset.color).join();
     sw.click();
     const shown = hex.value === 'e5484d' && document.querySelector('#palette .hex').textContent.trim().startsWith('#') && customRow() === '' && document.querySelectorAll('#customs .slot').length === 5;
