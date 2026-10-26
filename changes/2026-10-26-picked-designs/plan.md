@@ -52,7 +52,7 @@ After it, the owner records up to 30 s, marks the key frames, and the session ho
 
 | #   | Feature                                                                    | Facts         | Branch                       | State |
 | --- | -------------------------------------------------------------------------- | ------------- | ---------------------------- | ----- |
-| 3.1 | Spike: frames from `desktopCapturer` at 15 fps, a GIF from ImageIO via JXA | none (proof)  | `milestone/picked-designs-3` | todo  |
+| 3.1 | Spike: frames from `desktopCapturer` at 15 fps, a GIF from ImageIO via JXA | none (proof)  | `milestone/picked-designs-3` | done  |
 | 3.2 | Record mode, Frame Rate, picker keep, recording control, stop and cancel   | F59–F68, F81  | `milestone/picked-designs-3` | todo  |
 | 3.3 | Key frames and GIF timing (pure functions)                                 | F69, F70, F77 | `milestone/picked-designs-3` | todo  |
 | 3.4 | Recording editor and frame data                                            | F71–F76       | `milestone/picked-designs-3` | todo  |
@@ -200,7 +200,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 ### Milestone 3
 
-- [ ] 10. Spike: 15 fps frames from a test page, and a 3-frame GIF with set delays. Proof: `test/spike-gif.ts` reads back three frames and their delays.
+- [x] 10. Spike: 15 fps frames from a test page, and a 3-frame GIF with set delays. Proof: `test/spike-gif.ts` reads back three frames and their delays.
 - [ ] 11. Record mode, panel, stop and cancel. Proof: `@F59`–`@F68`, `@F81` pass.
 - [ ] 12. Key frames and GIF timing. Proof: `@F69`, `@F70`, `@F77` pass.
 - [ ] 13. Recording editor and frame data. Proof: `@F71`–`@F76` pass.
@@ -294,3 +294,6 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/smoke.ts`: the pop-up is greyed by `aria-disabled`, inside `#dest-wrap`, with its reason as `aria-describedby` (`@F36`, `@F45`, F115).
   - `test/smoke.ts`: the move and hex errors are `role="status"` (`@F44`, `@F56`).
   - `test/smoke.ts`: A15 and `@F56` keep the hex error while the value is bad, and clear it once valid, as interaction.md says.
+- 3.1: the GIF half is proven. JXA bridges plain objects to ImageIO's CF dictionaries with no extra work, and `test/spike-gif.ts` reads back 3 frames, delays 0.1, 0.5 and 1 s, and LoopCount 0. No dependency is needed.
+  - ImageIO labels the file `GIF87a` though it writes the 89a delay and loop blocks. `gif.ts` rewrites the label to `GIF89a`.
+  - The 15 fps `desktopCapturer` half is not proven locally, since no Electron runs here. The milestone 3 smoke proves it at the gate.
