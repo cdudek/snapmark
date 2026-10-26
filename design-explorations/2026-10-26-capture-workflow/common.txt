@@ -1,0 +1,28 @@
+You are a senior product designer. Produce ONE design direction as GENERATED IMAGES, made with your image generation tool, and nothing else.
+
+First read these files (paths relative to the repo root, three folders up from here: ../../../): docs/ux/setup.md, docs/ux/interaction-guidelines.md, docs/ux/glossary-proposal.md (skim), and ../brief.md. Then look at every attached reference image:
+- native-editor.png: Snapmark's editor as it looks today (toolbar with ⌘-numbered tools, side column with notes, Discard ⌘W and the blue "Add to session ⌘↩"). Your editor screens must look like this product.
+- notes-column-today.png: today's notes column in dark mode. The owner finds the vertical room around the headings wrong.
+- macos-capture-bar.png and macos-capture-bar-options.png: macOS's own ⇧⌘5 bar and its Options menu, which Snapmark's capture bar follows.
+- app-icon.png: the logo; its blue is the app's blue.
+
+Write exactly these files in the current directory, each a landscape 1536 x 1024 image of a Mac desktop:
+- shots/1-capture-bar--session.png (LIGHT): a browser showing a web app; Snapmark's capture bar at the bottom centre of the screen; Capture Area chosen; the target is Session "Ledgerly Q4 review".
+- shots/2-capture-bar--record-options.png (DARK): the same bar with Record chosen and its Options menu open: Save to (Session · One-Shot), Frame rate (15, 10 ✓, 5, 4, 2 fps), Timer (None ✓, 3 seconds, 5 seconds, 10 seconds), Show Mouse Pointer.
+- shots/3-countdown--3.png (LIGHT): the Timer counting: the area about to be captured is outlined on the web app and a large "3" counts down; "Esc cancels".
+- shots/4-recording--running.png (DARK): Record running over a loading spinner in a web app: the recorded area outlined; a small control showing "0:07 of 0:30 · 10 fps", Done ↩ and Esc cancels.
+- shots/5-editor--session.png (LIGHT): the editor after a capture, in Session: the side column has Session | One-Shot tabs (Session chosen), the target session "Ledgerly Q4 review · 6 screenshots" with a way to pick an older session or start a new one, "General comment" with its field, a light divider, "References" with notes 1 and 2 (coral red numbered diamonds), Discard ⌘W and "Add to session ⌘↩".
+- shots/6-editor--one-shot.png (DARK): the same editor in One-Shot: the side column shows Beautify instead of notes: Padding, Inset, Rounded corners and Shadow sliders with values; Backdrop swatches (None, gradients, solid colours, Custom) with a hex field "# 2492FF"; Ratio (Auto, 16:9, 4:3, 1:1); the screenshot sits on the gradient backdrop; buttons Save As… ⇧⌘S and the blue "Copy ⌘↩" with the line "Copies and closes".
+- notes.md: first line "# <Direction name>", then one paragraph on the idea, then a short list of what you deliberately did NOT do.
+
+Hard constraints:
+- APP UI colours: blue #2492FF for tints, focus rings and selected icons; filled buttons #0F72DB with white text; neutral macOS greys otherwise; light panels #F7F7F8, dark panels #262628, dark fields #313134. Annotation marks and numbered diamonds are coral red #E5484D. Never mix the two.
+- macOS-native: SF Pro, system materials, 8 pt rhythm, 40 pt hit targets in the bar, real macOS menus.
+- Only ONE blue filled element per screen: the main action (Capture ↩, Add to session ⌘↩, Copy ⌘↩).
+- Show the keys: every action names its key (↩, Esc, ⌘↩, ⌘W, 1–5 for the bar's modes).
+- The exact words above. Real content (a web app called Ledgerly with orders, customers, payments), never lorem ipsum.
+- Text sharp and readable at full size; nothing cut off.
+
+Do not write HTML, code, a build or a README.
+
+THE DIRECTION:

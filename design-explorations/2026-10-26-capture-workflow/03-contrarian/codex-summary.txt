@@ -1,0 +1,11 @@
+![Capture bar — Session](shots/1-capture-bar--session.png)
+
+![Record options](shots/2-capture-bar--record-options.png)
+
+![Countdown](shots/3-countdown--3.png)
+
+![Recording](shots/4-recording--running.png)
+
+![Session editor](shots/5-editor--session.png)
+
+![One-Shot editor](shots/6-editor--one-shot.png)

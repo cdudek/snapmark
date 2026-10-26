@@ -1,0 +1,26 @@
+You are a senior product designer. Produce ONE design direction as GENERATED IMAGES, made with your image generation tool, and nothing else.
+
+First read ../brief.md and, from the repo root three folders up (../../../), docs/ux/interaction-guidelines.md. Then look at every attached reference image:
+- native-editor.png: Snapmark's editor today. Your images must look exactly like this product: same toolbar (tools with ⌘1–⌘7, colour swatch, Undo ⌘Z, Redo ⇧⌘Z), same screenshot of the Ledgerly orders page with coral red marks, same side column. Change ONLY what the direction below asks for.
+- notes-column-today.png: today's notes column (dark). Keep it a notes column; in your images give "General comment" and "References" more room above each heading than below, and put a light hairline divider between the General comment block and References.
+- 1-capture-bar--session.png: the capture bar the owner picked; its "Session | One-Shot" segmented control and the session pop-up "Ledgerly Q4 review" are the words and the control style to reuse.
+
+Write exactly these files in the current directory, each a landscape 1536 x 1024 image of the editor window, LIGHT mode:
+- shots/1-editor--session.png: the editor in Session, target "Ledgerly Q4 review · 6 screenshots". Side column: General comment "Orders list before the Q4 launch: payment states need more context.", divider, References 1 "Failed payment shows no reason. Show the card decline message on hover." and 2 "Unfulfilled tab needs its count, like Open orders: 128." with coral red numbered diamonds; Discard ⌘W and the blue "Add to Session ⌘↩" bottom right.
+- shots/2-editor--destination-menu.png: the same editor with the destination menu OPEN, a real macOS menu: ✓ Ledgerly Q4 review (6), then recent sessions "Checkout redesign (14)", "Onboarding audit (3)", "Pricing page v2 (9)", then "Older Sessions…", "New Session ⌃⇧N", a separator, and "One-Shot: Beautify, then Copy" (or a separate Session | One-Shot control if the direction says so).
+- notes.md: first line "# <Direction name>", then one paragraph on the idea and which UX laws and rules it leans on, then a short list of what you deliberately did NOT do.
+
+Hard constraints:
+- APP UI colours: blue #2492FF for tints, focus rings, selected icons; the one filled blue button #0F72DB with white text; neutral macOS greys. Marks and numbered diamonds coral red #E5484D.
+- macOS-native: SF Pro, system materials, real macOS menus (no custom dropdown cards), 8 pt rhythm.
+- Only ONE blue filled element in the window: "Add to Session ⌘↩".
+- Every action names its key. Do not use ⌘O.
+- The exact words above. Text sharp and readable; nothing cut off.
+
+Do not write HTML, code, a build or a README.
+
+THE DIRECTION:
+
+**A. Title-bar destination (macOS document title menu).** The window title reads 'Ledgerly Q4 review · 6 screenshots ⌄' centred in the title bar, like Pages' or TextEdit's document title; clicking it opens the destination menu (recent sessions with ✓ on the current one, Older Sessions…, New Session ⌃⇧N, separator, One-Shot). Nothing about the destination appears in the side column or the toolbar; the side column is only notes and the footer. Image 2 shows the menu dropping from the title.
+
+This is your direction. Commit to it. Do not hedge toward the middle, and do not try to also cover what the other directions are doing — you are one of several, and the reviewer needs them to be genuinely different.

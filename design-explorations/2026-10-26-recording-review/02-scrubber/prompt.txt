@@ -1,0 +1,27 @@
+You are a senior product designer. Produce ONE design direction as GENERATED IMAGES, made with your image generation tool, and nothing else.
+
+First read ../brief.md and, from the repo root three folders up (../../../), docs/ux/setup.md and docs/ux/interaction-guidelines.md. Then look at every attached reference image:
+- native-editor.png: Snapmark's editor today. Your editor image must look like this product: same toolbar, same side column, same buttons.
+- session--screenshots.png and session--document.png: Snapmark's session window today (Screenshots grid and Document tabs). Your session image must look like this.
+- 4-recording--running.png: the recording control the owner picked; the recording you show is the result of this.
+
+Write exactly these files in the current directory, each a landscape 1536 x 1024 image of a Mac window, LIGHT mode:
+- shots/1-editor--recording.png: the editor right after Done on a recording of 0:03.2 at 10 fps (32 frames) of the Ledgerly orders page, where a spinner "Loading payments…" shows for 2.4 s before the rows appear. Two coral red marks with numbered diamonds: 1 on the spinner ("Use a skeleton here, not a spinner"), 2 on the moment the rows appear ("2.4 s is too long: rows should appear under 1 s"). The side column: General comment "Orders page loads slowly after the Q4 launch.", References 1 and 2 with those notes, a recording summary "0:03.2 · 10 fps · 32 frames", Discard ⌘W and the blue "Add to session ⌘↩".
+- shots/2-session--recording-entry.png: the session window "Ledgerly Q4 review · 7 screenshots" showing this recording's entry beside an ordinary screenshot entry, so it is clear what the session (and the AI) gets: the filmstrip with its marks, and the GIF for people.
+- notes.md: first line "# <Direction name>", then one paragraph on the idea, then a short list of what you deliberately did NOT do.
+
+Hard constraints:
+- APP UI colours: blue #2492FF for tints, focus rings and selected icons; filled buttons #0F72DB with white text; neutral macOS greys. Annotation marks and numbered diamonds coral red #E5484D. Never mix the two.
+- macOS-native: SF Pro, system materials, 8 pt rhythm.
+- Only ONE blue filled button per screen.
+- Every action names its key.
+- Real content (Ledgerly orders, customers, payments), never lorem ipsum. Frame time labels like "0.0 s", "0.4 s", "2.4 s".
+- Text sharp and readable at full size; nothing cut off.
+
+Do not write HTML, code, a build or a README.
+
+THE DIRECTION:
+
+**The GIF with a scrubber.** The canvas plays the recording large, like a video, with a timeline under it: play/pause (Space), frame step (← →), a playhead at 2.4 s, and tick marks on the timeline where marks were made. The owner stops on a moment and marks that frame; the frames that carry marks become the filmstrip the AI gets. Show the canvas paused at 2.4 s with mark 2, and the timeline showing a tick at 0.4 s (mark 1) and 2.4 s (mark 2). In the session window the entry shows the short filmstrip of only the marked frames, with the GIF beside it.
+
+This is your direction. Commit to it. Do not hedge toward the middle, and do not try to also cover what the other directions are doing — you are one of three, and the reviewer needs them to be genuinely different.
