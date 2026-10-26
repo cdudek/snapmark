@@ -1228,8 +1228,16 @@ app
     viewer['F5 the label names the button under the pointer'] = !notYet && hovered === 'Capture Window 1' && (await centredOver('window'));
     console.log('F5', JSON.stringify({ notYet, hovered }));
     const tw = barTipWindow()!;
+    // Content protection exists on macOS and Windows only, so CI's Linux run reads false there
+    const tipParts = {
+      focusable: tw.isFocusable(),
+      protectedOrLinux: process.platform === 'linux' || tw.isContentProtected(),
+      onTop: tw.isAlwaysOnTop(),
+      allSpaces: tw.isVisibleOnAllWorkspaces(),
+    };
+    console.log('F8', JSON.stringify(tipParts));
     viewer['F8 the label is part of the bar, never in a capture'] =
-      !tw.isFocusable() && tw.isContentProtected() && tw.isAlwaysOnTop() && tw.isVisibleOnAllWorkspaces() && !barWin.isDestroyed();
+      !tipParts.focusable && tipParts.protectedOrLinux && tipParts.onTop && tipParts.allSpaces && !barWin.isDestroyed();
     // F7: leaving the bar keeps the label while the pointer is on it, on the strip under it or back on the bar, and drops
     // it anywhere else. The rule, at fixed points (the real pointer cannot be moved, and macOS keeps windows off the
     // menu bar and the Dock); then the real path, wherever the owner's pointer is.
