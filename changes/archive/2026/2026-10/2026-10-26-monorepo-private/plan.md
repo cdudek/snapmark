@@ -8,6 +8,7 @@ status: approved
 reviewed_by: Calvin Dudek
 approved_at: 2026-10-26
 created: 2026-10-26
+archived_at: 2026-10-26
 ---
 
 # Plan: one private repo for the app, the Chrome extension and the website, with updates that keep working
@@ -109,9 +110,9 @@ Each step has a proof. The proof is a command, a file, or a fact.
 - [x] 5. `npx electron-builder --mac dir --publish never -c.mac.identity=-` in `snapmark-app/` — proof: `checks/asar.sh` (F3) exits 0, and `app-update.yml` names the bucket (F4).
 - [x] 6. The ADR, `python3 scripts/design_index.py write` — proof: `INDEX.md` lists it.
 - [x] 7. Milestone checks: `python3 scripts/verify_gate.py milestone 2026-10-26-monorepo-private` — proof: `VERIFY PASS milestone` (F2).
-- [ ] 8. PR `milestone/monorepo-private-1` → `main`, titled `fix(updates): …` so it releases a patch; auto-merge armed after asking (workflow and lockfile change) — proof: CI `check` green.
-- [ ] 9. After the merge: the release run uploads to the bucket — proof: F5, F6 checks.
-- [ ] 10. The owner confirms both Macs; ask, then make the repo private — proof: F10, F11.
+- [x] 8. PR `milestone/monorepo-private-1` → `main`, titled `fix(updates): …` so it releases a patch; auto-merge armed after asking (workflow and lockfile change) — proof: CI `check` green.
+- [x] 9. After the merge: the release run uploads to the bucket — proof: F5, F6 checks.
+- [x] 10. The owner confirms both Macs; ask, then make the repo private — proof: F10, F11.
 
 ## Risks
 
@@ -167,3 +168,5 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-26 — `snapmark-app/test/guide.test.ts` and `keys.test.ts` read `docs/` from the repo root, one folder further up.
 - 2026-10-26 — New `snapmark-app/scripts/link-hoisted.cjs`, run by `build`: the editor loads Fabric from `../../node_modules`, which workspaces moved to the root in development.
 - 2026-10-26 — F7 keeps the newest 10 versions, not 5 (owner: "can we make sure that we only keeping the last 10 versions around?"; `decisions.json` › `protectedEdit`). Storage is then about 5.5 GB, $0.13 a month.
+- 2026-10-26 — "Both Macs" in F10, the success measure and steps 6, 7 and 10 was the orchestrator's assumption; the owner has one Mac ("which other mac?"). F10 is validated on that Mac; facts.md keeps its locked wording.
+- 2026-10-26 — Restart to Update did not quit Snapmark, and Settings shows no update state; the owner quit by hand to install 0.22.1. Filed as snap-bmr.25.

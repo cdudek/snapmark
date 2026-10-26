@@ -8,6 +8,7 @@ status: approved
 reviewed_by: Calvin Dudek
 approved_at: 2026-10-26
 created: 2026-10-26
+archived_at: 2026-10-26
 ---
 
 # Facts: one private repo for the app, the Chrome extension and the website, with updates that keep working
