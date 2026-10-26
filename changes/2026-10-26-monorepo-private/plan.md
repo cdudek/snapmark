@@ -159,3 +159,9 @@ F5, F6's object check, F10 and F11 are proven after the merge, in Stage 7.
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-10-26 — Steps 2–6 ran before step 1: billing on `snapmark-ai` is still off, and the code features do not need the bucket.
+- 2026-10-26 — `build/` (entitlements) moved into `snapmark-app/` too; the table missed it.
+- 2026-10-26 — Public read is `roles/storage.legacyObjectReader`, not `objectViewer`: electron-updater only gets files, and nobody needs to list the bucket.
+- 2026-10-26 — New `snapmark-app/scripts/electron-builder.sh`: workspaces hoist `electron`, and electron-builder refuses the `^45.0.0` range without the installed version.
+- 2026-10-26 — `snapmark-app/test/guide.test.ts` and `keys.test.ts` read `docs/` from the repo root, one folder further up.
