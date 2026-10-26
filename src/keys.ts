@@ -26,7 +26,8 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
   {
     title: 'Capture bar',
     rows: [
-      ['← →', 'Pick a mode', 'Tab moves on to Options and Capture'],
+      ['1–4', 'Pick a mode', 'window, new area, last area, scrolling'],
+      ['← →', 'Move between modes', 'Tab moves on to Options and Capture'],
       ['↩', 'Capture', ''],
       ['Esc', 'Close', ''],
     ],

@@ -43,6 +43,8 @@ const {
   menuItems,
   moveEditor,
   openCaptureBar,
+  barTipWindow,
+  keepsTip,
   setCapture,
   openSettings,
   showShortcuts,
@@ -289,7 +291,12 @@ app
     // Sidebar (F7-F10): fields grow with their text; the buttons stay in view while the body scrolls
     const cap = document.getElementById('caption');
     const oneLine = cap.clientHeight;
-    r['comment is one line, "Add a comment…"'] = cap.dataset.placeholder === 'Add a comment…' && cap.dataset.empty === 'true' && oneLine < 50;
+    r['comment is one line, "About the whole screenshot…"'] = cap.dataset.placeholder === 'About the whole screenshot…' && cap.dataset.empty === 'true' && oneLine < 50;
+    const capHead = document.getElementById('caption-label');
+    r['F12 the top box is headed General comment'] =
+      capHead?.tagName === 'H2' && capHead.textContent === 'General comment' && !capHead.hidden && capHead.nextElementSibling === cap &&
+      document.getElementById('refs-label').tagName === 'H2' && getComputedStyle(capHead).fontWeight === getComputedStyle(document.getElementById('refs-label')).fontWeight &&
+      cap.querySelector('[contenteditable]').getAttribute('aria-labelledby') === 'caption-label';
     setMd(cap, ['a', 'b', 'c', 'd', 'e']); await sleep(50);
     r['comment grows as you type'] = cap.clientHeight > oneLine * 2 && cap.dataset.empty === 'false';
     const ref1 = document.querySelector('#refs .md');
@@ -408,11 +415,45 @@ app
     key('z', { metaKey: true });
     r['F13 a multi-selection is one step'] = groupStep && movedBack && removed && places() === placed0 && markers().map((m) => m.n).join() === nums;
 
+    // F13, F14: with three or more references, each note asks "What about n?" and the rows stand 12 pt apart. The
+    // references added here are undone again, so what follows sees the session as before.
+    document.activeElement?.blur?.();
+    const refsBefore = document.querySelectorAll('#refs .ref').length;
+    let refsAdded = 0; // names unique in this page script: it is one scope, and tsc never sees it
+    for (const fx of [.05, .1, .15]) {
+      if (document.querySelectorAll('#refs .ref').length >= 3) break;
+      key('1'); if (tool() !== 'marker') key('1');
+      drag(null, [[fx, .92]]); refsAdded++; await sleep(150); document.activeElement?.blur?.();
+    }
+    const refRows = [...document.querySelectorAll('#refs .ref')];
+    const refGaps = refRows.slice(1).map((row, i) => row.getBoundingClientRect().top - refRows[i].getBoundingClientRect().bottom);
+    r['F13 a note asks What about n'] =
+      refRows.length >= 2 && refRows.every((row) => row.querySelector('.md').dataset.placeholder === 'What about ' + row.querySelector('b').textContent + '?');
+    r['F14 notes stand 12 pt apart'] = refRows.length >= 3 && refGaps.every((g) => Math.abs(g - 12) <= 1);
+    console.log('F13 F14 ' + JSON.stringify({ rows: refRows.length, gaps: refGaps, refsAdded }));
+    for (let i = 0; i < refsAdded; i++) key('z', { metaKey: true });
+    await sleep(100);
+    r['F13/F14 the added references are undone'] = document.querySelectorAll('#refs .ref').length === refsBefore;
     setMd(cap, ['Smoke test caption']); document.activeElement.blur();
     return r;
   })()`;
     const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
     inPage['F111 title row'] &&= win.getTitle() === 'Snapmark — smoke'; // the window title stays, for the Window menu
+    // F12, F13: the names a screen reader hears, from Chromium's own accessibility tree, on the editable elements
+    const dbg = win.webContents.debugger;
+    dbg.attach('1.3');
+    await dbg.sendCommand('Accessibility.enable');
+    const { nodes } = (await dbg.sendCommand('Accessibility.getFullAXTree')) as {
+      nodes: { role?: { value: string }; name?: { value: string } }[];
+    };
+    dbg.detach();
+    const fieldNames = nodes.filter((n) => n.role?.value === 'textbox').map((n) => n.name?.value ?? '');
+    const refNums: string[] = await win.webContents.executeJavaScript(
+      `[...document.querySelectorAll('#refs .ref b')].map((b) => b.textContent)`,
+    );
+    console.log('F12 F13 names', JSON.stringify({ fieldNames, refNums }));
+    inPage['F12 the top box is headed General comment'] &&= fieldNames.includes('General comment');
+    inPage['F13 a note asks What about n'] &&= refNums.length > 0 && refNums.every((n) => fieldNames.includes(`Note for reference ${n}`));
     // F106: Settings ▸ Single-Key Tools redraws an open editor's captions and tooltips, without reopening it
     const toolbarSays = (cap: string, tip: string) =>
       win.webContents.executeJavaScript(`(async () => {
@@ -1161,6 +1202,95 @@ app
           g.querySelectorAll('[role=radio]').length === 4 && g.querySelectorAll('[aria-checked="true"]').length === 1 &&
           document.querySelector('[aria-label^="Capture Last Area · "]')?.getAttribute('aria-label') === 'Capture Last Area · First time: drag the area';`,
       ));
+    // The label above the bar (F5–F10): its own panel, shown by the pointer or a key, never by the opening
+    const tipShown = () => {
+      const t = barTipWindow();
+      return !!t && !t.isDestroyed() && t.isVisible();
+    };
+    const tipSays = async () => {
+      for (let i = 0; i < 20 && !tipShown(); i++) await sleep(50);
+      await sleep(150); // the text and its preferred size land a moment after
+      const t = barTipWindow();
+      return t && tipShown() ? ((await inWin(t, `return document.body.innerText.replace(/\\s+/g, ' ').trim()`)) as string) : '';
+    };
+    const centredOver = async (mode: string) => {
+      const r = JSON.parse(
+        await inWin(barWin, `return JSON.stringify(document.querySelector('[data-mode="${mode}"]').getBoundingClientRect())`),
+      );
+      const [t, b] = [barTipWindow()!.getBounds(), barWin.getBounds()];
+      return Math.abs(t.x + t.width / 2 - (b.x + r.left + r.width / 2)) <= 1 && t.y + t.height === b.y - 8;
+    };
+    const atOpening = tipShown();
+    await inWin(barWin, `document.querySelector('[data-mode="window"]').dispatchEvent(new MouseEvent('mouseenter'));`);
+    await sleep(150);
+    const notYet = tipShown(); // the label waits 300 ms
+    const hovered = await tipSays();
+    viewer['F5 the label names the button under the pointer'] = !notYet && hovered === 'Capture Window 1' && (await centredOver('window'));
+    console.log('F5', JSON.stringify({ notYet, hovered }));
+    const tw = barTipWindow()!;
+    // Content protection exists on macOS and Windows only, so CI's Linux run reads false there
+    const tipParts = {
+      focusable: tw.isFocusable(),
+      protectedOrLinux: process.platform === 'linux' || tw.isContentProtected(),
+      onTop: tw.isAlwaysOnTop(),
+      allSpaces: tw.isVisibleOnAllWorkspaces(),
+    };
+    console.log('F8', JSON.stringify(tipParts));
+    viewer['F8 the label is part of the bar, never in a capture'] =
+      !tipParts.focusable && tipParts.protectedOrLinux && tipParts.onTop && tipParts.allSpaces && !barWin.isDestroyed();
+    // F7: leaving the bar keeps the label while the pointer is on it, on the strip under it or back on the bar, and drops
+    // it anywhere else. The rule, at fixed points (the real pointer cannot be moved, and macOS keeps windows off the
+    // menu bar and the Dock); then the real path, wherever the owner's pointer is.
+    const [tipB, barB] = [tw.getBounds(), barWin.getBounds()];
+    const staysOnIt =
+      keepsTip(tipB, barB, { x: tipB.x + tipB.width / 2, y: tipB.y + tipB.height / 2 }) &&
+      keepsTip(tipB, barB, { x: tipB.x + 2, y: barB.y - 4 }) &&
+      keepsTip(tipB, barB, { x: barB.x + 2, y: barB.y + 2 }) &&
+      !keepsTip(tipB, barB, { x: tipB.x - 40, y: tipB.y - 40 }) &&
+      !keepsTip(tipB, barB, { x: tipB.x + tipB.width + 2, y: barB.y - 4 });
+    await inWin(barWin, `document.documentElement.dispatchEvent(new MouseEvent('mouseleave'));`);
+    await sleep(350);
+    const pointerOnIt = keepsTip(tw.getBounds(), barWin.getBounds(), screen.getCursorScreenPoint());
+    const goneElsewhere = tipShown() === pointerOnIt;
+    // F6 and F9: a key shows the focused button's label; 1–4 only choose a mode
+    keyTo(barWin, '4');
+    const afterFour = await tipSays();
+    const fourChose = await inWin(
+      barWin,
+      `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`,
+    );
+    keyTo(barWin, '1');
+    const afterOne = await tipSays();
+    const oneChose = await inWin(
+      barWin,
+      `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`,
+    );
+    keyTo(barWin, 'Right');
+    const afterRight = await tipSays();
+    viewer['F6 the label follows the keyboard, not the opening'] =
+      !atOpening && afterFour === 'Capture Scrolling 4' && afterRight.startsWith('Choose New Area 2') && (await centredOver('area'));
+    viewer['F9 keys 1-4 choose a mode and never capture'] =
+      fourChose === 'scroll|scroll' &&
+      oneChose === 'window|window' &&
+      afterOne === 'Capture Window 1' &&
+      runs.length === 0 &&
+      !barWin.isDestroyed();
+    viewer['F10 every bar button announces its key'] =
+      (await inWin(
+        barWin,
+        `return JSON.stringify([...document.querySelectorAll('button')].map((b) => [b.id || b.dataset.mode, b.getAttribute('aria-keyshortcuts')]))`,
+      )) ===
+      JSON.stringify([
+        ['close', 'Escape'],
+        ['window', '1'],
+        ['area', '2'],
+        ['last', '3'],
+        ['scroll', '4'],
+        ['options', null],
+        ['capture', 'Enter'],
+      ]);
+    console.log('F6 F7 F9', JSON.stringify({ atOpening, staysOnIt, goneElsewhere, afterFour, afterOne, afterRight, fourChose, oneChose }));
+    await inWin(barWin, `document.querySelector('[data-mode="area"]').focus();`); // back where the bar opened, for F207's checks
     const barSays = () =>
       inWin(
         barWin,
@@ -1208,6 +1338,7 @@ app
     const tabsOk =
       JSON.stringify(tabs) === JSON.stringify(['Close', 'Capture Last Area', 'Options', 'Capture', 'Options', 'Capture Last Area']);
     viewer['F205 the bar is gone when the capture starts'] = runs.length === 1 && runs[0].barGone;
+    const tipGoneOnCapture = !barTipWindow();
     // Reopened: on the mode last used; Esc closes it without capturing
     const barReopened = openCaptureBar(runner)!;
     await barReady(barReopened);
@@ -1224,8 +1355,13 @@ app
       reLabel === 'Capture One-Shot' &&
       reOptions === 'One-Shot,5 Seconds,Show Mouse Pointer' &&
       saved === lastOpts;
+    keyTo(barReopened, '3');
+    const tipBeforeEsc = await tipSays();
     keyTo(barReopened, 'Escape');
     for (let i = 0; i < 30 && !barReopened.isDestroyed(); i++) await sleep(100);
+    viewer['F7 the label goes with the pointer and the bar'] =
+      staysOnIt && goneElsewhere && tipGoneOnCapture && tipBeforeEsc.startsWith('Capture Last Area') && !barTipWindow();
+    console.log('F7', JSON.stringify({ staysOnIt, goneElsewhere, tipGoneOnCapture, tipBeforeEsc }));
     viewer['F204 arrows pick, Return captures, Esc closes'] =
       arrowsOk && tabsOk && runs.length === 1 && runs[0].o.mode === 'last' && barReopened.isDestroyed() && !barUp().length;
     // One-Shot: a scrolling capture opens in one-shot mode, never in a session
@@ -1511,6 +1647,7 @@ app
         return JSON.stringify({
           beautify: !document.getElementById('beautify').hidden && shown('beautify'),
           noRefs: !shown('refs') && !shown('caption'),
+          noHeading: !shown('caption-label'),
           noAdd: !document.body.innerText.includes('Add to session'),
           primary: document.getElementById('save').textContent,
           values: ['padding', 'radius', 'shadow'].map((id) => document.getElementById(id).value + '=' + document.querySelector('output[for="' + id + '"]').textContent).join(),
@@ -1521,6 +1658,7 @@ app
     );
     viewer['one-shot: the Beautify panel replaces References and the comment'] = panel.beautify && panel.noRefs;
     inPage['F115 no session menu in Edit Again or one-shot'] = noMenuAgain && (await noSessionMenu(one));
+    inPage['F12 the top box is headed General comment'] &&= panel.noHeading; // hidden with the box in one-shot mode
     viewer['one-shot: no Add to session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
     viewer['one-shot: sliders show their values; 10 backgrounds; Auto 4:3 3:2 16:9 1:1'] =
       panel.values === '64=64,12=12,40=40' && panel.backdrops === 10 && panel.ratios === 'Auto,4:3,3:2,16:9,1:1';

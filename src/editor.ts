@@ -27,7 +27,7 @@ const colorEl = $<HTMLInputElement>('color');
 const saveBtn = $<HTMLButtonElement>('save');
 const toolsEl = $<HTMLSpanElement>('tools');
 const mainEl = document.querySelector('main')!;
-const refsLabel = $<HTMLLabelElement>('refs-label');
+const refsLabel = $<HTMLHeadingElement>('refs-label');
 const undoBtn = $<HTMLButtonElement>('undo');
 const redoBtn = $<HTMLButtonElement>('redo');
 
@@ -986,7 +986,8 @@ function renderRefs() {
       badge.style.setProperty('--mark', String(m.fill));
       const field = document.createElement('div');
       const mounted = MdNotes.mount(field, m.note, {
-        placeholder: `Note for ${m.n}`,
+        placeholder: `What about ${m.n}?`,
+        label: `Note for reference ${m.n}`,
         onChange: (md) => {
           m.note = md;
           markDirty();
@@ -1314,7 +1315,11 @@ window.snapmark
       saveBtn.title = 'Copy the image with its background, at full resolution';
       renderBeauty();
     }
-    captionField = await MdNotes.mount($('caption'), state?.caption ?? '', { placeholder: 'Add a comment…', onChange: markDirty });
+    captionField = await MdNotes.mount($('caption'), state?.caption ?? '', {
+      placeholder: 'About the whole screenshot…',
+      labelledBy: 'caption-label',
+      onChange: markDirty,
+    });
     background = await fabric.FabricImage.fromURL(src);
     background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });
     // A tall scrolling capture counts as twice its width high: the strokes suit the part in view, not the whole page.

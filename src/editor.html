@@ -399,10 +399,27 @@
       .checker {
         background: repeating-conic-gradient(#d8d8dc 0 25%, #fff 0 50%) 0 0 / 16px 16px;
       }
+      .one-shot #caption-label,
       .one-shot #caption,
       .one-shot #refs,
       .one-shot #refs-label {
         display: none !important;
+      }
+      /* The notes column's headings: General comment and References (guide NTE-1, WRD-3). */
+      #caption-label,
+      #refs-label {
+        margin: 0 0 -6px; /* 4 px to its own box, under the column's 10 px gap (Law of Proximity) */
+        font-size: inherit;
+        font-weight: 600;
+      }
+      #refs-label {
+        margin-top: 10px; /* 20 px between the comment and References, more than between two notes */
+      }
+      /* Reference notes stand apart (guide NTE-4). */
+      #refs {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
       /* Beautify (one-shot mode): sliders with their values, background swatches, ratio as a segmented control. */
       #beautify {
@@ -723,8 +740,9 @@
     </main>
     <aside>
       <div class="body">
-        <div id="caption" aria-label="Comment"></div>
-        <label id="refs-label" hidden>References</label>
+        <h2 id="caption-label">General comment</h2>
+        <div id="caption"></div>
+        <h2 id="refs-label" hidden>References</h2>
         <div id="refs"></div>
         <section id="beautify" aria-label="Beautify" hidden>
           <label>Beautify</label>

@@ -49,14 +49,22 @@ assert.deepStrictEqual(
   ['⌃⇧5', 'Capture options', 'the capture bar: window, new area, last area or scrolling, and where it goes'],
   'F236',
 );
+// F11 the capture bar group lists 1-4 (first, before F236's rows)
 assert.deepStrictEqual(
   KEY_GROUPS[1].rows,
   [
-    ['← →', 'Pick a mode', 'Tab moves on to Options and Capture'],
+    ['1–4', 'Pick a mode', 'window, new area, last area, scrolling'],
+    ['← →', 'Move between modes', 'Tab moves on to Options and Capture'],
     ['↩', 'Capture', ''],
     ['Esc', 'Close', ''],
   ],
-  'F236 Capture bar',
+  'F11 and F236 Capture bar',
+);
+const bar = read('src/bar.html');
+assert.deepStrictEqual(
+  [...bar.matchAll(/aria-keyshortcuts="([^"]+)"/g)].map((m) => m[1]),
+  ['Escape', '1', '2', '3', '4', 'Enter'],
+  'F11 the bar buttons carry the keys the group lists',
 );
 assert.deepStrictEqual(
   KEY_GROUPS[2].rows,

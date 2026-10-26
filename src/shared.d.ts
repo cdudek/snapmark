@@ -86,6 +86,13 @@ interface BarInit extends CaptureOpts {
   last: string; // Capture Last Area's suffix: "1280 × 720" or "First time: drag the area"
 }
 
+// The capture bar's label (tip.html): a button's name and key, centred over the button.
+interface BarTip {
+  text: string;
+  key: string; // as a keycap shows it: "1", "Esc", "↩"; empty for none
+  at: Area;
+}
+
 // The Settings window (settings.html): what its three tabs show.
 interface SettingsInit {
   login: { enabled: boolean; checked: boolean; needsApproval: boolean }; // menu.ts loginState
@@ -117,6 +124,9 @@ interface Window {
     barOptions(mode: CaptureMode, at: Area): void; // the Options menu under `at` (window points), for the chosen mode
     barClose(): void;
     onBarState(cb: (s: BarInit) => void): void; // an option changed in the Options menu or in Settings
+    barTip(t: BarTip | null): void; // the label above the bar for one button (`at` in bar window points), or none
+    barTipLeave(): void; // the pointer left the bar: the label stays while the pointer is on it
+    onTip(cb: (t: { text: string; key: string }) => void): void; // tip.html: what the label says
     areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
     scrollDone(ok: boolean): void; // Capture Scrolling: Done (true) or Cancel (false)
     onScrollStatus(cb: (status: ScrollStatus) => void): void;

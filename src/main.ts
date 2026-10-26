@@ -347,6 +347,7 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
     webPreferences: { preload: path.join(__dirname, 'preload.js'), enablePreferredSizeMode: true },
   });
   bar = win;
+  win.once('close', () => barTip(null, true)); // the label goes with the bar, at once, so it is never in a capture (F7, F8)
   // As wide as its content, so every gap stays 8 pt, also when the Capture label changes (F212).
   win.webContents.on('preferred-size-changed', (_e, { width }) => win.setBounds(at(width)));
   win.setContentProtection(true); // belt and braces: it closes before every capture
@@ -373,6 +374,92 @@ export function setCapture(change: Partial<Record<keyof CaptureOpts, unknown>>) 
   saveState();
   if (bar && barOpen()) bar.webContents.send('bar:state', barInit());
 }
+
+// The bar's label (tip.html): a button's name and key, 8 pt above the bar, centred over the button. Its own panel,
+// because the bar's window paints its material over its whole rectangle, and macOS never shows a native tooltip in
+// a panel that does not make Snapmark the active app (guide WIN-2, EX-7). Clicks pass through it; it never takes focus.
+let tip: BrowserWindow | null = null;
+let tipNow: BarTip | null = null;
+let tipSize = { width: 0, height: 0 };
+let tipWatch: ReturnType<typeof setInterval> | undefined;
+export const barTipWindow = () => tip;
+
+function placeTip() {
+  if (!tip || !tipNow || !bar || !barOpen() || !tipSize.width) return;
+  const b = bar.getBounds();
+  const wa = screen.getDisplayMatching(b).workArea;
+  const { width, height } = tipSize;
+  const x = Math.round(b.x + tipNow.at.x + tipNow.at.width / 2 - width / 2);
+  tip.setBounds({ x: Math.min(Math.max(x, wa.x), wa.x + wa.width - width), y: b.y - 8 - height, width, height });
+  if (!tip.isVisible()) tip.showInactive();
+}
+
+// close: the bar is gone, so the window goes too; otherwise it is only hidden, ready for the next button.
+function barTip(t: BarTip | null, close = false) {
+  clearInterval(tipWatch);
+  tipNow = t;
+  if (close) {
+    if (tip && !tip.isDestroyed()) tip.destroy(); // synchronous, unlike close(): gone before the capture's 200 ms wait
+    tip = null;
+    return;
+  }
+  if (!t) return void (tip && !tip.isDestroyed() && tip.hide());
+  if (!tip || tip.isDestroyed()) {
+    const w = new BrowserWindow({
+      width: 160,
+      height: 24,
+      frame: false,
+      transparent: true,
+      hasShadow: true,
+      roundedCorners: true,
+      resizable: false,
+      movable: false,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      focusable: false,
+      skipTaskbar: true,
+      ...(process.platform === 'darwin' ? { type: 'panel' } : {}),
+      vibrancy: 'popover',
+      visualEffectState: 'active',
+      show: false,
+      webPreferences: { preload: path.join(__dirname, 'preload.js'), enablePreferredSizeMode: true },
+    });
+    w.setIgnoreMouseEvents(true);
+    w.setContentProtection(true);
+    w.setAlwaysOnTop(true, 'screen-saver');
+    w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+    w.webContents.on('preferred-size-changed', (_e, size) => {
+      tipSize = size;
+      placeTip();
+    });
+    w.webContents.once('did-finish-load', () => tipNow && w.webContents.send('tip:show', tipNow)); // asked before it loaded
+    void w.loadFile(path.join(__dirname, 'tip.html'));
+    tip = w;
+    tipSize = { width: 0, height: 0 };
+  }
+  tip.webContents.send('tip:show', { text: t.text, key: t.key });
+  placeTip();
+}
+
+// The pointer left the bar: the label stays while the pointer is on it, on the 8 pt strip under it, or back on the
+// bar (WCAG 1.4.13), and goes once it is anywhere else.
+export function keepsTip(t: Electron.Rectangle, b: Electron.Rectangle, p: Electron.Point) {
+  const inside = (r: Electron.Rectangle) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
+  return inside({ x: t.x, y: t.y, width: t.width, height: b.y - t.y }) || inside(b);
+}
+
+function leaveTip() {
+  clearInterval(tipWatch);
+  if (!tip || !tipNow || !bar || !barOpen()) return; // tipNow, not isVisible(): a label still loading counts too
+  tipWatch = setInterval(() => {
+    if (!tip || !bar || !barOpen()) return barTip(null);
+    if (!keepsTip(tip.getBounds(), bar.getBounds(), screen.getCursorScreenPoint())) barTip(null);
+  }, 100);
+}
+
+ipcMain.on('bar:tip', (e, t: BarTip | null) => fromBar(e) && barTip(t));
+ipcMain.on('bar:tip-leave', (e) => fromBar(e) && leaveTip());
 
 ipcMain.handle('bar:init', (): BarInit => barInit());
 ipcMain.on('bar:close', (e) => fromBar(e) && bar!.close());

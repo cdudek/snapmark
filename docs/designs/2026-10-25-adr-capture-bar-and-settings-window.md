@@ -31,6 +31,7 @@ Accepted on 2026-10-25 with the plan of `changes/2026-10-25-finish-app` (milesto
 8. **Keyboard Shortcuts stays its own window, in its own file `src/shortcuts.html`**, reached by ⌘/ from any Snapmark window and from Settings ▸ Shortcuts. It is a reference sheet kept open beside the editor, wide and two-column like the round-1 mock.
 9. **Snapmark sets its own app menu**, the smallest one that gives ⌘, and ⌘/: About, Settings… ⌘,, Keyboard Shortcuts ⌘/, Services, Hide, Hide Others, Show All, Quit. File, Edit, View and Window stay Electron's stock roles.
 10. **No beautify option in the bar.** The one-shot editor already remembers its last Beautify settings.
+11. **The bar names each button in a label above it, with its key, and 1–4 pick a mode.** The label is its own small panel, 8 pt above the bar, centred over the button. It shows after the pointer rests 300 ms, or when a key moves the focus, never when the bar opens. Clicks pass through it, it never takes focus, and it closes with the bar. Native tooltips never show in a panel that does not activate Snapmark, which is why the bar draws its own (guide WIN-2, EX-7). A number only chooses, as a click does.
 
 The bar is a non-activating panel at the bottom centre of the display with the pointer, over every Space and full-screen app, with the system's popover material. It closes, then waits for `closed` plus 200 ms, before any capture runs, so it is never in the screenshot. While it is open, or while its Timer counts, ⌃⇧4 and ⌃⇧3 do nothing: one capture at a time.
 
@@ -50,6 +51,7 @@ The bar is a non-activating panel at the bottom centre of the display with the p
 ## Milestones
 
 - fixes: changes/2026-10-25-finish-app (milestone 2)
+- fixes: changes/2026-10-26-interaction-guide-polish (the bar's label and keys 1–4)
 
 | Date       | Decision                                      | Answer (quoted)                                             | By whom      |
 | ---------- | --------------------------------------------- | ----------------------------------------------------------- | ------------ |
