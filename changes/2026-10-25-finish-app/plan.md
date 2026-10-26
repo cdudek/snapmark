@@ -284,11 +284,11 @@ Feature 3.2 — one screenshot everywhere:
 
 ### Milestone 4
 
-- [ ] 1. Read the Electron 45 and vitest 5 breaking-change notes; list what touches this code in `## Revisions` — proof: the list is there.
-- [ ] 2. Set the versions in `package.json` (F401–F403) and run `npm install` — proof: the `npm ls` line in F403 prints the targets.
-- [ ] 3. Fix what the notes and the milestone gate name — proof: the gate.
+- [x] 1. Read the Electron 45 and vitest 5 breaking-change notes; list what touches this code in `## Revisions` — proof: the list is there.
+- [x] 2. Set the versions in `package.json` (F401–F403) and run `npm install` — proof: the `npm ls` line in F403 prints the targets.
+- [x] 3. Fix what the notes and the milestone gate name — proof: the gate.
 - [ ] 4. Close Dependabot #63, #70, #71, #72, #73 with a comment naming the milestone PR. Proof: `gh pr list --repo cdudek/snapmark --author app/dependabot --state open` lists none of them.
-- [ ] 5. `npm audit --omit=dev --audit-level=high` — proof: exits 0 (F404).
+- [x] 5. `npm audit --omit=dev --audit-level=high` — proof: exits 0 (F404).
 - [ ] 6. Close snap-p7t once released — proof: `bd show snap-p7t` says closed.
 
 ### Every milestone, at its end
@@ -418,3 +418,5 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-25 — M3.2: `sessionHtml` finds the parts line by its words from `sessions.partsLine` (a parts line the owner rewrote prints as written); `restoreShot` renumbers a part link by its path (`](img/007/`) and its alt text (`[Screenshot 7, part `) separately, so an alt text edited by hand keeps the right path; F23 needed no code change, since `exportZip` already zips `img/` with its folders
 - 2026-10-26 — M3 fix round: `partLayout` decides "tall" on the size scaled to the part width (M3-3), so `fitForAI` and `cutParts` always agree; `replaceShot` swaps through `img/NNN.old/` with a rollback (M3-2); `ViewerInit.images` forces a remount after an Edit Again save (M3-1). The gate's first compile touched milestone 1–2 code only by renaming clashing smoke declarations to the names their fix rounds chose (`barAgain`, `barReopened`, `oneSelected`) and Prettier formatting; no assertion changed
 - 2026-10-26 — M3 gate, milestone 1 code: the F123 smoke check asserted that a 60-character name is cut at 1100 pt, but it fits there (446 of 451 px) and the fact asks only that the button keeps one line and only the name shortens; the check now asserts that at 1100 pt (button on one line, inside the window, tabs and buttons at full width) and again at 900 pt with the name cut. That second step found a real bug, fixed: the header (a grid item) had no `min-width: 0`, so a long name pushed the buttons out of the window
+- 2026-10-25 — M4.1: the Electron 45 and vitest 5 notes touch no code here. Electron 45 changes sandboxed preloads (no `Buffer`, `events`, `timers`, `url`, `setImmediate`; no static `once`), `getUserMedia` desktop ids, `display-capture` permissions, `window.open` children, ASAR descriptors and `safeStorage`; `src/preload.ts` uses only `contextBridge`, `ipcRenderer`, `webFrame`, and the rest are unused. vitest 5 needs Node ≥ 22.12 (CI has 22; questions.md M4 Q1), makes `vite` a peer (npm installs it), defaults `clearMocks` on and changes `toThrow('')`, `-t`, `sequential`, `bench`; `tests/sdlc.test.ts` uses none, and there is no vitest config file
+- 2026-10-26 — M4 gate: CI and the Release workflow already set `node-version: 22` (all three `setup-node` steps, latest 22.x, ≥ 22.12, so vitest 5 runs there); there is no `.nvmrc` and no `engines`, so nothing was raised. The Electron 45 breaking-change list (WebFetched) touches nothing in `src/`: `Buffer` and `.once` are used only in the main process. The first hidden smoke run failed once with `UnknownVizError` from `capturePage` (1 of 2 runs; never seen on Electron 44), so `test/smoke.ts` captures through `capture()`, which repaints and tries once more; no assertion changed

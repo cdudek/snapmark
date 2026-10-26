@@ -68,6 +68,13 @@ const { exportPdf } = require('../src/exporter') as typeof import('../src/export
 
 // Headless Linux (xvfb) has no GPU; capturePage fails with UnknownVizError unless compositing runs on the CPU.
 if (process.platform === 'linux') app.disableHardwareAcceleration();
+// Electron 45 on macOS: a window behind another app's sometimes has no frame yet (UnknownVizError); repaint, try once more.
+const capture = (wc: Electron.WebContents) =>
+  wc.capturePage().catch(async () => {
+    wc.invalidate();
+    await new Promise((r) => setTimeout(r, 500));
+    return wc.capturePage();
+  });
 
 setTimeout(() => {
   console.log('smoke: TIMEOUT');
@@ -80,7 +87,7 @@ app
     await mock.loadURL(`data:text/html,${encodeURIComponent(MOCK)}`);
     await new Promise((r) => setTimeout(r, 300)); // first paint
     const shot = path.join(root, 'mock.png');
-    fs.writeFileSync(shot, (await mock.webContents.capturePage()).toPNG());
+    fs.writeFileSync(shot, (await capture(mock.webContents)).toPNG());
     mock.destroy();
     const shotSize = nativeImage.createFromPath(shot).getSize();
     const shotCopy = path.join(root, 'mock-copy.png'); // openEditor deletes its input on close
@@ -532,7 +539,7 @@ app
       countAfter === count && undone !== null && undone !== typed && (await noteText()) === typed;
     win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
-    fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
+    fs.writeFileSync(path.join(root, 'editor.png'), (await capture(win.webContents)).toPNG());
     // Copy Image (⇧⌘C, from inside the note) and Save As… (⇧⌘S): the image Add to session saves, and no entry
     await win.webContents.executeJavaScript(
       `document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
