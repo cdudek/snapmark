@@ -189,7 +189,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 - [x] 2. Keys, menu rows, busy rule, area reset. Proof: `@F1`–`@F10` pass.
 - [x] 3. The bar: focus, global Esc, rows, modes, destination, Options, tokens; delete `tip`. Proof: `@F11`–`@F27` and `@N1` pass.
 - [x] 4. The countdown overlay. Proof: `@F28`–`@F32` pass.
-- [ ] 5. Gate. Proof: `python3 scripts/verify_gate.py milestone 2026-10-26-picked-designs` ends `VERIFY PASS`.
+- [x] 5. Gate. Proof: `python3 scripts/verify_gate.py milestone 2026-10-26-picked-designs` ends `VERIFY PASS`.
 
 ### Milestone 2
 
@@ -263,6 +263,20 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 
 ## Revisions
 
-- 1.1: `test/guide.test.ts` F3 (accepted rules match `guideAccepted`) also counts the six rules this change's gate accepted (CAP-12, CAP-13, REC-1, REC-2, KEY-7, ACC-6), listed in the test with `@F33`; otherwise F3 would reject any rule added after the interaction-guide-polish gate. EX-7 keeps its id and now records the global Esc (it bends WIN-4), since the drawn label it excused is retired (Q3).
-- 1.3: tests that encoded the replaced bar changed with it, as the facts say they replace them. `test/capture.test.ts` F202, F211 and F216 now hold `@F15`, `@F26` and CAP-6 for the five modes; its `@F4` source check follows ⌃⇧3 through `captureArgs('full')`, still no arguments. `test/menu.test.ts` F114 and F118 read the shared pop-up's counts and Older Sessions…. `test/keys.test.ts` F236's bar rows and keys follow the new bar. In `test/smoke.ts` the bar block replaces F202, F203, F9, F10 and the drawn label's F5–F8, and F223 switches One-Shot with the segment instead of Options ▸ Save to. `settings.html` gains the 3 Seconds timer (questions.md).
-- Milestone 1 fix round (findings.md 4–14): `snapmark-app/README.md` and `docs/ux/setup.md` were edited although they are not in Files that change, a departure: the user docs described the old keys and bar (⌃⇧3 as Capture Last Area, Capture Screenshot…, Options ▸ Save to). The questions.md default "Session | One-Shot and the pop-up draw no ⇧⌘O and ⇧⌘P" is reversed: the bar now shows both keys. Tests this change owns follow the fixes: `test/keys.test.ts` `@F10` reads the new `launching` flag and `@F18` the two visible keys, the ⇧⌘P row is "Switch Session" as screens.md names it; `test/capture.test.ts` `@F27` checks `barSize` at 150 %.
+- 1.1: `test/guide.test.ts` F3 checks that accepted rules match `guideAccepted`. It now also counts the six rules this change's gate accepted, listed with `@F33`. Without that, F3 would reject any rule added after the interaction-guide-polish gate.
+- 1.1: EX-7 keeps its id and now records the global Esc, which bends WIN-4. The drawn label it excused is retired (Q3).
+- 1.3: tests that encoded the replaced bar changed with it, as the facts say they replace them.
+  - `test/capture.test.ts`: F202, F211 and F216 now hold `@F15`, `@F26` and CAP-6 for the five modes.
+  - `test/capture.test.ts`: the `@F4` source check follows ⌃⇧3 through `captureArgs('full')`, still with no arguments.
+  - `test/menu.test.ts`: F114 and F118 read the shared pop-up's counts and Older Sessions….
+  - `test/keys.test.ts`: F236's bar rows and keys follow the new bar.
+  - `test/smoke.ts`: the bar block replaces F202, F203, F9, F10 and the drawn label's F5–F8.
+  - `test/smoke.ts`: F223 switches One-Shot with the segment instead of Options ▸ Save to.
+  - `settings.html` gains the 3 Seconds timer (questions.md).
+- Milestone 1 fix round (findings.md 4–14): `snapmark-app/README.md` and `docs/ux/setup.md` were edited, a departure from Files that change. The user docs described the old keys and the old bar.
+- Milestone 1 fix round: the questions.md default "the bar draws no ⇧⌘O and ⇧⌘P" is reversed. The bar now shows both keys.
+- Milestone 1 fix round: tests this change owns follow the fixes.
+  - `test/keys.test.ts`: `@F10` reads the new `launching` flag, and `@F18` the two visible keys.
+  - `test/keys.test.ts`: the ⇧⌘P row is "Switch Session", as screens.md names it.
+  - `test/capture.test.ts`: `@F27` checks `barSize` at 150 %.
+- Milestone 1 gate: two `test/keys.test.ts` source checks named old lines. They now name `() => void captureFullScreen()` and the countdown cancel on ⌃⇧5 (F31).
