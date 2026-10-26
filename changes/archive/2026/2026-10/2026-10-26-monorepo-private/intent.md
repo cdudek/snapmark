@@ -8,6 +8,7 @@ status: approved
 reviewed_by: Calvin Dudek
 approved_at: 2026-10-26
 created: 2026-10-26
+archived_at: 2026-10-26
 ---
 
 # Intent: one private repo for the app, the Chrome extension and the website, with updates that keep working
@@ -38,7 +39,7 @@ Drafted by the agent from the asks; the engineer confirms them. Label every stor
 
 How we know after release that it worked. One number, where it is read, and the target.
 
-- **Measure:** the owner's Snapmark updates itself to the first version released after the repo went private. **Read in:** Snapmark ▸ About and the bucket's object list. **Target:** within one day, on both of the owner's Macs.
+- **Measure:** the owner's Snapmark updates itself to the first version released after the repo went private. **Read in:** Snapmark ▸ About and the bucket's object list. **Target:** within one day, on the owner's Mac. (The draft said "both Macs"; that was the orchestrator's assumption, the owner has one.)
 
 ## Problem
 
