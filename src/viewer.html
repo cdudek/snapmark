@@ -91,6 +91,12 @@
       header input {
         -webkit-app-region: no-drag;
       }
+      /* Only the name shrinks in a narrow window or for a long name: the tabs and buttons keep their one line. */
+      header > button,
+      .tabs {
+        flex: none;
+        white-space: nowrap;
+      }
       header .icon {
         width: 22px;
         height: 22px;
@@ -104,6 +110,7 @@
         min-width: 0;
       }
       #title {
+        min-width: 0;
         border: 0;
         background: none;
         padding: 3px 4px;
@@ -148,7 +155,8 @@
         color: inherit;
       }
       #rename::placeholder {
-        color: var(--muted);
+        color: var(--muted); /* 5:1 on --panel, light and dark */
+        opacity: 1;
       }
       #rename::selection {
         background: var(--accent-fill);
@@ -504,7 +512,7 @@
         <p class="empty" id="grid-empty">No screenshots yet. Capture one with ⌃⇧4.</p>
       </section>
       <section id="shots" hidden>
-        <div class="stage"><img id="shot" alt="" /></div>
+        <div class="stage"><img id="shot" alt="" tabindex="-1" /></div>
         <div class="bar">
           <button id="back" title="All screenshots (Esc)">‹ All Screenshots</button>
           <button id="prev" title="Previous (←)">←</button>

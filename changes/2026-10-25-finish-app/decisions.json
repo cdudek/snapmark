@@ -1,0 +1,37 @@
+{
+  "size": "L",
+  "kind": "feature",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "new",
+    "slug": "finish-app"
+  },
+  "milestones": [
+    {
+      "n": 1,
+      "slug": "finish-app-1",
+      "title": "Editor polish and leftovers"
+    },
+    {
+      "n": 2,
+      "slug": "finish-app-2",
+      "title": "Capture bar, Settings, Keyboard Shortcuts"
+    },
+    {
+      "n": 3,
+      "slug": "finish-app-3",
+      "title": "Tall captures as tiles"
+    },
+    {
+      "n": 4,
+      "slug": "finish-app-4",
+      "title": "Electron 45 and dependency updates"
+    }
+  ],
+  "milestoneNote": "2026-10-25: the owner asked for everything but selling in one go (A12); tiles (snap-bmr.10) became milestone 3 of this change. Intent confirmed in a dialog.",
+  "ticket": "snap-bmr",
+  "design": "docs/designs/2026-10-25-adr-tall-screenshots-saved-as-parts.md",
+  "skips": {
+    "prototype": "skip -- the approved mocks in design-explorations/ are the prototype for milestones 1 and 2; milestone 3 changes no window (orchestrator, 2026-10-25)"
+  }
+}

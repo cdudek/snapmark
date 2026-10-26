@@ -173,7 +173,7 @@ resolves.
     F001, F001, F001, F001). The current-session block gives Rename, Show in Finder and Export the same
     rank as the hand-off (F002). Keyboard Shortcuts is filed under Settings (F003/F065, F003/F065, F003/F065).
   - _Dialogs:_ one Snapmark dialog (the quit question: "N screenshots are not in a session yet."
-    [Review] [Quit anyway]); three macOS open panels (Sessions Folder…, Other Session…, Reopen
+    [Review] [Quit anyway]); three macOS open panels (Sessions Folder…, Older Sessions…, Reopen
     Discarded…) with the default "Open" button and an explanation in a title macOS may not show;
     Rename is an AppleScript dialog, checked only after it closes (F177/F190, F177/F178, F177). Restart to Update
     closes unfinished editors without the quit question (F212).
@@ -182,7 +182,7 @@ resolves.
 - **Rule:**
   - **Menu bar menu.** Fixed rows in a fixed order; unavailable rows are greyed, never hidden; rare
     states (an update waiting) are added at the bottom, above Quit. Top level, about ten rows:
-    1. Capture Screenshot · Capture Same Area (with where the area is) · Choose Area…
+    1. Capture Screenshot · Capture Last Area (with where the area is) · Choose Area…
     2. the current session's header, **one hand-off item**, Open Session
     3. session management: New Session…, Switch Session ▸ (and, fixed, Reopen Last Discarded)
     4. Settings ▸, Keyboard Shortcuts, Quit Snapmark
@@ -211,7 +211,7 @@ resolves.
   agent 1 ([Proposal](audits/2026-09-28/shots/1-proposal-menu.png)), agent 7 ([Proposal](audits/2026-09-28/shots/7-proposal-menu.png)),
   agent 6 ([Proposal](audits/2026-09-28/shots/6-menu-built-vs-proposal.png)), and the copy item by agent 4
   ([Proposal](audits/2026-09-28/shots/4-proposal-copy-item.png)).
-- **Applies to:** menu bar menu, quit and update questions, Sessions Folder…, Other Session…, Reopen
+- **Applies to:** menu bar menu, quit and update questions, Sessions Folder…, Older Sessions…, Reopen
   Discarded…, Rename Session…, the Mac menu bar.
 
 <details><summary>Supporting notes</summary>
@@ -338,7 +338,7 @@ resolves.
     menu, a bar in the session window), written event · consequence · action, never raw error text.
   - Notifications are for things that happen out of sight (a copy, a background update, a taken shortcut
     at launch) and always have an in-app twin (the menu line) for when notifications are off.
-  - Key names in messages use the symbols (⌃⇧2), never code names.
+  - Key names in messages use the symbols (⌃⇧N), never code names.
 - **Why it helps:** the reviewer knows the screenshot landed, where a closed one went, and what failed,
   without watching the corner of the screen.
 - **Tradeoff:** an icon badge and in-menu status lines are small new pieces of UI; fewer notifications
@@ -394,7 +394,7 @@ resolves.
 - **Today:** the menu bar menu is the only hub. Each capture opens its own editor, centred, exactly on
   top of any editor already open (F059/F066). From a full-screen browser the editor stays on that Space while
   the Mac slides to the desktop, so the reviewer lands on an empty desktop and must swipe back (F026,
-  F026 to F030, F026/F027, F026/F027, F026); the next Capture Same Area can then photograph the desktop. Every
+  F026 to F030, F026/F027, F026/F027, F026); the next Capture Last Area can then photograph the desktop. Every
   editor window is titled "Snapmark" (F059/F066, F059/F066, F059, F059, F059). The editor names its session only
   as "→ 2026-09-28 09.14" at the far top right and cannot reach it (F061/F101, F060, F101, F060, F060, F059/F060/F061).
   The session window cannot hand off, export or rename (F133, F133, F133, F133). Every session action
@@ -485,7 +485,7 @@ resolves.
 - **Today:** the comment field's only label is its placeholder "Add a comment…" (F091, F091, F091, F091);
   reference fields lose their "Note for 1" label once typing starts (F087). Rename is checked after its
   dialog has closed: a taken name gives a notification and the typed name is lost; "/" and ":" are
-  replaced silently (F177/F178, F177, F177/F178, F177/F178). Other Session… and Sessions Folder… are checked after the
+  replaced silently (F177/F178, F177, F177/F178, F177/F178). Older Sessions… and Sessions Folder… are checked after the
   panel closes (F004/F186, F004). An area under 8 × 8 starts over silently. An empty note is saved as
   "_(no note)_" (F090, F090).
 - **Rule:**
@@ -503,7 +503,7 @@ resolves.
   dialog, which is more code.
 - **Exceptions:** none.
 - **Example:** the comment field without a label ([annotated](audits/2026-09-28/shots/7-editor-empty-1180-annotated.png)).
-- **Applies to:** editor side panel, Rename Session, Other Session…, Sessions Folder…, `session.md`.
+- **Applies to:** editor side panel, Rename Session, Older Sessions…, Sessions Folder…, `session.md`.
 
 <details><summary>Supporting notes</summary>
 
@@ -523,9 +523,9 @@ resolves.
   suspended in text fields; ⌘ keys always act, including the stock ⌘R, which wipes the marks (F053). Esc
   steps back through four levels in the editor and ends by discarding (F163/F221, F051); it cancels the area
   picker; it does nothing in the session window or the Keyboard Shortcuts window (F165). Global keys:
-  ⌃⇧1 capture, ⌃⇧2 New Session, ⌃⇧3 Capture Same Area — New Session between the two captures (F020,
+  the old capture keys had New Session between them (F020,
   F020, F020/F176, F020/F176, F020), one modifier away from macOS's own ⌘⇧3/4/5 (F022, F022), and none of them can
-  be changed (F021, F021, F017/F021/F173, F021). Choosing a tool from the keyboard throws focus to the top of the
+  be changed (F021, F021, F017/F021/F173, F021); since 2026-10-25 they follow macOS: ⌃⇧4, ⌃⇧3, ⌃⇧5 and ⌃⇧N. Choosing a tool from the keyboard throws focus to the top of the
   page (F056, F056). No keyboard route for moving marks or for any menu action (F048/F119, F025); the key list
   lives under Settings and misses the session window's and area picker's keys (F161, F159). Right after
   a reference, the next tool key types into its note (F124).
@@ -575,16 +575,16 @@ resolves.
 
 - **Status:** proposed
 - **Situation:** finding an older session; finding a note in a long session.
-- **Today:** none anywhere. Switch Session shows the 20 most recently used sessions; older ones only
+- **Today:** none anywhere. Switch Session shows the 10 most recent sessions; older ones only
   through a Finder folder panel (F004/F013). ⌘F does nothing in the session window (F150).
-- **Rule:** no search in the menu (twenty recent sessions plus "Other Session…" is enough). Find in
+- **Rule:** no search in the menu (the 10 most recent sessions plus "Older Sessions…" is enough). Find in
   page in the session window: ⌘F, matches as you type, Enter for the next, Esc clears and returns focus.
   Revisit a session filter only if sessions routinely exceed twenty.
 - **Why it helps:** a long review can be checked for a word before it is handed off.
 - **Tradeoff:** none worth naming.
 - **Exceptions:** none.
 - **Example:** a 30-screenshot session: ⌘F "Delete" jumps between the three notes that mention it.
-- **Applies to:** session window; menu (Switch Session, Other Session…).
+- **Applies to:** session window; menu (Switch Session, Older Sessions…).
 
 <details><summary>Supporting notes</summary>
 
@@ -673,7 +673,7 @@ resolves.
   - Dragging the marked image out of the editor or the Screenshots tab gives the PNG.
 - **Why it helps:** the gestures stay fast for the pointer, become possible without it, and the area can
   be fixed before it is committed.
-- **Tradeoff:** an adjust step before the first Capture Same Area adds one keypress (once per area).
+- **Tradeoff:** an adjust step before the first Capture Last Area adds one keypress (once per area).
 - **Exceptions:** freehand pen strokes stay pointer-only (a path cannot be clicked).
 - **Example:** the area captured the moment the mouse is released
   ([annotated](audits/2026-09-28/shots/7-area-dragging-annotated.png)); agent 5's click and key route for the area
@@ -753,7 +753,7 @@ exploration does not change that.
   - A write that collides keeps the reviewer's text and asks (see Saving); a write that fails says so in
     place with a way forward; a change from outside shows in place (as today).
   - Changing the sessions folder offers to move the sessions, reports what moved, and keeps the old
-    folder reachable through "Other Session…".
+    folder reachable through "Older Sessions…".
   - Closing a window writes what it holds first.
   - Anything the reviewer redacted is redacted everywhere Snapmark keeps it: the clear original for Edit
     Again is kept outside the shared session folder (or the redaction is burnt in and Edit Again keeps
@@ -818,7 +818,7 @@ A cloud sessions folder is the operating system's sync, covered by Local work an
   F209, F209). Without Screen Recording permission every capture is the wallpaper, with no explanation
   (F210, F210, F210). Help is the tooltips, the key under each tool, the picker's hint and the Keyboard
   Shortcuts window under Settings; no Help menu, no key for help, no route from the editor (F003/F065, F065,
-  F003/F065, F003/F065). The empty session's hint ("This session is empty. Capture a screenshot with ⌃⇧1.") never
+  F003/F065, F003/F065). The empty session's hint ("This session is empty. Capture a screenshot with ⌃⇧4.") never
   shows (F132, F132, F132, F132, F132, F132). The first-run menu shows "No Session Yet" over five greyed
   rows (F007, F007). The README teaches ⌘⇧1 and ⌘⇧2 (F211/F218, F211, F211, F211/F218, F211).
 - **Rule:**
@@ -828,8 +828,8 @@ A cloud sessions folder is the operating system's sync, covered by Local work an
     ([Open System Settings] then [Quit & Reopen]) instead of a wallpaper capture.
   - Help is one key away everywhere (⌘/) and in the Mac menu bar's Help menu; the list opens on the keys
     that work anywhere.
-  - Every empty state teaches the next step, in the window where it is seen ("No screenshots yet. Press
-    ⌃⇧1 to capture one.").
+  - Every empty state teaches the next step, in the window where it is seen ("No screenshots yet.
+    Capture one with ⌃⇧4.").
   - Tooltips, hints and the README are generated from, or checked against, the same key list.
 - **Why it helps:** the first useful screenshot happens without reading the README.
 - **Tradeoff:** a first-launch sign is shown once and then never again; a reviewer who misses it still
@@ -877,8 +877,8 @@ A cloud sessions folder is the operating system's sync, covered by Local work an
 #### Capturing never captures Snapmark, never loses the reviewer's place, and shows what it will capture
 
 - **Status:** proposed
-- **Situation:** Capture Screenshot, Capture Same Area, the area picker, ten captures in a row.
-- **Today:** Capture Same Area photographs Snapmark's own editor when one is still open over the area
+- **Situation:** Capture Screenshot, Capture Last Area, the area picker, ten captures in a row.
+- **Today:** Capture Last Area photographs Snapmark's own editor when one is still open over the area
   (F033/F066, F033, F033), and each new editor opens exactly on top of the last. The area is a fixed place on
   the screen, not a place in the browser (F037), shown only by its size, "1280 × 720" (F035, F035, F035,
   F035, F035); "Choose New Area…" also captures at once (F040). The picker opens only on the display
@@ -888,7 +888,7 @@ A cloud sessions folder is the operating system's sync, covered by Local work an
   Retina screen is shown at twice its size and looks soft (F106).
 - **Rule:**
   - Snapmark hides its own windows for the moment of a capture and brings them back after.
-  - Capture Same Area names where the area is ("1280 × 720 · Built-in Display, top left") and "Choose
+  - Capture Last Area names where the area is ("1280 × 720 · Built-in Display, top left") and "Choose
     Area…" opens the picker with the current area drawn, movable and resizable, on every display.
   - A capture that fails says so; Esc stays silent.
   - The editor can zoom (⌘+, ⌘−, ⌘0 for fit, pinch) and shows a small capture at its real size.
@@ -1073,8 +1073,9 @@ They apply on top of the area rules above. WCAG 2.2 AA is the bar.
 #### A12 · Single-key shortcuts stay out of text fields and can be switched off (keyboard and focus)
 
 - **Status:** proposed
-- **Today:** tool keys are suspended in text fields (good) but cannot be switched off (F112); right after
-  a reference, a tool key types into its note (F124).
+- **Today:** tool keys are suspended in text fields, and Settings ▸ Single-Key Tools switches them off, leaving
+  ⌘1–⌘7. The toolbar captions, tooltips and the Keyboard Shortcuts window follow the setting, and smoke and unit
+  tests cover it (`test/keys.test.ts` F103–F105, F109; smoke F106, F110).
 - **Rule:** single-key shortcuts act only when no text field has the cursor, and a setting turns them off
   (or requires a modifier).
 - **Applies to:** editor.
@@ -1222,7 +1223,7 @@ the three from the briefing. "M" is the menu bar menu.
 | 1   | M → Switch Session ▸ "Checkout review · 12 · 27 Sep" | menu key, arrows, Return | its session window opens; today's session stays current             |
 | 2   | ⌘F "Delete"                                          | ⌘F                       | matches highlighted as you type                                     |
 | 3   | Copy for AI                                          | ⌘⇧C                      | "Copied: the path to Checkout review"                               |
-| 4   | close the window                                     | ⌘W                       | back where the reviewer was; next ⌃⇧1 still goes to today's session |
+| 4   | close the window                                     | ⌘W                       | back where the reviewer was; next ⌃⇧4 still goes to today's session |
 
 - **Rules:** Navigation and return, Search and filters, Lists and selection.
 
@@ -1256,38 +1257,38 @@ the three from the briefing. "M" is the menu bar menu.
 
 ### F9 · First launch up to the first saved screenshot (all scenes)
 
-- **Today:** install, Gatekeeper "Open Anyway", launch: only a small menu bar icon (F209); ⌃⇧1 (learned
-  from the README, which says ⌘⇧1, F211) → Screen Recording prompt → the capture is the wallpaper
-  (F210) → quit and relaunch → ⌃⇧1 → drag → mark → ⌘↵ → the window vanishes (F062). 10+ steps.
+- **Today:** install, Gatekeeper "Open Anyway", launch: only a small menu bar icon (F209); the capture key (learned
+  from the README, which then said ⌘⇧1, F211) → Screen Recording prompt → the capture is the wallpaper
+  (F210) → quit and relaunch → ⌃⇧4 → drag → mark → ⌘↵ → the window vanishes (F062). 10+ steps.
 - **Proposed:**
 
 | #   | Pointer              | Keyboard  | Sees                                                                                                         |
 | --- | -------------------- | --------- | ------------------------------------------------------------------------------------------------------------ |
-| 1   | open Snapmark        | —         | the menu opens once below the icon: "Snapmark lives here. ⌃⇧1 captures, ⌃⇧2 captures the same area."         |
-| 2   | Capture Screenshot   | ⌃⇧1       | Screen Recording missing: a small window with [Open System Settings] and [Quit & Reopen], before any capture |
-| 3   | after reopening      | ⌃⇧1, drag | editor on the capture, over the app it came from                                                             |
+| 1   | open Snapmark        | —         | the menu opens once below the icon: "Snapmark lives here. ⌃⇧4 captures, ⌃⇧3 captures the same area."         |
+| 2   | Capture Screenshot   | ⌃⇧4       | Screen Recording missing: a small window with [Open System Settings] and [Quit & Reopen], before any capture |
+| 3   | after reopening      | ⌃⇧4, drag | editor on the capture, over the app it came from                                                             |
 | 4   | mark, Add to session | ⌘↵        | tick and "1" on the menu bar icon; the session was created and named "28 Sep 14:32"                          |
 
 - **Rules:** First run and help, Feedback, Navigation.
 
 ### F10 · Capture, mark, save, capture the next one (scene 1)
 
-- **Today:** ⌃⇧1, drag, mark, ⌘↵ — 3 steps plus marking; the window vanishes without a sign (F062);
+- **Today:** ⌃⇧4, drag, mark, ⌘↵ — 3 steps plus marking; the window vanishes without a sign (F062);
   every editor starts on Box in red (F107).
 - **Proposed:**
 
 | #   | Pointer          | Keyboard                | Sees                                                      |
 | --- | ---------------- | ----------------------- | --------------------------------------------------------- |
-| 1   | —                | ⌃⇧1, drag               | editor over the browser, on the tool and colour used last |
+| 1   | —                | ⌃⇧4, drag               | editor over the browser, on the tool and colour used last |
 | 2   | mark, type notes | 1, click, type; 5, drag | notes and cards listed in the panel                       |
 | 3   | Add to session   | ⌘↵                      | back in the browser; tick and count on the menu bar icon  |
-| 4   | —                | ⌃⇧1                     | next capture                                              |
+| 4   | —                | ⌃⇧4                     | next capture                                              |
 
 - **Rules:** Navigation, Feedback, Remembered state, Capturing.
 
 ### F11 · Start a new session and switch back to an older one (scene 1)
 
-- **Today:** ⌃⇧2 anywhere (between the two capture keys) → notification only; switching back: M → Switch
+- **Today:** ⌃⇧N anywhere → notification only; switching back: M → Switch
   Session ▸ a timestamp. A slip costs the rest of the review (F020, F020, F020/F176, F020/F176).
 - **Proposed:**
 
@@ -1387,7 +1388,7 @@ the three from the briefing. "M" is the menu bar menu.
 
 | #   | Pointer | Keyboard                                   | Sees                                                                            |
 | --- | ------- | ------------------------------------------ | ------------------------------------------------------------------------------- |
-| 1   | —       | ⌃⇧2 (or the owner's Capture Same Area key) | first time: the picker; drag; handles to adjust; Return captures                |
+| 1   | —       | ⌃⇧3 (or the owner's Capture Last Area key) | first time: the picker; drag; handles to adjust; Return captures                |
 | 2   | mark    | keys                                       | editor over the browser, on the last tool and colour                            |
 | 3   | —       | ⌘↵                                         | back in the browser; count on the icon                                          |
 | 4   | —       | same key × 9                               | each capture hides Snapmark's windows; editors that are still open stack offset |
@@ -1398,9 +1399,9 @@ the three from the briefing. "M" is the menu bar menu.
 
 ### F19 · Capture from a full-screen browser and come back (scene 1, from the briefing)
 
-- **Today:** ⌃⇧1, drag → macOS slides to the desktop, the editor stays on the browser's Space → swipe back
+- **Today:** ⌃⇧4, drag → macOS slides to the desktop, the editor stays on the browser's Space → swipe back
   → mark → ⌘↵ → back in the browser. 4 steps per screenshot plus a search (F026, F026).
-- **Proposed:** ⌃⇧1, drag → the editor opens over the browser on its Space → mark → ⌘↵ → the browser.
+- **Proposed:** ⌃⇧4, drag → the editor opens over the browser on its Space → mark → ⌘↵ → the browser.
   3 steps, no Space change ([Proposal](audits/2026-09-28/shots/2-fullscreen-proposal.png)).
 - **Rules:** Navigation and return, Motion, Keyboard and focus (A5).
 
@@ -1467,7 +1468,7 @@ and the prompt).
 | A9 Contrast, measured                                                            | a token contrast table checked in CI (light and dark); axe-core colour-contrast                                                                                                                                                                    | **not enforced**                                                                         | tokens; the check                                                                                             |
 | A10 Never colour alone                                                           | the approve mark decision; `session.md` "Marks:" line test                                                                                                                                                                                         | **not enforced**                                                                         | approve mark (if chosen); format test                                                                         |
 | A11 Targets ≥ 24 points                                                          | smoke: Fabric handle size ÷ display scale ≥ 24                                                                                                                                                                                                     | **not enforced**                                                                         | handle sizing                                                                                                 |
-| A12 Single keys out of text, switchable                                          | the editor's one key handler (skips text fields today); a setting and a test                                                                                                                                                                       | **partly** (the handler skips text fields; no off switch, no test)                       | the setting; a smoke assertion                                                                                |
+| A12 Single keys out of text, switchable                                          | the editor's one key handler (skips text fields today); a setting and a test                                                                                                                                                                       | **yes** (Settings ▸ Single-Key Tools; `test/keys.test.ts`, smoke F106 and F110)          | —                                                                                                             |
 | A13 Language and titles                                                          | axe-core `html-has-lang`; `titleFor` test                                                                                                                                                                                                          | **not enforced**                                                                         | `lang` attributes; `titleFor`                                                                                 |
 | A14 200% and 400% zoom                                                           | smoke at zoom factor 2 and 4: primary button in view                                                                                                                                                                                               | **not enforced**                                                                         | stacking layout; minimum window sizes                                                                         |
 | A15 Reduce Motion                                                                | the CSS rule under Motion                                                                                                                                                                                                                          | **not enforced** (nothing animates)                                                      | as Motion                                                                                                     |

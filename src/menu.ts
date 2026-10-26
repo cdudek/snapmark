@@ -53,6 +53,15 @@ export interface MenuActions {
 
 export const MAX_LISTED = 10;
 
+// The quit warning: one-shot images are never in a session, so they are counted as not copied or saved.
+export function quitMessage(inSession: number, oneShot: number): string {
+  const n = inSession + oneShot;
+  const is = n === 1 ? 'is' : 'are';
+  if (!oneShot) return `${n} screenshot${n === 1 ? '' : 's'} ${is} not in a session yet.`;
+  if (!inSession) return `${n} image${n === 1 ? '' : 's'} ${is} not copied or saved yet.`;
+  return `${n} screenshots are not saved yet.`;
+}
+
 // The most recently used sessions; the current one takes the last row when it is older than those.
 const recent = (sessions: SessionInfo[], cur: SessionInfo | null) => {
   const top = sessions.slice(0, MAX_LISTED);
@@ -131,7 +140,7 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
         { ...shortcut('New Session', st.shortcuts.newSession, () => a.newSession()), ...icon('new') },
         {
           label: 'Switch Session',
-          enabled: st.sessions.length > 0,
+          enabled: st.sessions.some((s) => s.name !== cur?.name), // greyed while there is nothing to switch to
           ...icon('switch'),
           submenu: [
             ...recent(st.sessions, cur).map((s): Item => ({
@@ -195,5 +204,39 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
       ],
     },
     { label: 'Quit Snapmark', accelerator: 'Command+Q', ...icon('quit'), click: () => a.quit() },
+  ];
+}
+
+// The editor's session label (spec M1): the 10 recent sessions, this editor's ticked, then New Session. A pick moves
+// the editor's screenshot to that session and makes it the current one.
+export interface EditorSessionActions {
+  moveTo(name: string): void;
+  newSession(): void;
+}
+
+export function editorSessionMenu(st: MenuState, session: string, a: EditorSessionActions): Item[] {
+  const own = st.sessions.find((s) => s.name === session) ?? null;
+  return [
+    ...recent(st.sessions, own).map((s): Item => ({
+      label: s.label,
+      type: 'checkbox',
+      checked: s.name === session,
+      click: () => a.moveTo(s.name),
+    })),
+    { type: 'separator' },
+    {
+      label: 'New Session',
+      ...(st.shortcuts.newSession ? { accelerator: st.shortcuts.newSession, registerAccelerator: false } : {}),
+      click: () => a.newSession(),
+    },
+  ];
+}
+
+// The editor's Copy or Save button: the two buttons it replaces. The keys are the editor page's own, so the menu only
+// shows them.
+export function copyMenu(a: { copyImage(): void; saveAs(): void }): Item[] {
+  return [
+    { label: 'Copy Image', accelerator: 'Shift+Command+C', registerAccelerator: false, click: () => a.copyImage() },
+    { label: 'Save As…', accelerator: 'Shift+Command+S', registerAccelerator: false, click: () => a.saveAs() },
   ];
 }

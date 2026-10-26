@@ -33,7 +33,7 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 ├── Capture Screenshot  ⌃⇧4
 │     └──► macOS capture overlay (native): drag a region, or Space + click a window ──► Editor
 │                                          Esc or a failed capture ──► nothing (silent; the two look alike, F028)
-├── Capture Same Area   ⌃⇧3   sub-line "1280 × 720" or "First time: drag the area"
+├── Capture Last Area   ⌃⇧3   sub-line "1280 × 720" or "First time: drag the area"
 │     ├── no area yet, or its display is gone ──► Area picker (display under the pointer, over full-screen apps)
 │     │        drag ≥ 8 × 8, release ──► captured at once ──► Editor · click or sliver ──► starts over · Esc ──► nothing
 │     └── area set ──► captured at once (with any Snapmark window that is over it, F033/F066) ──► Editor
@@ -62,8 +62,13 @@ MENU (rebuilt on every open; rows appear and disappear with state: 12 to 17 top-
 
 EDITOR  (one per capture; title "Snapmark"; opens centred, exactly on top of any open editor; Dock icon shows;
          from a full-screen app it stays on that Space while the Mac slides to the desktop, F026 / F026)
-├── Toolbar: C Select · 1 Reference/Card · 2 Box/Ellipse · 3 Arrow · 4 Pen · 5 Cross/Remove area ·
-│            6 Highlighter/Spotlight · 7 Cut & move/Redact · colour well · Undo ⌘Z · Redo ⇧⌘Z · "→ <folder name>" (text)
+├── Title row: traffic lights · app icon + "Snapmark" (drags the window; the window title stays "Snapmark — <session>")
+├── Toolbar: C Select · ⌘1 Reference/Card · ⌘2 Box/Ellipse · ⌘3 Arrow · ⌘4 Pen · ⌘5 Cross/Remove area ·
+│            ⌘6 Highlighter/Spotlight · ⌘7 Cut & move/Redact (captions follow Settings ▸ Single-Key Tools: C or Esc) ·
+│            colour swatch · Undo (icon) · Redo (icon) · Copy or Save (icon) · "<session> · n screenshots ⌄"
+├── Copy or Save ──► native menu: Copy Image ⇧⌘C · Save As… ⇧⌘S
+├── session label ⌄ ──► native menu: the 10 recent sessions (this editor's ticked) · New Session
+│         a pick ──► the editor saves there, and it becomes the current session (plain text in Edit Again and one-shot)
 ├── Canvas (fitted, no zoom)
 ├── Side panel: comment ("Add a comment…") · References (after the first) · [Discard ⌘W] [Add to session ⌘↵ | Save changes ⌘↵]
 ├── ⌘↵ ──► entry added (or replaced, Edit Again) ──► window closes (silent; no route to the session)
@@ -131,7 +136,7 @@ ENTRY POINTS
 ├── Menu bar icon (shows a brief tick and the count after each Add to session; a key opens it (decision))
 ├── Global keys: capture only, on neighbouring keys, changeable (chosen 2026-10-25: ⌃⇧3, ⌃⇧4, ⌃⇧5 mirror macOS's ⇧⌘3, ⇧⌘4, ⇧⌘5)
 │     ├── Capture Screenshot
-│     └── Capture Same Area
+│     └── Capture Last Area
 ├── ⌘/ in any Snapmark window ──► Keyboard Shortcuts
 ├── Drop an image on the menu bar icon, or paste ──► Editor on that image
 └── Relaunching Snapmark ──► opens its menu
@@ -141,7 +146,7 @@ FIRST CAPTURE without Screen Recording ──► small window: [Open System Sett
 
 MENU (fixed rows in a fixed order; unavailable rows greyed, never hidden; about 11 rows)
 ├── Capture Screenshot                <key>
-├── Capture Same Area                 <key>    sub-line "1280 × 720 · Built-in Display, top left"
+├── Capture Last Area                 <key>    sub-line "1280 × 720 · Built-in Display, top left"
 ├── Choose Area…                      ──► Area picker with the current area drawn, adjustable, then [Capture] (Return)
 ├── ──
 ├── "Checkout review · 7 screenshots"          (header)

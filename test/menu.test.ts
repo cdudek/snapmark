@@ -2,7 +2,18 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { menuTemplate, captureOptions, loginState, MenuActions, MenuState, MAX_LISTED } from '../src/menu';
+import {
+  menuTemplate,
+  captureOptions,
+  loginState,
+  editorSessionMenu,
+  copyMenu,
+  quitMessage,
+  MenuActions,
+  MenuState,
+  MAX_LISTED,
+} from '../src/menu';
+import type { EditorSessionActions } from '../src/menu';
 
 const calls: string[] = [];
 const a = new Proxy({} as MenuActions, {
@@ -12,9 +23,9 @@ const a = new Proxy({} as MenuActions, {
       calls.push([String(key), ...args].join(':')),
 });
 const base: MenuState = {
-  current: { name: '2026-09-25 12.03', label: '25 Sep 12.03', count: 2 },
+  current: { name: '2026-09-25 12.03', label: '2026-09-25, 12:03', count: 2 },
   sessions: [
-    { name: '2026-09-25 12.03', label: '25 Sep 12.03', count: 2 },
+    { name: '2026-09-25 12.03', label: '2026-09-25, 12:03', count: 2 },
     { name: 'Old', label: 'Old', count: 0 },
   ],
   root: '~/Documents/Snapmark',
@@ -42,7 +53,7 @@ const head = (items: Item[]) => items.find((i) => i.type === 'header')!;
 // Order and labels, as the owner drew it (2026-10-24): capture, the current session, then Session ▸ for the rest
 assert.deepStrictEqual(labels(menu()), [
   'Adding screenshots to',
-  '25 Sep 12.03 · 2 screenshots',
+  '2026-09-25, 12:03 · 2 screenshots',
   'Capture Screenshot…',
   'Capture Last Area',
   'Capture Options',
@@ -139,7 +150,7 @@ assert.strictEqual(calls.pop(), 'openFile:2026-09-25 12.03');
 const ses = sub(find(menu(), 'Session'));
 assert.deepStrictEqual(labels(ses), [
   'Current Session',
-  '25 Sep 12.03',
+  '2026-09-25, 12:03',
   'New Session',
   'Switch Session',
   '—',
@@ -188,7 +199,7 @@ assert.strictEqual(labels(switchOf({ sessions: many(10), current: many(10)[0] })
 // F17 empty: no session, Switch Session greyed
 assert.strictEqual(find(sub(find(menu({ current: null, sessions: [] }), 'Session')), 'Switch Session').enabled, false, 'F17');
 const listed = sub(find(ses, 'Switch Session'));
-assert.strictEqual(find(listed, '25 Sep 12.03').checked, true);
+assert.strictEqual(find(listed, '2026-09-25, 12:03').checked, true);
 find(listed, 'Old').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'makeCurrent:Old');
 
@@ -248,5 +259,63 @@ assert.strictEqual(wait.checked, false);
 assert.strictEqual(wait.sublabel, 'Allow in System Settings → Login Items');
 const ticked = find(sub(find(menu({ login: loginState(true, { openAtLogin: false, status: 'enabled' }) }), 'Settings')), 'Open at Login');
 assert.strictEqual(ticked.checked, true);
+
+// F113 Copy or Save menu: Copy Image ⇧⌘C and Save As… ⇧⌘S, which do what the two buttons did
+// The same recording proxy, for the editor's own menus
+const ed = a as unknown as EditorSessionActions & { copyImage(): void; saveAs(): void };
+const share = copyMenu(ed);
+assert.deepStrictEqual(
+  share.map((i) => [i.label, i.accelerator, i.registerAccelerator]),
+  [
+    ['Copy Image', 'Shift+Command+C', false],
+    ['Save As…', 'Shift+Command+S', false],
+  ],
+  'F113',
+);
+share[0].click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'copyImage', 'F113');
+share[1].click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'saveAs', 'F113');
+
+// F114 editor session menu: at most 10 sessions, this editor's ticked, then a separator and New Session
+const edMenu = editorSessionMenu(
+  { ...base, sessions: [...many(12).slice(0, 1), { name: 'b', label: 'B', count: 3 }, ...many(12).slice(1)] },
+  'b',
+  ed,
+);
+const edRows = edMenu.filter((i) => i.type === 'checkbox');
+assert.strictEqual(edRows.length, 10, 'F114 at most 10');
+assert.deepStrictEqual(
+  edRows.filter((i) => i.checked).map((i) => i.label),
+  ['B'],
+  'F114 b ticked',
+);
+assert.deepStrictEqual(labels(edMenu).slice(-2), ['—', 'New Session'], 'F114');
+find(edMenu, 'B').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'moveTo:b', 'F114 a pick moves the editor');
+find(edMenu, 'New Session').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'newSession', 'F114');
+// The editor's session 15th by last use still shows, ticked, as the 10th row
+const lateEd = editorSessionMenu({ ...base, sessions: many(15) }, 's14', ed).filter((i) => i.type === 'checkbox');
+assert.deepStrictEqual([lateEd.length, lateEd[9].label, lateEd[9].checked], [10, 's14', true], 'F114');
+
+// F118 one session: Switch Session is greyed while no session other than the current one exists
+const only = { name: 'solo', label: 'solo', count: 1 };
+assert.strictEqual(find(sub(find(menu({ current: only, sessions: [only] }), 'Session')), 'Switch Session').enabled, false, 'F118');
+assert.strictEqual(
+  find(sub(find(menu({ current: only, sessions: [only, { name: 'two', label: 'two', count: 0 }] }), 'Session')), 'Switch Session').enabled,
+  true,
+  'F118',
+);
+const soloMenu = editorSessionMenu({ ...base, current: only, sessions: [only] }, 'solo', ed);
+assert.deepStrictEqual(labels(soloMenu), ['solo', '—', 'New Session'], 'F118 editor menu');
+assert.ok(soloMenu[0].checked && soloMenu.every((i) => i.enabled !== false), 'F118 the one session ticked, nothing greyed');
+
+// F121 quit warning: one-shot images count as images not copied or saved yet (spec.md Words)
+assert.strictEqual(quitMessage(0, 1), '1 image is not copied or saved yet.', 'F121 one-shot only');
+assert.strictEqual(quitMessage(0, 2), '2 images are not copied or saved yet.', 'F121 one-shot only');
+assert.strictEqual(quitMessage(1, 2), '3 screenshots are not saved yet.', 'F121 mixed');
+assert.strictEqual(quitMessage(2, 0), '2 screenshots are not in a session yet.', 'F121 session only, as today');
+assert.strictEqual(quitMessage(1, 0), '1 screenshot is not in a session yet.', 'F121 session only, as today');
 
 console.log('menu: ok');

@@ -135,9 +135,18 @@
     if (!n || removing) return;
     removing = true;
     try {
-      await load(await window.snapmark.viewerRemove(n));
-      lastRemoved = data.discarded.find((d) => d.kind === 'shot')?.dir ?? null; // newest first
+      const at = data.shots.findIndex((s) => s.n === n);
+      const { data: d, dir } = await window.snapmark.viewerRemove(n);
+      await load(d);
+      lastRemoved = dir;
       $('announce').textContent = `Screenshot ${n} moved to Discarded. ⌘Z puts it back.`;
+      // Focus stays in the content, never on the page: ↩ would start a rename (snap-c5c).
+      // The grid focuses the tile that took the removed one's place, or the Screenshots tab when none is left.
+      if (view === 'shot') img.focus();
+      else if (view === 'grid') {
+        const pics = $('grid').querySelectorAll<HTMLElement>('.pic');
+        (pics[Math.min(at, pics.length - 1)] ?? $('tab-shots')).focus();
+      }
     } finally {
       removing = false;
     }
@@ -148,8 +157,13 @@
     const dir = lastRemoved;
     lastRemoved = null;
     if (!dir || !data.discarded.some((d) => d.dir === dir)) return;
+    const had = new Set(data.shots.map((s) => s.n));
     await load(await window.snapmark.viewerReopen(dir));
-    index = data.shots.length - 1; // it goes back at the end
+    // Back in place, or at the end when its number was taken in the meantime.
+    index = Math.max(
+      0,
+      data.shots.findIndex((s) => !had.has(s.n)),
+    );
     show('shot');
     $('announce').textContent = `Screenshot ${data.shots[index]?.n ?? ''} is back.`;
   }
@@ -164,9 +178,11 @@
   }
 
   // Rename in place: the title becomes a field; ↩ or clicking away saves, Esc cancels. A refused name keeps the field.
+  const hintText = () =>
+    data.stamped ? `${data.session.slice(0, 10)} stays in front · ↩ to save · Esc to cancel` : '↩ to save · Esc to cancel';
   function startRename() {
     input.value = data.name; // only the name: the date stays in front either way
-    hint.textContent = data.stamped ? 'The date stays · ↩ to save · Esc to cancel' : '↩ to save · Esc to cancel';
+    hint.textContent = hintText();
     hint.classList.remove('error');
     nameEl.classList.add('editing');
     input.focus();
@@ -197,7 +213,14 @@
       $('title').focus();
     }
   };
-  input.onblur = () => void saveRename();
+  // A click away saves; with the field emptied it keeps the old name (↩ on an empty field still clears it to the date).
+  input.onblur = () => (input.value.trim() ? void saveRename() : endRename());
+  // Typing after a refused name clears the error.
+  input.oninput = () => {
+    if (!hint.classList.contains('error')) return;
+    hint.textContent = hintText();
+    hint.classList.remove('error');
+  };
 
   $('tab-doc').onclick = () => show('doc');
   $('tab-shots').onclick = () => show('grid');

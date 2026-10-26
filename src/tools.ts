@@ -131,4 +131,41 @@ const GROUPS: ToolGroup[] = [
   },
 ];
 
-if (typeof module !== 'undefined') module.exports = { GROUPS };
+// The caption under a group's button: the key that always picks it, ⌘1–⌘7. Select has no ⌘ key (snap-bmr.17.3):
+// C while Settings ▸ Single-Key Tools is on, Esc while it is off.
+function capFor(g: ToolGroup, singleKeys: boolean): string {
+  if (g.key === 'c') return singleKeys ? 'C' : 'Esc';
+  return `⌘${g.key}`;
+}
+
+// Every key that picks the group in the current mode: "2 or ⌘2", "⌘2"; Select "C or Esc", "Esc".
+function keysFor(g: ToolGroup, singleKeys: boolean): string {
+  if (!singleKeys) return capFor(g, false);
+  return g.key === 'c' ? 'C or Esc' : `${g.key} or ⌘${g.key}`;
+}
+
+// "Box (2 or ⌘2) · press again for Ellipse"; with single keys off "Box (⌘2) · press ⌘2 again for Ellipse".
+function tipFor(g: ToolGroup, variant: number, singleKeys: boolean): string {
+  const t = g.tools[variant];
+  const next = g.tools[(variant + 1) % g.tools.length];
+  const again = singleKeys ? 'press again' : `press ${capFor(g, false)} again`;
+  return `${t.label} (${keysFor(g, singleKeys)})${t.tip ? `: ${t.tip}` : ''}` + (g.tools.length > 1 ? ` · ${again} for ${next.label}` : '');
+}
+
+// A hex code as typed or pasted into the colour panel: with or without "#", 3 or 6 digits, any case, spaces around it.
+// "#E5484D", "e5484d", " f00 " → "#e5484d", "#e5484d", "#ff0000"; anything else is null.
+function normalizeHex(text: string): string | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(text.trim());
+  if (!m) return null;
+  const digits = m[1].length === 3 ? [...m[1]].map((d) => d + d).join('') : m[1];
+  return `#${digits.toLowerCase()}`;
+}
+
+// The colour panel's Custom row: one row of five, newest first, each colour once, never a preset.
+const CUSTOM_MAX = 5;
+function withCustom(customs: string[], c: string, presets: string[]): string[] {
+  if (presets.includes(c)) return customs;
+  return [c, ...customs.filter((x) => x !== c)].slice(0, CUSTOM_MAX);
+}
+
+if (typeof module !== 'undefined') module.exports = { GROUPS, capFor, tipFor, normalizeHex, withCustom, CUSTOM_MAX };

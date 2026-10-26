@@ -2,7 +2,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { app, BrowserWindow, nativeImage, screen } from 'electron';
+import { app, BrowserWindow, nativeImage, nativeTheme, screen } from 'electron';
 
 const MOCK = `<body style="margin:0;font:16px system-ui;background:#fff;color:#18181b">
   <header style="height:56px;background:#18181b;color:#fff;display:flex;align-items:center;padding:0 24px">Acme Dashboard</header>
@@ -25,8 +25,23 @@ function pixel(file: string, fx: number, fy: number, dx = 0, dy = 0): number[] {
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-smoke-'));
 process.env.SNAPMARK_NO_UI = '1';
 process.env.SNAPMARK_ROOT = root;
-const { openEditor, openViewer, reopen, setActive, fitForAI, promptFor, sessionMdPath, pickArea, scrollCapture, desk } =
-  require('../src/main') as typeof import('../src/main');
+// state.json goes to the temp folder, never the dev app's real user data folder (F110)
+app.setPath('userData', path.join(root, 'userData'));
+const {
+  openEditor,
+  openViewer,
+  reopen,
+  setActive,
+  fitForAI,
+  promptFor,
+  sessionMdPath,
+  pickArea,
+  scrollCapture,
+  desk,
+  setSingleKeys,
+  menuItems,
+  moveEditor,
+} = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
 let offered = '';
@@ -37,6 +52,12 @@ desk.savePath = async (_win, opts) => {
   return { canceled: false, filePath: savedAs };
 };
 desk.recognize = async () => null; // as on Linux, where there is no Vision; the auto-redact checks feed their own text
+// Never a notification on the owner's screen, never their clipboard, never a real screencapture: kept here instead.
+const notes: { body: string; onClick?: () => void }[] = [];
+desk.notify = (body, onClick) => void notes.push({ body, onClick });
+let copiedText = '';
+desk.copyText = (text) => void (copiedText = text);
+desk.screencapture = (_args, done) => done(new Error('no screencapture in the smoke test'), '');
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -59,6 +80,7 @@ app
     const shotSize = nativeImage.createFromPath(shot).getSize();
     const shotCopy = path.join(root, 'mock-copy.png'); // openEditor deletes its input on close
     fs.copyFileSync(shot, shotCopy);
+    const why: Record<string, unknown> = {}; // what some checks saw, printed when the suite fails
     setActive(sessions.create(root, 'smoke'));
     const win = openEditor(shot);
     win.webContents.on('console-message', (e) => console.log('[page]', (e as unknown as { message: string }).message));
@@ -78,10 +100,17 @@ app
     const key = (k, opts = {}) => document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
     const drag = (k, pts) => { if (k) key(k); ev('mousedown', ...pts[0]); pts.slice(1).forEach((p) => ev('mousemove', ...p)); ev('mouseup', ...pts.at(-1)); };
     const px = (fx, fy) => { canvas.renderAll(); return Array.from(canvas.lowerCanvasEl.getContext('2d').getImageData(Math.round(canvas.width * fx), Math.round(canvas.height * fy), 1, 1).data); };
+    // WCAG contrast of two [r, g, b] colours
+    const lum = (c) => c.slice(0, 3).map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
     // Notes are Markdown fields (contenteditable). A new reference's field is mounted and focused a moment after the click.
     const note = async (text) => { for (let i = 0; i < 50 && !document.activeElement?.closest?.('#refs .md'); i++) await sleep(20); document.execCommand('insertText', false, text); document.activeElement.blur(); };
     const setMd = (el, lines) => { el.querySelector('.ProseMirror').focus(); document.execCommand('selectAll'); lines.forEach((l, i) => { if (i) document.execCommand('insertParagraph'); document.execCommand('insertText', false, l); }); };
     const r = {};
+    // Header like the mock (F111–F113): a title row that drags, icon Undo and Redo, one Copy or Save button
+    r['F111 title row'] = (() => { const t = document.querySelector('.titlebar'); return !!t && t.textContent.trim() === 'Snapmark' && !!t.querySelector('svg') && getComputedStyle(t).getPropertyValue('-webkit-app-region') === 'drag'; })();
+    r['F112 Undo and Redo are icons'] = [['undo', 'Undo (⌘Z)'], ['redo', 'Redo (⇧⌘Z)']].every(([id, name]) => { const b = document.getElementById(id); return !!b.querySelector('svg') && b.textContent.trim() === '' && b.title === name && b.getAttribute('aria-label') === name; });
+    r['F113 one Copy or Save button'] = !document.getElementById('copy') && !document.getElementById('save-as') && !!document.getElementById('share');
     r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs .md');
     key('a', { metaKey: true });
     const emptyRefused = !canvas.getActiveObject(); // F12: ⌘A with no marks does nothing
@@ -101,6 +130,12 @@ app
     r.cardWithPointer = card instanceof Card && card.text === 'Make this bigger' && !!card.pointAt;
 
     drag('6', [[.25,.3],[.4,.35]]);                   // highlighter
+    const lit = px(.32, .32);
+    r['F102 a highlight over white is as before'] = [253, 232, 150].every((v, i) => Math.abs(lit[i] - v) <= 2);
+    const dark = px(.37, .04);
+    drag(null, [[.30,.02],[.45,.06]]);                // over the mock's dark header
+    r['F101 a highlight over the dark header reads at 3:1'] = contrast(px(.37, .04), dark) >= 3;
+    key('z', { metaKey: true });
     const corner = px(.02, .98);
     drag('6', [[.45,.25],[.55,.35]]);                 // spotlight
     r.spotlightDims = px(.02, .98)[0] < corner[0] * 0.7;
@@ -133,14 +168,18 @@ app
     const pick = (id) => { group = GROUPS.findIndex((g) => g.tools.some((t) => t.id === id)); variant[group] = GROUPS[group].tools.findIndex((t) => t.id === id); applyTool(); };
     const btns = [...document.querySelectorAll('#tools button')];
     r['toolbar: one icon button per key, C 1-7, no text in the buttons'] = btns.map((b) => b.dataset.group).join('') === 'c1234567' && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '');
-    r['toolbar: key under each button, dots where a key has more tools'] = [...document.querySelectorAll('#tools .cap')].every((c, i) => { const g = GROUPS[i], d = c.querySelector('.dots')?.textContent ?? ''; return c.querySelector('kbd').textContent === g.key.toUpperCase() && (g.tools.length > 1 ? d.length === g.tools.length && d.split('●').length === 2 : d === ''); });
+    const stackOk = (b, i) => { const g = GROUPS[i], svg = b.querySelector('svg'), ref = document.createElementNS('http://www.w3.org/2000/svg', 'g'); ref.innerHTML = g.tools[variant[i]].icon; return svg.querySelector(':scope > .front').innerHTML === ref.innerHTML && svg.querySelectorAll('.back').length === (g.tools.length > 1 ? 1 : 0); };
+    r['toolbar: key under each button, a stacked icon (current tool in front) where a key has more tools, no dots'] = [...document.querySelectorAll('#tools .cap')].every((c, i) => { const g = GROUPS[i]; return c.children.length === 1 && c.textContent === capFor(g, true) && c.querySelector('kbd').textContent === capFor(g, true); }) && btns.every(stackOk) && !document.querySelector('#tools .dots') && !/[●○]/.test(document.getElementById('tools').textContent);
+    r['F103 captions read C, ⌘1–⌘7'] = [...document.querySelectorAll('#tools .cap kbd')].map((k) => k.textContent).join() === 'C,⌘1,⌘2,⌘3,⌘4,⌘5,⌘6,⌘7';
+    const css = (sel, pseudo) => getComputedStyle(document.querySelector(sel), pseudo);
+    r['F107 toolbar sizes'] = css('#tools svg').width === '22px' && css('#tools svg').height === '22px' && css('#tools button').width === '40px' && css('#tools button').height === '36px' && css('#tools .cap').fontSize === '11px' && css('#tools .cap').color === getComputedStyle(document.body).color;
     pick('box');
     const tb = () => document.querySelector('#tools [data-group="2"]');
-    r['toolbar: active button has a blue tint and a blue icon'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(36, 146, 255') && getComputedStyle(tb()).color === 'rgb(36, 146, 255)';
+    r['toolbar: active button has a blue tint and a blue icon (#0f72db light, 3.8:1 on the tint)'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(36, 146, 255') && getComputedStyle(tb()).color === (matchMedia('(prefers-color-scheme: dark)').matches ? 'rgb(36, 146, 255)' : 'rgb(15, 114, 219)');
     r['"Add to session" is the darker brand blue, for white text'] = getComputedStyle(document.getElementById('save')).backgroundColor === 'rgb(15, 114, 219)';
-    r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3)';
+    r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2 or ⌘2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3 or ⌘3)';
     key('2');
-    r['toolbar: pressing the key again swaps the icon'] = tool() === 'ellipse' && tb().dataset.tool === 'ellipse';
+    r['toolbar: pressing the key again swaps the icon'] = tool() === 'ellipse' && tb().dataset.tool === 'ellipse' && stackOk(tb(), group);
     document.querySelector('#tools [data-group="4"]').click();
     r['toolbar: click picks the tool'] = tool() === 'pen';
     r['keys: Arrow on 3, Pen on 4, crosses on 5'] = ['3:arrow', '4:pen', '5:cross'].every((k) => { const [key, id] = k.split(':'); return GROUPS.find((g) => g.key === key).tools[0].id === id; });
@@ -162,6 +201,63 @@ app
     r['palette: remove marks stay coral red'] = canvas.getObjects().at(-1).stroke === '#e5484d';
     key('z', { metaKey: true }); key('z', { metaKey: true });
     sw.click(); presets[0].click(); // back to coral red
+    // A15: the hex field takes a code with or without "#", 3 or 6 digits, any case, spaces around it; Enter or leaving it
+    // applies it; a bad code says so and changes nothing, and keys typed there never pick a tool
+    const hex = document.getElementById('hex'), hexErr = document.getElementById('hex-error');
+    const typeHex = (v, enter) => { hex.focus(); hex.value = v; hex.dispatchEvent(new Event('input', { bubbles: true })); if (enter) hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); else { hex.blur(); hex.dispatchEvent(new FocusEvent('blur')); } };
+    const customRow = () => [...document.querySelectorAll('#customs button')].map((b) => b.dataset.color).join();
+    sw.click();
+    const shown = hex.value === 'e5484d' && document.querySelector('#palette .hex').textContent.trim().startsWith('#') && customRow() === '' && document.querySelectorAll('#customs .slot').length === 5;
+    typeHex('  #12AB9F ', false);
+    const byBlur = colorEl.value === '#12ab9f' && hexErr.hidden && !pal.hidden;
+    typeHex('F0A', true);
+    const byEnter = colorEl.value === '#ff00aa' && pal.hidden;
+    const toolBefore = tool(), marksBefore = canvas.getObjects().length;
+    canvas.setActiveObject(canvas.getObjects().at(-1)); // so a stray Backspace would show
+    sw.click(); typeHex('zz12', true);
+    const refused = colorEl.value === '#ff00aa' && !pal.hidden && !hexErr.hidden && hex.getAttribute('aria-invalid') === 'true' && document.activeElement === hex;
+    ['3', 'c', 'Backspace'].forEach((k) => hex.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })));
+    const noTool = tool() === toolBefore && canvas.getObjects().length === marksBefore;
+    canvas.discardActiveObject();
+    hex.value = 'zz1'; hex.dispatchEvent(new Event('input', { bubbles: true }));
+    const cleared = hexErr.hidden && !hex.hasAttribute('aria-invalid');
+    hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    r['A15 a hex code with or without #, 3 or 6 digits, any case, trimmed; a bad one says so and changes nothing'] = shown && byBlur && byEnter && refused && noTool && cleared && pal.hidden && colorEl.value === '#ff00aa';
+    // A16: one row of custom colours under the two rows of presets, newest first, no presets, no repeats; the panel
+    // opens on the colour picked last
+    sw.click(); typeHex('e5484d', true); // a preset typed as hex stays out of the row
+    const noPreset = colorEl.value === '#e5484d' && customRow() === '#ff00aa,#12ab9f';
+    sw.click(); typeHex('12ab9f', true); // again: moves to the front, once
+    const order = customRow() === '#12ab9f,#ff00aa' && document.querySelectorAll('#customs .slot').length === 3;
+    sw.click();
+    const opensOnIt = document.activeElement.closest('#customs') && document.activeElement.dataset.color === '#12ab9f' && document.activeElement.getAttribute('aria-pressed') === 'true';
+    const rows = [...document.querySelectorAll('#palette .swatches')].map((g) => g.id).join() === 'presets,customs' && document.getElementById('customs-label').textContent === 'Custom' && !!pal.querySelector('.custom input[type="color"]');
+    r['A16 two rows of presets, then a Custom row: newest first, no presets, no repeats; opens on the last pick'] = noPreset && order && !!opensOnIt && rows;
+    // A17: the swatch and every dot in the panel are one 24 px circle, and the picked colour wears the same ring in both
+    const swDot = sw.querySelector('i');
+    const dot = (el) => { const s = getComputedStyle(el); return [s.width, s.height, s.borderRadius].join(); };
+    const ring = (el) => { const s = getComputedStyle(el); return [s.outlineStyle, s.outlineWidth, s.outlineOffset, s.outlineColor].join(); };
+    const picked = pal.querySelector('.swatches [aria-pressed="true"]'), other = pal.querySelector('.swatches [aria-pressed="false"]');
+    r['A17 one 24 px circle for the swatch and the panel, one ring on the picked colour'] = dot(swDot) === '24px,24px,50%' && [...pal.querySelectorAll('.swatches > *')].every((b) => dot(b) === '24px,24px,50%') && ring(swDot) === ring(picked) && ring(picked).startsWith('solid,2px,2px') && getComputedStyle(other).outlineWidth === '0px';
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    sw.click(); presets[0].click(); // back to coral red; the Custom row stays for the A16 check in the next editor
+    // A18: one keycap style. Every key the editor shows is a <kbd> at 11 px, weight 500, in the system font, in the
+    // colour of its text (a disabled button's in --muted), at 4.5:1 or more; under every icon button, after the label of every text button
+    const kbds = [...document.querySelectorAll('kbd')];
+    const keyStyle = (k) => { const s = getComputedStyle(k); return [s.fontSize, s.fontWeight, s.fontFamily.split(',')[0].trim()].join(); };
+    const rgb = (c) => c.match(/[0-9.]+/g).slice(0, 3).map(Number);
+    const ink = (k, ground) => contrast(rgb(getComputedStyle(k).color), rgb(getComputedStyle(ground).backgroundColor)) >= 4.5;
+    const iconBtns = [...document.querySelectorAll('#tools button'), document.getElementById('undo'), document.getElementById('redo')];
+    const below = (b) => { const c = b.parentElement.querySelector(':scope > .cap'), br = b.getBoundingClientRect(), cr = c.getBoundingClientRect(); return !!c.querySelector('kbd') && cr.top >= br.bottom && Math.abs(cr.left + cr.right - br.left - br.right) < 2; };
+    const textBtns = [document.getElementById('cancel'), document.getElementById('save')];
+    const after = (b) => { const k = b.lastElementChild, kr = k.getBoundingClientRect(), br = b.getBoundingClientRect(); return k.tagName === 'KBD' && b.firstChild.nodeType === 3 && kr.top > br.top && kr.bottom < br.bottom; };
+    const heights = (els) => new Set(els.map((e) => e.getBoundingClientRect().height + '/' + getComputedStyle(e).paddingTop + '/' + getComputedStyle(e).paddingLeft)).size === 1;
+    r['A18 one keycap style: 11 px, 500, system glyphs, its text colour at 4.5:1; under icon buttons, after text labels'] =
+      kbds.length === 12 && kbds.every((k) => keyStyle(k) === '11px,500,-apple-system' && getComputedStyle(k).color === getComputedStyle(k.parentElement).color) &&
+      iconBtns.every(below) && iconBtns.every((b) => ink(b.parentElement.querySelector('.cap kbd'), document.querySelector('header'))) &&
+      textBtns.every((b) => after(b) && ink(b.querySelector('kbd'), b)) &&
+      document.getElementById('save').textContent === 'Add to session ⌘↵' && document.getElementById('cancel').textContent === 'Discard ⌘W' &&
+      heights([...document.querySelectorAll('header button')].filter((b) => b.id !== 'session')) && heights(textBtns);
     r['toolbar shows the session name alone while it is empty, then the count'] = document.getElementById('session').textContent === 'smoke' && shotsLabel('Ledgerly Q4 review', 12) === 'Ledgerly Q4 review · 12 screenshots' && shotsLabel('s', 1) === 's · 1 screenshot';
     const tail = bubbleTail(50, 20, { x: -200, y: -100 }, 2);
     r['card: the bubble tail leaves the top edge toward its target; none when the target is inside'] = !!tail && tail[2].y < -20 && tail[2].x < tail[0].x && tail[0].y === -18 && bubbleTail(50, 20, { x: 10, y: 5 }, 2) === null;
@@ -183,9 +279,9 @@ app
     await sleep(100); setMd(ref1, ['Button is misaligned']); await sleep(100);
     r['restored reference note'] = ref1.textContent === 'Button is misaligned'; document.activeElement.blur();
     ref1.querySelector('.ProseMirror').focus();
-    const toolBefore = tool();
+    const toolBeforeNote = tool();
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true }));
-    r['tool keys do nothing while typing a note'] = tool() === toolBefore;
+    r['tool keys do nothing while typing a note'] = tool() === toolBeforeNote;
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '3', metaKey: true, bubbles: true, cancelable: true }));
     r['⌘3 picks Arrow from inside a note and leaves the note'] = tool() === 'arrow' && !document.activeElement?.closest?.('.md');
     ref1.querySelector('.ProseMirror').focus();
@@ -292,6 +388,40 @@ app
     return r;
   })()`;
     const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
+    inPage['F111 title row'] &&= win.getTitle() === 'Snapmark — smoke'; // the window title stays, for the Window menu
+    // F106: Settings ▸ Single-Key Tools redraws an open editor's captions and tooltips, without reopening it
+    const toolbarSays = (cap: string, tip: string) =>
+      win.webContents.executeJavaScript(`(async () => {
+        const ok = () => document.querySelector('#tools .cap kbd').textContent === ${JSON.stringify(cap)} && document.querySelector('#tools [data-group="2"]').title === ${JSON.stringify(tip)};
+        for (let i = 0; i < 10 && !ok(); i++) await new Promise((r) => setTimeout(r, 100));
+        return ok();
+      })()`);
+    setSingleKeys(false);
+    const redrawnOff = await toolbarSays('Esc', 'Box (⌘2) · press ⌘2 again for Ellipse');
+    setSingleKeys(true);
+    inPage['F106 the setting redraws the toolbar'] = redrawnOff && (await toolbarSays('C', 'Box (2 or ⌘2) · press again for Ellipse'));
+    // F110: the menu's Single-Key Tools item saves the setting to state.json in the temp folder and tells the editor
+    const settingsMenu = menuItems().find((i) => i.label === 'Settings')!.submenu as Electron.MenuItemConstructorOptions[];
+    const singleItem = settingsMenu.find((i) => i.label === 'Single-Key Tools')!;
+    singleItem.click!({ checked: false } as never, undefined, {} as never);
+    const stateFile = path.join(root, 'userData', 'state.json');
+    const savedOff = fs.existsSync(stateFile) && JSON.parse(fs.readFileSync(stateFile, 'utf8')).singleKeys === false;
+    const editorOff = await win.webContents.executeJavaScript(
+      `(async () => { for (let i = 0; i < 10 && singleKeys; i++) await new Promise((r) => setTimeout(r, 100)); return singleKeys === false; })()`,
+    );
+    setSingleKeys(true);
+    inPage['F110 the setting reaches state.json and the editor'] = savedOff && editorOff;
+    // F108: at the minimum size the toolbar shows every control without scrolling sideways; the session label shortens
+    const [w0, h0] = win.getSize();
+    win.setSize(820, 520);
+    await new Promise((r) => setTimeout(r, 300));
+    inPage['F108 the toolbar fits at 820 points'] =
+      JSON.stringify(win.getMinimumSize()) === JSON.stringify([820, 520]) &&
+      (await win.webContents.executeJavaScript(
+        `(() => { const h = document.querySelector('header'); return h.scrollWidth <= h.clientWidth && getComputedStyle(document.getElementById('session')).textOverflow === 'ellipsis'; })()`,
+      ));
+    win.setSize(w0, h0);
+    await new Promise((r) => setTimeout(r, 300));
     // Real input events (not synthetic DOM ones) include the browser's default mousedown handling, which moved focus.
     const at = await win.webContents.executeJavaScript(`(() => {
       group = GROUPS.findIndex((g) => g.key === '1'); variant[group] = 0; applyTool();
@@ -313,6 +443,45 @@ app
       win.webContents.sendInputEvent({ type: 'keyUp', ...ev }); // or the next typed character counts as ⌘ + that key
       await sleep(200);
     };
+    // snap-c5c F13: two marks dragged with the real mouse move together as one step; one ⌘Z puts both back
+    const pair = await win.webContents.executeJavaScript(`(() => {
+      group = GROUPS.findIndex((g) => g.key === 'c'); variant[group] = 0; applyTool();
+      const two = canvas.getObjects().filter((o) => o instanceof Glyph).slice(0, 2);
+      window.pair = two;
+      const at = JSON.stringify(two.map((o) => [o.left, o.top]));
+      select(two);
+      const c = fabric.util.transformPoint(canvas.getActiveObject().getCenterPoint(), canvas.viewportTransform);
+      const b = document.querySelector('.upper-canvas').getBoundingClientRect(), k = b.width / canvas.getWidth();
+      return { x: Math.round(b.left + c.x * k), y: Math.round(b.top + c.y * k), at, steps: undoStack.length };
+    })()`);
+    win.webContents.sendInputEvent({ type: 'mouseDown', x: pair.x, y: pair.y, button: 'left', clickCount: 1 });
+    for (let i = 1; i <= 5; i++)
+      win.webContents.sendInputEvent({
+        type: 'mouseMove',
+        x: pair.x + i * 8,
+        y: pair.y + i * 6,
+        button: 'left',
+        modifiers: ['leftbuttondown'],
+      });
+    win.webContents.sendInputEvent({ type: 'mouseUp', x: pair.x + 40, y: pair.y + 30, button: 'left', clickCount: 1 });
+    await sleep(300);
+    const pairNow = `(() => { canvas.discardActiveObject(); return JSON.stringify({ at: pair.map((o) => [o.left, o.top]), steps: undoStack.length }); })()`;
+    const dragged2 = JSON.parse(await win.webContents.executeJavaScript(pairNow));
+    const was = JSON.parse(pair.at) as number[][];
+    const [dx, dy] = [dragged2.at[0][0] - was[0][0], dragged2.at[0][1] - was[0][1]];
+    const movedTogether =
+      dx > 0 &&
+      dy > 0 &&
+      dragged2.at.every((p: number[], i: number) => Math.abs(p[0] - was[i][0] - dx) < 0.01 && Math.abs(p[1] - was[i][1] - dy) < 0.01);
+    await cmdZ();
+    const undone2 = JSON.parse(await win.webContents.executeJavaScript(pairNow));
+    why.F13 = { pair, dragged2, undone2 };
+    inPage['snap-c5c F13: two marks dragged with the mouse are one step, one ⌘Z puts both back'] =
+      movedTogether &&
+      dragged2.steps === pair.steps + 1 &&
+      undone2.at.every((p: number[], i: number) => Math.abs(p[0] - was[i][0]) < 0.01 && Math.abs(p[1] - was[i][1]) < 0.01) &&
+      undone2.steps === pair.steps;
+    await win.webContents.executeJavaScript(`group = GROUPS.findIndex((g) => g.key === '1'); variant[group] = 0; applyTool();`);
     await click();
     const placed = await refs();
     await cmdZ();
@@ -348,11 +517,13 @@ app
     win.webContents.invalidate(); // capturePage can return a stale frame for a window that is not in front
     await new Promise((r) => setTimeout(r, 500)); // let the canvas repaint before capturing
     fs.writeFileSync(path.join(root, 'editor.png'), (await win.webContents.capturePage()).toPNG());
-    // Copy Image (⇧⌘C, from inside the note) and Save As… (its button): the image Add to session saves, and no entry
+    // Copy Image (⇧⌘C, from inside the note) and Save As… (⇧⌘S): the image Add to session saves, and no entry
     await win.webContents.executeJavaScript(
       `document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
     );
-    await win.webContents.executeJavaScript(`document.getElementById('save-as').click()`);
+    await win.webContents.executeJavaScript(
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
+    );
     for (let i = 0; i < 30 && !(copied && fs.existsSync(savedAs)); i++) await new Promise((r) => setTimeout(r, 100));
     const notAdded = sessions.count(root, 'smoke') === 0;
     // F9: plain ⌘C outside the text copies the image too, and the marks stay selected
@@ -367,6 +538,23 @@ app
     for (let i = 0; i < 30 && !copied; i++) await new Promise((r) => setTimeout(r, 100));
     inPage['F9 ⌘C copies the image'] =
       !!copied && keptMarks > 1 && (await win.webContents.executeJavaScript('canvas.getActiveObjects().length')) === keptMarks;
+    // F134: ⇧⌘C and the Copy or Save menu's Copy Image keep the selected marks selected, as ⌘C does
+    const keepsTwo = async (copy: () => unknown) => {
+      copied = null;
+      await win.webContents.executeJavaScript(
+        `document.activeElement.blur(); select(canvas.getObjects().filter((o) => o.selectable && !isRedaction(o)).slice(0, 2));`,
+      );
+      await copy();
+      for (let i = 0; i < 30 && !copied; i++) await sleep(100);
+      return !!copied && (await win.webContents.executeJavaScript('canvas.getActiveObjects().length')) === 2;
+    };
+    const keptByKeys = await keepsTwo(() =>
+      win.webContents.executeJavaScript(
+        `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
+      ),
+    );
+    const keptByMenu = await keepsTwo(() => win.webContents.send('editor:share', 'copy')); // what the menu item sends
+    await win.webContents.executeJavaScript('canvas.discardActiveObject()');
     copied = shiftCopied; // the ⇧⌘C check below compares that copy
     // F7: ⌘S adds to the session as ⌘↵ does, here while the caption has the cursor
     await win.webContents.executeJavaScript(`(() => {
@@ -463,14 +651,46 @@ app
         `for (let i = 0; i < 50 && !(background && captionField); i++) await new Promise((r) => setTimeout(r, 100)); await new Promise((r) => setTimeout(r, 300));`,
       );
     const counts = `return JSON.stringify([markers().length, cards().length, canvas.getObjects().filter((o) => links.has(o)).length, captionField.value(), markers().map(noteOf)[0]])`;
+    // F131: ⌘Z after ⌘⌫ puts back the screenshot ⌘⌫ removed, also when a newer discard exists (an editor closed unsaved)
+    await inView(`document.querySelector('#grid .thumb .pic').click(); document.activeElement.blur();`);
+    keyIn('Backspace', ['meta']);
+    const removedOne = await waitFor(`document.querySelectorAll('#grid .thumb').length === 0`);
+    fs.copyFileSync(shotCopy, path.join(root, 'newer.png'));
+    const newer = openEditor(path.join(root, 'newer.png'), { session: 'smoke' });
+    await new Promise<void>((r) => newer.webContents.once('did-finish-load', () => r()));
+    await loaded(newer);
+    newer.close();
+    for (let i = 0; i < 30 && !newer.isDestroyed(); i++) await sleep(100);
+    const newerKept = sessions.discardedIn(root, 'smoke').find((d) => d.kind === 'capture');
+    await inView(`document.activeElement.blur();`);
+    keyIn('z', ['meta']);
+    viewer['F131 ⌘Z puts back the one removed'] =
+      removedOne &&
+      !!newerKept &&
+      (await waitFor(
+        `document.querySelectorAll('#grid .thumb').length === 1 && document.getElementById('count').textContent === '1 of 1'`,
+      )) &&
+      JSON.stringify(sessions.shots(root, 'smoke')) === '[1]';
+    if (newerKept) fs.rmSync(newerKept.dir, { recursive: true, force: true }); // the Discarded tab checks below count one
     viewer['Edit Again is offered for a saved screenshot'] = await waitFor(`!document.querySelector('#grid .thumb .edit').hidden`);
     let windows = BrowserWindow.getAllWindows();
+    // The grid's Edit Again button opens the editor too (snap-c5c)
+    await inView(`document.querySelector('#grid .thumb .edit').click();`);
+    const fromGrid = await nextWindow(windows);
+    await new Promise<void>((r) => fromGrid.webContents.once('did-finish-load', () => r()));
+    await loaded(fromGrid);
+    viewer["snap-c5c the grid's Edit Again button opens the editor"] =
+      fromGrid.webContents.getURL().endsWith('editor.html') &&
+      (await inWin(fromGrid, `return document.getElementById('save').textContent`)).startsWith('Save changes');
+    fromGrid.destroy();
+    await sleep(300);
+    windows = BrowserWindow.getAllWindows();
     // F18: ⌘O on the screenshot shown large is Edit Again
     await inView(`document.querySelector('#grid .thumb .pic').click();`);
     keyIn('o', ['meta']);
     const again = await nextWindow(windows);
-    viewer['F18 ⌘O edits again'] = true; // nextWindow throws when no editor opens
     await new Promise<void>((r) => again.webContents.once('did-finish-load', () => r()));
+    viewer['F18 ⌘O edits again'] = again.webContents.getURL().endsWith('editor.html');
     await loaded(again);
     const restored = JSON.parse(await inWin(again, counts));
     viewer['Edit Again restores references, cards, moves, comment and notes'] =
@@ -480,6 +700,10 @@ app
     viewer['Edit Again says it saves changes'] = (await inWin(again, `return document.getElementById('save').textContent`)).startsWith(
       'Save changes',
     );
+    // F115: Edit Again (and one-shot, below) shows the session as plain text, with no chevron and no menu
+    const noSessionMenu = (w: BrowserWindow) =>
+      inWin(w, `const s = document.getElementById('session'); return s.disabled && !s.querySelector('.chevron');`);
+    const noMenuAgain = await noSessionMenu(again);
     await inWin(again, `captionField.focus();`);
     for (const ch of 'Edited ') again.webContents.sendInputEvent({ type: 'char', keyCode: ch });
     await new Promise((r) => setTimeout(r, 300));
@@ -508,12 +732,29 @@ app
       (await waitFor(`document.getElementById('tab-discarded').hidden && document.querySelectorAll('#grid .thumb').length === 2`)) &&
       smokeMd().includes('Second shot');
     viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke · 2 screenshots');
-    // F15: ↩ with nothing focused starts renaming, as in Finder; Esc cancels it
+    // F135: after ⌘⌫ in the large view, ↩ does not start a rename: the large image has the focus
+    await inView(`document.querySelector('#grid .thumb .pic').click(); document.activeElement.blur();`);
+    keyIn('Backspace', ['meta']);
+    const oneLeft = await waitFor(`document.getElementById('count').textContent === '1 of 1'`);
+    keyIn('Return');
+    await sleep(300);
+    viewer['F135 ↩ after a removal does not rename'] =
+      oneLeft &&
+      (await inView(
+        `return getComputedStyle(document.getElementById('rename')).display === 'none' && document.activeElement === document.getElementById('shot');`,
+      ));
+    keyIn('z', ['meta']);
+    viewer['F119 ⌘Z puts it back in its place'] = await waitFor(
+      `document.querySelectorAll('#grid .thumb').length === 2 && document.getElementById('count').textContent === '1 of 2' && document.getElementById('shot').src.includes('img/001.png')`,
+    );
+    // F15: ↩ with nothing focused starts renaming, as in Finder, also with a screenshot shown large; Esc cancels it
+    const largeShown = await inView(`return !document.getElementById('shots').hidden;`);
     await inView(`document.activeElement.blur();`);
     keyIn('Return');
     viewer['F15 ↩ renames'] = await waitFor(
       `getComputedStyle(document.getElementById('rename')).display !== 'none' && document.activeElement === document.getElementById('rename')`,
     );
+    viewer['snap-c5c F15 ↩ renames with a screenshot shown large'] = largeShown && viewer['F15 ↩ renames'];
     keyIn('Escape');
     await new Promise((r) => setTimeout(r, 200));
     // Rename in place: ↩ saves (the folder moves, the window follows), a taken name keeps the field, Esc cancels
@@ -532,10 +773,51 @@ app
     viewer['a taken name says so and keeps the field'] =
       (await inView(`return ${fieldOpen} && document.getElementById('hint').textContent.includes('already exists');`)) &&
       fs.existsSync(path.join(root, 'smoke'));
+    // F128: typing after a refused name clears the error
+    view.webContents.sendInputEvent({ type: 'char', keyCode: 'x' });
+    viewer['F128 typing clears the error'] = await waitFor(
+      `!document.getElementById('hint').classList.contains('error') && !document.getElementById('hint').textContent.includes('already exists')`,
+    );
+    // F125: a rename that fails (here: no permission) says why under the field
+    const realRename = sessions.rename;
+    (sessions as { rename: typeof realRename }).rename = () => {
+      throw new Error('EACCES');
+    };
+    await rename('smoke elsewhere', 'Return');
+    viewer['F125 a failed rename says why'] = await waitFor(
+      `document.getElementById('hint').textContent === "Couldn't rename: EACCES" && document.getElementById('hint').classList.contains('error')`,
+    );
+    (sessions as { rename: typeof realRename }).rename = realRename;
     await rename('smoke renamed', 'Escape');
     viewer['Esc cancels the rename'] =
       (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
       !fs.existsSync(path.join(root, 'smoke renamed'));
+    // F127: an emptied field and a click away keep the name. The click away is the field's blur event: blur() does
+    // nothing when another app has taken the focus from this window, as a parallel test run can.
+    await inView(
+      `document.getElementById('title').click(); document.getElementById('rename').value = ''; document.getElementById('rename').dispatchEvent(new FocusEvent('blur'));`,
+    );
+    await sleep(300);
+    viewer['F127 an empty field and a click away keep the name'] =
+      (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
+      fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8').startsWith('# smoke\n');
+    // F129: the rename field's placeholder reads at 4.5:1 on the field, light and dark
+    const placeholderContrast = () =>
+      inView(`document.getElementById('title').click(); const f = document.getElementById('rename'); f.value = '';
+        await new Promise((r) => setTimeout(r, 200));
+        const rgb = (c) => c.match(/[\\d.]+/g).slice(0, 3).map(Number);
+        const lum = (c) => c.map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+        const [a, b] = [lum(rgb(getComputedStyle(f, '::placeholder').color)), lum(rgb(getComputedStyle(f).backgroundColor))];
+        f.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);`);
+    nativeTheme.themeSource = 'light';
+    const lightRatio: number = await placeholderContrast();
+    nativeTheme.themeSource = 'dark';
+    const darkRatio: number = await placeholderContrast();
+    nativeTheme.themeSource = 'system';
+    viewer['F129 placeholder contrast'] = lightRatio >= 4.5 && darkRatio >= 4.5;
+    // F130: the session window never shrinks below 720 × 480
+    viewer['F130 minimum size'] = JSON.stringify(view.getMinimumSize()) === JSON.stringify([720, 480]);
     await rename('smoke renamed', 'Return');
     viewer['↩ renames the session folder and the window'] =
       (await waitFor(`!(${fieldOpen}) && document.getElementById('title').textContent === 'smoke renamed'`)) &&
@@ -544,8 +826,28 @@ app
       view.getTitle() === 'smoke renamed — Snapmark';
     viewer['an open editor follows the rename'] =
       (await label('smoke renamed · 2 screenshots')) && watching.getTitle() === 'Snapmark — smoke renamed';
+    // F116: a long name shortens with "…" in an open editor's label; its tooltip has the full name
+    const long = 'Ledgerly Q4 review of checkout, payments, refunds and the new order page, take 2';
+    await rename(long, 'Return');
+    inPage['F116 a long name shortens'] =
+      (await label(`${long} · 2 screenshots`)) &&
+      (await inWin(
+        watching,
+        `const s = document.getElementById('session'); return s.scrollWidth > s.clientWidth && s.title.startsWith(${JSON.stringify(long)});`,
+      ));
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
+    // F123: at 1100 points a 60-character name leaves "Open in Markdown App" on one line; only the name shortens
+    view.setSize(1100, 900);
+    const sixty = 'Ledgerly Q4 review of checkout, payments and refunds, take 2';
+    await rename(sixty, 'Return');
+    viewer['F123 a long name never wraps the buttons'] =
+      (await waitFor(`document.getElementById('title').textContent === ${JSON.stringify(sixty)}`)) &&
+      (await inView(
+        `const r = document.createRange(); r.selectNodeContents(document.getElementById('external')); const others = [...document.querySelectorAll('header button, header [role=tab]')].filter((b) => !b.contains(document.getElementById('title'))); return r.getClientRects().length === 1 && others.every((b) => b.scrollWidth <= b.clientWidth + 1);`,
+      ));
+    await rename('smoke', 'Return');
+    await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     watching.destroy();
     view.close();
 
@@ -569,15 +871,37 @@ app
       (await inWin(datedEditor, `return document.getElementById('session').textContent`)).startsWith('2026-10-24, 23:38') &&
       datedEditor.getTitle() === 'Snapmark — 2026-10-24, 23:38';
     datedEditor.destroy();
+    // snap-ua7 F3: an editor on an empty dated session shows only its readable name
+    const bare = sessions.create(root, '2026-10-24 09.05');
+    fs.copyFileSync(shotCopy, path.join(root, 'bare.png'));
+    const bareEditor = openEditor(path.join(root, 'bare.png'), { session: bare });
+    await new Promise<void>((r) => bareEditor.webContents.once('did-finish-load', () => r()));
+    await loaded(bareEditor);
+    viewer['snap-ua7 F3 an editor on an empty session shows only its readable name'] =
+      (await inWin(bareEditor, `return document.getElementById('session').textContent`)) === '2026-10-24, 09:05' &&
+      bareEditor.getTitle() === 'Snapmark — 2026-10-24, 09:05';
+    bareEditor.destroy();
     await inDated(`document.getElementById('title').click();`);
+    // F126: renaming a dated session, the hint names the date that stays
+    viewer['F126 the hint names the date'] = await inDated(
+      `return document.getElementById('hint').textContent.startsWith('2026-10-24 stays in front');`,
+    );
     const emptyField = await inDated(`return document.getElementById('rename').value === '';`);
     await inDated(`document.getElementById('rename').value = 'Ledgerly Q4 review';`);
     dated.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
     viewer['F8 a renamed session keeps its date'] =
       (await datedTitle('2026-10-24 · Ledgerly Q4 review')) && fs.existsSync(path.join(root, '2026-10-24 23.38 Ledgerly Q4 review'));
+    viewer['snap-ua7 F8 the window title follows the rename'] = dated.getTitle() === '2026-10-24 · Ledgerly Q4 review — Snapmark';
+    viewer["snap-bmr.14.3 gap: session.md's title follows the rename"] = fs
+      .readFileSync(path.join(root, '2026-10-24 23.38 Ledgerly Q4 review', 'session.md'), 'utf8')
+      .startsWith('# 2026-10-24 · Ledgerly Q4 review\n');
     await inDated(`document.getElementById('title').click();`);
     viewer['F9 the rename field holds only the name'] =
       emptyField && (await inDated(`return document.getElementById('rename').value === 'Ledgerly Q4 review';`));
+    await inDated(`document.getElementById('rename').value = '';`);
+    dated.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
+    viewer['snap-bmr.14.3 gap: ↩ on an emptied field goes back to the bare date'] =
+      (await datedTitle('2026-10-24, 23:38')) && fs.existsSync(path.join(root, '2026-10-24 23.38', 'session.md'));
     dated.close();
 
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks
@@ -624,6 +948,120 @@ app
     viewer['area picker: Esc gives no area and closes the picker'] =
       cancelled === null && !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('area.html'));
 
+    // snap-bmr.14.3 F027, F028, F041, F043 (UX audit 2026-09-28): the capture items, with screencapture stubbed
+    const shots: string[][] = [];
+    let fail: string | null = null; // what a failing screencapture writes to stderr; '' is Esc in macOS's overlay
+    const dock: boolean[] = [];
+    const dockOnOpen: boolean[] = []; // did opening the editor turn the Dock on, before the editor had focus
+    desk.dock = (on) => void dock.push(on);
+    desk.screencapture = (args, done) => {
+      shots.push(args);
+      if (fail !== null) return done(new Error('Command failed: screencapture'), fail);
+      fs.copyFileSync(shotCopy, args.at(-1)!);
+      const n = dock.length;
+      done(null, ''); // opens the editor, synchronously: no event has reached it yet
+      dockOnOpen.push(dock.length > n);
+    };
+    type Item = Electron.MenuItemConstructorOptions;
+    const item = (label: string, items: Item[] = menuItems()) => items.find((i) => i.label?.startsWith(label))!;
+    const press = (label: string, items?: Item[]) => item(label, items).click!({} as never, undefined, {} as never);
+    const loadedWindow = async (before: BrowserWindow[]) => {
+      const w = await nextWindow(before);
+      for (let i = 0; i < 50 && (w.webContents.isLoading() || !w.webContents.getURL()); i++) await sleep(100);
+      return w;
+    };
+    let spoken = '';
+    const pickerOpen = () => BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('area.html'));
+    // F043: while dragging, a polite live region says the size the label shows. Compared with the label, not with
+    // fixed numbers: the pointer over the see-through picker can move the drag while the page is read.
+    const speaking = await pickWith((w) => {
+      w.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+      void w.webContents
+        .executeJavaScript(
+          `(async () => { const s = document.getElementById('say'); for (let i = 0; i < 30 && !s.textContent; i++) await new Promise((r) => setTimeout(r, 50));
+            return [s.getAttribute('aria-live'), getComputedStyle(s).width, s.textContent === document.getElementById('size').textContent.replace(' × ', ' by ') + ' points', /^\\d+ by \\d+ points$/.test(s.textContent)].join('|'); })()`,
+        )
+        .then((v) => {
+          spoken = v;
+          w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+        });
+    });
+    viewer['snap-bmr.14.3 F043: the area picker speaks the size while dragging'] = speaking === null && spoken === 'polite|1px|true|true';
+    // Choose New Area…: the picker, a drag, then the capture
+    let windowsNow = BrowserWindow.getAllWindows();
+    press('Choose New Area…', item('Capture Options').submenu as Item[]);
+    const chooser = await loadedWindow(windowsNow);
+    windowsNow = BrowserWindow.getAllWindows();
+    chooser.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+    chooser.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+    chooser.webContents.sendInputEvent({ type: 'mouseUp', x: 400, y: 320, button: 'left', clickCount: 1 });
+    const repeats = [await loadedWindow(windowsNow)];
+    // F027: Capture Last Area again and again: the same rectangle at once, no picker, each time an editor that turns the
+    // Dock on only once it has focus (turned on first, macOS leaves a full-screen browser for the desktop)
+    for (let i = 0; i < 2; i++) {
+      windowsNow = BrowserWindow.getAllWindows();
+      press('Capture Last Area');
+      repeats.push(await loadedWindow(windowsNow));
+    }
+    const rects = shots.map((a) => a.slice(0, 3).join(' '));
+    const dockAfterFocus = repeats.every((w) => {
+      const n = dock.length;
+      w.emit('focus'); // what macOS sends when the reviewer gets to it; once only, so no harm if it came already
+      return dock.length > n ? dock.at(-1) === true : dock.includes(true);
+    });
+    viewer['snap-bmr.14.3 F027: Capture Last Area repeats the area at once, the editor waits for focus before the Dock'] =
+      rects.join() ===
+        Array(3)
+          .fill(`-R ${display.x + 100},${display.y + 120},300,200 -x`)
+          .join() &&
+      repeats.every((w) => w.webContents.getURL().endsWith('editor.html')) &&
+      !pickerOpen() &&
+      dockOnOpen.join() === 'false,false,false' &&
+      dockAfterFocus;
+    why.F027 = { rects, urls: repeats.map((w) => w.webContents.getURL()), picker: pickerOpen(), dockOnOpen, dock, dockAfterFocus };
+    repeats.forEach((w) => w.destroy());
+    // F041: with the area's display gone, the picker says so
+    const realDisplays = screen.getAllDisplays; // Electron's screen hands out its methods bound
+    screen.getAllDisplays = () => [];
+    windowsNow = BrowserWindow.getAllWindows();
+    press('Capture Last Area');
+    const gonePicker = await loadedWindow(windowsNow);
+    screen.getAllDisplays = realDisplays;
+    const goneHint = await gonePicker.webContents.executeJavaScript(`document.getElementById('hint').textContent`);
+    const goneClosed = new Promise<void>((r) => gonePicker.once('closed', () => r()));
+    gonePicker.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+    await goneClosed;
+    await sleep(400); // the picker's promise resolves 200 ms after 'closed'; until then a capture key does nothing
+    viewer['snap-bmr.14.3 F041: with the display gone, the picker says why'] =
+      goneHint === 'The last area was on a display that is not connected. Drag a new area. Esc cancels.' && shots.length === 3;
+    // F028: a failed capture says so and offers to try again; Esc in macOS's overlay stays quiet
+    notes.length = 0;
+    windowsNow = BrowserWindow.getAllWindows();
+    fail = 'could not create image from rect\n';
+    press('Capture Last Area');
+    const failed = notes.map((n) => n.body);
+    notes[0]?.onClick?.();
+    const retried = shots.length === 5;
+    fail = '';
+    press('Capture Screenshot');
+    await sleep(300);
+    viewer['snap-bmr.14.3 F028: a failed capture says so and tries again on a click; Esc stays quiet'] =
+      failed.join() === 'Capture failed: could not create image from rect. No screenshot was added. Click to try again.' &&
+      retried &&
+      notes.length === 2 &&
+      shots.at(-1)!.includes('-i') &&
+      BrowserWindow.getAllWindows().length === windowsNow.length;
+    why.F028 = {
+      failed,
+      retried,
+      notes: notes.map((n) => n.body),
+      shots: shots.slice(3),
+      now: BrowserWindow.getAllWindows().length,
+      was: windowsNow.length,
+    };
+    fail = null;
+
     // Capture Scrolling: frames of a synthetic 8200-row page under a fixed header go through the live loop; ↩ in its
     // control stitches them into the editor, which fits the width and scrolls. Esc cancels without an editor.
     const [PW, PH, VIEW, TOP] = [600, 8200, 600, 40];
@@ -637,6 +1075,7 @@ app
     const offsets = Array.from({ length: (PH - VIEW) / 400 + 1 }, (_, i) => i * 400);
     const scrollArea = { x: display.x + 100, y: display.y + 100, width: 300, height: 200 };
     let ctlBounds: Electron.Rectangle | null = null;
+    let doneColour = ''; // F120
     const fakeGrab = (frames: number[], key: string) => {
       let [i, sent] = [0, false];
       return async () => {
@@ -646,6 +1085,7 @@ app
         if (!sent && i >= frames.length - 1 && ctl && !ctl.webContents.isLoading()) {
           sent = true;
           ctlBounds = ctl.getBounds();
+          doneColour = await ctl.webContents.executeJavaScript(`getComputedStyle(document.getElementById('done')).backgroundColor`);
           ctl.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
         }
         return frame(frames[Math.min(i++, frames.length - 1)]);
@@ -653,6 +1093,7 @@ app
     };
     const tall = await scrollCapture(scrollArea, fakeGrab(offsets, 'Return'));
     viewer['Capture Scrolling: ↩ opens the stitched page in the editor'] = !!tall;
+    viewer['F120 Done is the dark blue'] = doneColour === 'rgb(15, 114, 219)';
     if (tall) {
       await new Promise<void>((r) => (tall.webContents.isLoading() ? tall.webContents.once('did-finish-load', () => r()) : r()));
       await loaded(tall);
@@ -723,6 +1164,7 @@ app
       ),
     );
     viewer['one-shot: the Beautify panel replaces References and the comment'] = panel.beautify && panel.noRefs;
+    inPage['F115 no session menu in Edit Again or one-shot'] = noMenuAgain && (await noSessionMenu(one));
     viewer['one-shot: no Add to session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
     viewer['one-shot: sliders show their values; 10 backgrounds; Auto 4:3 3:2 16:9 1:1'] =
       panel.values === '64=64,12=12,40=40' && panel.backdrops === 10 && panel.ratios === 'Auto,4:3,3:2,16:9,1:1';
@@ -762,13 +1204,30 @@ app
       !!oneCopy && near(pixel(oneFile, 0, 0, 2, 2), [18, 52, 86]) && near(pixel(oneFile, 1, 1, -3, -3), [18, 52, 86]);
     viewer['one-shot: the screenshot and its marks sit centred on it'] =
       !!oneCopy && red(pixel(oneFile, (L.x + shotSize.width / 2) / L.width, (L.y + shotSize.height / 2) / L.height, -shotUnit * 8 * 0.45));
-    await inWin(one, `document.getElementById('save-as').click();`);
+    await inWin(
+      one,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`,
+    );
     for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
     viewer['one-shot: Save As… writes the same image, named Snapmark <date time>'] =
       /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(got.offered) &&
       !!oneCopy &&
       fs.existsSync(oneSaved) &&
       fs.readFileSync(oneSaved).equals(oneCopy);
+    // F134: one-shot ⌘↵ copies and keeps the selected marks selected
+    got.copy = null;
+    const oneSelected = await inWin(
+      one,
+      `canvas.add(new Marker({ x: 40, y: 40 }, '#e5484d')); after();
+      select(canvas.getObjects().filter((o) => o instanceof Marker));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', metaKey: true, bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 500));
+      const n = canvas.getActiveObjects().length;
+      canvas.discardActiveObject();
+      return n;`,
+    );
+    for (let i = 0; i < 30 && !got.copy; i++) await sleep(100);
+    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu && oneSelected === 2 && !!got.copy;
     viewer['one-shot: nothing is added to any session'] =
       JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
     for (const key of ['Escape', 'Escape']) {
@@ -864,6 +1323,73 @@ app
       await textView.webContents.executeJavaScript(`MdNotes.fieldAt(document.getElementById('doc')).value()`)
     ).includes(block);
     textView.close();
+    // An editor on a copy of the mock, loaded
+    const openOn = async (file: string, opts: Parameters<typeof openEditor>[1] = {}) => {
+      fs.copyFileSync(shotCopy, path.join(root, file));
+      const w = openEditor(path.join(root, file), opts);
+      await new Promise<void>((r) => w.webContents.once('did-finish-load', () => r()));
+      await loaded(w);
+      return w;
+    };
+    // F117: the colour picked in one editor is the next editor's, also after a restart (state.json)
+    const firstColour = await openOn('colour-1.png', { session: 'smoke' });
+    await inWin(
+      firstColour,
+      `document.getElementById('swatch').click(); [...document.querySelectorAll('#presets button')].find((b) => b.title === 'Violet').click();`,
+    );
+    await sleep(200); // the pick reaches the main process before the window goes
+    firstColour.destroy();
+    const nextColour = await openOn('colour-2.png', { session: 'smoke' });
+    inPage['F117 the next editor keeps the colour'] =
+      (await inWin(nextColour, `return colorEl.value`)) === '#8b3dff' &&
+      JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).color === '#8b3dff';
+    // A16: the Custom row reaches state.json and the next editor; the main process keeps only up to five #rrggbb
+    await inWin(nextColour, `window.snapmark.customColors(['red']); window.snapmark.customColors(Array(6).fill('#000000'));`);
+    await sleep(200);
+    inPage['A16 the Custom row is kept in state.json, checked at the IPC boundary'] =
+      (await inWin(nextColour, `return [...document.querySelectorAll('#customs button')].map((b) => b.dataset.color).join()`)) ===
+        '#12ab9f,#ff00aa' &&
+      JSON.stringify(JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).customColors) ===
+        '["#12ab9f","#ff00aa"]';
+    await inWin(nextColour, `setColor('#e5484d');`); // back to coral red
+    await sleep(200);
+    nextColour.destroy();
+    // F114: the session label's menu moves the editor to another session, which becomes current; ⌘S saves there
+    const moved = sessions.create(root, 'moved');
+    const mover = await openOn('move.png', { session: 'smoke' });
+    moveEditor(mover, moved);
+    const movedLabel = await inWin(
+      mover,
+      `for (let i = 0; i < 30 && document.getElementById('session').textContent !== 'moved'; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('session').textContent === 'moved';`,
+    );
+    const movedTitle = mover.getTitle();
+    const nowCurrent = (menuItems()[1] as { label?: string }).label;
+    await inWin(
+      mover,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true, cancelable: true }));`,
+    );
+    for (let i = 0; i < 30 && sessions.count(root, moved) === 0; i++) await sleep(100);
+    inPage['F114 the label switches the session'] =
+      movedLabel && movedTitle === 'Snapmark — moved' && nowCurrent === 'moved' && sessions.count(root, moved) === 1;
+    // snap-ua7 F13: the menu's Switch Session lists the sessions by last use
+    setActive('smoke');
+    await sleep(20);
+    setActive(moved);
+    const submenu = (items: Electron.MenuItemConstructorOptions[], label: string) =>
+      items.find((i) => i.label === label)!.submenu as Electron.MenuItemConstructorOptions[];
+    const switchRows = submenu(submenu(menuItems(), 'Session'), 'Switch Session').filter((i) => i.type === 'checkbox');
+    viewer['snap-ua7 F13 Switch Session lists the sessions by last use'] =
+      switchRows[0]?.label === 'moved' && !!switchRows[0]?.checked && switchRows[1]?.label === 'smoke';
+    // snap-bmr.14.3 F025 (UX audit 2026-09-28): the hand-off stays a menu item with no global key (ADR 2026-09-25
+    // menu-3); it copies the current session's prompt and names the session
+    const promptItem = menuItems().find((i) => i.label === 'Copy Prompt for AI')!;
+    notes.length = 0;
+    promptItem.click!({} as never, undefined, {} as never);
+    viewer["snap-bmr.14.3 F025: Copy Prompt for AI copies the session's prompt and names it, with no global key"] =
+      !promptItem.accelerator &&
+      promptItem.enabled === true &&
+      copiedText === promptFor(path.join(root, moved)) &&
+      notes.map((n) => n.body).join() === `Prompt for ${moved} copied. Paste it into your AI agent.`;
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,
@@ -908,6 +1434,7 @@ app
     console.log(`root: ${root}`);
     for (const [name, pass] of Object.entries(checks)) console.log(`${pass ? '✓' : '✗'} ${name}`);
     const ok = Object.values(checks).every(Boolean);
+    if (!ok) console.log('why:', JSON.stringify(why));
     console.log(ok ? 'smoke: ok' : `smoke: FAILED (${[r1, g1, b1]})`);
     app.exit(ok ? 0 : 1);
   })

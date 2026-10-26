@@ -19,8 +19,12 @@
         --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
         --accent-tint: rgb(36 146 255 / 0.14);
         --focus: #0f72db; /* focus rings: --accent is 3:1 on the light panels */
+        --accent-ink: #0f72db; /* the picked tool's icon: 3.8:1 on its tint, where #2492ff is 2.6:1 */
         --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
         --lift: 0 10px 30px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.06);
+        --hairline: rgb(0 0 0 / 0.12); /* the edge of a colour dot, so Graphite and pale picks keep their outline */
+        --slot: rgb(0 0 0 / 0.22);
+        --danger: #c42b31; /* 5.6:1 on --field */
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -28,13 +32,17 @@
           --panel: #262628;
           --field: #313134;
           --ink: #f5f5f7;
-          --muted: #98989d;
+          --muted: #a4a4a9; /* 5.2:1 on --field, 6.1:1 on --panel: small secondary text stays above 4.5:1 */
           --line: rgb(255 255 255 / 0.1);
           --hover: rgb(255 255 255 / 0.07);
           --accent-tint: rgb(36 146 255 / 0.24);
           --focus: #2492ff;
+          --accent-ink: #2492ff; /* 3.4:1 on the dark tint */
           --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
           --lift: 0 10px 30px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.1);
+          --hairline: rgb(255 255 255 / 0.16);
+          --slot: rgb(255 255 255 / 0.24);
+          --danger: #ff7a7a; /* 5.5:1 on --field */
         }
       }
       * {
@@ -44,7 +52,7 @@
         margin: 0;
         height: 100vh;
         display: grid;
-        grid-template: auto 1fr / 1fr 320px;
+        grid-template: auto auto 1fr / 1fr 320px;
         font:
           13px -apple-system,
           system-ui,
@@ -56,18 +64,59 @@
         outline: 2px solid var(--focus);
         outline-offset: 1px;
       }
+      /* One keycap style for every key the editor shows (A18): the system font's own ⌘ ⇧ ⌥ ⌃ ↵ glyphs, which stand as
+         tall as its digits (a <kbd>'s default monospace draws ⇧ a third smaller), 11 px, weight 500, in the colour of
+         the text it belongs to. Under an icon button it is the caption; in a text button it follows the label. */
+      kbd {
+        font:
+          500 11px/14px -apple-system,
+          system-ui,
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+        color: inherit;
+        white-space: nowrap;
+      }
+      /* The title row: the traffic lights sit in it (titleBarStyle hiddenInset), so it drags the window. */
+      .titlebar {
+        grid-column: 1 / -1;
+        height: 32px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        background: var(--panel);
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+      .titlebar svg {
+        width: 16px;
+        height: 16px;
+      }
+      /* The toolbar: every control's 36 px box sits on one row (so tool icons and Undo line up); tool captions hang
+         below it. Clusters (tools │ colour │ history and share) are split by hairlines, on an 8 pt rhythm. */
       header {
         grid-column: 1 / -1;
         /* One line, always: a wrapping toolbar would shift the canvas under the pointer when tool labels change. */
         overflow-x: auto;
         display: flex;
-        gap: 8px;
-        align-items: center;
-        padding: 8px 12px;
+        gap: 4px;
+        align-items: flex-start;
+        padding: 4px 16px 6px; /* the header clips (overflow), so the 3 px focus ring needs this room */
         border-bottom: 1px solid var(--line);
         background: var(--panel);
+        -webkit-app-region: drag; /* between the controls */
       }
-      header button,
+      header button {
+        -webkit-app-region: no-drag;
+      }
+      header .sep {
+        flex: none;
+        width: 1px;
+        height: 24px;
+        margin: 6px 8px 0;
+        background: var(--line);
+      }
       .actions button {
         font: inherit;
         padding: 5px 10px;
@@ -78,135 +127,226 @@
         color: inherit;
         cursor: pointer;
       }
-      header button:hover:not(:disabled),
       .actions button:hover {
         background-image: linear-gradient(var(--hover), var(--hover));
       }
+      /* Toolbar buttons are borderless, like a macOS toolbar: a soft fill on hover, the blue tint when picked. */
+      header button {
+        flex: none;
+        display: grid;
+        place-items: center;
+        height: 36px;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      header button:hover:not(:disabled) {
+        background: var(--hover);
+      }
       header button:disabled {
-        opacity: 0.4;
+        opacity: 0.35;
         cursor: default;
       }
       #tools {
         display: flex;
-        gap: 2px;
-        padding-right: 8px;
-        border-right: 1px solid var(--line);
+        gap: 4px;
       }
-      #tools .group {
+      header .group {
+        flex: none;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1px;
+        gap: 2px;
       }
-      #tools .cap {
-        display: flex;
-        gap: 3px;
-        align-items: center;
-        height: 11px;
-        font:
-          600 10px ui-monospace,
-          monospace;
-        color: var(--muted);
+      header .cap {
+        height: 14px;
+        font-size: 11px;
+        color: var(--ink);
       }
-      #tools .cap kbd {
-        font: inherit;
-        margin: 0;
-      }
-      #tools .dots {
-        font-size: 6px;
-        letter-spacing: 1px;
+      header .group:has(button:disabled) .cap {
+        color: var(--muted); /* dims with its button, still 4.7:1 or more */
       }
       #tools button {
-        display: grid;
-        place-items: center;
-        width: 34px;
-        height: 30px;
-        padding: 0;
-        border-color: transparent;
-        background: transparent;
-        box-shadow: none;
-      }
-      #tools button:hover {
-        background: var(--hover);
+        width: 40px;
       }
       #tools button[aria-pressed='true'] {
         background: var(--accent-tint);
-        color: var(--accent);
+        color: var(--accent-ink);
       }
-      #tools svg {
-        width: 18px;
-        height: 18px;
+      header svg {
         fill: none;
         stroke: currentColor;
         stroke-width: 1.8;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      header kbd,
-      .actions kbd {
-        color: var(--muted);
-        font-size: 11px;
-        margin-left: 4px;
+      #tools svg {
+        width: 22px;
+        height: 22px;
+        overflow: visible; /* a two-tool button's back layer sits just outside the glyph's 24-unit box */
       }
-      header .session {
+      /* A key with two tools: the current tool in front, the corner of a second layer behind it. */
+      #tools .back {
+        opacity: 0.5;
+      }
+      /* Undo, Redo and Copy or Save: icons; the name and key are in the tooltip and the accessible name. */
+      header .icon-btn {
+        width: 36px;
+      }
+      header .icon-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+      /* The session label: opens the session menu; only the name shortens, with "…". Plain text in Edit Again and
+         one-shot. The chevron sits in the right padding, so the ellipsis never hides it. */
+      header #session {
+        position: relative;
+        display: block;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 260px;
         margin-left: auto;
-        padding-left: 12px;
+        padding: 0 26px 0 10px;
+        line-height: 36px;
+        overflow: hidden;
         white-space: nowrap;
+        text-overflow: ellipsis;
         color: var(--muted);
       }
-      /* The annotation colour: a swatch, and a popover of presets with Custom… (the macOS colour panel). */
+      header #session:disabled {
+        opacity: 1;
+        padding-right: 10px;
+      }
+      #session .chevron {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        width: 10px;
+        height: 10px;
+        margin-top: -5px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* The annotation colour: a swatch, and a popover of presets, the Custom row, a hex field and Custom… (the macOS
+         colour panel). One dot everywhere (A17): the swatch and every circle in the popover are 24 px circles, and the
+         picked colour wears the same ring, a 2 px gap and then 2 px of the colour itself. */
       #swatch {
-        display: grid;
-        place-items: center;
-        width: 34px;
-        height: 30px;
-        padding: 0;
+        width: 40px;
       }
-      #swatch i {
-        width: 18px;
-        height: 18px;
-        border-radius: 5px;
-        box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15);
-      }
-      #palette {
-        position: fixed; /* the header scrolls sideways, so a popover inside it would be clipped */
-        z-index: 10;
-        padding: 12px;
-        border-radius: 12px;
-        background: var(--field);
-        box-shadow: var(--lift);
-      }
-      #presets {
-        display: grid;
-        grid-template-columns: repeat(5, 28px);
-        gap: 10px;
-      }
-      #presets button {
-        width: 28px;
-        height: 28px;
+      #swatch i,
+      #palette .swatches > * {
+        display: block;
+        width: 24px;
+        height: 24px;
         padding: 0;
         border: 0;
         border-radius: 50%;
         background-color: currentColor;
-        cursor: pointer;
-        outline-offset: 4px;
+        box-shadow: inset 0 0 0 1px var(--hairline);
+        outline: 0 solid currentColor;
+        outline-offset: 2px;
       }
-      #presets button[aria-pressed='true'] {
+      #swatch i,
+      #palette .swatches [aria-pressed='true'] {
+        outline-width: 2px;
+      }
+      #palette {
+        position: fixed; /* the header scrolls sideways, so a popover inside it would be clipped */
+        z-index: 10;
+        width: 196px; /* five 24 px dots, 12 px apart, in 14 px of padding */
+        padding: 14px;
+        border-radius: 12px;
+        background: var(--field);
+        box-shadow: var(--lift);
+      }
+      #palette .swatches {
+        display: grid;
+        grid-template-columns: repeat(5, 24px);
+        gap: 12px;
+      }
+      #palette .swatches button {
+        cursor: pointer;
+      }
+      /* Focus sits outside the picked ring, so both show at once. */
+      #palette .swatches button:focus-visible {
         box-shadow:
-          0 0 0 2px var(--field),
-          0 0 0 4px currentColor;
+          inset 0 0 0 1px var(--hairline),
+          0 0 0 5px var(--field),
+          0 0 0 7px var(--focus);
+      }
+      #palette .swatches [aria-pressed='true'] {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 12.5l3.2 3.2L17 9' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       }
+      /* A free place in the Custom row. */
+      #palette .swatches .slot {
+        background: none;
+        box-shadow: none;
+        border: 1px dashed var(--slot);
+      }
+      #palette h3 {
+        margin: 14px 0 8px;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 14px;
+        color: var(--muted);
+      }
       #palette hr {
-        margin: 12px 0 6px;
+        margin: 14px 0 12px;
         border: 0;
         border-top: 1px solid var(--line);
+      }
+      /* The hex field: "#" is drawn, the field holds the digits. Enter or leaving it applies them. */
+      #palette .hex {
+        display: flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--muted);
+        cursor: text;
+      }
+      #palette .hex:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-tint);
+      }
+      #palette .hex:has([aria-invalid='true']) {
+        border-color: var(--danger);
+        box-shadow: none;
+      }
+      #palette .hex input {
+        flex: 1;
+        min-width: 0;
+        margin-left: 2px;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        font-variant-numeric: tabular-nums;
+        font-weight: 400;
+      }
+      #hex-error {
+        margin: 6px 0 0;
+        font-size: 11px;
+        line-height: 14px;
+        color: var(--danger);
       }
       #palette .custom {
         position: relative;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        margin: 8px -4px -4px;
         padding: 4px;
         border-radius: 8px;
         font-weight: 400;
@@ -227,11 +367,11 @@
         pointer-events: none;
       }
       #palette .ring {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         background: conic-gradient(#e5484d, #ffb224, #30a46c, #05a2c2, #2492ff, #8b3dff, #ef28a7, #e5484d);
-        mask: radial-gradient(circle, transparent 8px, #000 9px);
+        mask: radial-gradient(circle, transparent 7px, #000 8px);
       }
       main {
         overflow: hidden;
@@ -261,8 +401,7 @@
       }
       .one-shot #caption,
       .one-shot #refs,
-      .one-shot #refs-label,
-      .one-shot #copy {
+      .one-shot #refs-label {
         display: none !important;
       }
       /* Beautify (one-shot mode): sliders with their values, background swatches, ratio as a segmented control. */
@@ -486,14 +625,42 @@
         color: #fff;
         font-weight: 600;
       }
-      .actions .primary kbd {
-        color: inherit;
+      .actions kbd {
+        margin-left: 3px; /* after the label's space: about 7 px in all */
       }
     </style>
   </head>
   <body>
+    <div class="titlebar">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="cool" x1="0" y1="0" x2=".85" y2="1">
+            <stop stop-color="#20F4EC" />
+            <stop offset=".45" stop-color="#2492FF" />
+            <stop offset="1" stop-color="#8B3DFF" />
+          </linearGradient>
+          <linearGradient id="pink" x1="0" y1="0" x2=".8" y2="1">
+            <stop stop-color="#FA6CFF" />
+            <stop offset="1" stop-color="#EF28A7" />
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1c20" />
+        <g transform="translate(14 14) scale(.72)">
+          <path
+            d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63"
+            fill="none"
+            stroke="url(#cool)"
+            stroke-width="12"
+            stroke-linecap="round"
+          />
+          <rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#pink)" />
+        </g>
+      </svg>
+      Snapmark
+    </div>
     <header>
       <span id="tools"></span>
+      <span class="sep" aria-hidden="true"></span>
       <button
         id="swatch"
         title="Annotation colour"
@@ -504,15 +671,51 @@
       >
         <i></i>
       </button>
-      <button id="undo" disabled>Undo<kbd>⌘Z</kbd></button>
-      <button id="redo" disabled>Redo<kbd>⇧⌘Z</kbd></button>
-      <button id="copy" title="Copy the marked-up image, without adding it to the session">Copy Image<kbd>⇧⌘C</kbd></button>
-      <button id="save-as" title="Save the marked-up image as a PNG, without adding it to the session">Save As…<kbd>⇧⌘S</kbd></button>
-      <span class="session" id="session"></span>
+      <span class="sep" aria-hidden="true"></span>
+      <div class="group">
+        <button id="undo" class="icon-btn" title="Undo (⌘Z)" aria-label="Undo (⌘Z)" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 14L4 9l5-5" />
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+          </svg>
+        </button>
+        <div class="cap"><kbd>⌘Z</kbd></div>
+      </div>
+      <div class="group">
+        <button id="redo" class="icon-btn" title="Redo (⇧⌘Z)" aria-label="Redo (⇧⌘Z)" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 14l5-5-5-5" />
+            <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+          </svg>
+        </button>
+        <div class="cap"><kbd>⇧⌘Z</kbd></div>
+      </div>
+      <button id="share" class="icon-btn" title="Copy Image or Save As…" aria-label="Copy or Save" aria-haspopup="menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3v12M8 7l4-4 4 4" />
+          <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
+        </svg>
+      </button>
+      <button id="session" aria-haspopup="menu" disabled>
+        <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
+      </button>
     </header>
     <div id="palette" role="dialog" aria-label="Annotation colour" hidden>
-      <div id="presets"></div>
+      <div id="presets" class="swatches"></div>
+      <h3 id="customs-label">Custom</h3>
+      <div id="customs" class="swatches" role="group" aria-labelledby="customs-label"></div>
       <hr />
+      <label class="hex"
+        >#<input
+          id="hex"
+          type="text"
+          maxlength="9"
+          spellcheck="false"
+          autocomplete="off"
+          aria-label="Hex colour"
+          aria-describedby="hex-error"
+      /></label>
+      <p id="hex-error" hidden>Use 3 or 6 hex digits.</p>
       <label class="custom"><input type="color" id="color" value="#e5484d" /><i class="ring"></i>Custom…</label>
     </div>
     <main>
@@ -536,8 +739,8 @@
         <p id="redacted" hidden></p>
       </div>
       <div class="actions">
-        <button id="cancel">Discard<kbd> ⌘W</kbd></button>
-        <button id="save" class="primary">Add to session ⌘↵</button>
+        <button id="cancel">Discard <kbd>⌘W</kbd></button>
+        <button id="save" class="primary">Add to session <kbd>⌘↵</kbd></button>
       </div>
     </aside>
     <script src="../../node_modules/fabric/dist/index.min.js"></script>
