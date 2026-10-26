@@ -2030,7 +2030,7 @@ app
         `const r = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2, b.width, b.height].map(Math.round).join(); };
         const d = document.getElementById('digit');
         return JSON.stringify({ digit: d.textContent, line: document.getElementById('line').textContent, said: document.getElementById('say').textContent,
-          outline: r('outline'), square: r('square'), anim: getComputedStyle(d).animationName });`,
+          outline: r('outline'), square: r('square'), anim: getComputedStyle(d).animationName, reduced: matchMedia('(prefers-reduced-motion: reduce)').matches });`,
       ).then((s: string) => JSON.parse(s));
     const shotsBeforeTimed = shots.length;
     const windowsBeforeTimed = BrowserWindow.getAllWindows();
@@ -2069,7 +2069,8 @@ app
     viewer['@F30 the countdown closes 200 ms before the capture'] =
       shots.length === shotsBeforeTimed + 1 && !overlayAtShot && closedAt > 0 && shotAt - closedAt >= 190;
     viewer['@F32 with Reduce Motion the digits change without scale or fade'] =
-      first.anim === 'tick' && still?.digit === '2' && still?.anim === 'none';
+      // a runner that already reduces motion (GitHub's macOS image does) never shows the tick
+      first.anim === (first.reduced ? 'none' : 'tick') && still?.digit === '2' && still?.anim === 'none';
     why.F28 = { first, still, cdBounds, display, shotAfterClose: shotAt - closedAt, overlayAtShot };
     timedEditor.destroy();
     // @F31: ⌃⇧5 or a click on the menu bar icon cancels: no capture, no bar, no message; Esc is capture.test.ts's
