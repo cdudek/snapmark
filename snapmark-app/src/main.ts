@@ -611,7 +611,7 @@ export function openEditor(
     // At the minimum size the toolbar still fits on one line (F108).
     minWidth: 820,
     minHeight: 520,
-    title: `Snapmark — ${oneShot ? 'One-shot' : sessions.shortName(session)}`,
+    title: editorTitle(session),
     // The page draws its own title row, with the traffic lights in it, like the session window.
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 10 },
@@ -638,6 +638,9 @@ export function openEditor(
   return win;
 }
 
+// "Snapmark — <session>"; One-Shot has no session ('').
+const editorTitle = (session: string) => `Snapmark — ${session ? sessions.shortName(session) : 'One-Shot'}`;
+
 function editorFor(id: number) {
   const ed = editors.get(id);
   if (!ed) throw new Error(`No editor for webContents ${id}`);
@@ -647,29 +650,33 @@ function editorFor(id: number) {
 ipcMain.handle('editor:init', (e): EditorInit => {
   const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
-  const picked = color ?? undefined;
-  if (oneShot)
-    return {
-      src,
-      session,
-      count: 0,
-      state,
-      oneShot,
-      beautify: state?.beautify ?? beautify ?? undefined,
-      singleKeys,
-      color: picked,
-      customColors,
-    };
   return {
     src,
-    session: sessions.shortName(session),
-    count: sessions.count(into, session),
+    ...(oneShot
+      ? { session, count: 0, oneShot }
+      : { session: sessions.shortName(session), count: sessions.count(into, session), replacing: replace }),
     state,
-    replacing: replace,
+    // In Session too, so a switch to One-Shot needs no reload
+    beautify: state?.beautify ?? beautify ?? undefined,
     singleKeys,
-    color: picked,
+    color: color ?? undefined,
     customColors,
   };
+});
+
+// Session | One-Shot in the editor: the same window switches, so its marks and undo stay (plan 2.1). Back in Session
+// it goes to the current session, as a new editor would. Edit Again saves back into its entry and never switches.
+ipcMain.handle('editor:destination', (e, one: unknown) => {
+  const ed = editorFor(e.sender.id);
+  if (!ed.replace && typeof one === 'boolean') {
+    ed.oneShot = one;
+    ed.root = root;
+    ed.session = one ? '' : (active ?? sessions.create(root));
+    if (!one) setActive(ed.session);
+    ed.win.setTitle(editorTitle(ed.session));
+  }
+  const { root: into, session, oneShot } = ed;
+  return oneShot ? { session: '', count: 0 } : { session: sessions.shortName(session), count: sessions.count(into, session) };
 });
 
 // The page is not trusted to send a colour: only #rrggbb is kept in state.json.
@@ -689,6 +696,8 @@ ipcMain.on('editor:custom-colors', (_e, list: unknown) => {
 export function moveEditor(win: BrowserWindow, name: string) {
   const ed = editors.get(win.webContents.id);
   if (!ed || ed.oneShot || ed.replace) return; // Edit Again and one-shot have no session menu
+  // Its folder went (Finder, another Mac): stay in the old session and say so under the pop-up (F44)
+  if (!sessions.list(root).includes(name)) return void ed.win.webContents.send('editor:move-error', sessions.shortName(name));
   ed.root = root;
   ed.session = name;
   setActive(name);
@@ -736,10 +745,17 @@ ipcMain.on('editor:beautify', (e, settings: Beautify) => {
 });
 
 // Sent synchronously while the window unloads without a save, so the capture is kept before the window is gone.
-ipcMain.on('editor:stash', (e, state: EditState) => {
+// copied: Copy Image closed a One-Shot, which Discarded lists as "Copied One-Shot" (F40).
+ipcMain.on('editor:stash', (e, state: EditState, copied: unknown) => {
   const ed = editors.get(e.sender.id);
   if (ed && fs.existsSync(ed.image)) {
-    sessions.discardCapture(ed.root, ed.oneShot ? 'one-shot' : ed.session, ed.image, JSON.stringify(state));
+    sessions.discardCapture(
+      ed.root,
+      ed.oneShot ? 'one-shot' : ed.session,
+      ed.image,
+      JSON.stringify(state),
+      !!ed.oneShot && copied === true,
+    );
     for (const v of viewers.values()) if (v.root === ed.root && v.session === ed.session) reloadViewer(v); // its Discarded tab
   }
   e.returnValue = null;
@@ -802,7 +818,7 @@ ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, sta
 function tellEditors(into: string, name: string) {
   for (const ed of editors.values())
     if (ed.root === into && ed.session === name && !ed.win.isDestroyed()) {
-      ed.win.setTitle(`Snapmark — ${sessions.shortName(name)}`);
+      ed.win.setTitle(editorTitle(name));
       ed.win.webContents.send('editor:session', sessions.shortName(name), sessions.count(into, name));
     }
 }

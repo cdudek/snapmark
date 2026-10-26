@@ -5,8 +5,8 @@ interface EditorInit {
   count: number; // screenshots already in the session
   state?: EditState; // marks and text to put back: a reopened discard, or Edit Again
   replacing?: number; // Edit Again: saving replaces this entry instead of adding one
-  oneShot?: boolean; // one-shot mode: Beautify, then copy or save; no session
-  beautify?: Beautify; // one-shot: the settings to start from (the reopened discard's, else the last used)
+  oneShot?: boolean; // One-Shot: Beautify, then copy or save; no session. The editor can switch it (destination)
+  beautify?: Beautify; // One-Shot's settings to start from (the reopened discard's, else the last used), also in Session
   singleKeys: boolean; // Settings ▸ Single-Key Tools; off, a plain letter or digit picks no tool and ⌘1–⌘7 still do
   color?: string; // the annotation colour last picked in any editor, also before a restart
   customColors: string[]; // the colour panel's Custom row, newest first, kept in state.json
@@ -132,7 +132,9 @@ interface Window {
     beautify(settings: Beautify): void; // one-shot: remember the settings as the one preset
     secrets(): Promise<{ x: number; y: number; w: number; h: number }[] | null>; // auto-redact's areas; null: no text recognition
     dirty(value: boolean): void; // the editor has marks or text that are not saved yet
-    stash(state: EditState): void; // the window closes without saving: keep it in Discarded (synchronous)
+    stash(state: EditState, copied: boolean): void; // closes without saving: keep it in Discarded (synchronous); copied: a One-Shot Copy closed it
+    destination(oneShot: boolean): Promise<{ session: string; count: number }>; // Session | One-Shot: the session it now goes to
+    onMoveError(cb: (session: string) => void): void; // the session picked in the pop-up has no folder any more
     onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
     onSingleKeys(cb: (on: boolean) => void): void; // Settings ▸ Single-Key Tools changed while the editor is open
     color(c: string): void; // the owner picked an annotation colour: the next editor starts with it

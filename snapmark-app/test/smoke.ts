@@ -282,9 +282,9 @@ app
       kbds.length === 12 && kbds.every((k) => keyStyle(k) === '11px,500,-apple-system' && getComputedStyle(k).color === getComputedStyle(k.parentElement).color) &&
       iconBtns.every(below) && iconBtns.every((b) => ink(b.parentElement.querySelector('.cap kbd'), document.querySelector('header'))) &&
       textBtns.every((b) => after(b) && ink(b.querySelector('kbd'), b)) &&
-      document.getElementById('save').textContent === 'Add to session ⌘↵' && document.getElementById('cancel').textContent === 'Discard ⌘W' &&
-      heights([...document.querySelectorAll('header button')].filter((b) => b.id !== 'session')) && heights(textBtns);
-    r['toolbar shows the session name alone while it is empty, then the count'] = document.getElementById('session').textContent === 'smoke' && shotsLabel('Ledgerly Q4 review', 12) === 'Ledgerly Q4 review · 12 screenshots' && shotsLabel('s', 1) === 's · 1 screenshot';
+      document.getElementById('save').textContent === 'Add to Session ⌘↩' && document.getElementById('cancel').textContent === 'Discard ⌘W' &&
+      heights([...document.querySelectorAll('header button')].filter((b) => b.id !== 'session' && !b.closest('#dest'))) && heights(textBtns);
+    r['toolbar shows the session name alone while it is empty'] = document.getElementById('session').textContent === 'smoke';
     const tail = bubbleTail(50, 20, { x: -200, y: -100 }, 2);
     r['card: the bubble tail leaves the top edge toward its target; none when the target is inside'] = !!tail && tail[2].y < -20 && tail[2].x < tail[0].x && tail[0].y === -18 && bubbleTail(50, 20, { x: 10, y: 5 }, 2) === null;
     r['no "Numbered" in the editor'] = !/numbered marker|Numbered/.test(document.body.innerText + GROUPS.flatMap((g) => g.tools.map((t) => t.label + (t.tip ?? ''))).join(' '));
@@ -482,7 +482,7 @@ app
     inPage['F108 the toolbar fits at 820 points'] =
       JSON.stringify(win.getMinimumSize()) === JSON.stringify([820, 520]) &&
       (await win.webContents.executeJavaScript(
-        `(() => { const h = document.querySelector('header'); return h.scrollWidth <= h.clientWidth && getComputedStyle(document.getElementById('session')).textOverflow === 'ellipsis'; })()`,
+        `(() => { const h = document.querySelector('header'); return h.scrollWidth <= h.clientWidth && getComputedStyle(document.getElementById('session-name')).textOverflow === 'ellipsis'; })()`,
       ));
     win.setSize(w0, h0);
     await new Promise((r) => setTimeout(r, 300));
@@ -745,7 +745,7 @@ app
     await loaded(fromGrid);
     viewer["snap-c5c the grid's Edit Again button opens the editor"] =
       fromGrid.webContents.getURL().endsWith('editor.html') &&
-      (await inWin(fromGrid, `return document.getElementById('save').textContent`)).startsWith('Save changes');
+      (await inWin(fromGrid, `return document.getElementById('save').textContent`)) === 'Save Changes ⌘↩'; // @F51
     fromGrid.destroy();
     await sleep(300);
     windows = BrowserWindow.getAllWindows();
@@ -760,14 +760,22 @@ app
     viewer['Edit Again restores references, cards, moves, comment and notes'] =
       JSON.stringify(restored) === JSON.stringify([3, 2, 1, 'Smoke test caption', 'Button is misaligned']);
     viewer['Edit Again shows the session and its count'] =
-      (await inWin(again, `return document.getElementById('session').textContent`)) === 'smoke · 1 screenshot';
+      (await inWin(again, `return document.getElementById('session').textContent`)) === 'smoke (1)';
     viewer['Edit Again says it saves changes'] = (await inWin(again, `return document.getElementById('save').textContent`)).startsWith(
-      'Save changes',
+      'Save Changes',
     );
     // F115: Edit Again (and one-shot, below) shows the session as plain text, with no chevron and no menu
     const noSessionMenu = (w: BrowserWindow) =>
       inWin(w, `const s = document.getElementById('session'); return s.disabled && !s.querySelector('.chevron');`);
     const noMenuAgain = await noSessionMenu(again);
+    // @F45 Edit Again: Session | One-Shot and the pop-up are greyed, the reason on their wrapper; ⇧⌘O changes nothing
+    for (const type of ['keyDown', 'keyUp'] as const)
+      again.webContents.sendInputEvent({ type, keyCode: 'O', modifiers: ['shift', 'meta'] });
+    await sleep(200);
+    viewer['@F45 Edit Again greys the destination, with its reason'] = await inWin(
+      again,
+      `return [...document.querySelectorAll('#dest button')].every((b) => b.disabled) && document.getElementById('dest-wrap').title === 'Edit Again saves back into smoke.' && document.getElementById('session').disabled && !oneShot && document.querySelector('#dest [aria-checked="true"]').textContent.trim() === 'Session';`,
+    );
     await inWin(again, `captionField.focus();`);
     for (const ch of 'Edited ') again.webContents.sendInputEvent({ type: 'char', keyCode: ch });
     await new Promise((r) => setTimeout(r, 300));
@@ -785,7 +793,7 @@ app
         watching,
         `for (let i = 0; i < 30 && document.getElementById('session').textContent !== ${JSON.stringify(text)}; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('session').textContent === ${JSON.stringify(text)};`,
       );
-    viewer['an open editor shows the count'] = await label('smoke · 1 screenshot');
+    viewer['an open editor shows the count'] = await label('smoke (1)');
     // Discarded tab: this session's removed screenshot, and Reopen puts it back
     await inView(`document.getElementById('tab-discarded').click();`);
     viewer['Discarded tab lists the removed screenshot'] = await waitFor(
@@ -795,7 +803,7 @@ app
     viewer['Reopen puts it back in the session'] =
       (await waitFor(`document.getElementById('tab-discarded').hidden && document.querySelectorAll('#grid .thumb').length === 2`)) &&
       smokeMd().includes('Second shot');
-    viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke · 2 screenshots');
+    viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke (2)');
     // F135: after ⌘⌫ in the large view, ↩ does not start a rename: the large image has the focus
     await inView(`document.querySelector('#grid .thumb .pic').click(); document.activeElement.blur();`);
     keyIn('Backspace', ['meta']);
@@ -888,16 +896,15 @@ app
       fs.existsSync(path.join(root, 'smoke renamed', 'session.md')) &&
       !fs.existsSync(path.join(root, 'smoke')) &&
       view.getTitle() === 'smoke renamed — Snapmark';
-    viewer['an open editor follows the rename'] =
-      (await label('smoke renamed · 2 screenshots')) && watching.getTitle() === 'Snapmark — smoke renamed';
+    viewer['an open editor follows the rename'] = (await label('smoke renamed (2)')) && watching.getTitle() === 'Snapmark — smoke renamed';
     // F116: a long name shortens with "…" in an open editor's label; its tooltip has the full name
     const long = 'Ledgerly Q4 review of checkout, payments, refunds and the new order page, take 2';
     await rename(long, 'Return');
     inPage['F116 a long name shortens'] =
-      (await label(`${long} · 2 screenshots`)) &&
+      (await label(`${long} (2)`)) &&
       (await inWin(
         watching,
-        `const s = document.getElementById('session'); return s.scrollWidth > s.clientWidth && s.title.startsWith(${JSON.stringify(long)});`,
+        `const s = document.getElementById('session'), n = document.getElementById('session-name'); return n.scrollWidth > n.clientWidth && s.title.startsWith(${JSON.stringify(long)});`,
       ));
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
@@ -1418,7 +1425,7 @@ app
       arrowsOk && tabsOk && runs.length === 2 && barEsc.isDestroyed() && !barUp().length;
     // One-Shot: a scrolling capture opens in one-shot mode, never in a session
     const oneShotScroll = await scrollCapture(scrollArea, fakeGrab([0, 400], 'Return'), { oneShot: true });
-    viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-shot';
+    viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-Shot';
     oneShotScroll?.destroy();
     setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false }); // as the first time again
 
@@ -1685,8 +1692,10 @@ app
     for (let i = 0; i < 30 && !keysWin.isDestroyed(); i++) await sleep(100);
     viewer['F234 Esc closes Keyboard Shortcuts'] = keysWin.isDestroyed();
 
-    // One-shot mode: Beautify instead of References, no Add to session; ⌘C copies the marked screenshot on its
-    // backdrop at full resolution; nothing goes into a session; closing keeps it in Discarded; the settings are remembered
+    // One-shot mode: Beautify instead of References, no Add to Session; ⌘C copies the marked screenshot on its
+    // backdrop at full resolution and closes the editor (@F39), so this block is split: Save As… first, then Copy on this
+    // window, ⌘↩ and Esc on their own (plan Risks). Nothing goes into a session; Discarded keeps each; the settings are
+    // remembered. Replaces the old one-shot sequence of ⌘C, ⇧⌘S and ⌘↩ on one window.
     const { beautyLayout } = require('../src/beautify') as { beautyLayout: typeof globalThis.beautyLayout };
     const sessionsBefore = JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)]));
     fs.copyFileSync(shotCopy, path.join(root, 'one.png'));
@@ -1701,7 +1710,7 @@ app
           beautify: !document.getElementById('beautify').hidden && shown('beautify'),
           noRefs: !shown('refs') && !shown('caption'),
           noHeading: !shown('caption-label'),
-          noAdd: !document.body.innerText.includes('Add to session'),
+          noAdd: !document.body.innerText.includes('Add to Session'),
           primary: document.getElementById('save').textContent,
           values: ['padding', 'radius', 'shadow'].map((id) => document.getElementById(id).value + '=' + document.querySelector('output[for="' + id + '"]').textContent).join(),
           backdrops: document.querySelectorAll('#backdrops > *').length,
@@ -1712,14 +1721,16 @@ app
     viewer['one-shot: the Beautify panel replaces References and the comment'] = panel.beautify && panel.noRefs;
     inPage['F115 no session menu in Edit Again or one-shot'] = noMenuAgain && (await noSessionMenu(one));
     inPage['F12 the top box is headed General comment'] &&= panel.noHeading; // hidden with the box in one-shot mode
-    viewer['one-shot: no Add to session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
+    viewer['one-shot: no Add to Session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
     viewer['one-shot: sliders show their values; 10 backgrounds; Auto 4:3 3:2 16:9 1:1'] =
       panel.values === '64=64,12=12,40=40' && panel.backdrops === 10 && panel.ratios === 'Auto,4:3,3:2,16:9,1:1';
     const shotUnit = Math.max(2, Math.round(Math.max(shotSize.width, Math.min(shotSize.height, 2 * shotSize.width)) / 400));
+    // A reference at the centre, which the copied image leaves out (@F50), inside a red box, which it keeps
+    const [cx, cy] = [Math.round(shotSize.width / 2), Math.round(shotSize.height / 2)];
     const preview = JSON.parse(
       await inWin(
         one,
-        `canvas.add(new Marker({ x: background.width / 2, y: background.height / 2 }, '#e5484d')); after();
+        `canvas.add(new Marker({ x: ${cx}, y: ${cy} }, '#e5484d'), new Glyph('box', { x: ${cx - 80}, y: ${cy - 80}, w: 160, h: 160 }, '#e5484d')); after();
         const set = (el, v) => { el.value = v; el.dispatchEvent(new Event('input')); };
         set(document.getElementById('padding'), '100');
         set(document.querySelector('#backdrops input[type="color"]'), '#123456');
@@ -1738,11 +1749,39 @@ app
       got.offered = opts.defaultPath ?? '';
       return { canceled: false, filePath: oneSaved };
     };
+    // ⇧⌘S first: Save As… leaves the editor open
+    await inWin(
+      one,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`,
+    );
+    for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
+    // @F41 the hex field has the cursor: ⌘C is its text's, so nothing is copied and the editor stays open
+    const textKept = await inWin(
+      one,
+      `document.getElementById('swatch').click();
+      const h = document.getElementById('hex');
+      h.focus();
+      h.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 500));
+      const kept = document.activeElement === h;
+      closePalette(false);
+      return kept;`,
+    );
+    viewer['@F41 ⌘C in a text field copies text and leaves the editor open'] = textKept && !got.copy && !one.isDestroyed();
+    // @F39 ⌘C, no text field focused: the image is copied and the editor closes
     await inWin(one, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));`);
-    for (let i = 0; i < 30 && !got.copy; i++) await new Promise((r) => setTimeout(r, 100));
+    for (let i = 0; i < 30 && !one.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
     const oneCopy = got.copy;
     const oneFile = path.join(root, 'one-shot-copied.png');
     if (oneCopy) fs.writeFileSync(oneFile, oneCopy);
+    viewer['@F39 Copy Image copies the image and closes the editor'] = !!oneCopy && one.isDestroyed();
+    // @F40 Discarded keeps it 7 days, listed as "Copied One-Shot", with its settings
+    const [copiedKept] = sessions.discarded(root);
+    viewer['@F40 Discarded keeps the copied One-Shot as "Copied One-Shot"'] =
+      copiedKept?.session === 'one-shot' &&
+      !!copiedKept.copied &&
+      path.basename(copiedKept.dir).endsWith(' · one-shot · Copied One-Shot') &&
+      JSON.parse(fs.readFileSync(path.join(copiedKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
     const L = beautyLayout(shotSize.width, shotSize.height, { padding: 100, radius: 12, shadow: 40, backdrop: '#123456', ratio: '16:9' });
     const near = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]) <= 2);
     viewer['one-shot: ⌘C copies at full resolution, the canvas at the ratio'] =
@@ -1750,43 +1789,15 @@ app
     viewer['one-shot: the copied image has the backdrop in its corners'] =
       !!oneCopy && near(pixel(oneFile, 0, 0, 2, 2), [18, 52, 86]) && near(pixel(oneFile, 1, 1, -3, -3), [18, 52, 86]);
     viewer['one-shot: the screenshot and its marks sit centred on it'] =
-      !!oneCopy && red(pixel(oneFile, (L.x + shotSize.width / 2) / L.width, (L.y + shotSize.height / 2) / L.height, -shotUnit * 8 * 0.45));
-    await inWin(
-      one,
-      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`,
-    );
-    for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
+      !!oneCopy && red(pixel(oneFile, (L.x + cx - 80) / L.width, (L.y + cy) / L.height));
+    viewer['@F50 the One-Shot image leaves the reference numbers out'] =
+      !!oneCopy && !red(pixel(oneFile, (L.x + cx) / L.width, (L.y + cy) / L.height, -shotUnit * 8 * 0.45));
     viewer['one-shot: Save As… writes the same image, named Snapmark <date time>'] =
       /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(got.offered) &&
       !!oneCopy &&
       fs.existsSync(oneSaved) &&
       fs.readFileSync(oneSaved).equals(oneCopy);
-    // F134: one-shot ⌘↵ copies and keeps the selected marks selected
-    got.copy = null;
-    const oneSelected = await inWin(
-      one,
-      `canvas.add(new Marker({ x: 40, y: 40 }, '#e5484d')); after();
-      select(canvas.getObjects().filter((o) => o instanceof Marker));
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', metaKey: true, bubbles: true, cancelable: true }));
-      await new Promise((r) => setTimeout(r, 500));
-      const n = canvas.getActiveObjects().length;
-      canvas.discardActiveObject();
-      return n;`,
-    );
-    for (let i = 0; i < 30 && !got.copy; i++) await sleep(100);
-    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu && oneSelected === 2 && !!got.copy;
-    viewer['one-shot: nothing is added to any session'] =
-      JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
-    for (const key of ['Escape', 'Escape']) {
-      one.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    for (let i = 0; i < 30 && !one.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
-    const [oneKept] = sessions.discarded(root);
-    viewer['one-shot: Esc, Esc closes it into Discarded with its settings'] =
-      one.isDestroyed() &&
-      oneKept?.session === 'one-shot' &&
-      JSON.parse(fs.readFileSync(path.join(oneKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
+    // The next one-shot starts from the last settings; ⌘↩ with marks selected copies and closes it too (@F39)
     fs.copyFileSync(shotCopy, path.join(root, 'two.png'));
     const two = openEditor(path.join(root, 'two.png'), { oneShot: true });
     await new Promise<void>((r) => two.webContents.once('did-finish-load', () => r()));
@@ -1796,7 +1807,34 @@ app
         two,
         `return document.getElementById('padding').value === '100' && document.querySelector('#ratios [aria-pressed="true"]').textContent === '16:9' && document.querySelector('#backdrops .custom').classList.contains('picked');`,
       )) === true;
-    two.destroy();
+    got.copy = null;
+    await inWin(
+      two,
+      `canvas.add(new Marker({ x: 40, y: 40 }, '#e5484d')); after();
+      select(canvas.getObjects().filter((o) => o instanceof Marker));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', metaKey: true, bubbles: true, cancelable: true }));`,
+    );
+    for (let i = 0; i < 30 && !two.isDestroyed(); i++) await sleep(100);
+    viewer['@F39 One-Shot ⌘↩ copies and closes the editor'] = !!got.copy && two.isDestroyed();
+    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu; // One-Shot's copy closes the editor (@F39)
+    viewer['one-shot: nothing is added to any session'] =
+      JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
+    // Esc, Esc: closed without a copy, so it is "not saved", with its settings
+    fs.copyFileSync(shotCopy, path.join(root, 'three.png'));
+    const three = openEditor(path.join(root, 'three.png'), { oneShot: true });
+    await new Promise<void>((r) => three.webContents.once('did-finish-load', () => r()));
+    await loaded(three);
+    for (const key of ['Escape', 'Escape']) {
+      three.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    for (let i = 0; i < 30 && !three.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
+    const [oneKept] = sessions.discarded(root);
+    viewer['one-shot: Esc, Esc closes it into Discarded with its settings'] =
+      three.isDestroyed() &&
+      oneKept?.session === 'one-shot' &&
+      path.basename(oneKept.dir).endsWith(' · one-shot · not saved') &&
+      JSON.parse(fs.readFileSync(path.join(oneKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
     // Auto-redact and the text in the screenshot, from a stubbed text recognition: words 9 px a character
     const word = (start: number, end: number, x: number, y: number) => ({ start, end, x, y, w: (end - start) * 9, h: 18 });
     desk.recognize = async () => [
@@ -1937,6 +1975,131 @@ app
       promptItem.enabled === true &&
       copiedText === promptFor(path.join(root, moved)) &&
       notes.map((n) => n.body).join() === `Prompt for ${moved} copied. Paste it into your AI agent.`;
+    // The editor's destination (@F36–@F38, @F42–@F49, @N2): Session | One-Shot and the session pop-up at the toolbar's
+    // right end. The same window switches, so its marks, notes and undo stay. desk.popup hands over the pop-up's items,
+    // as in the capture bar's block; One-Shot's Copy is the one-shot block's (@F39–@F41, @F50).
+    desk.popup = (_w, items) => void (popped = items);
+    const dest = await openOn('dest.png', { session: moved });
+    const destLook = async () =>
+      JSON.parse(
+        await inWin(
+          dest,
+          `const shown = (id) => getComputedStyle(document.getElementById(id)).display !== 'none';
+          const h = document.querySelector('header');
+          return JSON.stringify({
+            ends: [...h.children].slice(-2).map((c) => c.id),
+            segs: [...document.querySelectorAll('#dest [role=radio]')].map((b) => b.textContent.trim() + ':' + b.getAttribute('aria-checked')).join(),
+            face: document.getElementById('session').textContent, greyed: document.getElementById('session').disabled,
+            primary: document.getElementById('save').textContent, beautify: shown('beautify'),
+            notes: shown('caption') && shown('caption-label') && shown('refs'),
+            kept: shown('notes-kept') ? document.getElementById('notes-kept').textContent : '',
+            marks: canvas.getObjects().length, undo: undoStack.length, caption: captionField.value(), note: markers().map(noteOf).join('|'),
+          });`,
+        ),
+      );
+    const s0 = await destLook();
+    viewer['@F36 the toolbar ends with Session | One-Shot, then the pop-up "<session> (<n>)"'] =
+      s0.ends.join() === 'dest-wrap,session' && s0.segs === 'Session:true,One-Shot:false' && s0.face === 'moved (1)' && !s0.greyed;
+    viewer['@F51 the primary button reads Add to Session ⌘↩'] = s0.primary === 'Add to Session ⌘↩';
+    // Notes and marks to keep: a comment, a reference with a note, and a box, selected for @F48
+    const box0 = await inWin(
+      dest,
+      `document.querySelector('#caption .ProseMirror').focus(); document.execCommand('insertText', false, 'Kept comment'); document.activeElement.blur();
+      canvas.add(Object.assign(new Marker({ x: 60, y: 60 }, '#e5484d'), { note: 'Kept note' }));
+      const g = new Glyph('box', { x: 120, y: 120, w: 80, h: 60 }, '#e5484d');
+      canvas.add(g); added(g); select([g]); window.destBox = g;
+      await new Promise((r) => setTimeout(r, 400));
+      const b = document.querySelectorAll('#dest [role=radio]')[1].getBoundingClientRect();
+      return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2), left: g.left };`,
+    );
+    const s1 = await destLook();
+    // @F48 a click on One-Shot hands the keys back to the canvas: → nudges the selected box
+    dest.focus();
+    dest.webContents.sendInputEvent({ type: 'mouseDown', x: box0.x, y: box0.y, button: 'left', clickCount: 1 });
+    dest.webContents.sendInputEvent({ type: 'mouseUp', x: box0.x, y: box0.y, button: 'left', clickCount: 1 });
+    await sleep(400);
+    for (const type of ['keyDown', 'keyUp'] as const) dest.webContents.sendInputEvent({ type, keyCode: 'Right' });
+    await sleep(200);
+    const nudged = await inWin(
+      dest,
+      `return !document.activeElement.closest('#dest') && canvas.getActiveObject() === destBox && destBox.left > ${box0.left};`,
+    );
+    const s2 = await destLook();
+    viewer['@F48 a click on a segment leaves the arrows to the canvas'] = nudged && s2.segs === 'Session:false,One-Shot:true';
+    viewer['@F37 One-Shot shows Beautify and Copy Image ⌘C, with every mark'] =
+      s2.beautify && !s2.notes && s2.primary === 'Copy Image ⌘C' && s2.marks === s1.marks && dest.getTitle() === 'Snapmark — One-Shot';
+    viewer['@F49 One-Shot with notes says they stay'] = s2.kept === 'Notes stay with Session. They are not copied.';
+    const noPop = await popWith(() => keyTo(dest, 'P', ['shift', 'meta']));
+    viewer['@F45 One-Shot greys the pop-up: Not in a session, no menu'] = s2.face === 'Not in a session' && s2.greyed && !noPop.length;
+    // @F46 ⇧⌘O switches back to Session, and again; @F38 the notes come back as they were
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(300);
+    const s3 = await destLook();
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(300);
+    const s4 = await destLook();
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(300);
+    viewer['@F46 ⇧⌘O switches between Session and One-Shot'] =
+      s3.segs === 'Session:true,One-Shot:false' && s4.segs === 'Session:false,One-Shot:true' && (await destLook()).segs === s3.segs;
+    viewer['@F38 back in Session, the comment and notes are as they were'] =
+      s3.notes &&
+      !s3.beautify &&
+      s3.caption === 'Kept comment' &&
+      s3.note === s1.note &&
+      s1.note === 'Kept note' &&
+      s3.marks === s1.marks &&
+      s3.face === 'moved (1)' &&
+      s3.primary === 'Add to Session ⌘↩' &&
+      dest.getTitle() === 'Snapmark — moved';
+    // @F47 ⇧⌘P opens the pop-up: the sessions with counts, this one ticked, Older Sessions…, New Session (@F42 unit)
+    const destRows = await popWith(() => keyTo(dest, 'P', ['shift', 'meta']));
+    viewer['@F47 ⇧⌘P opens the session pop-up'] =
+      destRows.find((i) => i.checked)?.label === 'moved (1)' && menuShape(destRows).endsWith('—|Older Sessions…|New Session');
+    // @F43 a pick moves the screenshot there and makes it current at once
+    const smokeRow = destRows.find((i) => i.type === 'checkbox' && !i.checked && /^smoke( \(\d+\))?$/.test(i.label ?? ''))!;
+    pick(destRows, smokeRow.label!);
+    await sleep(300);
+    const s5 = await destLook();
+    viewer['@F43 a session picked in the editor takes the screenshot, and is current'] =
+      s5.face === smokeRow.label && (menuItems()[1] as { label?: string }).label === 'smoke' && dest.getTitle() === 'Snapmark — smoke';
+    // @F44 the picked session's folder is gone: the old session stays, and the error stands under the pop-up
+    const goneName = sessions.create(root, 'gone');
+    fs.rmSync(path.join(root, goneName), { recursive: true, force: true });
+    moveEditor(dest, goneName);
+    await sleep(300);
+    const goneSays = JSON.parse(
+      await inWin(
+        dest,
+        `const m = document.getElementById('move-error'), p = document.getElementById('session').getBoundingClientRect(), r = m.getBoundingClientRect();
+        return JSON.stringify({ text: m.hidden ? '' : m.textContent, alert: m.getAttribute('role'), under: r.top >= p.bottom && Math.abs(r.right - p.right) <= 1 });`,
+      ),
+    );
+    viewer['@F44 a gone session keeps the old one and says so under the pop-up'] =
+      goneSays.text === "Couldn't move to gone: its folder is gone. Choose another session or New Session." &&
+      goneSays.alert === 'alert' &&
+      goneSays.under &&
+      (await destLook()).face === s5.face &&
+      (menuItems()[1] as { label?: string }).label === 'smoke';
+    // @N2 at the 820 × 520 minimum, with a long session name, the toolbar keeps one line in Session and in One-Shot
+    const longest = sessions.create(root, 'Ledgerly Q4 review of checkout, payments and refunds');
+    moveEditor(dest, longest);
+    const [dw, dh] = dest.getSize();
+    dest.setSize(820, 520);
+    await sleep(400);
+    const oneLine = `const h = document.querySelector('header'), n = document.getElementById('session-name');
+      const whole = ['dest', 'session'].every((id) => document.getElementById(id).getBoundingClientRect().right <= h.getBoundingClientRect().right);
+      return h.scrollWidth <= h.clientWidth && whole && n.textContent.startsWith('Ledgerly') === !oneShot && (oneShot || n.scrollWidth > n.clientWidth);`;
+    const narrowSession = await inWin(dest, oneLine);
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(400);
+    const narrowOneShot = await inWin(dest, oneLine);
+    why.N2 = { narrowSession, narrowOneShot, classes: await inWin(dest, `return document.querySelector('header').className`) };
+    viewer['@N2 at 820 × 520 the toolbar fits on one line'] = narrowSession && narrowOneShot;
+    dest.setSize(dw, dh);
+    dest.destroy();
+    desk.popup = realPopup;
+    setActive(moved);
     // @F1–@F7, @F10: the global keys, pressed as globalShortcut would (keyHandlers), with screencapture stubbed. Here
     // the current session holds a screenshot, so ⌃⇧N starts a new one; the tall captures below make their own current.
     const keyWin = async (k: keyof typeof keyHandlers) => {
@@ -1980,7 +2143,7 @@ app
     // @F3: ⌃⇧2 runs macOS's overlay (-i), and the result opens in One-Shot
     const oneShotKey = await keyWin('oneShot');
     viewer['@F3 ⌃⇧2 runs the overlay and opens One-Shot'] =
-      shots.at(-1)![0] === '-i' && shots.at(-1)![1] === '-x' && oneShotKey.getTitle() === 'Snapmark — One-shot';
+      shots.at(-1)![0] === '-i' && shots.at(-1)![1] === '-x' && oneShotKey.getTitle() === 'Snapmark — One-Shot';
     oneShotKey.destroy();
     // @F4: ⌃⇧3 with two displays: one screencapture, no picker, a file per display, an editor per file
     const realAll = screen.getAllDisplays;

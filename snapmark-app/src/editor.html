@@ -25,6 +25,8 @@
         --hairline: rgb(0 0 0 / 0.12); /* the edge of a colour dot, so Graphite and pale picks keep their outline */
         --slot: rgb(0 0 0 / 0.22);
         --danger: #c42b31; /* 5.6:1 on --field */
+        --fill-selected: light-dark(#e5e5ea, #3a3a3c); /* the selected segment, as in the capture bar */
+        --accent-text: light-dark(#0a62c2, #6cb4ff); /* its text: 4.7:1 light, 5.2:1 dark (N1) */
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -201,25 +203,96 @@
         width: 20px;
         height: 20px;
       }
-      /* The session label: opens the session menu; only the name shortens, with "…". Plain text in Edit Again and
-         one-shot. The chevron sits in the right padding, so the ellipsis never hides it. */
+      /* Where this screenshot goes, at the toolbar's right end: Session | One-Shot, 12 pt, then the session pop-up. Both
+         behave as the capture bar's; the flexible gap sits before them. */
+      #dest-wrap {
+        flex: none;
+        margin-left: auto;
+        padding-top: 3px;
+      }
+      #dest {
+        display: flex;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        -webkit-app-region: no-drag;
+      }
+      /* 24 + 2 × 2 padding + 2 × 1 border: 30 high, level with the pop-up */
+      header #dest button {
+        width: 100px;
+        height: 24px;
+        border-radius: 5px;
+      }
+      header #dest [aria-checked='true'] {
+        background: var(--fill-selected);
+        color: var(--accent-text);
+      }
+      /* The session pop-up: "<session> (<n>)" and a chevron; only the name shortens, with "…", so the count stays. Greyed,
+         without the chevron, in One-Shot and Edit Again. The chevron sits in the right padding. */
       header #session {
         position: relative;
-        display: block;
-        flex: 0 1 auto;
-        min-width: 0;
+        display: flex;
+        align-items: center;
+        flex: none;
         max-width: 260px;
-        margin-left: auto;
+        height: 30px;
+        margin: 3px 0 0 8px;
         padding: 0 26px 0 10px;
-        line-height: 36px;
-        overflow: hidden;
+        border: 1px solid var(--line);
         white-space: nowrap;
-        text-overflow: ellipsis;
         color: var(--muted);
       }
+      #session-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       header #session:disabled {
-        opacity: 1;
         padding-right: 10px;
+      }
+      /* Too narrow for one line (N2), in the spec's order: the name to 96 pt, the segments to 72, then the tool captions
+         go and the tools and separators tighten (editor.ts fitToolbar). */
+      header.fit-name #session-name {
+        max-width: 96px;
+      }
+      header.fit-segments #dest button {
+        width: 72px;
+      }
+      header.fit-tools {
+        gap: 2px;
+        padding-inline: 12px;
+      }
+      header.fit-tools #tools {
+        gap: 2px;
+      }
+      header.fit-tools .cap {
+        display: none;
+      }
+      header.fit-tools #tools button {
+        width: 32px;
+      }
+      header.fit-tools .sep {
+        margin-inline: 4px;
+      }
+      /* The failed move, under the pop-up for 8 s */
+      #move-error {
+        position: fixed;
+        z-index: 10;
+        max-width: 320px;
+        margin: 0;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: var(--field);
+        box-shadow: var(--lift);
+        color: var(--danger);
+        font-size: 12px;
+      }
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
       }
       #session .chevron {
         position: absolute;
@@ -398,6 +471,10 @@
       /* Transparent shows as a checkerboard, in the preview and on the None swatch. */
       .checker {
         background: repeating-conic-gradient(#d8d8dc 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+      }
+      #notes-kept {
+        margin: 0;
+        color: var(--muted);
       }
       .one-shot #caption-label,
       .one-shot #caption,
@@ -713,10 +790,21 @@
           <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
         </svg>
       </button>
-      <button id="session" aria-haspopup="menu" disabled>
+      <span id="dest-wrap">
+        <span id="dest" role="radiogroup" aria-label="Save to">
+          <button role="radio" aria-checked="true" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">Session</button>
+          <button role="radio" aria-checked="false" tabindex="-1" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">
+            One-Shot
+          </button>
+        </span>
+      </span>
+      <button id="session" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P" disabled>
+        <span id="session-name"></span><span id="session-count"></span>
         <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
       </button>
     </header>
+    <p id="move-error" role="alert" hidden></p>
+    <p id="announce" class="sr" aria-live="polite"></p>
     <div id="palette" role="dialog" aria-label="Annotation colour" hidden>
       <div id="presets" class="swatches"></div>
       <h3 id="customs-label">Custom</h3>
@@ -744,6 +832,7 @@
         <div id="caption"></div>
         <h2 id="refs-label" hidden>References</h2>
         <div id="refs"></div>
+        <p id="notes-kept" hidden>Notes stay with Session. They are not copied.</p>
         <section id="beautify" aria-label="Beautify" hidden>
           <label>Beautify</label>
           <label class="row">Padding<output for="padding"></output><input type="range" id="padding" min="0" max="200" /></label>
@@ -758,7 +847,7 @@
       </div>
       <div class="actions">
         <button id="cancel">Discard <kbd>⌘W</kbd></button>
-        <button id="save" class="primary">Add to session <kbd>⌘↵</kbd></button>
+        <button id="save" class="primary">Add to Session <kbd>⌘↩</kbd></button>
       </div>
     </aside>
     <script src="../../node_modules/fabric/dist/index.min.js"></script>

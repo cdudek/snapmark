@@ -42,7 +42,7 @@ After it, the owner switches Session and One-Shot in the editor, picks any sessi
 
 | #   | Feature                                                      | Facts       | Branch                       | State |
 | --- | ------------------------------------------------------------ | ----------- | ---------------------------- | ----- |
-| 2.1 | Editor destination: live switch, session pop-up, Copy closes | F36–F51, N2 | `milestone/picked-designs-2` | todo  |
+| 2.1 | Editor destination: live switch, session pop-up, Copy closes | F36–F51, N2 | `milestone/picked-designs-2` | done  |
 | 2.2 | Notes spacing and hairline; hex fields                       | F52–F56     | `milestone/picked-designs-2` | todo  |
 | 2.3 | Session window opens at 90 % and remembers its size          | F57, F58    | `milestone/picked-designs-2` | todo  |
 
@@ -193,7 +193,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 ### Milestone 2
 
-- [ ] 6. Destination IPC, toolbar controls, pop-up, Copy closes, ⌘C guard. Proof: `@F36`–`@F51` and `@N2` pass.
+- [x] 6. Destination IPC, toolbar controls, pop-up, Copy closes, ⌘C guard. Proof: `@F36`–`@F51` and `@N2` pass.
 - [ ] 7. Notes spacing and hex fields. Proof: `@F52`–`@F56` pass.
 - [ ] 8. Session window size. Proof: `@F57`, `@F58` pass.
 - [ ] 9. Gate. Proof: `VERIFY PASS milestone`.
@@ -280,3 +280,10 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/keys.test.ts`: the ⇧⌘P row is "Switch Session", as screens.md names it.
   - `test/capture.test.ts`: `@F27` checks `barSize` at 150 %.
 - Milestone 1 gate: two `test/keys.test.ts` source checks named old lines. They now name `() => void captureFullScreen()` and the countdown cancel on ⌃⇧5 (F31).
+- 2.1: tests that encoded the replaced editor words changed with them.
+  - `test/smoke.ts`: the primary reads "Add to Session ⌘↩" and "Save Changes ⌘↩"; the pop-up face is "<session> (<n>)".
+  - `test/smoke.ts`: F108 and F116 read `#session-name`; A18's height check leaves out Session | One-Shot.
+  - `test/smoke.ts`: the editor title says "One-Shot" (F212, `@F3`), as screens.md words it.
+  - `test/smoke.ts`: the one-shot block is split, since Copy closes the window. F134 keeps its Session part; One-Shot's ⌘↩ is `@F39`.
+  - `test/keys.test.ts`: F236's Editor rows gain ⇧⌘O and ⇧⌘P.
+- 2.1 (N2): hiding the tool captions frees no width. The last shrink step also narrows the tools to 32 pt and tightens the gaps (questions.md).

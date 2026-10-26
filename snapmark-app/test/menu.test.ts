@@ -284,25 +284,25 @@ const edMenu = editorSessionMenu(
   ed,
 );
 const edRows = edMenu.filter((i) => i.type === 'checkbox');
-assert.strictEqual(edRows.length, 10, 'F114 at most 10');
+assert.strictEqual(edRows.length, 10, 'F114 @F42 at most 10');
 assert.deepStrictEqual(
   edRows.filter((i) => i.checked).map((i) => i.label),
   ['B (3)'],
-  'F114 @F23 b ticked, with its count',
+  'F114 @F23 @F42 b ticked, with its count',
 );
-assert.deepStrictEqual(labels(edMenu).slice(-3), ['—', 'Older Sessions…', 'New Session'], 'F114 @F23');
+assert.deepStrictEqual(labels(edMenu).slice(-3), ['—', 'Older Sessions…', 'New Session'], 'F114 @F23 @F42');
 find(edMenu, 'B (3)').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'moveTo:b', 'F114 @F23 a pick hands over that session (the bar makes it current)');
 find(edMenu, 'Older Sessions…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'older', '@F23 Older Sessions… opens the folder panel');
 find(edMenu, 'New Session').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'newSession', 'F114');
-assert.strictEqual(find(edMenu, 'New Session').accelerator, 'Control+Shift+N', '@F23 New Session shows ⌃⇧N');
+assert.strictEqual(find(edMenu, 'New Session').accelerator, 'Control+Shift+N', '@F23 @F42 New Session shows ⌃⇧N');
 // An empty session: the name without a count
 assert.deepStrictEqual(
   labels(editorSessionMenu(base, '2026-09-25 12.03', ed)).slice(0, 2),
   ['2026-09-25, 12:03 (2)', 'Old'],
-  '@F23 counts; none for an empty session',
+  '@F23 @F42 counts; none for an empty session',
 );
 // The bar's pop-up picks make the session current (main.ts wires moveTo to setActive, the menu bar's makeCurrent)
 const mainTs = fs.readFileSync(path.join(__dirname, '../../src/main.ts'), 'utf8');
