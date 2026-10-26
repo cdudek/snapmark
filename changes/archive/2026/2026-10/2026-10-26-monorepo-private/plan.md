@@ -61,13 +61,13 @@ One go: each row is a commit on `milestone/monorepo-private-1`, with no checks b
 
 ### Milestone 1 — the app updates from the bucket and lives in `snapmark-app/`
 
-| #   | Feature                                                                        | Facts          | Branch                         | State |
-| --- | ------------------------------------------------------------------------------ | -------------- | ------------------------------ | ----- |
-| 0   | Owner: a billing account linked to `snapmark-ai` (all four are closed)         | F8             | none (console)                 | todo  |
-| 1   | GCP: the bucket, public read, WIF pool, provider and uploader account          | F8, F9         | none (gcloud)                  | todo  |
-| 2   | The app reads updates from the bucket; the release workflow uploads and prunes | F4, F5, F6, F7 | `milestone/monorepo-private-1` | todo  |
-| 3   | The app moves into `snapmark-app/`; root workspace; CI runs from the root      | F1, F2, F3, N1 | `milestone/monorepo-private-1` | todo  |
-| 4   | The ADR and the design index                                                   | none           | `milestone/monorepo-private-1` | todo  |
+| #   | Feature                                                                        | Facts          | Branch                         | State        |
+| --- | ------------------------------------------------------------------------------ | -------------- | ------------------------------ | ------------ |
+| 0   | Owner: a billing account linked to `snapmark-ai` (all four are closed)         | F8             | none (console)                 | done         |
+| 1   | GCP: the bucket, public read, WIF pool, provider and uploader account          | F8, F9         | none (gcloud)                  | done         |
+| 2   | The app reads updates from the bucket; the release workflow uploads and prunes | F4, F5, F6, F7 | `milestone/monorepo-private-1` | done bf4d120 |
+| 3   | The app moves into `snapmark-app/`; root workspace; CI runs from the root      | F1, F2, F3, N1 | `milestone/monorepo-private-1` | done 76857cf |
+| 4   | The ADR and the design index                                                   | none           | `milestone/monorepo-private-1` | done 9bd5f90 |
 
 ### After the merge (Stage 7, with the owner)
 

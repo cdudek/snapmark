@@ -1,8 +1,8 @@
 {
-  "approved_at": "2026-10-26T19:05:45+00:00",
-  "sha": "ea47379af16bbb1be6e11ecd127a0103cece2e83",
+  "approved_at": "2026-10-26T20:13:28+00:00",
+  "sha": "d0230f9a732f0931c487f9d277d2a65bab1194aa",
   "criteria": {
-    "facts.md": "914547a84c41faff96ed5d3d8e8066005c38941202c98a984636e42a4e802605",
+    "facts.md": "78db8dce6772a93ee17e8a55e956e6c947a38bee155d563e8a599880cebecb67",
     "done.json": "b9c1a8bbbecf724da883aeaabc6af1f16fb973e62eaa55ba0a6067749e1598cb",
     "checks": "07e1ed0cd700c938ec8884e98c8fb9ddfd90a6334394ee7a497733265c0858fc"
   }

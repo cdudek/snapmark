@@ -15,7 +15,7 @@ __pycache__/
 # sdlc_status.py: where a change stands, per laptop
 /changes/*/status.json
 # verify_gate.py output; lock.json is committed
-/changes/*/verify/
+/changes/**/verify/
 __pycache__/
 # the guardrail test JSON report
 .vitest/
