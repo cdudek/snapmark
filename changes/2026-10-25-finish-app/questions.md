@@ -37,6 +37,13 @@ Each has a default taken; none blocks the build.
 9. **Remove the stock View menu (Reload, Developer Tools) now?** Default: no, a separate change; M2 adds only the Snapmark menu.
 10. **⌃⇧5 row's words (build, M2.1):** the spec's Words table says "the capture bar: window, new area, last area, scrolling, and where it goes"; its `KEY_GROUPS after M2` list says "… last area or scrolling, and where it goes". Default taken: the `KEY_GROUPS` list, which F236 tests.
 
+## Milestone 3 — Tall captures as tiles
+
+Each has a default taken; none blocks the build.
+
+1. **Edit Again that changes only the marks (build, M3.2):** the session window reloads only when the text of `session.md` changes (`fs.watch` compares it), so a tall screenshot saved again with the same comment and notes keeps showing its old parts in the Document tab and its old thumbnail in the grid until the next change, as a fitting screenshot does today. Default taken: as the plan says, the image cache is cleared when a changed `session.md` mounts (F21); a follow-up bead if the owner sees old parts. The other way: main also reloads the window after every Edit Again save.
+2. **F10's capture (build, M3.1):** the smoke check saves a solid 1280 × 8000 PNG through the real editor and ⌘S, not a stitched scrolling capture (smoke never captures the screen). Default taken: the solid PNG; the layout and the part widths are what F10 measures.
+
 ## Answers
 
 - 2026-10-25, owner, during milestone 1 (became ask A14): "can you make sure all the icons and everything in the top bar have enough spacing? [...] Make it look professional because right now it doesn't. It looks cheap and bad. The quick buttons' shortcut text overlaps or almost touches each other. [...] One icon, instead of having a page, I would just have a foreground and background, kind of like a stack icon, similar to what Snapper has. When you draw it on the canvas you would see it anyway so what's the point?" Taken into milestone 1 before its PR, because milestone 1 is the toolbar and header and has not shipped; logged in plan.md Revisions.

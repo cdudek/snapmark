@@ -33,6 +33,7 @@ const {
   reopen,
   setActive,
   fitForAI,
+  cutParts,
   promptFor,
   sessionMdPath,
   pickArea,
@@ -856,11 +857,23 @@ app
     view.setSize(1100, 900);
     const sixty = 'Ledgerly Q4 review of checkout, payments and refunds, take 2';
     await rename(sixty, 'Return');
-    viewer['F123 a long name never wraps the buttons'] =
+    const headerFits =
       (await waitFor(`document.getElementById('title').textContent === ${JSON.stringify(sixty)}`)) &&
       (await inView(
         `const r = document.createRange(); r.selectNodeContents(document.getElementById('external')); const others = [...document.querySelectorAll('header button, header [role=tab]')].filter((b) => !b.contains(document.getElementById('title'))); return r.getClientRects().length === 1 && others.every((b) => b.scrollWidth <= b.clientWidth + 1);`,
       ));
+    // The button keeps one line inside the window, the tabs and buttons keep their full width, and only the name is cut
+    // (with "…") when it does not fit: at 1100 the 60 characters may just fit, so it is measured again at 900 too.
+    const onlyNameShortens = (mustCut: boolean) =>
+      inView(`const ext = document.getElementById('external'); const r = document.createRange(); r.selectNodeContents(ext);
+        const t = document.getElementById('title');
+        const whole = [...document.querySelectorAll('header > button, .tabs > button')].filter((b) => !b.hidden).every((b) => b.scrollWidth <= b.clientWidth);
+        return r.getClientRects().length === 1 && ext.getBoundingClientRect().right <= innerWidth && whole &&
+          getComputedStyle(t).textOverflow === 'ellipsis' && (${mustCut} ? t.scrollWidth > t.clientWidth : true);`);
+    const fitsAt1100 = headerFits && (await onlyNameShortens(false));
+    view.setSize(900, 900);
+    await sleep(200);
+    viewer['F123 a long name never wraps the buttons'] = fitsAt1100 && (await onlyNameShortens(true));
     await rename('smoke', 'Return');
     await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     watching.destroy();
@@ -1726,6 +1739,55 @@ app
       promptItem.enabled === true &&
       copiedText === promptFor(path.join(root, moved)) &&
       notes.map((n) => n.body).join() === `Prompt for ${moved} copied. Paste it into your AI agent.`;
+    // Milestone 3, tall captures: in their own session, so the smoke session's counts stay as they are
+    const tallSession = sessions.create(root, 'smoke-tall');
+    setActive(tallSession);
+    fs.writeFileSync(path.join(root, 'tall.png'), big(1280, 8000));
+    const tallEd = openEditor(path.join(root, 'tall.png'), { session: tallSession });
+    await new Promise<void>((r) => tallEd.webContents.once('did-finish-load', () => r()));
+    await loaded(tallEd);
+    await inWin(
+      tallEd,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true, cancelable: true }));`,
+    );
+    for (let i = 0; i < 100 && sessions.count(root, tallSession) === 0; i++) await sleep(100);
+    await sleep(300);
+    const tallMd = () => fs.readFileSync(path.join(root, tallSession, 'session.md'), 'utf8');
+    const sizeOf = (f: string) => nativeImage.createFromPath(path.join(root, tallSession, f)).getSize();
+    const linked = [...tallMd().matchAll(/!\[[^\]]*\]\((img\/[^)]+)\)/g)].map((m) => m[1]);
+    viewer['F10 a saved 1280×8000 capture links parts at least 1000 px wide'] =
+      linked.length === 11 && linked.every((f) => f.startsWith('img/001/') && sizeOf(f).width >= 1000);
+    viewer['F14 the one image is the whole page at 1280 px'] = JSON.stringify(sizeOf('img/001.png')) === '{"width":1280,"height":8000}';
+    const page = big(2560, 20_000);
+    const cutStart = performance.now();
+    const cut = cutParts(fitForAI(page));
+    const ms = Math.round(performance.now() - cutStart);
+    console.log(`N1 scaled and cut 2560 × 20000 into ${cut.length} parts in ${ms} ms`);
+    viewer['N1 a 2560×20000 capture is cut in under 1 s'] = cut.length === 13 && ms < 1000;
+    // Outside the timed span: a wider-than-1280 capture is scaled to the part width, and so are its parts
+    const sizeIn = (png: Buffer) => nativeImage.createFromBuffer(png).getSize();
+    viewer['N1 a 2560 px wide capture is scaled: one image 1280×10000, parts 1280 wide and at most 898 high'] =
+      JSON.stringify(sizeIn(fitForAI(page))) === '{"width":1280,"height":10000}' &&
+      cut.every((p) => sizeIn(p).width === 1280 && sizeIn(p).height <= 898);
+    // F25: typing at the end of the Document tab keeps every part link as written
+    const partLinks = () =>
+      tallMd()
+        .match(/!\[[^\]]*\]\(img\/001\/\d+\.png\)/g)
+        ?.join('\n') ?? '';
+    const linksBefore = partLinks();
+    const tallView = openViewer(tallSession, root);
+    await new Promise<void>((r) => tallView.webContents.once('did-finish-load', () => r()));
+    await tallView.webContents.executeJavaScript(`(async () => {
+      for (let i = 0; i < 50 && !document.querySelector('#doc img[src^="img/001/"]'); i++) await new Promise((r) => setTimeout(r, 100));
+      const p = [...document.querySelectorAll('#doc p')].pop(); const r = document.createRange(); r.selectNodeContents(p); r.collapse(false);
+      getSelection().removeAllRanges(); getSelection().addRange(r); p.closest('[contenteditable]').focus();
+    })()`);
+    for (const ch of ' typed in the Document tab') tallView.webContents.sendInputEvent({ type: 'char', keyCode: ch });
+    for (let i = 0; i < 30 && !tallMd().includes('typed in the Document tab'); i++) await sleep(100);
+    viewer['F25 typing keeps the part links'] =
+      tallMd().includes('typed in the Document tab') && linksBefore.split('\n').length === 11 && partLinks() === linksBefore;
+    tallView.close();
+    setActive(moved);
     const checks: Record<string, boolean> = {
       ...inPage,
       ...viewer,

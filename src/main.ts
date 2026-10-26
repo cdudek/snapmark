@@ -27,6 +27,7 @@ import { SHORTCUTS, KEY_GROUPS } from './keys';
 import { FIRST, barLabel, barOptions, captureArgs, checkedCapture, rect } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
+import { fitScale, partLayout } from './parts';
 import { Box, ocrText, OcrLine, recognize } from './ocr';
 import { secretBoxes } from './redact';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
@@ -628,17 +629,24 @@ ipcMain.on('editor:stash', (e, state: EditState) => {
   e.returnValue = null;
 });
 
-// Claude resizes images above 1568 px on the long edge or ~1.15 megapixels, so anything larger only
-// costs upload time and disk. Retina captures are 2x, so most crops land here.
-const MAX_EDGE = 1568;
-const MAX_PIXELS = 1_150_000;
-
+// The one image: fitted whole within Claude's limits (parts.ts), or, for a tall screenshot, the whole page scaled to
+// the part width only, so its parts can be cut from it at that width.
 export function fitForAI(png: Buffer): Buffer {
   const img = nativeImage.createFromBuffer(png);
   const { width, height } = img.getSize();
-  const scale = Math.min(1, MAX_EDGE / Math.max(width, height), Math.sqrt(MAX_PIXELS / (width * height)));
+  const tall = partLayout(width, height);
+  const scale = tall ? tall.width / width : fitScale(width, height);
   if (scale === 1) return png;
-  return img.resize({ width: Math.round(width * scale), height: Math.round(height * scale), quality: 'best' }).toPNG();
+  const size = tall ?? { width: Math.round(width * scale), height: Math.round(height * scale) }; // tall: the layout's own size
+  return img.resize({ width: size.width, height: size.height, quality: 'best' }).toPNG();
+}
+
+// A tall screenshot's parts, cut top to bottom from its one image (fitForAI's output); [] when it is not tall.
+export function cutParts(png: Buffer): Buffer[] {
+  const img = nativeImage.createFromBuffer(png);
+  const { width, height } = img.getSize();
+  const layout = partLayout(width, height);
+  return layout ? layout.parts.map((p) => img.crop({ x: 0, y: p.y, width, height: p.height }).toPNG()) : [];
 }
 
 // Auto-redact: where the screenshot's text holds an email, a key or token, a card number or an IBAN (redact.ts).
@@ -657,9 +665,16 @@ ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, sta
   const hidden = state.items.flatMap((i) => ((i as { t?: string }).t === 'redact' ? [(i as { r: Box }).r] : []));
   const lines = await read;
   const text = { caption, notes, cards, moves, text: lines ? ocrText(lines, hidden) : '' };
+  // Cut from the flattened image, so Redact marks and auto-redact reach every part (F9).
+  const parts = cutParts(out);
   // Edit Again on an entry removed in the meantime adds it back as a new one.
-  const n = replace && sessions.replaceShot(into, session, replace, out, text) ? replace : sessions.addShot(into, session, out, text);
+  const n =
+    replace && sessions.replaceShot(into, session, replace, out, text, parts) ? replace : sessions.addShot(into, session, out, text, parts);
   sessions.saveEdit(into, session, n, fs.readFileSync(image), JSON.stringify(state));
+  // Only the marks changed: session.md is the same text, so the watcher never reloads; show the new image anyway (F21).
+  if (n === replace)
+    for (const v of viewers.values())
+      if (v.root === into && v.session === session) v.win.webContents.send('viewer:reload', { ...viewerData(v), images: true });
   tellEditors(into, session);
   used[session] = Date.now();
   saveState();
@@ -909,7 +924,10 @@ async function reopenDiscarded() {
     properties: ['openDirectory'],
   });
   if (canceled || !filePaths[0]) return;
-  const d = sessions.discarded(root).find((x) => x.dir === path.resolve(filePaths[0]));
+  // The parts folder inside a removed tall screenshot's folder counts as picking that folder (F20).
+  const picked = path.resolve(filePaths[0]);
+  const dir = path.basename(picked) === 'parts' ? path.dirname(picked) : picked;
+  const d = sessions.discarded(root).find((x) => x.dir === dir);
   if (!d) return notify(`That folder is not in ${tilde(top)}.`);
   reopen(d);
 }

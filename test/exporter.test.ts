@@ -38,6 +38,35 @@ import { exportZip, sessionHtml } from '../src/exporter';
   assert.match(sessionHtml(path.join(root, dollar)), /<h1>2026-10-24 · Q4 \$&amp; costs<\/h1>/);
   fs.writeFileSync(path.join(root, dollar, 'session.md'), `Intro\n\n# My own heading\n`);
   assert.match(sessionHtml(path.join(root, dollar)), /<h1>My own heading<\/h1>/);
+
+  // F22 PDF one image: a tall entry prints its one image, without its parts or the parts line, also after a hand edit
+  const tall = sessions.create(root, 'tall export');
+  const tallDir = path.join(root, tall);
+  const parts = [1, 2, 3].map((i) => Buffer.from(`part${i}`));
+  sessions.addShot(root, tall, Buffer.from('one'), { caption: 'Long page', notes: ['Here'] }, parts);
+  const oneImageOnly = (html: string, why: string) => {
+    const imgs = [...html.matchAll(/<img [^>]*>/g)].map((m) => m[0]);
+    assert.deepStrictEqual(imgs, ['<img src="img/001.png" alt="Screenshot 1">'], `${why}: one image tag`);
+    assert.ok(!html.includes('img/001/') && !html.includes('This screenshot is tall'), `${why}: no parts, no parts line`);
+    assert.ok(html.includes('Long page') && html.includes('<li>Here</li>'), `${why}: the rest of the entry`);
+  };
+  oneImageOnly(sessionHtml(tallDir), 'F22 PDF one image');
+  const md = fs.readFileSync(path.join(tallDir, 'session.md'), 'utf8');
+  fs.writeFileSync(
+    path.join(tallDir, 'session.md'),
+    md
+      .replace('](img/001/01.png)\n\n', '](img/001/01.png)\n') // two parts in one paragraph
+      .replace('Screenshot 1, part 3 of 3', 'the bottom') // an alt text rewritten
+      .replace('Long page', 'Long page, edited'),
+  );
+  oneImageOnly(sessionHtml(tallDir), 'F22 PDF one image after a hand edit');
+
+  // F23 ZIP parts: session.md, the one image and every part
+  const tallZip = execFileSync('unzip', ['-Z1', await exportZip(tallDir)], { encoding: 'utf8' })
+    .trim()
+    .split('\n');
+  for (const f of ['session.md', 'img/001.png', 'img/001/01.png', 'img/001/02.png', 'img/001/03.png'])
+    assert.ok(tallZip.includes(f), `F23 ZIP parts: ${f}`);
   console.log('exporter: ok');
 })().catch((e) => {
   console.error(e);

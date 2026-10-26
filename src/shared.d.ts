@@ -39,6 +39,7 @@ interface ViewerInit {
   md: string;
   shots: ViewerShot[]; // the entries in session.md, in order
   discarded: ViewerDiscarded[]; // this session's, newest first
+  images?: boolean; // Edit Again saved: remount even when session.md's text is unchanged
 }
 
 interface ViewerShot {
@@ -142,6 +143,7 @@ interface Window {
     viewerRename(name: string): Promise<string | null>; // null when renamed (or unchanged), else why not
     viewerReopen(dir: string): Promise<ViewerInit>; // a discarded screenshot: back into the session, or into an editor
     onViewerReload(cb: (data: ViewerInit) => void): void; // session.md changed outside this window
+    clearImageCache(): void; // parts keep their file names on Edit Again, so the Document tab must not show cached ones
   };
 }
 

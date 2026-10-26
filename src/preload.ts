@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
 
 const api: Window['snapmark'] = {
   init: () => ipcRenderer.invoke('editor:init'),
@@ -24,6 +24,7 @@ const api: Window['snapmark'] = {
   viewerRename: (name) => ipcRenderer.invoke('viewer:rename', name),
   viewerReopen: (dir) => ipcRenderer.invoke('viewer:reopen', dir),
   onViewerReload: (cb) => void ipcRenderer.on('viewer:reload', (_e, data: ViewerInit) => cb(data)),
+  clearImageCache: () => webFrame.clearCache(),
   areaDone: (area) => ipcRenderer.send('area:done', area),
   scrollDone: (ok) => ipcRenderer.send('scroll:done', ok),
   shortcutsInit: () => ipcRenderer.invoke('shortcuts:init'),

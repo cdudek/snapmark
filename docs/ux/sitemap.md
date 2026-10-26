@@ -104,7 +104,8 @@ KEYBOARD SHORTCUTS WINDOW   "Keyboard Shortcuts", src/shortcuts.html, 980 × 680
 NOTIFICATIONS (native)   the only channel for copies, New Session, failures; clicking only "… is no longer in …" does something
 NATIVE PANELS AND DIALOGS   Sessions Folder…, Older Sessions…, Reopen Discarded… (folder panels, "Open"); Rename (AppleScript);
                   Quit sheet
-FINDER            session folder = session.md · img/NNN.png · .edit/ (clean originals, also of redacted images, F192) ·
+FINDER            session folder = session.md · img/NNN.png · img/NNN/ (parts of a tall screenshot) · .edit/ (clean
+                  originals, also of redacted images, F192) ·
                   <name>.pdf · <name>.zip ; sessions folder/.discarded/
 FIRST LAUNCH      no window, no hint; Screen Recording asked at the first capture, which is wallpaper until Snapmark restarts
 ```

@@ -56,3 +56,25 @@ Review of `origin/milestone/finish-app-1...milestone/finish-app-2`, code and UX 
 - **M2-7** (Low) the spec gives the ⌃⇧5 key-list row two wordings (`spec/capture-and-settings.md:143` and `:224`); the code follows `:224`.
 - **M2-8** (Low) if registering the timer's global Esc fails, nothing says so, and the countdown cannot be cancelled.
 - **M2-9** (Low) the Settings window's text, the sessions folder path and the version included, cannot be selected.
+
+## Milestone 3 — Tall captures as tiles
+
+Review of `origin/milestone/finish-app-2...milestone/finish-app-3`, checked against facts.md M3 (F1–F25, N1, N2), the specs and the ADR, plus the milestone gate (the first compile of milestones 2–3 on this branch). 0 Critical, 1 High, 0 Medium, 4 Low.
+
+### Blocking
+
+- [x] **M3-1** (High) Edit Again that changed only the marks rewrote `session.md` byte for byte, so the watcher never reloaded the session window and `clearImageCache()` never ran: the old parts, thumbnail and large view stayed on screen (F21). Fixed: `editor:save` sends a forced `viewer:reload` (`ViewerInit.images`) after an Edit Again save, and the viewer remounts on it even when the text is unchanged; the image cache is now cleared after the old `<img>` elements are removed.
+- [x] **M3-2** (Low) `replaceShot` was not all-or-nothing after the parts were written. Fixed: the old parts move to `img/NNN.old/`, the new ones take their place, then the one image and `session.md` are written, and the old parts go last; any failure puts the parts, the one image and `session.md` back. A stale `.old` left by a crash goes back when its folder is missing; `restoreShot` treats `NNN.new`/`NNN.old` as taken, `nextNumber` already did. New unit check "all or nothing" (a read-only `session.md`).
+- [x] **M3-3** (Low) the tall rule was decided on the captured size but `cutParts` decided again on the scaled one, so 71 sizes near the two-thirds line (e.g. 1362 × 2151) were saved as one 2.6 MP image with no parts. Fixed: `partLayout` decides on the size scaled to the part width, and `fitForAI` resizes a tall capture to the layout's own size. Checked over 1.58 M sizes (300–5120 × 200–30 000): `fitForAI` and `cutParts` never disagree; every spec/ia.md row keeps its result (F3).
+- [x] **M3-4** (Low) the F5 test compared the diamond with its own overlap formula. Fixed: it measures the overlap `partLayout(w, 20 × w)` makes, for every width 200–5120.
+- [x] **M3-5** (Low) nothing checked that a wider-than-1280 tall capture is scaled. Fixed: a new N1 smoke check, outside the timed span: a 2560 × 20 000 capture's one image is 1280 × 10 000 and its 13 parts are 1280 wide and at most 898 high.
+- [x] **G4** (gate) `test/smoke.ts` declared `tall`, `t0`, `again`, `reopened` and `oneKept` twice, and passed the session where a window was typed, so `tsc` failed. Fixed: `tallSession`, `cutStart`, and the names milestones 1 and 2 chose (`barAgain`, `barReopened`, `oneSelected`), so the branches merge cleanly. No check removed.
+- [x] **G6** (gate, milestone 1 code) F123 failed: the session window's header is a grid item without `min-width: 0`, so a long name widened the header past the window (at 900 pt, "Open in Markdown App" ended at 1071 pt) instead of shortening. Fixed in `src/viewer.html`. The check also asserted the 60-character name is cut at 1100 pt, where it fits (446 of 451 px); it now asserts at 1100 pt that the button keeps one line inside the window and the tabs and buttons keep their full width, and at 900 pt the same with the name cut. Fails on the milestone 1 fix commit too (`ed0deb6`).
+- [x] **G7** (gate, milestone 1 check) F127 failed 2 of 6 smoke runs: in the hidden run the session window has no system focus, so the test's `f.blur()` fired no blur event whenever another window held Electron's focus. Fixed in the test: it dispatches the blur event the click away causes; the assertion is unchanged. 3 runs in a row passed.
+- [x] **G5** (gate) the branch was not Prettier-clean (milestone 1 and 2 files included), so `format:check` would fail. Fixed: formatted and committed.
+
+### Advisory
+
+- F21 is still checked by hand only: no smoke check saves a marks-only Edit Again and looks at the session window.
+- A crash between moving the old parts to `.old` and writing `session.md` leaves the entry linking a missing folder until that entry is saved again (the next `replaceShot` puts `.old` back); an in-process failure is fully rolled back.
+- Not measured beyond the smoke: N1's budget on slower Macs, and Chromium's PDF page split of a 1280 × 8000 one image (interaction.md:86 accepts it).
