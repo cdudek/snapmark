@@ -129,11 +129,21 @@ app
     card.exitEditing();
     r.cardWithPointer = card instanceof Card && card.text === 'Make this bigger' && !!card.pointAt;
 
-    const under = px(.32, .32);                       // logged with the result: the macOS release runner differs here
-    drag('6', [[.25,.3],[.4,.35]]);                   // highlighter
-    const lit = px(.32, .32);
-    console.log('F102', JSON.stringify({ under, lit }));
-    r['F102 a highlight over white is as before'] = [253, 232, 150].every((v, i) => Math.abs(lit[i] - v) <= 2);
+    // F102 needs white under the highlight. The mock's layout moves when a small display shrinks its window (the macOS
+    // release runner gave 239 grey at a fixed spot), so find a white patch first: one read of the canvas, every pixel
+    // of a 0.15 × 0.05 patch at 250 or more.
+    const white = (() => {
+      canvas.renderAll();
+      const el = canvas.lowerCanvasEl, { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
+      const ok = (fx, fy) => { for (let y = Math.round(fy * el.height); y < (fy + .05) * el.height; y += 2) for (let x = Math.round(fx * el.width); x < (fx + .15) * el.width; x += 2) { const i = (y * el.width + x) * 4; if (data[i] < 250 || data[i + 1] < 250 || data[i + 2] < 250) return false; } return true; };
+      for (let fy = .2; fy < .9; fy += .02) for (let fx = .05; fx < .8; fx += .02) if (ok(fx, fy)) return [fx, fy];
+      return null;
+    })();
+    const [wx, wy] = white ?? [.25, .3];
+    drag('6', [[wx, wy],[wx + .15, wy + .05]]);       // highlighter
+    const lit = px(wx + .07, wy + .02);
+    console.log('F102', JSON.stringify({ white, lit }));
+    r['F102 a highlight over white is as before'] = !!white && [253, 232, 150].every((v, i) => Math.abs(lit[i] - v) <= 2);
     const dark = px(.37, .04);
     drag(null, [[.30,.02],[.45,.06]]);                // over the mock's dark header
     r['F101 a highlight over the dark header reads at 3:1'] = contrast(px(.37, .04), dark) >= 3;
