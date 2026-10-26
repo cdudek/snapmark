@@ -290,7 +290,12 @@ app
     // Sidebar (F7-F10): fields grow with their text; the buttons stay in view while the body scrolls
     const cap = document.getElementById('caption');
     const oneLine = cap.clientHeight;
-    r['comment is one line, "Add a comment…"'] = cap.dataset.placeholder === 'Add a comment…' && cap.dataset.empty === 'true' && oneLine < 50;
+    r['comment is one line, "About the whole screenshot…"'] = cap.dataset.placeholder === 'About the whole screenshot…' && cap.dataset.empty === 'true' && oneLine < 50;
+    const capHead = document.getElementById('caption-label');
+    r['F12 the top box is headed General comment'] =
+      capHead?.tagName === 'H2' && capHead.textContent === 'General comment' && !capHead.hidden && capHead.nextElementSibling === cap &&
+      document.getElementById('refs-label').tagName === 'H2' && getComputedStyle(capHead).fontWeight === getComputedStyle(document.getElementById('refs-label')).fontWeight &&
+      cap.querySelector('[contenteditable]').getAttribute('aria-labelledby') === 'caption-label';
     setMd(cap, ['a', 'b', 'c', 'd', 'e']); await sleep(50);
     r['comment grows as you type'] = cap.clientHeight > oneLine * 2 && cap.dataset.empty === 'false';
     const ref1 = document.querySelector('#refs .md');
@@ -409,11 +414,41 @@ app
     key('z', { metaKey: true });
     r['F13 a multi-selection is one step'] = groupStep && movedBack && removed && places() === placed0 && markers().map((m) => m.n).join() === nums;
 
+    // F13, F14: with three or more references, each note asks "What about n?" and the rows stand 12 pt apart. The
+    // references added here are undone again, so what follows sees the session as before.
+    document.activeElement?.blur?.();
+    const refsBefore = document.querySelectorAll('#refs .ref').length;
+    let added = 0;
+    for (const fx of [.05, .1, .15]) {
+      if (document.querySelectorAll('#refs .ref').length >= 3) break;
+      key('1'); if (tool() !== 'marker') key('1');
+      drag(null, [[fx, .92]]); added++; await sleep(150); document.activeElement?.blur?.();
+    }
+    const rows = [...document.querySelectorAll('#refs .ref')];
+    const gaps = rows.slice(1).map((row, i) => row.getBoundingClientRect().top - rows[i].getBoundingClientRect().bottom);
+    r['F13 a note asks What about n'] =
+      rows.length >= 2 && rows.every((row) => row.querySelector('.md').dataset.placeholder === 'What about ' + row.querySelector('b').textContent + '?');
+    r['F14 notes stand 12 pt apart'] = rows.length >= 3 && gaps.every((g) => Math.abs(g - 12) <= 1);
+    console.log('F13 F14 ' + JSON.stringify({ rows: rows.length, gaps, added }));
+    for (let i = 0; i < added; i++) key('z', { metaKey: true });
+    await sleep(100);
+    r['F13/F14 the added references are undone'] = document.querySelectorAll('#refs .ref').length === refsBefore;
     setMd(cap, ['Smoke test caption']); document.activeElement.blur();
     return r;
   })()`;
     const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
     inPage['F111 title row'] &&= win.getTitle() === 'Snapmark — smoke'; // the window title stays, for the Window menu
+    // F12, F13: the names a screen reader hears, from Chromium's own accessibility tree, on the editable elements
+    const dbg = win.webContents.debugger;
+    dbg.attach('1.3');
+    await dbg.sendCommand('Accessibility.enable');
+    const { nodes } = (await dbg.sendCommand('Accessibility.getFullAXTree')) as { nodes: { role?: { value: string }; name?: { value: string } }[] };
+    dbg.detach();
+    const fieldNames = nodes.filter((n) => n.role?.value === 'textbox').map((n) => n.name?.value ?? '');
+    const refNums: string[] = await win.webContents.executeJavaScript(`[...document.querySelectorAll('#refs .ref b')].map((b) => b.textContent)`);
+    console.log('F12 F13 names', JSON.stringify({ fieldNames, refNums }));
+    inPage['F12 the top box is headed General comment'] &&= fieldNames.includes('General comment');
+    inPage['F13 a note asks What about n'] &&= refNums.length > 0 && refNums.every((n) => fieldNames.includes(`Note for reference ${n}`));
     // F106: Settings ▸ Single-Key Tools redraws an open editor's captions and tooltips, without reopening it
     const toolbarSays = (cap: string, tip: string) =>
       win.webContents.executeJavaScript(`(async () => {
@@ -1586,6 +1621,7 @@ app
         return JSON.stringify({
           beautify: !document.getElementById('beautify').hidden && shown('beautify'),
           noRefs: !shown('refs') && !shown('caption'),
+          noHeading: !shown('caption-label'),
           noAdd: !document.body.innerText.includes('Add to session'),
           primary: document.getElementById('save').textContent,
           values: ['padding', 'radius', 'shadow'].map((id) => document.getElementById(id).value + '=' + document.querySelector('output[for="' + id + '"]').textContent).join(),
@@ -1596,6 +1632,7 @@ app
     );
     viewer['one-shot: the Beautify panel replaces References and the comment'] = panel.beautify && panel.noRefs;
     inPage['F115 no session menu in Edit Again or one-shot'] = noMenuAgain && (await noSessionMenu(one));
+    inPage['F12 the top box is headed General comment'] &&= panel.noHeading; // hidden with the box in one-shot mode
     viewer['one-shot: no Add to session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
     viewer['one-shot: sliders show their values; 10 backgrounds; Auto 4:3 3:2 16:9 1:1'] =
       panel.values === '64=64,12=12,40=40' && panel.backdrops === 10 && panel.ratios === 'Auto,4:3,3:2,16:9,1:1';

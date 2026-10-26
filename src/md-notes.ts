@@ -39,7 +39,12 @@ const image = imageSchema.extendSchema((prev) => (ctx) => {
 export async function mount(
   el: HTMLElement,
   value: string,
-  { placeholder, onChange }: { placeholder: string; onChange: (md: string) => void },
+  {
+    placeholder,
+    label,
+    labelledBy,
+    onChange,
+  }: { placeholder: string; label?: string; labelledBy?: string; onChange: (md: string) => void },
 ): Promise<MdField> {
   el.classList.add('md');
   el.dataset.placeholder = placeholder;
@@ -57,6 +62,13 @@ export async function mount(
     .use(listener)
     .use(history)
     .create();
+  // The name a screen reader hears sits on the editable element itself, not the wrapper; the placeholder is only a
+  // visual hint (guide ACC-1, WRD-3).
+  const editable = el.querySelector<HTMLElement>('[contenteditable]')!;
+  editable.setAttribute('role', 'textbox');
+  editable.setAttribute('aria-multiline', 'true');
+  if (label) editable.setAttribute('aria-label', label);
+  if (labelledBy) editable.setAttribute('aria-labelledby', labelledBy);
   // The placeholder follows every keystroke, not the debounced listener.
   el.addEventListener('input', () => (el.dataset.empty = String(!el.textContent?.trim())));
   const view = () => editor.action((ctx) => ctx.get(editorViewCtx));
