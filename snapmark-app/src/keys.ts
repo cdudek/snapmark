@@ -4,8 +4,10 @@
 
 // macOS's own screenshot digits with ⌃⇧ for ⇧⌘, which macOS keeps for itself (ADR 2026-10-25, keys follow macOS).
 export const SHORTCUTS = {
-  capture: 'Control+Shift+4', // ⇧⌘4: drag an area
-  area: 'Control+Shift+3', // ⇧⌘3: no dragging
+  newArea: 'Control+Shift+1', // drag an area, capture it and keep it for ⌃⇧4
+  oneShot: 'Control+Shift+2', // macOS's overlay, into a one-shot editor
+  fullScreen: 'Control+Shift+3', // ⇧⌘3: every display at once
+  capture: 'Control+Shift+4', // Capture Last Area: the kept area at once
   options: 'Control+Shift+5', // ⇧⌘5: the capture options
   newSession: 'Control+Shift+N',
 } as const;
@@ -16,11 +18,13 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
   {
     title: 'Anywhere',
     rows: [
-      ['⌃⇧4', 'Capture screenshot', 'drag an area, or press Space and click a window'],
-      ['⌃⇧3', 'Capture last area', 'the first time, drag the area'],
-      ['⌃⇧5', 'Capture options', 'the capture bar: window, new area, last area or scrolling, and where it goes'],
-      ['⌃⇧N', 'New session', ''],
-      ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (capture bar, ⌃⇧5)'],
+      ['⌃⇧4', 'Capture Last Area', 'the first time, or after New Session, drag the area'],
+      ['⌃⇧1', 'Capture New Area', 'drag an area, capture it, and keep it for ⌃⇧4'],
+      ['⌃⇧3', 'Capture Full Screen', 'every display at once, one screenshot each'],
+      ['⌃⇧2', 'Capture One-Shot', 'drag an area; not added to a session'],
+      ['⌃⇧5', 'Capture Options', 'the capture bar'],
+      ['⌃⇧N', 'New Session', 'also forgets the area'],
+      ['↩ / Esc', 'Done / Cancel', 'while Capture Scrolling runs'],
     ],
   },
   {

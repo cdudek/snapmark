@@ -1,6 +1,8 @@
 import assert from 'assert';
 import type { MenuItemConstructorOptions as Item } from 'electron';
-import { MODES, FIRST, captureArgs, appliesToArea, barLabel, barOptions, checkedCapture } from '../src/capture';
+import fs from 'fs';
+import path from 'path';
+import { MODES, FIRST, captureArgs, shotFiles, appliesToArea, barLabel, barOptions, checkedCapture } from '../src/capture';
 import type { OptionsActions, OptionsState } from '../src/capture';
 
 const calls: string[] = [];
@@ -19,6 +21,17 @@ const find = (items: Item[], label: string) => {
 };
 const click = (i: Item, item: Partial<Electron.MenuItem> = {}) => i.click!(item as never, undefined, {} as never);
 const area = { x: 10, y: 40.4, width: 1280, height: 720 };
+
+// @F4 ⌃⇧3: plain `screencapture -x` with one file per display, so each display is its own screenshot, its own editor
+assert.deepStrictEqual(shotFiles('/tmp/snapmark-7', 2), ['/tmp/snapmark-7-1.png', '/tmp/snapmark-7-2.png'], '@F4 one file per display');
+assert.deepStrictEqual(shotFiles('/tmp/snapmark-7', 3).length, 3, '@F4');
+assert.deepStrictEqual(shotFiles('/tmp/snapmark-7'), ['/tmp/snapmark-7.png'], 'one file for every other capture');
+const main = fs.readFileSync(path.join(__dirname, '../../src/main.ts'), 'utf8');
+assert.ok(main.includes("desk.screencapture([...args, '-x', ...files]"), '@F4 every file goes after -x');
+assert.ok(
+  main.includes('screen.getAllDisplays().length);') && main.includes('shoot([], false, files,'),
+  '@F4 no arguments, a file per display',
+);
 
 // F202 bar order: the four modes, left to right after Close
 assert.deepStrictEqual(

@@ -39,6 +39,11 @@ export function captureArgs(mode: CaptureMode, { pointer }: { pointer: boolean }
   return [...(pointer ? ['-C'] : []), '-R', rect(area)];
 }
 
+// Where `screencapture` writes, after `-x`: one file, or one per display for ⌃⇧3, which it fills in display order
+// (man screencapture), as macOS's ⇧⌘3 makes one screenshot per display.
+export const shotFiles = (base: string, displays = 1) =>
+  displays > 1 ? Array.from({ length: displays }, (_, i) => `${base}-${i + 1}.png`) : [`${base}.png`];
+
 // The Capture button says where the capture goes, so a One-Shot left on is never hidden (Decision 3).
 export const barLabel = (o: { oneShot: boolean }) => (o.oneShot ? 'Capture One-Shot' : 'Capture');
 

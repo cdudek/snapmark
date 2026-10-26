@@ -48,6 +48,7 @@ const {
   setCapture,
   openSettings,
   showShortcuts,
+  keyHandlers,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -1033,7 +1034,7 @@ app
     desk.screencapture = (args, done) => {
       shots.push(args);
       if (fail !== null) return done(new Error('Command failed: screencapture'), fail);
-      fs.copyFileSync(shotCopy, args.at(-1)!);
+      for (const f of args.slice(args.indexOf('-x') + 1)) fs.copyFileSync(shotCopy, f); // one file per display for ⌃⇧3
       const n = dock.length;
       done(null, ''); // opens the editor, synchronously: no event has reached it yet
       dockOnOpen.push(dock.length > n);
@@ -1429,7 +1430,7 @@ app
     notes[0]?.onClick?.();
     const retried = shots.length === 5;
     fail = '';
-    press('Capture Screenshot');
+    press('Capture One-Shot');
     await sleep(300);
     viewer['snap-bmr.14.3 F028: a failed capture says so and tries again on a click; Esc stays quiet'] =
       failed.join() === 'Capture failed: could not create image from rect. No screenshot was added. Click to try again.' &&
@@ -1525,7 +1526,7 @@ app
       ticked(fromSettings) === 'One-Shot,10 Seconds,Show Mouse Pointer' &&
       backLabel === 'Capture' &&
       settingsShows === 'true,0,false';
-    // Shortcuts: the four global keys, each taken here (quiet mode registers none); Show All Shortcuts opens the list
+    // Shortcuts: the six global keys, each taken here (quiet mode registers none); Show All Shortcuts opens the list
     await inWin(set, `document.getElementById('tab-shortcuts').click();`);
     const keyRows = await inWin(
       set,
@@ -1538,7 +1539,9 @@ app
       keyRows ===
         JSON.stringify([
           ['⌃⇧4', true],
+          ['⌃⇧1', true],
           ['⌃⇧3', true],
+          ['⌃⇧2', true],
           ['⌃⇧5', true],
           ['⌃⇧N', true],
         ]) && /keyboard shortcuts/i.test(allKeys.getTitle());
@@ -1884,6 +1887,88 @@ app
       promptItem.enabled === true &&
       copiedText === promptFor(path.join(root, moved)) &&
       notes.map((n) => n.body).join() === `Prompt for ${moved} copied. Paste it into your AI agent.`;
+    // @F1–@F7, @F10: the global keys, pressed as globalShortcut would (keyHandlers), with screencapture stubbed. Here
+    // the current session holds a screenshot, so ⌃⇧N starts a new one; the tall captures below make their own current.
+    const keyWin = async (k: keyof typeof keyHandlers) => {
+      const before = BrowserWindow.getAllWindows();
+      keyHandlers[k]();
+      return loadedWindow(before);
+    };
+    const hintOf = (w: BrowserWindow): Promise<string> => w.webContents.executeJavaScript(`document.getElementById('hint').textContent`);
+    const escPicker = async (w: BrowserWindow) => {
+      const closed = new Promise<void>((r) => w.once('closed', () => r()));
+      w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+      await closed;
+      await sleep(400); // the picker's promise resolves 200 ms after 'closed'; until then a capture key does nothing
+    };
+    const rectOf = (args: string[]) => args.slice(0, 2).join(' ');
+    // @F5: an area is set (Choose New Area above), so ⌃⇧4 captures it at once, no picker
+    const atOnce = await keyWin('capture');
+    viewer['@F5 ⌃⇧4 captures the set area at once'] =
+      atOnce.webContents.getURL().endsWith('editor.html') && rectOf(shots.at(-1)!) === `-R ${display.x + 100},${display.y + 120},300,200`;
+    atOnce.destroy();
+    // @F1, @F2: ⌃⇧1 opens the picker, captures the dragged area, and keeps it for ⌃⇧4
+    const newPicker = await keyWin('newArea');
+    const newHint = await hintOf(newPicker);
+    windowsNow = BrowserWindow.getAllWindows();
+    newPicker.webContents.sendInputEvent({ type: 'mouseDown', x: 50, y: 60, button: 'left', clickCount: 1 });
+    newPicker.webContents.sendInputEvent({ type: 'mouseMove', x: 250, y: 210, button: 'left', modifiers: ['leftbuttondown'] });
+    newPicker.webContents.sendInputEvent({ type: 'mouseUp', x: 250, y: 210, button: 'left', clickCount: 1 });
+    const newShot = await loadedWindow(windowsNow);
+    const newRect = rectOf(shots.at(-1)!);
+    const newUrl = newShot.webContents.getURL();
+    newShot.destroy();
+    const keptArea = await keyWin('capture');
+    viewer['@F1 ⌃⇧1 opens the picker and captures the dragged area'] =
+      newHint === 'Drag over the area to capture. ⌃⇧4 captures it again. Esc cancels.' &&
+      newUrl.endsWith('editor.html') &&
+      newRect === `-R ${display.x + 50},${display.y + 60},200,150`;
+    viewer['@F2 the area dragged after ⌃⇧1 is the one ⌃⇧4 captures'] =
+      keptArea.webContents.getURL().endsWith('editor.html') && rectOf(shots.at(-1)!) === newRect && !pickerOpen();
+    why.F1 = { newHint, newRect, last: shots.at(-1) };
+    keptArea.destroy();
+    // @F3: ⌃⇧2 runs macOS's overlay (-i), and the result opens in One-Shot
+    const oneShotKey = await keyWin('oneShot');
+    viewer['@F3 ⌃⇧2 runs the overlay and opens One-Shot'] =
+      shots.at(-1)![0] === '-i' && shots.at(-1)![1] === '-x' && oneShotKey.getTitle() === 'Snapmark — One-shot';
+    oneShotKey.destroy();
+    // @F4: ⌃⇧3 with two displays: one screencapture, no picker, a file per display, an editor per file
+    const realAll = screen.getAllDisplays;
+    const twoDisplays = [realAll()[0], { ...realAll()[0], id: -1 }];
+    screen.getAllDisplays = () => twoDisplays;
+    const beforeFull = BrowserWindow.getAllWindows();
+    const shotsBeforeFull = shots.length;
+    keyHandlers.fullScreen();
+    screen.getAllDisplays = realAll;
+    const fullEditors = () => BrowserWindow.getAllWindows().filter((w) => !beforeFull.includes(w));
+    for (let i = 0; i < 50 && fullEditors().length < 2; i++) await sleep(100);
+    const fullArgs = shots.at(-1)!;
+    viewer['@F4 ⌃⇧3 captures every display at once, one editor each'] =
+      shots.length === shotsBeforeFull + 1 && fullArgs[0] === '-x' && fullArgs.length === 3 && fullEditors().length === 2 && !pickerOpen();
+    why.F4 = { fullArgs, editors: fullEditors().length };
+    fullEditors().forEach((w) => w.destroy());
+    // @F10: while the picker is open, ⌃⇧1, ⌃⇧2, ⌃⇧3, ⌃⇧4 and ⌃⇧N do nothing
+    const busyPicker = await keyWin('newArea');
+    const busyWas = { shots: shots.length, windows: BrowserWindow.getAllWindows().length, session: menuItems()[1].label };
+    for (const k of ['newArea', 'oneShot', 'fullScreen', 'capture', 'newSession'] as const) keyHandlers[k]();
+    await sleep(300);
+    viewer['@F10 the capture keys and ⌃⇧N do nothing while a picker is open'] =
+      shots.length === busyWas.shots &&
+      BrowserWindow.getAllWindows().length === busyWas.windows &&
+      menuItems()[1].label === busyWas.session;
+    await escPicker(busyPicker);
+    // @F7, @F6: ⌃⇧N forgets the area; the menu and the next ⌃⇧4's picker say so, and nothing is captured first
+    keyHandlers.newSession();
+    const forgotLine = item('Capture Last Area').sublabel;
+    const shotsBeforeForgot = shots.length;
+    const forgotPicker = await keyWin('capture');
+    const forgotHint = await hintOf(forgotPicker);
+    viewer['@F6 ⌃⇧4 with no area opens the picker first'] =
+      forgotPicker.webContents.getURL().includes('area.html') && shots.length === shotsBeforeForgot;
+    viewer['@F7 a New Session forgets the area, and the picker says so'] =
+      forgotLine === 'New session: drag the area' && forgotHint === 'New session: drag the area. ⌃⇧4 captures it again. Esc cancels.';
+    why.F7 = { forgotLine, forgotHint, url: forgotPicker.webContents.getURL() };
+    await escPicker(forgotPicker);
     // Milestone 3, tall captures: in their own session, so the smoke session's counts stay as they are
     const tallSession = sessions.create(root, 'smoke-tall');
     setActive(tallSession);

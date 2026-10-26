@@ -24,7 +24,7 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, appMenu, loginState, editorSessionMenu, copyMenu, quitMessage, MenuActions, MenuState, SessionInfo } from './menu';
 import { SHORTCUTS, KEY_GROUPS } from './keys';
-import { FIRST, barLabel, barOptions, captureArgs, checkedCapture, rect } from './capture';
+import { FIRST, barLabel, barOptions, captureArgs, checkedCapture, rect, shotFiles } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
@@ -42,6 +42,7 @@ let root = process.env.SNAPMARK_ROOT || DEFAULT_ROOT;
 let active: string | null = null;
 let used: Record<string, number> = {}; // session name → last made current or saved into, epoch ms
 let area: Area | null = null; // what Capture Last Area captures, in global screen points
+let areaForgotten = false; // a New Session forgot the area: the next picker and the menu say so
 let singleKeys = true; // Settings ▸ Single-Key Tools
 let color: string | null = null; // the annotation colour last picked; every new editor starts with it
 let customColors: string[] = []; // the colour panel's Custom row, newest first (withCustom in tools.ts)
@@ -178,23 +179,27 @@ function newSession() {
   if (active && fs.existsSync(dirOf(active)) && sessions.count(root, active) === 0)
     return notify(`${sessions.shortName(active)} is still empty, so new captures keep going there.`);
   const made = sessions.create(root);
+  // A new session is new work, so ⌃⇧4 asks for its area again (Q2)
+  area = null;
+  areaForgotten = true;
   setActive(made);
   notify(`New session: ${sessions.shortName(made)}`);
 }
 
-function shoot(args: string[], oneShot = false) {
-  const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.png`);
+// `files`: one, or one per display for ⌃⇧3; each opens its own editor, `top` last so it is in front.
+function shoot(args: string[], oneShot = false, files = shotFiles(path.join(os.tmpdir(), `snapmark-${Date.now()}`)), top = '') {
   shooting = true;
   // -x: no sound
-  desk.screencapture([...args, '-x', tmp], (err, stderr) => {
+  desk.screencapture([...args, '-x', ...files], (err, stderr) => {
     shooting = false;
-    if (fs.existsSync(tmp)) return void openEditor(tmp, { oneShot });
+    const made = files.filter((f) => fs.existsSync(f));
+    if (made.length) return void made.sort((a, b) => +(a === top) - +(b === top)).forEach((f) => openEditor(f, { oneShot }));
     // No picture. Esc in macOS's overlay (-i) says nothing, and stays quiet; anything else is a failure, said so (F028).
     const why = stderr.trim() || (args.includes('-i') ? '' : (err?.message ?? 'screencapture made no image'));
     if (why)
       notify(
         `Capture failed: ${why.replace(/\.$/, '')}. No screenshot was added. Click to try again.`,
-        () => busy() || shoot(args, oneShot),
+        () => busy() || shoot(args, oneShot, files, top),
       );
   });
 }
@@ -205,33 +210,53 @@ let shooting = false; // screencapture runs: its crosshair is up, or it is writi
 let counting = false; // the capture bar's Timer counts down
 let bar: BrowserWindow | null = null; // the capture bar (⌃⇧5)
 const barOpen = () => !!bar && !bar.isDestroyed();
-// One capture at a time: a capture key or item while one is running does nothing. An open bar counts, or it would be
-// in the picture of the macOS overlay.
-const busy = () => picking || scrolling || shooting || barOpen() || counting;
-
-// -i: interactive region (space toggles window mode)
-const capture = () => void (busy() || shoot(['-i']));
+// One capture at a time: a capture key or item while one is running does nothing, ⌃⇧N included. An open bar counts
+// for captures, or it would be in the picture of the macOS overlay; its Options menu offers New Session.
+const capturing = () => picking || scrolling || shooting || counting;
+const busy = () => capturing() || barOpen();
 
 // The same area every time, e.g. the page in a browser. The first time, after Choose New Area, or when the display
 // it was on is gone, the owner drags it first.
-// `o`: the capture bar's options; ⌃⇧3 and the menu row capture as before, without them (F217).
+// `o`: the capture bar's options; ⌃⇧1, ⌃⇧4 and the menu rows capture without them (F217).
 async function captureArea(choose = false, o?: CaptureOpts) {
   const onScreen = (a: Area) =>
     screen
       .getAllDisplays()
       .some(({ bounds: b }) => a.x >= b.x && a.y >= b.y && a.x + a.width <= b.x + b.width && a.y + a.height <= b.y + b.height);
-  if (busy()) return; // ⌃⇧3 again while dragging, or while Capture Scrolling runs
+  if (busy()) return; // ⌃⇧4 again while dragging, or while Capture Scrolling runs
   if (choose || !area || !onScreen(area)) {
     picking = true;
     // F041: the hint says why the picker is back when the area's display is gone
-    const picked = await pickArea(!choose && area ? 'gone' : '').finally(() => (picking = false));
+    const picked = await pickArea(!choose && area ? 'gone' : !choose && areaForgotten ? 'new' : '').finally(() => (picking = false));
     if (!picked) return;
     area = picked;
+    areaForgotten = false;
     saveState();
   }
   if (o?.timer && !(await countdown(o.timer))) return;
   shoot(captureArgs(choose ? 'area' : 'last', { pointer: !!o?.pointer }, area), o?.oneShot);
 }
+
+// ⌃⇧3, like macOS's ⇧⌘3: every display at once, no picker, one editor per display, the pointer's in front.
+// shortcut: Electron's display order is taken as screencapture's (the main display first), true for two displays; match
+// by bounds if a third ever lands in the wrong editor.
+function captureFullScreen() {
+  if (busy()) return;
+  const files = shotFiles(path.join(os.tmpdir(), `snapmark-${Date.now()}`), screen.getAllDisplays().length);
+  const here = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id;
+  shoot([], false, files, files[screen.getAllDisplays().findIndex((d) => d.id === here)]);
+}
+
+// The global keys, as macOS's ⇧⌘1–⇧⌘5 (ADR 2026-10-25, keys follow macOS), and ⌃⇧N. Each does nothing while a capture
+// runs. Exported so the smoke test presses them as globalShortcut would.
+export const keyHandlers: Record<keyof typeof SHORTCUTS, () => void> = {
+  newArea: () => void captureArea(true),
+  oneShot: () => void (busy() || shoot(['-i'], true)), // -i: macOS's overlay; Space picks a window
+  fullScreen: captureFullScreen,
+  capture: () => void captureArea(),
+  options: () => void openCaptureBar(),
+  newSession: () => void (capturing() || newSession()),
+};
 
 // The bar's Timer, once the area is known: the seconds left beside the menu bar icon. Esc is taken from every app
 // only while it counts, and cancels: nothing is captured, and no message shows. False when cancelled.
@@ -254,8 +279,8 @@ async function countdown(seconds: number): Promise<boolean> {
 
 // `screencapture -i` never says where its region was, so the area to repeat is dragged in Snapmark's own
 // see-through window over the display with the pointer. Resolves once that window is off the screen. `mode` picks the
-// hint: Capture Scrolling's, or the one saying the last area's display is gone.
-export function pickArea(mode: '' | 'scroll' | 'gone' = ''): Promise<Area | null> {
+// hint: Capture Scrolling's, the one saying the last area's display is gone, or the one after a New Session.
+export function pickArea(mode: '' | 'scroll' | 'gone' | 'new' = ''): Promise<Area | null> {
   const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const win = new BrowserWindow({
     ...bounds,
@@ -1070,13 +1095,11 @@ function menuState(): MenuState {
     current: active && list.includes(active) ? info(active) : null,
     sessions: sessions.byLastUse(list, used).map(info),
     updateWaiting,
-    shortcuts: {
-      capture: registered.has(SHORTCUTS.capture) ? SHORTCUTS.capture : null,
-      area: registered.has(SHORTCUTS.area) ? SHORTCUTS.area : null,
-      options: registered.has(SHORTCUTS.options) ? SHORTCUTS.options : null,
-      newSession: registered.has(SHORTCUTS.newSession) ? SHORTCUTS.newSession : null,
-    },
+    shortcuts: Object.fromEntries(
+      Object.entries(SHORTCUTS).map(([k, key]) => [k, registered.has(key) ? key : null]),
+    ) as MenuState['shortcuts'],
     area,
+    areaForgotten,
     iconDir: path.join(__dirname, '../../assets'),
     hasDiscarded: sessions.discarded(root).length > 0,
   };
@@ -1200,13 +1223,6 @@ export function openSettings(): BrowserWindow {
   return win;
 }
 
-const ANYWHERE: [keyof typeof SHORTCUTS, string, string][] = [
-  ['capture', '⌃⇧4', 'Capture Screenshot'],
-  ['area', '⌃⇧3', 'Capture Last Area'],
-  ['options', '⌃⇧5', 'Capture Options'],
-  ['newSession', '⌃⇧N', 'New Session'],
-];
-
 const settingsInit = (): SettingsInit => ({
   login: loginState(app.isPackaged, app.getLoginItemSettings()),
   root: tilde(root),
@@ -1214,7 +1230,10 @@ const settingsInit = (): SettingsInit => ({
   version: app.getVersion(),
   canUpdate: app.isPackaged,
   singleKeys,
-  keys: ANYWHERE.map(([k, cap, name]) => ({ cap, name, taken: !registered.has(SHORTCUTS[k]) })),
+  // The Keyboard Shortcuts window's global keys (keys.ts), ⌃⇧4 standing for Control+Shift+4
+  keys: KEY_GROUPS[0].rows
+    .filter(([k]) => k.startsWith('⌃⇧'))
+    .map(([cap, name]) => ({ cap, name, taken: !registered.has(`Control+Shift+${cap.slice(2)}`) })),
   capture: captureOpts,
 });
 
@@ -1245,9 +1264,11 @@ ipcMain.handle('settings:run', async (e, what: SettingsRun): Promise<SettingsIni
 });
 
 const actions: MenuActions = {
-  capture,
-  captureArea: () => void captureArea(),
-  captureBar: () => void openCaptureBar(),
+  captureArea: keyHandlers.capture,
+  captureNewArea: keyHandlers.newArea,
+  captureFullScreen: keyHandlers.fullScreen,
+  captureOneShot: keyHandlers.oneShot,
+  captureBar: keyHandlers.options,
   newSession,
   copyPrompt: (name) => {
     desk.copyText(promptFor(dirOf(name)));
@@ -1291,13 +1312,8 @@ app.whenReady().then(() => {
     checkForUpdates();
     setInterval(checkForUpdates, 24 * 60 * 60 * 1000); // a menu bar app runs for days: check once a day, not only at start
   }
-  for (const [key, fn] of [
-    [SHORTCUTS.capture, capture],
-    [SHORTCUTS.area, () => void captureArea()],
-    [SHORTCUTS.options, () => void openCaptureBar()],
-    [SHORTCUTS.newSession, newSession],
-  ] as const) {
-    if (globalShortcut.register(key, fn)) registered.add(key);
+  for (const [name, key] of Object.entries(SHORTCUTS) as [keyof typeof SHORTCUTS, string][]) {
+    if (globalShortcut.register(key, keyHandlers[name])) registered.add(key);
     else notify(`${key} is taken by another app`);
   }
 });

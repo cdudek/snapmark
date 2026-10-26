@@ -5,6 +5,7 @@
   const el = (id: string) => document.getElementById(id)!;
   const [hint, box, size, say] = [el('hint'), el('box'), el('size'), el('say')];
   if (location.hash === '#scroll') hint.textContent = 'Drag over the part that scrolls, then scroll it. Esc cancels.';
+  if (location.hash === '#new') hint.textContent = 'New session: drag the area. ⌃⇧4 captures it again. Esc cancels.';
   if (location.hash === '#gone') hint.textContent = 'The last area was on a display that is not connected. Drag a new area. Esc cancels.';
   let start: { x: number; y: number } | null = null;
   let area: Area | null = null;

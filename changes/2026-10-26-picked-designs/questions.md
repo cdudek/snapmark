@@ -1,0 +1,11 @@
+# Open questions
+
+Questions met while building, with the default taken so the build kept going. The owner answers in the last column; an answer becomes an ask of the next milestone.
+
+| Question                                                                                                                                                   | Default taken                                                                                                                 | Milestone | Answer |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------- | ------ |
+| Which menu icons do the new capture rows get? No icon was drawn for them, and the plan adds no assets.                                                     | Existing icons: Last Area `area` (as today), New Area `choose`, Full Screen `capture`, One-Shot `export`, Options `settings`. | 1         |        |
+| Keyboard Shortcuts: ⌃⇧5's "while recording or scrolling, Done" is not true until milestones 3 and 4 ship it.                                               | Milestone 1 says "the capture bar"; 3 and 4 add the rest of the screens.md words.                                             | 1         |        |
+| `snapmark-app/README.md` and `docs/ux/setup.md` still name ⌃⇧3 as Capture Last Area and "Capture Screenshot…"; neither is in the plan's Files that change. | Left as they are in 1.2; the milestone gate updates them or adds them to the plan.                                            | 1         |        |
+| Does ⌃⇧N work while the capture bar is open?                                                                                                               | Yes: the bar's Options menu offers New Session with ⌃⇧N. The capture keys stay off while the bar is open, as today.           | 1         |        |
+| After a restart, does ⌃⇧4's picker still say "New session: drag the area"?                                                                                 | No: the forgotten-area note is not kept in state.json, so after a restart the picker and menu say "First time".               | 1         |        |

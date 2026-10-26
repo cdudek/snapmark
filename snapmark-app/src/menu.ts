@@ -1,5 +1,6 @@
 // The menu bar menu as data: no Electron at runtime, so test/menu.test.ts checks it in plain Node.
 import type { MenuItemConstructorOptions as Item } from 'electron';
+import type { SHORTCUTS } from './keys';
 
 export interface SessionInfo {
   name: string; // folder name
@@ -11,15 +12,18 @@ export interface MenuState {
   current: SessionInfo | null;
   sessions: SessionInfo[]; // by last use, current included
   updateWaiting: string | null; // version downloaded and ready to install
-  shortcuts: { capture: string | null; area: string | null; options: string | null; newSession: string | null }; // null = not registered
-  area: Area | null; // what Capture Last Area captures; null until the first time
+  shortcuts: Record<keyof typeof SHORTCUTS, string | null>; // null = not registered
+  area: Area | null; // what Capture Last Area captures; null until the first time, and after a New Session
+  areaForgotten: boolean; // a New Session forgot the area
   iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
   hasDiscarded: boolean; // something closed without saving, or removed, in the last 7 days
 }
 
 export interface MenuActions {
-  capture(): void;
-  captureArea(): void;
+  captureArea(): void; // Capture Last Area (⌃⇧4)
+  captureNewArea(): void; // ⌃⇧1
+  captureFullScreen(): void; // ⌃⇧3
+  captureOneShot(): void; // ⌃⇧2
   captureBar(): void; // Capture Options… (⌃⇧5): the capture bar
   reopenLast(): void;
   reopenDiscarded(): void;
@@ -95,14 +99,20 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
     ...(cur
       ? heading('Adding screenshots to', `${cur.label}${cur.count ? ` · ${plural(cur.count)}` : ''}`)
       : heading('No Session Yet', null)),
-    { ...shortcut('Capture Screenshot…', st.shortcuts.capture, () => a.capture()), ...icon('capture') },
+    // The five ways to capture, each with its key (ADR keys follow macOS); the bar holds the rest, as macOS's ⇧⌘5.
     {
-      ...shortcut('Capture Last Area', st.shortcuts.area, () => a.captureArea()),
-      sublabel: st.area ? `${st.area.width} × ${st.area.height}` : 'First time: drag the area',
+      ...shortcut('Capture Last Area', st.shortcuts.capture, () => a.captureArea()),
+      sublabel: st.area
+        ? `${st.area.width} × ${st.area.height}`
+        : st.areaForgotten
+          ? 'New session: drag the area'
+          : 'First time: drag the area',
       ...icon('area'),
     },
-    // The less frequent ways to capture live in the capture bar, as macOS's ⇧⌘5 (ADR capture bar and Settings window).
-    { ...shortcut('Capture Options…', st.shortcuts.options, () => a.captureBar()), ...icon('choose') },
+    { ...shortcut('Capture New Area…', st.shortcuts.newArea, () => a.captureNewArea()), ...icon('choose') },
+    { ...shortcut('Capture Full Screen', st.shortcuts.fullScreen, () => a.captureFullScreen()), ...icon('capture') },
+    { ...shortcut('Capture One-Shot…', st.shortcuts.oneShot, () => a.captureOneShot()), ...icon('export') },
+    { ...shortcut('Capture Options…', st.shortcuts.options, () => a.captureBar()), ...icon('settings') },
     { type: 'separator' },
     { label: 'Open Current Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
     { label: 'Copy Prompt for AI', enabled: on, ...icon('prompt'), click: () => a.copyPrompt(name) },

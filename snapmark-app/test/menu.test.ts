@@ -14,6 +14,7 @@ import {
   MAX_LISTED,
 } from '../src/menu';
 import type { EditorSessionActions } from '../src/menu';
+import { SHORTCUTS } from '../src/keys';
 
 const calls: string[] = [];
 const a = new Proxy({} as MenuActions, {
@@ -29,8 +30,9 @@ const base: MenuState = {
     { name: 'Old', label: 'Old', count: 0 },
   ],
   updateWaiting: null,
-  shortcuts: { capture: 'Control+Shift+4', area: 'Control+Shift+3', options: 'Control+Shift+5', newSession: 'Control+Shift+N' },
+  shortcuts: { ...SHORTCUTS },
   area: null,
+  areaForgotten: false,
   iconDir: '',
   hasDiscarded: false,
 };
@@ -48,8 +50,10 @@ const head = (items: Item[]) => items.find((i) => i.type === 'header')!;
 assert.deepStrictEqual(labels(menu()), [
   'Adding screenshots to',
   '2026-09-25, 12:03 · 2 screenshots',
-  'Capture Screenshot…',
   'Capture Last Area',
+  'Capture New Area…',
+  'Capture Full Screen',
+  'Capture One-Shot…',
   'Capture Options…',
   '—',
   'Open Current Session',
@@ -74,16 +78,29 @@ assert.strictEqual(calls.pop(), 'reopenLast');
 find(disc, 'Reopen Discarded…').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'reopenDiscarded');
 
-// Capture Last Area: says the first press asks for the area; once there is one, shows its size
-const last = find(menu(), 'Capture Last Area');
-assert.strictEqual(last.accelerator, 'Control+Shift+3');
-assert.strictEqual(last.sublabel, 'First time: drag the area');
-const withArea = menu({ area: { x: 10, y: 40, width: 1800, height: 1007 } });
-assert.strictEqual(find(withArea, 'Capture Last Area').sublabel, '1800 × 1007');
-find(withArea, 'Capture Last Area').click!({} as never, undefined, {} as never);
-assert.strictEqual(calls.pop(), 'captureArea');
-assert.strictEqual(find(menu(), 'Capture Screenshot…').accelerator, 'Control+Shift+4');
-assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, area: null } })[3].label, 'Capture Last Area (shortcut unavailable)');
+// @F8 the five capture rows of screens.md, in order, each with its key, each doing what its key does
+const captureRows = menu().slice(2, 7);
+assert.deepStrictEqual(
+  captureRows.map((i) => [i.label, i.accelerator]),
+  [
+    ['Capture Last Area', 'Control+Shift+4'],
+    ['Capture New Area…', 'Control+Shift+1'],
+    ['Capture Full Screen', 'Control+Shift+3'],
+    ['Capture One-Shot…', 'Control+Shift+2'],
+    ['Capture Options…', 'Control+Shift+5'],
+  ],
+  '@F8',
+);
+for (const [i, call] of ['captureArea', 'captureNewArea', 'captureFullScreen', 'captureOneShot', 'captureBar'].entries()) {
+  captureRows[i].click!({} as never, undefined, {} as never);
+  assert.strictEqual(calls.pop(), call, `@F8 ${captureRows[i].label}`);
+}
+assert.ok(!labels(menu()).includes('Capture Screenshot…'), '@F8 Capture Screenshot… leaves (Q1)');
+// Capture Last Area's sublabel: the area's size; with none, the first time or after a New Session (@F7)
+assert.strictEqual(find(menu(), 'Capture Last Area').sublabel, 'First time: drag the area');
+assert.strictEqual(find(menu({ areaForgotten: true }), 'Capture Last Area').sublabel, 'New session: drag the area', '@F7');
+assert.strictEqual(find(menu({ area: { x: 10, y: 40, width: 1800, height: 1007 } }), 'Capture Last Area').sublabel, '1800 × 1007');
+assert.strictEqual(menu({ shortcuts: { ...base.shortcuts, capture: null } })[2].label, 'Capture Last Area (shortcut unavailable)');
 
 // F218 Capture Options…: one row with ⌃⇧5 beside it, opening the capture bar, in place of the submenu
 const options = find(menu(), 'Capture Options…');
@@ -92,7 +109,7 @@ assert.strictEqual(options.submenu, undefined, 'F218 no submenu');
 assert.strictEqual(options.sublabel, undefined, 'F218 the key shows beside it');
 options.click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'captureBar', 'F218');
-const noOptions = menu({ shortcuts: { ...base.shortcuts, options: null } })[4];
+const noOptions = menu({ shortcuts: { ...base.shortcuts, options: null } })[6];
 assert.strictEqual(noOptions.label, 'Capture Options… (shortcut unavailable)', 'F218');
 assert.strictEqual(noOptions.accelerator, undefined, 'F218');
 noOptions.click!({} as never, undefined, {} as never);
@@ -107,7 +124,7 @@ assert.strictEqual(menu({ current: { name: 'x', label: 'x', count: 1 } })[1].lab
 assert.strictEqual(menu({ current: { name: 'e', label: 'e', count: 0 } })[1].label, 'e');
 const none = menu({ current: null, sessions: [] });
 assert.strictEqual(head(none).label, 'No Session Yet');
-assert.strictEqual(none[1].label, 'Capture Screenshot…');
+assert.strictEqual(none[1].label, 'Capture Last Area');
 for (const l of ['Open Current Session', 'Copy Prompt for AI']) assert.strictEqual(find(none, l).enabled, false, l);
 for (const l of ['Rename Session…', 'Show Session in Finder', 'Copy Session File Path'])
   assert.strictEqual(find(sub(find(none, 'Session')), l).enabled, false, l);
@@ -214,9 +231,9 @@ const upd = menu({ updateWaiting: '0.4.2' });
 assert.strictEqual(upd[0].label, 'Restart to Update to 0.4.2');
 upd[0].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'installUpdate');
-const off = menu({ shortcuts: { ...base.shortcuts, capture: null } });
-assert.strictEqual(off[2].label, 'Capture Screenshot… (shortcut unavailable)');
-assert.strictEqual(off[2].accelerator, undefined);
+const off = menu({ shortcuts: { ...base.shortcuts, oneShot: null } });
+assert.strictEqual(off[5].label, 'Capture One-Shot… (shortcut unavailable)');
+assert.strictEqual(off[5].accelerator, undefined);
 
 // Icons: every action at the top and in Session ▸ has one (headers and their text lines do not), and every file exists at 1x and 2x
 const withIcons = menu({ iconDir: path.join(__dirname, '../../assets'), updateWaiting: '1.0.0', hasDiscarded: true });
