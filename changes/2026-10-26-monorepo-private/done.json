@@ -1,0 +1,20 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Size none: no pages or widths.",
+  "facts": [
+    { "id": "F1", "tag": "@F1", "screen": "none", "states": ["layout"] },
+    { "id": "F2", "tag": "@F2", "screen": "none", "states": ["verify"] },
+    { "id": "F3", "tag": "@F3", "screen": "none", "states": ["packaged"] },
+    { "id": "N1", "tag": "@N1", "screen": "none", "states": ["dependencies"] },
+    { "id": "F4", "tag": "@F4", "screen": "none", "states": ["packaged"] },
+    { "id": "F5", "tag": "@F5", "screen": "none", "states": ["released"] },
+    { "id": "F6", "tag": "@F6", "screen": "none", "states": ["released"] },
+    { "id": "F7", "tag": "@F7", "screen": "none", "states": ["prune"] },
+    { "id": "F8", "tag": "@F8", "screen": "none", "states": ["bucket"] },
+    { "id": "F9", "tag": "@F9", "screen": "none", "states": ["bucket"] },
+    { "id": "F10", "tag": "@F10", "screen": "none", "states": ["private"] },
+    { "id": "F11", "tag": "@F11", "screen": "none", "states": ["private"] }
+  ],
+  "pages": [],
+  "widths": { "feature": [], "milestone": "none" },
+  "turns": { "feature": 40, "milestone": 30 }
+}

@@ -17,6 +17,13 @@
   "ticket": "snap-bmr.23",
   "design": "none",
   "skips": {
-    "ux": "skip -- size none: no screen changes (orchestrator, 2026-10-26)"
+    "ux": "skip -- size none: no screen changes (orchestrator, 2026-10-26)",
+    "brief": "skip -- size none: no screen changes (orchestrator, 2026-10-26)",
+    "ia": "skip -- size none: no screen, route or object (orchestrator, 2026-10-26)",
+    "interaction": "skip -- size none: no interaction changes (orchestrator, 2026-10-26)",
+    "screens": "skip -- size none: no screen changes (orchestrator, 2026-10-26)",
+    "prototype": "skip -- size none: nothing to draw (orchestrator, 2026-10-26)",
+    "conformance": "skip -- size none: no interface to check against the guidelines (orchestrator, 2026-10-26)",
+    "validation": "skip -- size none: no spec to validate (orchestrator, 2026-10-26)"
   }
 }
