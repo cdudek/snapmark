@@ -1,4 +1,5 @@
-// Snapmark's keys as data: the global shortcuts and the Keyboard Shortcuts window's rows, so the two never disagree.
+// Snapmark's keys as data: the global shortcuts and the Keyboard Shortcuts window's rows (src/shortcuts.html), so the
+// two never disagree.
 // No Electron at runtime, so test/keys.test.ts checks it in plain Node.
 
 // macOS's own screenshot digits with ⌃⇧ for ⇧⌘, which macOS keeps for itself (ADR 2026-10-25, keys follow macOS).
@@ -17,9 +18,24 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
     rows: [
       ['⌃⇧4', 'Capture screenshot', 'drag an area, or press Space and click a window'],
       ['⌃⇧3', 'Capture last area', 'the first time, drag the area'],
-      ['⌃⇧5', 'Capture options', 'a menu under the menu bar icon: Choose New Area, Capture Window, Capture Scrolling, One-Shot Capture'],
+      ['⌃⇧5', 'Capture options', 'the capture bar: window, new area, last area or scrolling, and where it goes'],
       ['⌃⇧N', 'New session', ''],
-      ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (menu: Capture Options)'],
+      ['↩ / Esc', 'Capture Scrolling', 'Done or cancel, while it grabs the area you scroll (capture bar, ⌃⇧5)'],
+    ],
+  },
+  {
+    title: 'Capture bar',
+    rows: [
+      ['← →', 'Pick a mode', 'Tab moves on to Options and Capture'],
+      ['↩', 'Capture', ''],
+      ['Esc', 'Close', ''],
+    ],
+  },
+  {
+    title: 'Snapmark windows',
+    rows: [
+      ['⌘,', 'Settings', ''],
+      ['⌘/', 'Keyboard Shortcuts', ''],
     ],
   },
   {
@@ -53,33 +69,3 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
     ],
   },
 ];
-
-const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-
-// The Keyboard Shortcuts window: the tools in the keys of the current mode (Settings ▸ Single-Key Tools), a line
-// naming the setting, then KEY_GROUPS. Built from the toolbar's own tool list, so the two never disagree. No script,
-// so the page needs no CSP exception.
-export function shortcutsHtml(groups: ToolGroup[], singleKeys: boolean): string {
-  const row = (keys: string, icon: string, name: string, what: string) =>
-    `<tr><td><kbd>${keys}</kbd></td><td>${icon && `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`}</td><td><b>${esc(name)}</b></td><td>${esc(what)}</td></tr>`;
-  // On: "C or Esc", "1 or ⌘1", "1 again". Off: "Esc", "⌘1", "⌘1 again".
-  const first = (g: ToolGroup) => (g.key === 'c' ? (singleKeys ? 'C or Esc' : 'Esc') : singleKeys ? `${g.key} or ⌘${g.key}` : `⌘${g.key}`);
-  const tools = groups
-    .flatMap((g) =>
-      g.tools.map((t, v) => row(v ? `${singleKeys ? g.key : `⌘${g.key}`} again` : first(g), t.icon, t.label, t.tip ?? t.means ?? '')),
-    )
-    .join('');
-  const setting = singleKeys
-    ? 'Settings ▸ Single-Key Tools is on: C and 1–7 pick tools too.'
-    : 'Settings ▸ Single-Key Tools is off: only ⌘1–⌘7 pick tools, and Esc goes back to Select.';
-  // The other keys, grouped by where they work (owner, 2026-10-25).
-  const other = KEY_GROUPS.map(
-    (g) => `<h2>${esc(g.title)}</h2><table>${g.rows.map(([k, n, w]) => row(k, '', n, w)).join('')}</table>`,
-  ).join('');
-  return `<!doctype html><html lang="en"><meta charset="utf-8"><title>Keyboard shortcuts</title><style>
-    :root{color-scheme:light dark;font:13px -apple-system,system-ui,sans-serif}body{margin:16px}
-    h2{font-size:13px;margin:16px 0 6px}table{border-collapse:collapse;width:100%}td{padding:4px 6px;vertical-align:middle}
-    kbd{font:600 11px ui-monospace,monospace;white-space:nowrap}p{margin:8px 6px 0;color:GrayText}
-    svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    </style><h2>Editor tools</h2><table>${tools}</table><p>${esc(setting)}</p>${other}`;
-}

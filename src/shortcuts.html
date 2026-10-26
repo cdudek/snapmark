@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Keyboard Shortcuts</title>
+    <style>
+      /* The round-1 Native palette (design-explorations/2026-10-24-brand-refresh/01-native/notes.md); dark mode takes
+         the system's dark colours. */
+      :root {
+        color-scheme: light dark;
+        --text: light-dark(#1d1d1f, CanvasText);
+        --second: light-dark(#76767c, #a1a1a6);
+        --sep: light-dark(#d8d9dd, #48484c);
+        --bg: light-dark(#ffffff, Canvas);
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          13px -apple-system,
+          system-ui,
+          sans-serif;
+      }
+      /* Two columns with a hairline between; below 760 pt they stack, Other keys first. */
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+        align-items: start;
+        padding: 24px 32px 32px;
+        gap: 0 32px;
+      }
+      #tools {
+        border-left: 1px solid var(--sep);
+        padding-left: 32px;
+      }
+      @media (max-width: 760px) {
+        main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        #tools {
+          border-left: 0;
+          padding-left: 0;
+          margin-top: 24px;
+        }
+      }
+      h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0 0 12px;
+      }
+      h2 {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--second);
+        margin: 24px 0 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      tr {
+        border-top: 1px solid var(--sep);
+      }
+      td {
+        padding: 8px 16px 8px 0;
+        vertical-align: middle;
+      }
+      td.keys {
+        white-space: nowrap;
+        width: 1%;
+      }
+      td.again {
+        width: 1%;
+        color: var(--second);
+        font-size: 12px;
+      }
+      td.name {
+        font-weight: 600;
+        white-space: nowrap;
+        width: 1%;
+      }
+      td.what,
+      .or {
+        color: var(--second);
+      }
+      .or {
+        margin: 0 8px;
+        font-size: 12px;
+      }
+      /* The editor's one keycap style (A18): 11 px, weight 500, system glyphs, tabular digits, the text's colour;
+         here drawn as a cap, which F231 asks for. */
+      kbd {
+        display: inline-block;
+        font:
+          500 11px/14px -apple-system,
+          system-ui,
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+        color: inherit;
+        white-space: nowrap;
+        min-width: 16px;
+        text-align: center;
+        padding: 4px 10px; /* the glyph never touches the border */
+        border: 1px solid var(--sep);
+        border-radius: 6px;
+        box-shadow: 0 1px 0 var(--sep);
+        background: var(--bg);
+      }
+      td.icon {
+        width: 1%;
+      }
+      td.icon svg {
+        display: block;
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #setting {
+        margin: 16px 0 0;
+        color: var(--second);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section id="other" aria-labelledby="other-title"><h1 id="other-title">Other keys</h1></section>
+      <section id="tools" aria-labelledby="tools-title">
+        <h1 id="tools-title">Editor tools</h1>
+        <table id="tool-rows"></table>
+        <p id="setting"></p>
+      </section>
+    </main>
+    <script src="tools.js"></script>
+    <script src="shortcuts.js"></script>
+  </body>
+</html>

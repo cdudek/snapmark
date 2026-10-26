@@ -41,6 +41,10 @@ const {
   setSingleKeys,
   menuItems,
   moveEditor,
+  openCaptureBar,
+  setCapture,
+  openSettings,
+  showShortcuts,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -412,10 +416,9 @@ app
     const redrawnOff = await toolbarSays('Esc', 'Box (⌘2) · press ⌘2 again for Ellipse');
     setSingleKeys(true);
     inPage['F106 the setting redraws the toolbar'] = redrawnOff && (await toolbarSays('C', 'Box (2 or ⌘2) · press again for Ellipse'));
-    // F110: the menu's Single-Key Tools item saves the setting to state.json in the temp folder and tells the editor
-    const settingsMenu = menuItems().find((i) => i.label === 'Settings')!.submenu as Electron.MenuItemConstructorOptions[];
-    const singleItem = settingsMenu.find((i) => i.label === 'Single-Key Tools')!;
-    singleItem.click!({ checked: false } as never, undefined, {} as never);
+    // F110: the setting (Settings ▸ Shortcuts ▸ Pick tools with single keys calls setSingleKeys; F225 clicks it) saves
+    // to state.json in the temp folder and tells the editor
+    setSingleKeys(false);
     const stateFile = path.join(root, 'userData', 'state.json');
     const savedOff = fs.existsSync(stateFile) && JSON.parse(fs.readFileSync(stateFile, 'utf8')).singleKeys === false;
     const editorOff = await win.webContents.executeJavaScript(
@@ -1000,79 +1003,14 @@ app
         });
     });
     viewer['snap-bmr.14.3 F043: the area picker speaks the size while dragging'] = speaking === null && spoken === 'polite|1px|true|true';
-    // Choose New Area…: the picker, a drag, then the capture
-    let windowsNow = BrowserWindow.getAllWindows();
-    press('Choose New Area…', item('Capture Options').submenu as Item[]);
-    const chooser = await loadedWindow(windowsNow);
-    windowsNow = BrowserWindow.getAllWindows();
-    chooser.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
-    chooser.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
-    chooser.webContents.sendInputEvent({ type: 'mouseUp', x: 400, y: 320, button: 'left', clickCount: 1 });
-    const repeats = [await loadedWindow(windowsNow)];
-    // F027: Capture Last Area again and again: the same rectangle at once, no picker, each time an editor that turns the
-    // Dock on only once it has focus (turned on first, macOS leaves a full-screen browser for the desktop)
-    for (let i = 0; i < 2; i++) {
-      windowsNow = BrowserWindow.getAllWindows();
-      press('Capture Last Area');
-      repeats.push(await loadedWindow(windowsNow));
-    }
-    const rects = shots.map((a) => a.slice(0, 3).join(' '));
-    const dockAfterFocus = repeats.every((w) => {
-      const n = dock.length;
-      w.emit('focus'); // what macOS sends when the reviewer gets to it; once only, so no harm if it came already
-      return dock.length > n ? dock.at(-1) === true : dock.includes(true);
-    });
-    viewer['snap-bmr.14.3 F027: Capture Last Area repeats the area at once, the editor waits for focus before the Dock'] =
-      rects.join() ===
-        Array(3)
-          .fill(`-R ${display.x + 100},${display.y + 120},300,200 -x`)
-          .join() &&
-      repeats.every((w) => w.webContents.getURL().endsWith('editor.html')) &&
-      !pickerOpen() &&
-      dockOnOpen.join() === 'false,false,false' &&
-      dockAfterFocus;
-    why.F027 = { rects, urls: repeats.map((w) => w.webContents.getURL()), picker: pickerOpen(), dockOnOpen, dock, dockAfterFocus };
-    repeats.forEach((w) => w.destroy());
-    // F041: with the area's display gone, the picker says so
-    const realDisplays = screen.getAllDisplays; // Electron's screen hands out its methods bound
-    screen.getAllDisplays = () => [];
-    windowsNow = BrowserWindow.getAllWindows();
-    press('Capture Last Area');
-    const gonePicker = await loadedWindow(windowsNow);
-    screen.getAllDisplays = realDisplays;
-    const goneHint = await gonePicker.webContents.executeJavaScript(`document.getElementById('hint').textContent`);
-    const goneClosed = new Promise<void>((r) => gonePicker.once('closed', () => r()));
-    gonePicker.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
-    await goneClosed;
-    await sleep(400); // the picker's promise resolves 200 ms after 'closed'; until then a capture key does nothing
-    viewer['snap-bmr.14.3 F041: with the display gone, the picker says why'] =
-      goneHint === 'The last area was on a display that is not connected. Drag a new area. Esc cancels.' && shots.length === 3;
-    // F028: a failed capture says so and offers to try again; Esc in macOS's overlay stays quiet
-    notes.length = 0;
-    windowsNow = BrowserWindow.getAllWindows();
-    fail = 'could not create image from rect\n';
-    press('Capture Last Area');
-    const failed = notes.map((n) => n.body);
-    notes[0]?.onClick?.();
-    const retried = shots.length === 5;
-    fail = '';
-    press('Capture Screenshot');
-    await sleep(300);
-    viewer['snap-bmr.14.3 F028: a failed capture says so and tries again on a click; Esc stays quiet'] =
-      failed.join() === 'Capture failed: could not create image from rect. No screenshot was added. Click to try again.' &&
-      retried &&
-      notes.length === 2 &&
-      shots.at(-1)!.includes('-i') &&
-      BrowserWindow.getAllWindows().length === windowsNow.length;
-    why.F028 = {
-      failed,
-      retried,
-      notes: notes.map((n) => n.body),
-      shots: shots.slice(3),
-      now: BrowserWindow.getAllWindows().length,
-      was: windowsNow.length,
+    // The capture bar, loaded: its chosen mode is drawn
+    const barReady = async (w: BrowserWindow) => {
+      for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await sleep(100);
+      await inWin(
+        w,
+        `for (let i = 0; i < 50 && !document.querySelector('[aria-checked="true"]'); i++) await new Promise((r) => setTimeout(r, 100));`,
+      );
     };
-    fail = null;
 
     // Capture Scrolling: frames of a synthetic 8200-row page under a fixed header go through the live loop; ↩ in its
     // control stitches them into the editor, which fits the width and scrolls. Esc cancels without an editor.
@@ -1151,6 +1089,392 @@ app
     const extra = () => BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
     for (let t = 0; t < 30 && extra(); t++) await new Promise((r) => setTimeout(r, 100)); // the control closes a moment after
     viewer['Capture Scrolling: Esc cancels, no editor, control gone'] = cancelled2 === null && !extra();
+
+    // The capture bar (F201–F208, F212, N201), with a swapped runner: screencapture never runs
+    const runs: { o: CaptureOpts; barGone: boolean }[] = [];
+    const barUp = () => BrowserWindow.getAllWindows().filter((w) => w.getTitle() === 'Capture Options');
+    const runner = (o: CaptureOpts) =>
+      void runs.push({ o, barGone: !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('bar.html')) });
+    const keyTo = (w: BrowserWindow, keyCode: string, modifiers: Electron.KeyboardInputEvent['modifiers'] = []) => {
+      w.webContents.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
+      w.webContents.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
+    };
+    // The Options menu as main builds it: with desk.popup swapped, a click on Options hands over its items (F207, F223)
+    let popped: Item[] = [];
+    const realPopup = desk.popup;
+    desk.popup = (_w, items) => void (popped = items);
+    const optionsOf = async (w: BrowserWindow) => {
+      popped = [];
+      await inWin(w, `document.getElementById('options').click();`);
+      for (let i = 0; i < 20 && !popped.length; i++) await sleep(50);
+      return popped;
+    };
+    const pick = (items: Item[], label: string, checked = true) =>
+      items.find((i) => i.label === label)!.click!({ checked } as Electron.MenuItem, undefined, {} as Electron.KeyboardEvent);
+    const ticked = (items: Item[]) =>
+      items
+        .filter((i) => i.checked)
+        .map((i) => i.label)
+        .join();
+    const t0 = Date.now();
+    const barWin = openCaptureBar(runner)!;
+    const shownIn = await new Promise<number>((r) => barWin.once('ready-to-show', () => r(Date.now() - t0)));
+    console.log(`N201: the bar showed in ${shownIn} ms`);
+    viewer['N201 the bar shows within 1 s'] = shownIn < 1000;
+    await barReady(barWin);
+    const wa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+    const bb = barWin.getBounds();
+    viewer["F201 the capture bar opens bottom-centre on the pointer's display"] =
+      Math.abs(bb.x + bb.width / 2 - (wa.x + wa.width / 2)) <= 1 && Math.abs(wa.y + wa.height - 24 - (bb.y + bb.height)) <= 1;
+    viewer['F202 the bar shows its seven controls in order'] =
+      (await inWin(
+        barWin,
+        `return JSON.stringify([...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label').split(' · ')[0]))`,
+      )) === JSON.stringify(['Close', 'Capture Window', 'Choose New Area', 'Capture Last Area', 'Capture Scrolling', 'Options', 'Capture']);
+    viewer['F203 every bar control is named; the modes are a radio group'] =
+      barWin.getTitle() === 'Capture Options' &&
+      (await inWin(
+        barWin,
+        `const named = [...document.querySelectorAll('button, [role=radio]')].every((b) => (b.getAttribute('aria-label') ?? '').trim() !== '');
+        const g = document.querySelector('[role=radiogroup]');
+        return named && document.title === 'Capture Options' && g.getAttribute('aria-label') === 'Mode' &&
+          g.querySelectorAll('[role=radio]').length === 4 && g.querySelectorAll('[aria-checked="true"]').length === 1 &&
+          document.querySelector('[aria-label^="Capture Last Area · "]')?.getAttribute('aria-label') === 'Capture Last Area · First time: drag the area';`,
+      ));
+    const barSays = () =>
+      inWin(
+        barWin,
+        `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.getAttribute('aria-label').split(' · ')[0]`,
+      );
+    const firstTime = await barSays();
+    const firstOptions = ticked(await optionsOf(barWin));
+    const barAgain = openCaptureBar(runner);
+    viewer['F206 one bar at a time'] = barAgain === barWin && barUp().length === 1;
+    viewer['F208 the bar is on top on every Space'] = barWin.isAlwaysOnTop() && barWin.isVisibleOnAllWorkspaces();
+    // ← → (and ↓ ↑, as a radio group) move between the modes, wrapping; Tab goes Close → the chosen mode → Options →
+    // Capture; ↩ on a mode captures
+    const moves: string[] = [];
+    for (const k of ['Right', 'Left', 'Left', 'Left', 'Right', 'Right', 'Right', 'Down', 'Up']) {
+      keyTo(barWin, k);
+      await sleep(80);
+      moves.push(await barSays());
+    }
+    const tabs: string[] = [];
+    for (const m of [['shift'], [], [], [], ['shift'], ['shift']] as Electron.KeyboardInputEvent['modifiers'][]) {
+      keyTo(barWin, 'Tab', m);
+      await sleep(80);
+      tabs.push(((await barSays()) as string).split('|')[1]);
+    }
+    // Save to, Timer and Show Mouse Pointer chosen in the Options menu, as the owner clicks them
+    const chosen = await optionsOf(barWin);
+    pick(chosen, 'One-Shot');
+    pick(chosen, '5 Seconds');
+    pick(chosen, 'Show Mouse Pointer');
+    keyTo(barWin, 'Return');
+    for (let i = 0; i < 30 && !runs.length; i++) await sleep(100);
+    const arrowsOk =
+      JSON.stringify(moves) ===
+      JSON.stringify([
+        'last|Capture Last Area',
+        'area|Choose New Area',
+        'window|Capture Window',
+        'scroll|Capture Scrolling',
+        'window|Capture Window',
+        'area|Choose New Area',
+        'last|Capture Last Area',
+        'scroll|Capture Scrolling',
+        'last|Capture Last Area',
+      ]);
+    const tabsOk =
+      JSON.stringify(tabs) === JSON.stringify(['Close', 'Capture Last Area', 'Options', 'Capture', 'Options', 'Capture Last Area']);
+    viewer['F205 the bar is gone when the capture starts'] = runs.length === 1 && runs[0].barGone;
+    // Reopened: on the mode last used; Esc closes it without capturing
+    const barReopened = openCaptureBar(runner)!;
+    await barReady(barReopened);
+    const lastUsed = await inWin(barReopened, `return document.querySelector('[aria-checked="true"]').dataset.mode`);
+    const reLabel = await inWin(barReopened, `return document.getElementById('capture').textContent`);
+    const reOptions = ticked(await optionsOf(barReopened));
+    const saved = JSON.stringify(JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).capture);
+    const lastOpts = JSON.stringify({ mode: 'last', oneShot: true, timer: 5, pointer: true });
+    viewer['F207 the bar remembers the last mode'] =
+      firstTime === 'area|Choose New Area' &&
+      firstOptions === 'Current Session,None' &&
+      JSON.stringify(runs[0]?.o) === lastOpts &&
+      lastUsed === 'last' &&
+      reLabel === 'Capture One-Shot' &&
+      reOptions === 'One-Shot,5 Seconds,Show Mouse Pointer' &&
+      saved === lastOpts;
+    keyTo(barReopened, 'Escape');
+    for (let i = 0; i < 30 && !barReopened.isDestroyed(); i++) await sleep(100);
+    viewer['F204 arrows pick, Return captures, Esc closes'] =
+      arrowsOk && tabsOk && runs.length === 1 && runs[0].o.mode === 'last' && barReopened.isDestroyed() && !barUp().length;
+    // One-Shot: a scrolling capture opens in one-shot mode, never in a session
+    const oneShotScroll = await scrollCapture(scrollArea, fakeGrab([0, 400], 'Return'), { oneShot: true });
+    viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-shot';
+    oneShotScroll?.destroy();
+    setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false }); // as the first time again
+
+    // Choose New Area: the capture bar's first-time mode, then Capture: the picker, a drag, then the capture. After the
+    // bar's checks, which need the first time with no area yet (F203).
+    const chooseBar = openCaptureBar()!;
+    await barReady(chooseBar);
+    let windowsNow = BrowserWindow.getAllWindows();
+    await inWin(chooseBar, `document.getElementById('capture').click();`);
+    const chooser = await loadedWindow(windowsNow);
+    windowsNow = BrowserWindow.getAllWindows();
+    chooser.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+    chooser.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+    chooser.webContents.sendInputEvent({ type: 'mouseUp', x: 400, y: 320, button: 'left', clickCount: 1 });
+    const repeats = [await loadedWindow(windowsNow)];
+    // F027: Capture Last Area again and again: the same rectangle at once, no picker, each time an editor that turns the
+    // Dock on only once it has focus (turned on first, macOS leaves a full-screen browser for the desktop)
+    for (let i = 0; i < 2; i++) {
+      windowsNow = BrowserWindow.getAllWindows();
+      press('Capture Last Area');
+      repeats.push(await loadedWindow(windowsNow));
+    }
+    const rects = shots.map((a) => a.slice(0, 3).join(' '));
+    const dockAfterFocus = repeats.every((w) => {
+      const n = dock.length;
+      w.emit('focus'); // what macOS sends when the reviewer gets to it; once only, so no harm if it came already
+      return dock.length > n ? dock.at(-1) === true : dock.includes(true);
+    });
+    viewer['snap-bmr.14.3 F027: Capture Last Area repeats the area at once, the editor waits for focus before the Dock'] =
+      rects.join() ===
+        Array(3)
+          .fill(`-R ${display.x + 100},${display.y + 120},300,200 -x`)
+          .join() &&
+      repeats.every((w) => w.webContents.getURL().endsWith('editor.html')) &&
+      !pickerOpen() &&
+      dockOnOpen.join() === 'false,false,false' &&
+      dockAfterFocus;
+    why.F027 = { rects, urls: repeats.map((w) => w.webContents.getURL()), picker: pickerOpen(), dockOnOpen, dock, dockAfterFocus };
+    repeats.forEach((w) => w.destroy());
+    // F041: with the area's display gone, the picker says so
+    const realDisplays = screen.getAllDisplays; // Electron's screen hands out its methods bound
+    screen.getAllDisplays = () => [];
+    windowsNow = BrowserWindow.getAllWindows();
+    press('Capture Last Area');
+    const gonePicker = await loadedWindow(windowsNow);
+    screen.getAllDisplays = realDisplays;
+    const goneHint = await gonePicker.webContents.executeJavaScript(`document.getElementById('hint').textContent`);
+    const goneClosed = new Promise<void>((r) => gonePicker.once('closed', () => r()));
+    gonePicker.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+    await goneClosed;
+    await sleep(400); // the picker's promise resolves 200 ms after 'closed'; until then a capture key does nothing
+    viewer['snap-bmr.14.3 F041: with the display gone, the picker says why'] =
+      goneHint === 'The last area was on a display that is not connected. Drag a new area. Esc cancels.' && shots.length === 3;
+    // F028: a failed capture says so and offers to try again; Esc in macOS's overlay stays quiet
+    notes.length = 0;
+    windowsNow = BrowserWindow.getAllWindows();
+    fail = 'could not create image from rect\n';
+    press('Capture Last Area');
+    const failed = notes.map((n) => n.body);
+    notes[0]?.onClick?.();
+    const retried = shots.length === 5;
+    fail = '';
+    press('Capture Screenshot');
+    await sleep(300);
+    viewer['snap-bmr.14.3 F028: a failed capture says so and tries again on a click; Esc stays quiet'] =
+      failed.join() === 'Capture failed: could not create image from rect. No screenshot was added. Click to try again.' &&
+      retried &&
+      notes.length === 2 &&
+      shots.at(-1)!.includes('-i') &&
+      BrowserWindow.getAllWindows().length === windowsNow.length;
+    why.F028 = {
+      failed,
+      retried,
+      notes: notes.map((n) => n.body),
+      shots: shots.slice(3),
+      now: BrowserWindow.getAllWindows().length,
+      was: windowsNow.length,
+    };
+    fail = null;
+
+    // The Settings window (F219–F225, F228)
+    const settingsReady = async (w: BrowserWindow) => {
+      for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await sleep(100);
+      await inWin(
+        w,
+        `for (let i = 0; i < 50 && !document.getElementById('version').textContent; i++) await new Promise((r) => setTimeout(r, 100));`,
+      );
+    };
+    const firstSettings = openSettings();
+    viewer['F219 one Settings window'] = openSettings() === firstSettings;
+    await settingsReady(firstSettings);
+    viewer['F219 one Settings window'] &&=
+      BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().endsWith('settings.html')).length === 1;
+    const tabNames = await inWin(
+      firstSettings,
+      `return [...document.querySelectorAll('[role=tab]')].map((t) => t.textContent.trim()).join()`,
+    );
+    await inWin(firstSettings, `document.getElementById('tab-capture').click();`);
+    await sleep(200);
+    const titled = firstSettings.getTitle();
+    firstSettings.destroy();
+    const set = openSettings();
+    await settingsReady(set);
+    const openedOn = await inWin(set, `return document.querySelector('[aria-selected="true"]').textContent.trim()`);
+    viewer['F220 three tabs; the title names the tab'] =
+      tabNames === 'General,Capture,Shortcuts' && titled === 'Capture' && openedOn === 'Capture' && set.getTitle() === 'Capture';
+    // General: the four settings, in a development build with login and updates greyed
+    await inWin(set, `document.getElementById('tab-general').click();`);
+    const general = JSON.parse(
+      await inWin(
+        set,
+        `const p = document.getElementById('general');
+        const shown = (c) => !c.closest('[hidden]');
+        return JSON.stringify({
+          controls: [...p.querySelectorAll('input, button')].filter(shown).map((c) => (c.labels?.[0] ?? c).textContent.trim()),
+          version: document.getElementById('version').textContent,
+          greyed: document.getElementById('login').disabled && document.getElementById('updates').disabled,
+          notes: [...p.querySelectorAll('#login-dev, #updates-dev')].filter(shown).map((n) => n.textContent.trim()),
+        });`,
+      ),
+    );
+    viewer['F221 General holds the four settings'] =
+      JSON.stringify(general.controls) ===
+        JSON.stringify(['Open Snapmark at login', 'Change…', 'Clear Sessions Older Than 60 Days…', 'Check for Updates…']) &&
+      general.version === `Snapmark ${app.getVersion()}`;
+    viewer['F222 a development build greys login and updates'] =
+      general.greyed && JSON.stringify(general.notes) === JSON.stringify(['Only in the installed app.', 'Only in the installed app.']);
+    // Capture: the bar's options; One-Shot here makes the bar's button read Capture One-Shot
+    // Capture: the bar's options. One-Shot, 10 Seconds and the pointer chosen here reach the bar; chosen back in the bar's
+    // Options menu, Settings shows them when it comes forward (its focus listener, F227)
+    await inWin(set, `document.getElementById('tab-capture').click(); document.getElementById('oneshot').click();`);
+    await sleep(200);
+    await inWin(set, `const t = document.getElementById('timer'); t.value = '10'; t.dispatchEvent(new Event('change'));`);
+    await sleep(200);
+    await inWin(set, `document.getElementById('pointer').click();`);
+    await sleep(200);
+    const oneShotBar = openCaptureBar(runner)!;
+    await barReady(oneShotBar);
+    const oneShotLabel = await inWin(oneShotBar, `return document.getElementById('capture').textContent`);
+    const fromSettings = await optionsOf(oneShotBar);
+    pick(fromSettings, 'Current Session');
+    pick(fromSettings, 'None');
+    pick(fromSettings, 'Show Mouse Pointer', false);
+    await sleep(200);
+    const backLabel = await inWin(oneShotBar, `return document.getElementById('capture').textContent`);
+    oneShotBar.destroy();
+    desk.popup = realPopup;
+    await inWin(set, `window.dispatchEvent(new Event('focus'));`);
+    await sleep(200);
+    const settingsShows = await inWin(
+      set,
+      `return [document.getElementById('current').checked, document.getElementById('timer').value, document.getElementById('pointer').checked].join()`,
+    );
+    viewer['F223 Capture tab and bar share their options'] =
+      oneShotLabel === 'Capture One-Shot' &&
+      ticked(fromSettings) === 'One-Shot,10 Seconds,Show Mouse Pointer' &&
+      backLabel === 'Capture' &&
+      settingsShows === 'true,0,false';
+    // Shortcuts: the four global keys, each taken here (quiet mode registers none); Show All Shortcuts opens the list
+    await inWin(set, `document.getElementById('tab-shortcuts').click();`);
+    const keyRows = await inWin(
+      set,
+      `return JSON.stringify([...document.querySelectorAll('#keys li')].map((li) => [li.querySelector('kbd').textContent, li.textContent.includes('Taken by another app')]))`,
+    );
+    const beforeAll = BrowserWindow.getAllWindows();
+    await inWin(set, `document.getElementById('all').click();`);
+    const allKeys = await nextWindow(beforeAll);
+    viewer['F224 Shortcuts tab lists the keys'] =
+      keyRows ===
+        JSON.stringify([
+          ['⌃⇧4', true],
+          ['⌃⇧3', true],
+          ['⌃⇧5', true],
+          ['⌃⇧N', true],
+        ]) && /keyboard shortcuts/i.test(allKeys.getTitle());
+    allKeys.destroy();
+    // Pick tools with single keys off reaches a new editor
+    await inWin(set, `document.getElementById('single').click();`);
+    await sleep(200);
+    fs.copyFileSync(shotCopy, path.join(root, 'single.png'));
+    const singleOff = openEditor(path.join(root, 'single.png'), { session: 'smoke' });
+    await new Promise<void>((r) => singleOff.webContents.once('did-finish-load', () => r()));
+    await loaded(singleOff);
+    viewer['F225 single keys off reaches the editor'] =
+      !(await inWin(set, `return document.getElementById('single').checked`)) && (await inWin(singleOff, `return singleKeys === false`));
+    singleOff.destroy();
+    setSingleKeys(true);
+    // Every control is named and in the Tab order; → moves between tabs, wrapping; End and Home go to the last and first
+    const named = await inWin(
+      set,
+      `const all = [...document.querySelectorAll('input, select, button')];
+      return all.every((c) => c.labels?.length || (c.getAttribute('aria-label') ?? '').trim() || (c.tagName === 'BUTTON' && c.textContent.trim())) &&
+        all.every((c) => c.tabIndex >= 0 || c.getAttribute('role') === 'tab');`,
+    );
+    await inWin(set, `document.querySelector('[aria-selected="true"]').focus();`);
+    const tabMoved: string[] = [];
+    for (const k of ['Right', 'End', 'Home']) {
+      keyTo(set, k);
+      await sleep(100);
+      tabMoved.push(
+        await inWin(
+          set,
+          `return document.querySelector('[aria-selected="true"]').textContent.trim() + '|' + document.activeElement.textContent.trim()`,
+        ),
+      );
+    }
+    viewer['F228 Settings controls are labelled and reachable'] =
+      named && JSON.stringify(tabMoved) === JSON.stringify(['General|General', 'Shortcuts|Shortcuts', 'General|General']);
+    set.destroy();
+
+    // The Keyboard Shortcuts window (F229–F235): its own page, two columns as in the round-1 mock, Esc closes it
+    const keysWin = showShortcuts();
+    viewer['F233 one Keyboard Shortcuts window'] = showShortcuts() === keysWin;
+    for (let i = 0; i < 50 && keysWin.webContents.isLoading(); i++) await sleep(100);
+    await inWin(
+      keysWin,
+      `for (let i = 0; i < 50 && !document.querySelector('#tool-rows tr'); i++) await new Promise((r) => setTimeout(r, 100));`,
+    );
+    viewer['F233 one Keyboard Shortcuts window'] &&=
+      BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().endsWith('shortcuts.html')).length === 1;
+    viewer['F229 Keyboard Shortcuts is its own page'] =
+      keysWin.webContents.getURL().endsWith('shortcuts.html') && keysWin.getTitle() === 'Keyboard Shortcuts';
+    keysWin.setSize(980, 680);
+    await sleep(200);
+    const sheet = JSON.parse(
+      await inWin(
+        keysWin,
+        `const [o, t] = ['other', 'tools'].map((id) => document.getElementById(id).getBoundingClientRect());
+        const toolRows = [...document.querySelectorAll('#tool-rows tr')];
+        const cap = (k) => { const c = getComputedStyle(k); return parseFloat(c.borderTopWidth) > 0 && parseFloat(c.borderTopLeftRadius) > 0; };
+        const cells = [...document.querySelectorAll('td.keys')];
+        return JSON.stringify({
+          sameTop: Math.abs(o.top - t.top) <= 2,
+          right: t.left >= o.right,
+          icons: toolRows.length > 0 && toolRows.every((r) => !!r.querySelector('svg')),
+          caps: cells.length > 0 && cells.every((c) => c.querySelectorAll('kbd').length > 0 && [...c.querySelectorAll('kbd')].every(cap)),
+          rows: document.querySelectorAll('tr').length,
+          names: [...document.querySelectorAll('#other table')].flatMap((t) => [...t.querySelectorAll('td.name')].map((n) => t.previousElementSibling.textContent + '|' + n.textContent)),
+          tools: [...document.querySelectorAll('#tool-rows td.name')].map((n) => n.textContent),
+        });`,
+      ),
+    );
+    const { KEY_GROUPS } = require('../src/keys') as typeof import('../src/keys');
+    const { GROUPS: everyTool } = require('../src/tools') as { GROUPS: ToolGroup[] };
+    const keyNames = KEY_GROUPS.flatMap((g) => g.rows.map(([, n]) => `${g.title}|${n}`));
+    const toolNames = everyTool.flatMap((g) => g.tools.map((t) => t.label));
+    viewer['F230 two columns as in the round-1 mock'] = sheet.sameTop && sheet.right && sheet.icons;
+    viewer['F231 every key is a keycap'] = sheet.caps;
+    viewer['F232 every key and tool listed once'] =
+      sheet.rows === keyNames.length + toolNames.length &&
+      JSON.stringify(sheet.names) === JSON.stringify(keyNames) &&
+      JSON.stringify(sheet.tools) === JSON.stringify(toolNames);
+    nativeTheme.themeSource = 'dark';
+    await sleep(300);
+    const darkLum: number = await inWin(
+      keysWin,
+      `const c = getComputedStyle(document.body).backgroundColor.match(/[\\d.]+/g).slice(0, 3).map(Number);
+      return c.map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);`,
+    );
+    nativeTheme.themeSource = 'system';
+    viewer['F235 Keyboard Shortcuts turns dark'] = darkLum < 0.2;
+    keyTo(keysWin, 'Escape');
+    for (let i = 0; i < 30 && !keysWin.isDestroyed(); i++) await sleep(100);
+    viewer['F234 Esc closes Keyboard Shortcuts'] = keysWin.isDestroyed();
 
     // One-shot mode: Beautify instead of References, no Add to session; ⌘C copies the marked screenshot on its
     // backdrop at full resolution; nothing goes into a session; closing keeps it in Discarded; the settings are remembered

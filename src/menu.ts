@@ -10,26 +10,17 @@ export interface SessionInfo {
 export interface MenuState {
   current: SessionInfo | null;
   sessions: SessionInfo[]; // by last use, current included
-  root: string; // sessions folder, ~-shortened
-  canChangeRoot: boolean;
-  login: { enabled: boolean; checked: boolean; needsApproval: boolean };
-  version: string;
-  canUpdate: boolean;
   updateWaiting: string | null; // version downloaded and ready to install
   shortcuts: { capture: string | null; area: string | null; options: string | null; newSession: string | null }; // null = not registered
   area: Area | null; // what Capture Last Area captures; null until the first time
   iconDir: string; // folder with the menu-<name>Template.png icons ('' = no icons, e.g. in tests)
   hasDiscarded: boolean; // something closed without saving, or removed, in the last 7 days
-  singleKeys: boolean; // plain letters and digits pick tools in the editor
 }
 
 export interface MenuActions {
   capture(): void;
   captureArea(): void;
-  chooseArea(): void;
-  captureWindow(): void;
-  captureScrolling(): void;
-  oneShot(): void;
+  captureBar(): void; // Capture Options… (⌃⇧5): the capture bar
   reopenLast(): void;
   reopenDiscarded(): void;
   newSession(): void;
@@ -41,12 +32,8 @@ export interface MenuActions {
   exportAs(name: string, kind: 'ZIP' | 'PDF'): void;
   makeCurrent(name: string): void;
   otherSession(): void;
-  chooseRoot(): void;
-  clearOldSessions(): void;
-  setLogin(checked: boolean): void;
-  setSingleKeys(on: boolean): void;
-  keyboardShortcuts(): void;
-  checkUpdates(): void;
+  settings(): void; // Settings… (⌘,): the Settings window
+  keyboardShortcuts(): void; // ⌘/ in the app menu, and Settings ▸ Shortcuts ▸ Show All Shortcuts
   installUpdate(): void;
   quit(): void;
 }
@@ -71,7 +58,13 @@ const recent = (sessions: SessionInfo[], cur: SessionInfo | null) => {
 
 // macOS 13+ registers login items with SMAppService; Electron's openAtLogin can read false there while
 // status is 'enabled', so either one counts. 'requires-approval' means the owner must allow it in System Settings.
-export function loginState(packaged: boolean, s: { openAtLogin: boolean; status?: string }): MenuState['login'] {
+export interface LoginState {
+  enabled: boolean; // false in a development build, which would register the bare Electron binary
+  checked: boolean;
+  needsApproval: boolean;
+}
+
+export function loginState(packaged: boolean, s: { openAtLogin: boolean; status?: string }): LoginState {
   return {
     enabled: packaged, // in development it would register the bare Electron binary
     checked: packaged && (s.openAtLogin || s.status === 'enabled'),
@@ -84,20 +77,6 @@ function shortcut(label: string, accelerator: string | null, click: () => void):
 }
 
 const plural = (n: number) => `${n} screenshot${n === 1 ? '' : 's'}`;
-
-// The less frequent ways to capture: the Capture Options submenu, and the menu ⌃⇧5 pops at the menu bar icon.
-export function captureOptions(a: MenuActions): Item[] {
-  return [
-    { label: 'Choose New Area…', click: () => a.chooseArea() },
-    // Click one window: cropped to its edges, without the shadow macOS draws around it.
-    { label: 'Capture Window…', click: () => a.captureWindow() },
-    // Not the default, so no direct shortcut (owner, 2026-10-25): drag an area, scroll it, and get one tall screenshot.
-    { label: 'Capture Scrolling…', click: () => a.captureScrolling() },
-    { type: 'separator' },
-    // The second mode (owner, 2026-10-25): one image to beautify, then copy or save; nothing goes into a session.
-    { label: 'One-Shot Capture…', click: () => a.oneShot() },
-  ];
-}
 
 // Grouped as the owner drew it (2026-10-24): capture on top, the current session's everyday actions next,
 // everything else about sessions under Session. Icons are template images, so macOS tints them for light and dark menus.
@@ -122,12 +101,8 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
       sublabel: st.area ? `${st.area.width} × ${st.area.height}` : 'First time: drag the area',
       ...icon('area'),
     },
-    {
-      // macOS draws no key on a row that opens a submenu, so ⌃⇧5 is its sublabel.
-      ...(st.shortcuts.options ? { label: 'Capture Options', sublabel: '⌃⇧5' } : { label: 'Capture Options (shortcut unavailable)' }),
-      ...icon('choose'),
-      submenu: captureOptions(a),
-    },
+    // The less frequent ways to capture live in the capture bar, as macOS's ⇧⌘5 (ADR capture bar and Settings window).
+    { ...shortcut('Capture Options…', st.shortcuts.options, () => a.captureBar()), ...icon('choose') },
     { type: 'separator' },
     { label: 'Open Current Session', enabled: on, ...icon('open'), click: () => a.openFile(name) },
     { label: 'Copy Prompt for AI', enabled: on, ...icon('prompt'), click: () => a.copyPrompt(name) },
@@ -177,33 +152,37 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
       ],
     },
     { type: 'separator' },
+    // Everything that was the Settings submenu is in the Settings window (ADR capture bar and Settings window).
+    { label: 'Settings…', accelerator: 'Command+,', ...icon('settings'), click: () => a.settings() },
+    { label: 'Quit Snapmark', accelerator: 'Command+Q', ...icon('quit'), click: () => a.quit() },
+  ];
+}
+
+// Snapmark's own app menu, the smallest one that gives ⌘, and ⌘/ while an editor or session window is in front.
+// File, Edit, View and Window stay Electron's stock roles, so ⌘C, ⌘V, ⌘W and the rest keep working.
+export function appMenu(a: Pick<MenuActions, 'settings' | 'keyboardShortcuts'>): Item[] {
+  return [
     {
-      label: 'Settings',
-      ...icon('settings'),
+      label: 'Snapmark',
       submenu: [
-        {
-          label: 'Open at Login',
-          type: 'checkbox',
-          enabled: st.login.enabled,
-          checked: st.login.checked,
-          ...(st.login.needsApproval ? { sublabel: 'Allow in System Settings → Login Items' } : {}),
-          click: (item) => a.setLogin(item.checked),
-        },
-        { label: 'Sessions Folder…', sublabel: st.root, enabled: st.canChangeRoot, click: () => a.chooseRoot() },
-        { label: 'Clear Sessions Older Than 60 Days…', click: () => a.clearOldSessions() },
-        { label: 'Keyboard Shortcuts', click: () => a.keyboardShortcuts() },
-        // WCAG 2.1.4: keys without a modifier can be turned off. ⌘1–⌘7 still pick tools.
-        {
-          label: 'Single-Key Tools',
-          type: 'checkbox',
-          checked: st.singleKeys,
-          sublabel: 'Off: only ⌘1–⌘7 pick tools',
-          click: (item) => a.setSingleKeys(item.checked),
-        },
-        { label: 'Check for Updates…', sublabel: `Snapmark ${st.version}`, enabled: st.canUpdate, click: () => a.checkUpdates() },
+        { role: 'about', label: 'About Snapmark' },
+        { type: 'separator' },
+        { label: 'Settings…', accelerator: 'Command+,', click: () => a.settings() },
+        { label: 'Keyboard Shortcuts', accelerator: 'Command+/', click: () => a.keyboardShortcuts() },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide', label: 'Hide Snapmark' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit', label: 'Quit Snapmark' },
       ],
     },
-    { label: 'Quit Snapmark', accelerator: 'Command+Q', ...icon('quit'), click: () => a.quit() },
+    { role: 'fileMenu' },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
   ];
 }
 

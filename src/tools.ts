@@ -168,4 +168,18 @@ function withCustom(customs: string[], c: string, presets: string[]): string[] {
   return [c, ...customs.filter((x) => x !== c)].slice(0, CUSTOM_MAX);
 }
 
-if (typeof module !== 'undefined') module.exports = { GROUPS, capFor, tipFor, normalizeHex, withCustom, CUSTOM_MAX };
+// The Keyboard Shortcuts window's key for a tool: every key that picks it in the current mode; a group's later tools
+// are that key pressed again ("1", or "⌘1" with single keys off), with "again" beside it.
+function toolKey(g: ToolGroup, variant: number, singleKeys: boolean): string {
+  return variant ? (singleKeys ? g.key : `⌘${g.key}`) : keysFor(g, singleKeys);
+}
+
+// The Keyboard Shortcuts window's line under the tools: which mode the keys above are in.
+function singleKeysLine(on: boolean): string {
+  return on
+    ? 'Settings ▸ Shortcuts ▸ Pick tools with single keys is on: C and 1–7 pick tools too.'
+    : 'Settings ▸ Shortcuts ▸ Pick tools with single keys is off: only ⌘1–⌘7 pick tools, and Esc goes back to Select.';
+}
+
+if (typeof module !== 'undefined')
+  module.exports = { GROUPS, capFor, tipFor, normalizeHex, withCustom, CUSTOM_MAX, toolKey, singleKeysLine };

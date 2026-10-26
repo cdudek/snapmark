@@ -26,6 +26,15 @@ const api: Window['snapmark'] = {
   onViewerReload: (cb) => void ipcRenderer.on('viewer:reload', (_e, data: ViewerInit) => cb(data)),
   areaDone: (area) => ipcRenderer.send('area:done', area),
   scrollDone: (ok) => ipcRenderer.send('scroll:done', ok),
+  shortcutsInit: () => ipcRenderer.invoke('shortcuts:init'),
+  settingsInit: () => ipcRenderer.invoke('settings:init'),
+  settingsSet: (key, value) => ipcRenderer.invoke('settings:set', key, value),
+  settingsRun: (what) => ipcRenderer.invoke('settings:run', what),
+  barInit: () => ipcRenderer.invoke('bar:init'),
+  barCapture: (mode) => ipcRenderer.send('bar:capture', mode),
+  barOptions: (mode, at) => ipcRenderer.send('bar:options', mode, at),
+  barClose: () => ipcRenderer.send('bar:close'),
+  onBarState: (cb) => void ipcRenderer.on('bar:state', (_e, s: BarInit) => cb(s)),
   onScrollStatus: (cb) => void ipcRenderer.on('scroll:status', (_e, status: ScrollStatus) => cb(status)),
 };
 

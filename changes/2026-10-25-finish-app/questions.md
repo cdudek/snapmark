@@ -35,6 +35,7 @@ Each has a default taken; none blocks the build.
 7. **Keyboard Shortcuts as its own row in the menu bar menu** (proposed sitemap)? Default: no; ⌘/ and Settings ▸ Shortcuts reach it, and the menu stays short.
 8. **Timer for Capture Window?** Default: greyed; `screencapture -i -w` cannot wait after the click. A later change could pick the window with Snapmark's own picker.
 9. **Remove the stock View menu (Reload, Developer Tools) now?** Default: no, a separate change; M2 adds only the Snapmark menu.
+10. **⌃⇧5 row's words (build, M2.1):** the spec's Words table says "the capture bar: window, new area, last area, scrolling, and where it goes"; its `KEY_GROUPS after M2` list says "… last area or scrolling, and where it goes". Default taken: the `KEY_GROUPS` list, which F236 tests.
 
 ## Answers
 
