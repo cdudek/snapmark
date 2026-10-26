@@ -4,7 +4,9 @@ type: plan
 change: 2026-10-26-interaction-guide-polish
 design: docs/designs/2026-10-25-adr-capture-bar-and-settings-window.md
 author: Claude (orchestrator)
-status: draft
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-26
 created: 2026-10-26
 ---
 
