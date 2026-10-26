@@ -1,0 +1,19 @@
+{
+  "size": "M",
+  "kind": "feature",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "single",
+    "slug": "interaction-guide-polish"
+  },
+  "milestones": [
+    {
+      "n": 1,
+      "slug": "interaction-guide-polish-1",
+      "title": "Interaction guide, capture bar tooltips and keys, General comment"
+    }
+  ],
+  "milestoneNote": "2026-10-26: size, kind, design and milestone from the owner's 1.1 dialog. The ticket fork was answered with a new ask (A5); the recommended default, a new bead under snap-bmr.17, was taken.",
+  "ticket": "snap-bmr.17.4",
+  "design": "docs/designs/2026-10-25-adr-capture-bar-and-settings-window.md"
+}
