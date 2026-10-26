@@ -44,6 +44,9 @@ jobs:
     needs: version
     if: needs.version.outputs.version != ''
     runs-on: macos-latest
+    permissions:
+      contents: write
+      id-token: write # the key-free GCP login (Workload Identity Federation) for the update bucket
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -103,6 +106,19 @@ jobs:
             unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
             npx electron-builder --mac --publish never -c.mac.identity=-
           fi
+      # Installed copies read their updates from this bucket (package.json build.publish), so the repo can be private.
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/225569511245/locations/global/workloadIdentityPools/github/providers/snapmark
+          service_account: release-uploader@snapmark-ai.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      # latest-mac.yml goes last and uncached: until it lands, clients still see the previous version, complete.
+      - name: Upload to the update bucket
+        run: |
+          gcloud storage cp release/*.zip release/*.dmg release/*.blockmap gs://snapmark-updates/mac/
+          gcloud storage cp --cache-control=no-cache release/latest-mac.yml gs://snapmark-updates/mac/latest-mac.yml
+          old="$(gcloud storage ls gs://snapmark-updates/mac/ | sh scripts/prune-releases.sh)"
+          if [ -n "$old" ]; then printf '%s\n' "$old" | xargs gcloud storage rm; fi
       # Publish the version the dry run chose, at the commit that was built. Not `semantic-release` itself:
       # it refuses to publish once main has moved on, which a merge during this ~8 minute build does,
       # and it then exits 0, so a release silently went missing.
