@@ -21,7 +21,7 @@ The repo went public on 2026-09-26 only so that electron-updater could read its 
 - **Layout:** the Mac app lives in `snapmark-app/`, an npm workspace of a private root package. `snapmark-chrome/` and `snapmark-web/` start as READMEs and join `workspaces` when they get a `package.json`. The SDLC chain, docs, design explorations and CI stay at the root. One lockfile, at the root.
 - **Update feed:** `build.publish` is `provider: generic` with `https://storage.googleapis.com/snapmark-updates/mac`. Every installed copy reads `latest-mac.yml` there.
 - **Bucket:** `gs://snapmark-updates`, europe-west3, Standard, uniform access. `allUsers` may read objects (`roles/storage.legacyObjectReader`: get, no listing). The release workflow alone may write.
-- **Upload:** the release job logs in with Workload Identity Federation (pool `github`, provider `snapmark`, condition `assertion.repository=='cdudek/snapmark' && assertion.ref=='refs/heads/main'`: only the release job on `main`) as `release-uploader@snapmark-ai.iam.gserviceaccount.com`, which holds `roles/storage.objectAdmin` on this bucket only. No key exists. Binaries go up first, `latest-mac.yml` last with `Cache-Control: no-cache`, then every version except the newest 5 is deleted (`snapmark-app/scripts/prune-releases.sh`). The bucket keeps no soft-deleted or noncurrent copies, so a pruned version is gone at once.
+- **Upload:** the release job logs in with Workload Identity Federation (pool `github`, provider `snapmark`, condition `assertion.repository=='cdudek/snapmark' && assertion.ref=='refs/heads/main'`: only the release job on `main`) as `release-uploader@snapmark-ai.iam.gserviceaccount.com`, which holds `roles/storage.objectAdmin` on this bucket only. No key exists. Binaries go up first, `latest-mac.yml` last with `Cache-Control: no-cache`, then every version except the newest 10 is deleted (`snapmark-app/scripts/prune-releases.sh`). The bucket keeps no soft-deleted or noncurrent copies, so a pruned version is gone at once.
 - **GitHub releases stay** as the record of each version and its tag; nobody downloads from them once the repo is private.
 - **Order:** the first release built this way ships from the still-public repo, so installed copies move to the bucket feed through GitHub one last time. The repo goes private only after the owner's Macs run that release.
 - **electron-builder** runs through `snapmark-app/scripts/electron-builder.sh`, which passes the installed Electron version: workspaces hoist `electron` to the root, and electron-builder refuses the `^45.0.0` range otherwise.
@@ -36,7 +36,7 @@ The repo went public on 2026-09-26 only so that electron-updater could read its 
 
 ## Costs
 
-Expected, at list prices: storage about $0.06 a month (5 versions, 2.7 GB); downloads about $0.015 per Mac per update (the 124 MB arm64 ZIP at about $0.12/GB); about $1 a month for the owner alone, $6 at 100 users, $60 at 1,000.
+Expected, at list prices: storage about $0.13 a month (10 versions, 5.5 GB); downloads about $0.015 per Mac per update (the 124 MB arm64 ZIP at about $0.12/GB); about $1 a month for the owner alone, $6 at 100 users, $60 at 1,000.
 
 ## Setup
 
