@@ -991,79 +991,14 @@ app
         });
     });
     viewer['snap-bmr.14.3 F043: the area picker speaks the size while dragging'] = speaking === null && spoken === 'polite|1px|true|true';
-    // Choose New Area…: the picker, a drag, then the capture
-    let windowsNow = BrowserWindow.getAllWindows();
-    press('Choose New Area…', item('Capture Options').submenu as Item[]);
-    const chooser = await loadedWindow(windowsNow);
-    windowsNow = BrowserWindow.getAllWindows();
-    chooser.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
-    chooser.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
-    chooser.webContents.sendInputEvent({ type: 'mouseUp', x: 400, y: 320, button: 'left', clickCount: 1 });
-    const repeats = [await loadedWindow(windowsNow)];
-    // F027: Capture Last Area again and again: the same rectangle at once, no picker, each time an editor that turns the
-    // Dock on only once it has focus (turned on first, macOS leaves a full-screen browser for the desktop)
-    for (let i = 0; i < 2; i++) {
-      windowsNow = BrowserWindow.getAllWindows();
-      press('Capture Last Area');
-      repeats.push(await loadedWindow(windowsNow));
-    }
-    const rects = shots.map((a) => a.slice(0, 3).join(' '));
-    const dockAfterFocus = repeats.every((w) => {
-      const n = dock.length;
-      w.emit('focus'); // what macOS sends when the reviewer gets to it; once only, so no harm if it came already
-      return dock.length > n ? dock.at(-1) === true : dock.includes(true);
-    });
-    viewer['snap-bmr.14.3 F027: Capture Last Area repeats the area at once, the editor waits for focus before the Dock'] =
-      rects.join() ===
-        Array(3)
-          .fill(`-R ${display.x + 100},${display.y + 120},300,200 -x`)
-          .join() &&
-      repeats.every((w) => w.webContents.getURL().endsWith('editor.html')) &&
-      !pickerOpen() &&
-      dockOnOpen.join() === 'false,false,false' &&
-      dockAfterFocus;
-    why.F027 = { rects, urls: repeats.map((w) => w.webContents.getURL()), picker: pickerOpen(), dockOnOpen, dock, dockAfterFocus };
-    repeats.forEach((w) => w.destroy());
-    // F041: with the area's display gone, the picker says so
-    const realDisplays = screen.getAllDisplays; // Electron's screen hands out its methods bound
-    screen.getAllDisplays = () => [];
-    windowsNow = BrowserWindow.getAllWindows();
-    press('Capture Last Area');
-    const gonePicker = await loadedWindow(windowsNow);
-    screen.getAllDisplays = realDisplays;
-    const goneHint = await gonePicker.webContents.executeJavaScript(`document.getElementById('hint').textContent`);
-    const goneClosed = new Promise<void>((r) => gonePicker.once('closed', () => r()));
-    gonePicker.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
-    await goneClosed;
-    await sleep(400); // the picker's promise resolves 200 ms after 'closed'; until then a capture key does nothing
-    viewer['snap-bmr.14.3 F041: with the display gone, the picker says why'] =
-      goneHint === 'The last area was on a display that is not connected. Drag a new area. Esc cancels.' && shots.length === 3;
-    // F028: a failed capture says so and offers to try again; Esc in macOS's overlay stays quiet
-    notes.length = 0;
-    windowsNow = BrowserWindow.getAllWindows();
-    fail = 'could not create image from rect\n';
-    press('Capture Last Area');
-    const failed = notes.map((n) => n.body);
-    notes[0]?.onClick?.();
-    const retried = shots.length === 5;
-    fail = '';
-    press('Capture Screenshot');
-    await sleep(300);
-    viewer['snap-bmr.14.3 F028: a failed capture says so and tries again on a click; Esc stays quiet'] =
-      failed.join() === 'Capture failed: could not create image from rect. No screenshot was added. Click to try again.' &&
-      retried &&
-      notes.length === 2 &&
-      shots.at(-1)!.includes('-i') &&
-      BrowserWindow.getAllWindows().length === windowsNow.length;
-    why.F028 = {
-      failed,
-      retried,
-      notes: notes.map((n) => n.body),
-      shots: shots.slice(3),
-      now: BrowserWindow.getAllWindows().length,
-      was: windowsNow.length,
+    // The capture bar, loaded: its chosen mode is drawn
+    const barReady = async (w: BrowserWindow) => {
+      for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await sleep(100);
+      await inWin(
+        w,
+        `for (let i = 0; i < 50 && !document.querySelector('[aria-checked="true"]'); i++) await new Promise((r) => setTimeout(r, 100));`,
+      );
     };
-    fail = null;
 
     // Capture Scrolling: frames of a synthetic 8200-row page under a fixed header go through the live loop; ↩ in its
     // control stitches them into the editor, which fits the width and scrolls. Esc cancels without an editor.
@@ -1151,13 +1086,6 @@ app
     const keyTo = (w: BrowserWindow, keyCode: string, modifiers: Electron.KeyboardInputEvent['modifiers'] = []) => {
       w.webContents.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
       w.webContents.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
-    };
-    const barReady = async (w: BrowserWindow) => {
-      for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await sleep(100);
-      await inWin(
-        w,
-        `for (let i = 0; i < 50 && !document.querySelector('[aria-checked="true"]'); i++) await new Promise((r) => setTimeout(r, 100));`,
-      );
     };
     // The Options menu as main builds it: with desk.popup swapped, a click on Options hands over its items (F207, F223)
     let popped: Item[] = [];
@@ -1273,6 +1201,83 @@ app
     viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-shot';
     oneShotScroll?.destroy();
     setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false }); // as the first time again
+
+    // Choose New Area: the capture bar's first-time mode, then Capture: the picker, a drag, then the capture. After the
+    // bar's checks, which need the first time with no area yet (F203).
+    const chooseBar = openCaptureBar()!;
+    await barReady(chooseBar);
+    let windowsNow = BrowserWindow.getAllWindows();
+    await inWin(chooseBar, `document.getElementById('capture').click();`);
+    const chooser = await loadedWindow(windowsNow);
+    windowsNow = BrowserWindow.getAllWindows();
+    chooser.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+    chooser.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+    chooser.webContents.sendInputEvent({ type: 'mouseUp', x: 400, y: 320, button: 'left', clickCount: 1 });
+    const repeats = [await loadedWindow(windowsNow)];
+    // F027: Capture Last Area again and again: the same rectangle at once, no picker, each time an editor that turns the
+    // Dock on only once it has focus (turned on first, macOS leaves a full-screen browser for the desktop)
+    for (let i = 0; i < 2; i++) {
+      windowsNow = BrowserWindow.getAllWindows();
+      press('Capture Last Area');
+      repeats.push(await loadedWindow(windowsNow));
+    }
+    const rects = shots.map((a) => a.slice(0, 3).join(' '));
+    const dockAfterFocus = repeats.every((w) => {
+      const n = dock.length;
+      w.emit('focus'); // what macOS sends when the reviewer gets to it; once only, so no harm if it came already
+      return dock.length > n ? dock.at(-1) === true : dock.includes(true);
+    });
+    viewer['snap-bmr.14.3 F027: Capture Last Area repeats the area at once, the editor waits for focus before the Dock'] =
+      rects.join() ===
+        Array(3)
+          .fill(`-R ${display.x + 100},${display.y + 120},300,200 -x`)
+          .join() &&
+      repeats.every((w) => w.webContents.getURL().endsWith('editor.html')) &&
+      !pickerOpen() &&
+      dockOnOpen.join() === 'false,false,false' &&
+      dockAfterFocus;
+    why.F027 = { rects, urls: repeats.map((w) => w.webContents.getURL()), picker: pickerOpen(), dockOnOpen, dock, dockAfterFocus };
+    repeats.forEach((w) => w.destroy());
+    // F041: with the area's display gone, the picker says so
+    const realDisplays = screen.getAllDisplays; // Electron's screen hands out its methods bound
+    screen.getAllDisplays = () => [];
+    windowsNow = BrowserWindow.getAllWindows();
+    press('Capture Last Area');
+    const gonePicker = await loadedWindow(windowsNow);
+    screen.getAllDisplays = realDisplays;
+    const goneHint = await gonePicker.webContents.executeJavaScript(`document.getElementById('hint').textContent`);
+    const goneClosed = new Promise<void>((r) => gonePicker.once('closed', () => r()));
+    gonePicker.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+    await goneClosed;
+    await sleep(400); // the picker's promise resolves 200 ms after 'closed'; until then a capture key does nothing
+    viewer['snap-bmr.14.3 F041: with the display gone, the picker says why'] =
+      goneHint === 'The last area was on a display that is not connected. Drag a new area. Esc cancels.' && shots.length === 3;
+    // F028: a failed capture says so and offers to try again; Esc in macOS's overlay stays quiet
+    notes.length = 0;
+    windowsNow = BrowserWindow.getAllWindows();
+    fail = 'could not create image from rect\n';
+    press('Capture Last Area');
+    const failed = notes.map((n) => n.body);
+    notes[0]?.onClick?.();
+    const retried = shots.length === 5;
+    fail = '';
+    press('Capture Screenshot');
+    await sleep(300);
+    viewer['snap-bmr.14.3 F028: a failed capture says so and tries again on a click; Esc stays quiet'] =
+      failed.join() === 'Capture failed: could not create image from rect. No screenshot was added. Click to try again.' &&
+      retried &&
+      notes.length === 2 &&
+      shots.at(-1)!.includes('-i') &&
+      BrowserWindow.getAllWindows().length === windowsNow.length;
+    why.F028 = {
+      failed,
+      retried,
+      notes: notes.map((n) => n.body),
+      shots: shots.slice(3),
+      now: BrowserWindow.getAllWindows().length,
+      was: windowsNow.length,
+    };
+    fail = null;
 
     // The Settings window (F219–F225, F228)
     const settingsReady = async (w: BrowserWindow) => {
