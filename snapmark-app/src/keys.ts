@@ -30,10 +30,13 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
   {
     title: 'Capture bar',
     rows: [
-      ['1–4', 'Pick a mode', 'window, new area, last area, scrolling'],
-      ['← →', 'Move between modes', 'Tab moves on to Options and Capture'],
-      ['↩', 'Capture', ''],
-      ['Esc', 'Close', ''],
+      ['1–5', 'Pick a mode', 'new area, window, full screen, last area, scrolling'],
+      ['← →', 'Move between modes', 'Tab moves on to Options, Capture and Session or One-Shot'],
+      ['↩ / ⌘↩', 'Capture', ''],
+      ['⇧⌘O', 'Session or One-Shot', 'where the capture goes'],
+      ['⇧⌘P', 'Session pop-up', 'pick the current session'],
+      ['⌥O', 'Options', 'Timer and Show Mouse Pointer'],
+      ['Esc', 'Close', 'also from another app while the bar is open'],
     ],
   },
   {

@@ -1,4 +1,6 @@
 import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { normalizeHex, withCustom, CUSTOM_MAX } = require('../src/tools') as {
@@ -38,6 +40,37 @@ for (const bad of ['', ' ', '#', 'e5484', '#e5484d0', 'zz1234', '##e5484d', 'e5 
   assert.strictEqual(withCustom(same, '#e5484d', presets), same, 'a preset leaves the row as it is');
   const full = ['#000001', '#000002', '#000003', '#000004', '#000005'];
   assert.deepStrictEqual(withCustom(full, '#000006', presets), ['#000006', '#000001', '#000002', '#000003', '#000004']);
+}
+
+// @N1 selected text reaches 4.5:1 on its fill, light and dark: the chosen mode's and segment's --accent-text on
+// --fill-selected, and Capture's white on --accent-fill, as bar.html defines the tokens (spec screens.md, Tokens)
+{
+  const css = fs.readFileSync(path.join(__dirname, '../../src/bar.html'), 'utf8');
+  // [light, dark] of a token: `light-dark(#a, #b)`, or one colour for both
+  const token = (name: string) => {
+    const m = css.match(new RegExp(`--${name}:\\s*(?:light-dark\\((#\\w{6}),\\s*(#\\w{6})\\)|(#\\w{6}))`));
+    assert.ok(m, `--${name} in bar.html`);
+    return m[3] ? [m[3], m[3]] : [m[1], m[2]];
+  };
+  const lum = (hex: string) =>
+    [1, 3, 5]
+      .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+      .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const contrast = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+  const [text, fill, blue] = [token('accent-text'), token('fill-selected'), token('accent-fill')];
+  assert.deepStrictEqual(
+    [text, fill, blue],
+    [
+      ['#0a62c2', '#6cb4ff'],
+      ['#e5e5ea', '#3a3a3c'],
+      ['#0f72db', '#0f72db'],
+    ],
+  );
+  for (const [i, theme] of ['light', 'dark'].entries()) {
+    assert.ok(contrast(text[i], fill[i]) >= 4.5, `@N1 ${theme}: the chosen text on its fill, ${contrast(text[i], fill[i]).toFixed(2)}:1`);
+    assert.ok(contrast('#ffffff', blue[i]) >= 4.5, `@N1 ${theme}: Capture's text, ${contrast('#ffffff', blue[i]).toFixed(2)}:1`);
+  }
 }
 
 console.log('colour: ok');

@@ -62,7 +62,7 @@ assert.ok(
 );
 
 // @F10 busy: while a picker, countdown or capture runs, ⌃⇧1, ⌃⇧2, ⌃⇧3, ⌃⇧4 and ⌃⇧N do nothing. The open bar is busy for
-// the capture keys only: its Options menu offers New Session with ⌃⇧N.
+// the capture keys only: its session pop-up offers New Session with ⌃⇧N.
 assert.ok(main.includes('const capturing = () => picking || scrolling || shooting || counting;'), '@F10');
 assert.ok(main.includes('const busy = () => capturing() || barOpen();'), '@F10');
 for (const fn of ['async function captureArea', 'function captureFullScreen']) {
@@ -107,18 +107,23 @@ assert.ok(main.includes("keys: KEY_GROUPS[0].rows\n    .filter(([k]) => k.starts
 assert.deepStrictEqual(
   KEY_GROUPS[1].rows,
   [
-    ['1–4', 'Pick a mode', 'window, new area, last area, scrolling'],
-    ['← →', 'Move between modes', 'Tab moves on to Options and Capture'],
-    ['↩', 'Capture', ''],
-    ['Esc', 'Close', ''],
+    ['1–5', 'Pick a mode', 'new area, window, full screen, last area, scrolling'],
+    ['← →', 'Move between modes', 'Tab moves on to Options, Capture and Session or One-Shot'],
+    ['↩ / ⌘↩', 'Capture', ''],
+    ['⇧⌘O', 'Session or One-Shot', 'where the capture goes'],
+    ['⇧⌘P', 'Session pop-up', 'pick the current session'],
+    ['⌥O', 'Options', 'Timer and Show Mouse Pointer'],
+    ['Esc', 'Close', 'also from another app while the bar is open'],
   ],
-  'F11 and F236 Capture bar',
+  '@F18 F236 Capture bar',
 );
+// @F18 the bar's controls carry the keys the group lists, in bar order: the destination row, then Esc, 1–5, Options and
+// Capture
 const bar = read('src/bar.html');
 assert.deepStrictEqual(
   [...bar.matchAll(/aria-keyshortcuts="([^"]+)"/g)].map((m) => m[1]),
-  ['Escape', '1', '2', '3', '4', 'Enter'],
-  'F11 the bar buttons carry the keys the group lists',
+  ['Shift+Meta+O', 'Shift+Meta+O', 'Shift+Meta+P', 'Escape', '1', '2', '3', '4', '5', 'Alt+O', 'Enter Meta+Enter'],
+  '@F18 the bar buttons carry the keys the group lists',
 );
 assert.deepStrictEqual(
   KEY_GROUPS[2].rows,

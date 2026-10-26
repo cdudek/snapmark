@@ -2,8 +2,8 @@ import assert from 'assert';
 import type { MenuItemConstructorOptions as Item } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { MODES, FIRST, captureArgs, shotFiles, appliesToArea, barLabel, barOptions, checkedCapture } from '../src/capture';
-import type { OptionsActions, OptionsState } from '../src/capture';
+import { MODES, FIRST, captureArgs, shotFiles, timed, barHeads, barSize, barLabel, barOptions, checkedCapture } from '../src/capture';
+import type { OptionsActions } from '../src/capture';
 
 const calls: string[] = [];
 const a = new Proxy({} as OptionsActions, {
@@ -12,8 +12,7 @@ const a = new Proxy({} as OptionsActions, {
     (...args: unknown[]) =>
       calls.push([String(key), ...args].join(':')),
 });
-const base: OptionsState = { ...FIRST, session: '2026-10-25 · Ledgerly', newSession: 'Control+Shift+N' };
-const opts = (over: Partial<OptionsState> = {}) => barOptions({ ...base, ...over }, a);
+const opts = (over: Partial<CaptureOpts> = {}) => barOptions({ ...FIRST, ...over }, a);
 const find = (items: Item[], label: string) => {
   const i = items.find((x) => x.label === label);
   assert.ok(i, `no item "${label}"`);
@@ -28,121 +27,146 @@ assert.deepStrictEqual(shotFiles('/tmp/snapmark-7', 3).length, 3, '@F4');
 assert.deepStrictEqual(shotFiles('/tmp/snapmark-7'), ['/tmp/snapmark-7.png'], 'one file for every other capture');
 const main = fs.readFileSync(path.join(__dirname, '../../src/main.ts'), 'utf8');
 assert.ok(main.includes("desk.screencapture([...args, '-x', ...files]"), '@F4 every file goes after -x');
+// The keys path passes no options, so captureArgs('full') gives no arguments (asserted below)
 assert.ok(
-  main.includes('screen.getAllDisplays().length);') && main.includes('shoot([], false, files,'),
+  main.includes('screen.getAllDisplays().length);') &&
+    main.includes("shoot(captureArgs('full', { pointer: !!o?.pointer }), o?.oneShot, files,") &&
+    main.includes('fullScreen: () => void captureFullScreen(),'),
   '@F4 no arguments, a file per display',
 );
 
-// F202 bar order: the four modes, left to right after Close
+// @F15 bar order: 1 New Area, 2 Window, 3 Full Screen, 4 Last Area, 5 Scrolling, left to right after Close; bar.html
+// draws them in this order with these digits (replaces F202)
 assert.deepStrictEqual(
   MODES.map((m) => m.id),
-  ['window', 'area', 'last', 'scroll'],
-  'F202',
+  ['area', 'window', 'full', 'last', 'scroll'],
+  '@F15',
 );
 assert.deepStrictEqual(
   MODES.map((m) => m.name),
-  ['Capture Window', 'Choose New Area', 'Capture Last Area', 'Capture Scrolling'],
-  'F202',
+  ['New Area', 'Window', 'Full Screen', 'Last Area', 'Scrolling'],
+  '@F15',
+);
+const barHtml = fs.readFileSync(path.join(__dirname, '../../src/bar.html'), 'utf8');
+assert.deepStrictEqual(
+  [...barHtml.matchAll(/data-mode="(\w+)"[^>]*aria-label="([^"]+)"\s+aria-keyshortcuts="(\d)"/g)].map((m) => m.slice(1).join()),
+  MODES.map((m, i) => `${m.id},${m.name},${i + 1}`),
+  '@F15 @F18 bar.html: each mode with its name and digit',
 );
 
-// F210 screencapture arguments: each mode as its menu item did
+// @F17 the headline and hint per mode (spec screens.md); Last Area names the area's size, or that a drag comes first
+assert.deepStrictEqual(
+  barHeads(area),
+  {
+    area: ['Capture New Area', 'Drag to choose the area'],
+    window: ['Capture Window', 'Click a window after Capture'],
+    full: ['Capture Full Screen', 'Every display, one screenshot each'],
+    last: ['Capture Last Area', '1280 × 720'],
+    scroll: ['Capture Scrolling', 'Scroll the area yourself, then Done'],
+  },
+  '@F17',
+);
+assert.deepStrictEqual(barHeads(null).last, ['Capture Last Area', 'No area yet: drag one after Capture'], '@F17 no area yet');
+
+// @F27 under 1000 pt of work area the bar is narrow (the hint wraps, nothing hides); otherwise 960 pt
+assert.deepStrictEqual(barSize(1440), { width: 960, narrow: false }, '@F27');
+assert.deepStrictEqual(barSize(1000), { width: 952, narrow: false }, '@F27');
+assert.deepStrictEqual(barSize(900), { width: 852, narrow: true }, '@F27');
+
+// F210 screencapture arguments: each mode as its menu item did; Full Screen is ⌃⇧3's, with -C for the pointer
 assert.deepStrictEqual(captureArgs('window', { pointer: false }), ['-i', '-w', '-o'], 'F210 window');
 assert.deepStrictEqual(captureArgs('area', { pointer: false }, area), ['-R', '10,40,1280,720'], 'F210 area');
 assert.deepStrictEqual(captureArgs('last', { pointer: false }, area), ['-R', '10,40,1280,720'], 'F210 last');
 assert.deepStrictEqual(captureArgs('scroll', { pointer: false }), [], 'F210 scroll uses the picker');
+assert.deepStrictEqual(captureArgs('full', { pointer: false }), [], '@F4 F210 full: no arguments');
+assert.deepStrictEqual(captureArgs('full', { pointer: true }), ['-C'], 'F210 full with the pointer');
 assert.throws(() => captureArgs('last', { pointer: false }, null), 'F210 an area mode needs the area');
 
-// F211 Options menu: Save to, Timer, Show Mouse Pointer, the current choices checked
+// @F26 Options menu: Timer and Show Mouse Pointer, the current choices checked; no Save to (the bar's Session | One-Shot
+// replaces it) and no New Session (the session pop-up has it)
 const shape = (items: Item[]) => items.map((i) => (i.type === 'separator' ? '—' : `${i.type ?? 'normal'} ${i.label}`));
 assert.deepStrictEqual(
   shape(opts()),
-  [
-    'header Save to',
-    'radio Current Session',
-    'radio One-Shot',
-    'normal New Session',
-    '—',
-    'header Timer',
-    'radio None',
-    'radio 5 Seconds',
-    'radio 10 Seconds',
-    '—',
-    'header Options',
-    'checkbox Show Mouse Pointer',
-  ],
-  'F211',
+  ['header Timer', 'radio None', 'radio 3 Seconds', 'radio 5 Seconds', 'radio 10 Seconds', '—', 'checkbox Show Mouse Pointer'],
+  '@F26',
 );
-assert.strictEqual(find(opts(), 'Current Session').sublabel, '2026-10-25 · Ledgerly', 'F211 the session it goes to');
-assert.strictEqual(find(opts({ session: null }), 'Current Session').sublabel, 'A new session starts', 'F211');
-assert.strictEqual(find(opts(), 'One-Shot').sublabel, 'Beautify, then copy or save', 'F211');
 const checked = (items: Item[]) => items.filter((i) => i.checked).map((i) => i.label);
-assert.deepStrictEqual(checked(opts()), ['Current Session', 'None'], 'F211 first time');
-assert.deepStrictEqual(checked(opts({ oneShot: true, timer: 5, pointer: true })), ['One-Shot', '5 Seconds', 'Show Mouse Pointer'], 'F211');
-assert.deepStrictEqual(checked(opts({ timer: 10 })), ['Current Session', '10 Seconds'], 'F211');
+assert.deepStrictEqual(checked(opts()), ['None'], '@F26 first time');
+assert.deepStrictEqual(checked(opts({ oneShot: true, timer: 5, pointer: true })), ['5 Seconds', 'Show Mouse Pointer'], '@F26');
+assert.deepStrictEqual(checked(opts({ timer: 3 })), ['3 Seconds'], '@F26');
 for (const [label, call] of [
-  ['Current Session', 'setOneShot:false'],
-  ['One-Shot', 'setOneShot:true'],
   ['None', 'setTimer:0'],
+  ['3 Seconds', 'setTimer:3'],
   ['5 Seconds', 'setTimer:5'],
   ['10 Seconds', 'setTimer:10'],
 ]) {
   click(find(opts(), label));
-  assert.strictEqual(calls.pop(), call, `F211 ${label}`);
+  assert.strictEqual(calls.pop(), call, `@F26 ${label}`);
 }
 click(find(opts(), 'Show Mouse Pointer'), { checked: true });
-assert.strictEqual(calls.pop(), 'setPointer:true', 'F211');
+assert.strictEqual(calls.pop(), 'setPointer:true', '@F26');
+assert.deepStrictEqual(calls, [], '@F26 nothing else');
 
-// F212 Capture One-Shot: the Capture button says where the capture goes
-assert.strictEqual(barLabel({ oneShot: true }), 'Capture One-Shot', 'F212');
-assert.strictEqual(barLabel({ oneShot: false }), 'Capture', 'F212');
+// @F22 Capture One-Shot: the Capture button says where the capture goes (F212, CAP-5)
+assert.strictEqual(barLabel({ oneShot: true }), 'Capture One-Shot', '@F22');
+assert.strictEqual(barLabel({ oneShot: false }), 'Capture', '@F22');
 
-// F213 New Session: starts one as ⌃⇧N does, and nothing else (the bar stays open)
-const fresh = find(opts(), 'New Session');
-assert.strictEqual(fresh.accelerator, 'Control+Shift+N', 'F213 shows ⌃⇧N');
-assert.strictEqual(fresh.registerAccelerator, false, 'F213 the global key is main.ts’s, not the menu’s');
-assert.strictEqual(find(opts({ newSession: null }), 'New Session').accelerator, undefined, 'F213');
-click(fresh);
-assert.deepStrictEqual(calls.splice(0), ['newSession'], 'F213 no close');
-
-// F215 pointer: -C in Choose New Area and Capture Last Area, never in Capture Window
+// F215 pointer: -C in New Area, Last Area and Full Screen, never in Window
 assert.deepStrictEqual(captureArgs('area', { pointer: true }, area), ['-C', '-R', '10,40,1280,720'], 'F215 area');
 assert.ok(captureArgs('last', { pointer: true }, area).includes('-C'), 'F215 last');
 assert.ok(!captureArgs('window', { pointer: true }).includes('-C'), 'F215 window');
 
-// F216 areas only: Timer and Show Mouse Pointer greyed in Capture Window and Capture Scrolling
+// F216 CAP-6: Timer and Show Mouse Pointer greyed, never hidden, in Window and Scrolling; they keep their names
 assert.deepStrictEqual(
-  MODES.map((m) => appliesToArea(m.id)),
-  [false, true, true, false],
+  MODES.map((m) => timed(m.id)),
+  [true, false, true, true, false],
   'F216',
 );
-for (const mode of ['window', 'scroll'] as const) {
+for (const [mode, name] of [
+  ['window', 'Window'],
+  ['scroll', 'Scrolling'],
+] as const) {
   const items = opts({ mode });
-  assert.ok(
-    items.some((i) => i.type === 'header' && i.label === 'Timer (areas only)'),
-    `F216 ${mode} header`,
-  );
-  for (const l of ['None', '5 Seconds', '10 Seconds', 'Show Mouse Pointer'])
+  assert.deepStrictEqual(shape(items), shape(opts()), `F216 ${mode}: the same items`);
+  for (const l of ['None', '3 Seconds', '5 Seconds', '10 Seconds', 'Show Mouse Pointer'])
     assert.strictEqual(find(items, l).enabled, false, `F216 ${mode} ${l}`);
-  assert.strictEqual(find(items, 'Show Mouse Pointer').sublabel, 'Areas only', `F216 ${mode}`);
-  for (const l of ['Current Session', 'One-Shot', 'New Session']) assert.notStrictEqual(find(items, l).enabled, false, `F216 ${mode} ${l}`);
+  assert.strictEqual(find(items, 'Show Mouse Pointer').sublabel, `Not for ${name}`, `F216 ${mode}`);
 }
-for (const mode of ['area', 'last'] as const) {
+for (const mode of ['area', 'full', 'last'] as const) {
   const items = opts({ mode });
-  for (const l of ['None', '5 Seconds', '10 Seconds', 'Show Mouse Pointer'])
+  for (const l of ['None', '3 Seconds', '5 Seconds', '10 Seconds', 'Show Mouse Pointer'])
     assert.strictEqual(find(items, l).enabled, true, `F216 ${mode} ${l}`);
   assert.strictEqual(find(items, 'Show Mouse Pointer').sublabel, undefined, `F216 ${mode}`);
 }
 
-// M2-3 checked options: what a renderer or state.json sends is kept only if valid (timer 0, 5 or 10; booleans; a known mode)
+// M2-3 checked options: what a renderer or state.json sends is kept only if valid (timer 0, 3, 5 or 10; booleans; a known
+// mode)
 const was: CaptureOpts = { mode: 'last', oneShot: true, timer: 5, pointer: true };
 assert.deepStrictEqual(checkedCapture(undefined), FIRST, 'M2-3 no state');
 assert.deepStrictEqual(
-  checkedCapture({ mode: 'scroll', oneShot: false, timer: 10, pointer: false }, was),
-  { mode: 'scroll', oneShot: false, timer: 10, pointer: false },
+  checkedCapture({ mode: 'full', oneShot: false, timer: 3, pointer: false }, was),
+  { mode: 'full', oneShot: false, timer: 3, pointer: false },
   'M2-3 valid',
 );
 assert.deepStrictEqual(checkedCapture({ mode: 'everything', oneShot: 1, timer: 3600, pointer: 'yes' }, was), was, 'M2-3 invalid');
 assert.deepStrictEqual(checkedCapture({ timer: -5 }), FIRST, 'M2-3 negative timer');
 assert.deepStrictEqual(checkedCapture({ timer: '5' }), FIRST, 'M2-3 timer string');
+
+// @F11 while the bar is open, Esc is a global shortcut that closes it, given back when the bar closes; never in quiet
+// (SNAPMARK_NO_UI) runs, so the tests never take the owner's Esc. @F12 the panel takes the key focus when it opens.
+const opener = main.slice(
+  main.indexOf('export function openCaptureBar'),
+  main.indexOf('\n}\n', main.indexOf('export function openCaptureBar')),
+);
+assert.ok(opener.includes("if (!quiet) globalShortcut.register('Escape', () => barOpen() && bar!.close());"), '@F11 registered');
+assert.ok(opener.includes("win.once('closed', () => quiet || globalShortcut.unregister('Escape'));"), '@F11 given back');
+assert.ok(opener.includes("type: 'panel'") && /win\.show\(\);\s+win\.focus\(\);/.test(opener), '@F12 a panel, focused when shown');
+
+// @F19 the drawn hover label is gone: no tip page, no IPC for it, nothing copies it into the build
+const src = path.join(__dirname, '../../src');
+assert.ok(!fs.existsSync(path.join(src, 'tip.html')) && !fs.existsSync(path.join(src, 'tip.ts')), '@F19 no tip page');
+assert.ok(!/tip:show|bar:tip|barTip/.test(main + fs.readFileSync(path.join(src, 'preload.ts'), 'utf8')), '@F19 no tip IPC');
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf8'));
+assert.ok(!pkg.scripts.build.includes('tip.html'), '@F19 the build copies no tip page');
 
 console.log('capture: ok');

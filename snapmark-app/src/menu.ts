@@ -196,10 +196,12 @@ export function appMenu(a: Pick<MenuActions, 'settings' | 'keyboardShortcuts'>):
   ];
 }
 
-// The editor's session label (spec M1): the 10 recent sessions, this editor's ticked, then New Session. A pick moves
-// the editor's screenshot to that session and makes it the current one.
+// The session pop-up, one native menu in the editor and the capture bar (spec interaction.md, Session pop-up): the 10
+// recent sessions with their counts, `session` ticked, then Older Sessions… and New Session. In the editor a pick moves
+// the screenshot there and makes it current; in the bar it makes it current (the menu bar's makeCurrent).
 export interface EditorSessionActions {
   moveTo(name: string): void;
+  older(): void; // the folder panel, as the menu bar's Older Sessions…
   newSession(): void;
 }
 
@@ -207,12 +209,13 @@ export function editorSessionMenu(st: MenuState, session: string, a: EditorSessi
   const own = st.sessions.find((s) => s.name === session) ?? null;
   return [
     ...recent(st.sessions, own).map((s): Item => ({
-      label: s.label,
+      label: s.count ? `${s.label} (${s.count})` : s.label, // an empty session: the name without a count
       type: 'checkbox',
       checked: s.name === session,
       click: () => a.moveTo(s.name),
     })),
     { type: 'separator' },
+    { label: 'Older Sessions…', click: () => a.older() },
     {
       label: 'New Session',
       ...(st.shortcuts.newSession ? { accelerator: st.shortcuts.newSession, registerAccelerator: false } : {}),

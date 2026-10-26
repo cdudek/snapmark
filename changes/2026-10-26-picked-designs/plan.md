@@ -33,7 +33,7 @@ After it, the owner captures with ⌃⇧1–⌃⇧5 as macOS does, closes the ba
 | --- | --------------------------------------------------------------------------------- | ----------- | ---------------------------- | ----- |
 | 1.1 | Guide rules and ADRs                                                              | F33–F35     | `milestone/picked-designs-1` | done  |
 | 1.2 | Global keys, menu rows, Keyboard Shortcuts, busy rule                             | F1–F10      | `milestone/picked-designs-1` | done  |
-| 1.3 | Capture bar: focus, global Esc, two rows, modes 1–5, destination, Options, tokens | F11–F27, N1 | `milestone/picked-designs-1` | todo  |
+| 1.3 | Capture bar: focus, global Esc, two rows, modes 1–5, destination, Options, tokens | F11–F27, N1 | `milestone/picked-designs-1` | done  |
 | 1.4 | Countdown overlay                                                                 | F28–F32     | `milestone/picked-designs-1` | todo  |
 
 ### Milestone 2: editor destination, notes, hex field, session window size
@@ -187,7 +187,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 - [x] 1. Write the guide rules and the three ADRs; regenerate the index. Proof: `python3 scripts/design_index.py write` leaves no diff, and `@F33`–`@F35` pass.
 - [x] 2. Keys, menu rows, busy rule, area reset. Proof: `@F1`–`@F10` pass.
-- [ ] 3. The bar: focus, global Esc, rows, modes, destination, Options, tokens; delete `tip`. Proof: `@F11`–`@F27` and `@N1` pass.
+- [x] 3. The bar: focus, global Esc, rows, modes, destination, Options, tokens; delete `tip`. Proof: `@F11`–`@F27` and `@N1` pass.
 - [ ] 4. The countdown overlay. Proof: `@F28`–`@F32` pass.
 - [ ] 5. Gate. Proof: `python3 scripts/verify_gate.py milestone 2026-10-26-picked-designs` ends `VERIFY PASS`.
 
@@ -264,3 +264,4 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 ## Revisions
 
 - 1.1: `test/guide.test.ts` F3 (accepted rules match `guideAccepted`) also counts the six rules this change's gate accepted (CAP-12, CAP-13, REC-1, REC-2, KEY-7, ACC-6), listed in the test with `@F33`; otherwise F3 would reject any rule added after the interaction-guide-polish gate. EX-7 keeps its id and now records the global Esc (it bends WIN-4), since the drawn label it excused is retired (Q3).
+- 1.3: tests that encoded the replaced bar changed with it, as the facts say they replace them. `test/capture.test.ts` F202, F211 and F216 now hold `@F15`, `@F26` and CAP-6 for the five modes; its `@F4` source check follows ⌃⇧3 through `captureArgs('full')`, still no arguments. `test/menu.test.ts` F114 and F118 read the shared pop-up's counts and Older Sessions…. `test/keys.test.ts` F236's bar rows and keys follow the new bar. In `test/smoke.ts` the bar block replaces F202, F203, F9, F10 and the drawn label's F5–F8, and F223 switches One-Shot with the segment instead of Options ▸ Save to. `settings.html` gains the 3 Seconds timer (questions.md).

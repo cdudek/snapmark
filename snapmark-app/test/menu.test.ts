@@ -276,7 +276,8 @@ assert.strictEqual(calls.pop(), 'copyImage', 'F113');
 share[1].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'saveAs', 'F113');
 
-// F114 editor session menu: at most 10 sessions, this editor's ticked, then a separator and New Session
+// F114, @F23 the session pop-up, shared by the editor and the capture bar: at most 10 sessions with their counts, the
+// given one ticked, then a separator, Older Sessions… and New Session
 const edMenu = editorSessionMenu(
   { ...base, sessions: [...many(12).slice(0, 1), { name: 'b', label: 'B', count: 3 }, ...many(12).slice(1)] },
   'b',
@@ -286,17 +287,34 @@ const edRows = edMenu.filter((i) => i.type === 'checkbox');
 assert.strictEqual(edRows.length, 10, 'F114 at most 10');
 assert.deepStrictEqual(
   edRows.filter((i) => i.checked).map((i) => i.label),
-  ['B'],
-  'F114 b ticked',
+  ['B (3)'],
+  'F114 @F23 b ticked, with its count',
 );
-assert.deepStrictEqual(labels(edMenu).slice(-2), ['—', 'New Session'], 'F114');
-find(edMenu, 'B').click!({} as never, undefined, {} as never);
-assert.strictEqual(calls.pop(), 'moveTo:b', 'F114 a pick moves the editor');
+assert.deepStrictEqual(labels(edMenu).slice(-3), ['—', 'Older Sessions…', 'New Session'], 'F114 @F23');
+find(edMenu, 'B (3)').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'moveTo:b', 'F114 @F23 a pick hands over that session (the bar makes it current)');
+find(edMenu, 'Older Sessions…').click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'older', '@F23 Older Sessions… opens the folder panel');
 find(edMenu, 'New Session').click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'newSession', 'F114');
+assert.strictEqual(find(edMenu, 'New Session').accelerator, 'Control+Shift+N', '@F23 New Session shows ⌃⇧N');
+// An empty session: the name without a count
+assert.deepStrictEqual(
+  labels(editorSessionMenu(base, '2026-09-25 12.03', ed)).slice(0, 2),
+  ['2026-09-25, 12:03 (2)', 'Old'],
+  '@F23 counts; none for an empty session',
+);
+// The bar's pop-up picks make the session current (main.ts wires moveTo to setActive, the menu bar's makeCurrent)
+const mainTs = fs.readFileSync(path.join(__dirname, '../../src/main.ts'), 'utf8');
+assert.ok(
+  mainTs.includes('const pick = { moveTo: setActive, older: () => void otherSession(), newSession };') &&
+    mainTs.includes("editorSessionMenu(menuState(), active ?? '', pick)") &&
+    mainTs.includes('makeCurrent: setActive,'),
+  '@F23 a pick in the bar makes the session current',
+);
 // The editor's session 15th by last use still shows, ticked, as the 10th row
 const lateEd = editorSessionMenu({ ...base, sessions: many(15) }, 's14', ed).filter((i) => i.type === 'checkbox');
-assert.deepStrictEqual([lateEd.length, lateEd[9].label, lateEd[9].checked], [10, 's14', true], 'F114');
+assert.deepStrictEqual([lateEd.length, lateEd[9].label, lateEd[9].checked], [10, 's14 (1)', true], 'F114');
 
 // F118 one session: Switch Session is greyed while no session other than the current one exists
 const only = { name: 'solo', label: 'solo', count: 1 };
@@ -307,7 +325,7 @@ assert.strictEqual(
   'F118',
 );
 const soloMenu = editorSessionMenu({ ...base, current: only, sessions: [only] }, 'solo', ed);
-assert.deepStrictEqual(labels(soloMenu), ['solo', '—', 'New Session'], 'F118 editor menu');
+assert.deepStrictEqual(labels(soloMenu), ['solo (1)', '—', 'Older Sessions…', 'New Session'], 'F118 editor menu');
 assert.ok(soloMenu[0].checked && soloMenu.every((i) => i.enabled !== false), 'F118 the one session ticked, nothing greyed');
 
 // F121 quit warning: one-shot images count as images not copied or saved yet (spec.md Words)

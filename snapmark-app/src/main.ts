@@ -24,7 +24,7 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, appMenu, loginState, editorSessionMenu, copyMenu, quitMessage, MenuActions, MenuState, SessionInfo } from './menu';
 import { SHORTCUTS, KEY_GROUPS } from './keys';
-import { FIRST, barLabel, barOptions, captureArgs, checkedCapture, rect, shotFiles } from './capture';
+import { FIRST, barHeads, barLabel, barOptions, barSize, captureArgs, checkedCapture, rect, shotFiles } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
@@ -48,7 +48,7 @@ let color: string | null = null; // the annotation colour last picked; every new
 let customColors: string[] = []; // the colour panel's Custom row, newest first (withCustom in tools.ts)
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
-let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, Save to, Timer and Show Mouse Pointer, as last used
+let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, Session | One-Shot, Timer and Show Mouse Pointer, as last used
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
@@ -125,6 +125,7 @@ export function setActive(name: string) {
   active = name;
   used[name] = Date.now();
   saveState();
+  tellBar(); // an open bar's session pop-up names it
 }
 
 // Point Snapmark at another folder, e.g. inside iCloud Drive or Google Drive, so sessions sync.
@@ -211,7 +212,7 @@ let counting = false; // the capture bar's Timer counts down
 let bar: BrowserWindow | null = null; // the capture bar (⌃⇧5)
 const barOpen = () => !!bar && !bar.isDestroyed();
 // One capture at a time: a capture key or item while one is running does nothing, ⌃⇧N included. An open bar counts
-// for captures, or it would be in the picture of the macOS overlay; its Options menu offers New Session.
+// for captures, or it would be in the picture of the macOS overlay; its session pop-up offers New Session.
 const capturing = () => picking || scrolling || shooting || counting;
 const busy = () => capturing() || barOpen();
 
@@ -238,13 +239,16 @@ async function captureArea(choose = false, o?: CaptureOpts) {
 }
 
 // ⌃⇧3, like macOS's ⇧⌘3: every display at once, no picker, one editor per display, the pointer's in front.
+// `o`: the capture bar's Full Screen, with its Timer, Show Mouse Pointer and One-Shot; ⌃⇧3 captures without them.
 // shortcut: Electron's display order is taken as screencapture's (the main display first), true for two displays; match
 // by bounds if a third ever lands in the wrong editor.
-function captureFullScreen() {
+async function captureFullScreen(o?: CaptureOpts) {
   if (busy()) return;
+  if (o?.timer && !(await countdown(o.timer))) return;
   const files = shotFiles(path.join(os.tmpdir(), `snapmark-${Date.now()}`), screen.getAllDisplays().length);
   const here = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id;
-  shoot([], false, files, files[screen.getAllDisplays().findIndex((d) => d.id === here)]);
+  const top = files[screen.getAllDisplays().findIndex((d) => d.id === here)];
+  shoot(captureArgs('full', { pointer: !!o?.pointer }), o?.oneShot, files, top);
 }
 
 // The global keys, as macOS's ⇧⌘1–⇧⌘5 (ADR 2026-10-25, keys follow macOS), and ⌃⇧N. Each does nothing while a capture
@@ -252,7 +256,7 @@ function captureFullScreen() {
 export const keyHandlers: Record<keyof typeof SHORTCUTS, () => void> = {
   newArea: () => void captureArea(true),
   oneShot: () => void (busy() || shoot(['-i'], true)), // -i: macOS's overlay; Space picks a window
-  fullScreen: captureFullScreen,
+  fullScreen: () => void captureFullScreen(),
   capture: () => void captureArea(),
   options: () => void openCaptureBar(),
   newSession: () => void (capturing() || newSession()),
@@ -330,31 +334,40 @@ async function captureScrolling(oneShot = false) {
 }
 
 // A capture from the bar, once it is off the screen: each mode as its menu item did, with the bar's options.
-// Timer and Show Mouse Pointer apply to areas only (capture.ts).
+// Timer and Show Mouse Pointer apply to areas and the full screen (capture.ts timed).
 async function runCapture(o: CaptureOpts) {
   if (o.mode === 'window') return void (busy() || shoot(captureArgs('window', o), o.oneShot));
   if (o.mode === 'scroll') return captureScrolling(o.oneShot);
+  if (o.mode === 'full') return captureFullScreen(o);
   return captureArea(o.mode === 'area', o);
 }
 
 // The capture bar (⌃⇧5, Capture Options…), like macOS's ⇧⌘5: bottom centre of the display with the pointer, over
-// every Space and full-screen app. A non-activating panel, so it takes keys without pulling the owner's app to the
-// back. `run` is swappable so the smoke test never runs screencapture. One bar: asked again, it comes forward.
+// every Space and full-screen app. A non-activating panel that becomes the key window, so its keys reach the bar and
+// never the app behind, which stays active (CAP-13). `run` is swappable so the smoke test never runs screencapture.
+// One bar: asked again, it comes forward.
 let runBar: (o: CaptureOpts) => unknown = runCapture;
+let barNarrow = false;
 export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): BrowserWindow | null {
   if (bar && barOpen()) {
     bar.show();
-    if (!quiet) bar.focus();
+    bar.focus();
     return bar;
   }
   if (busy()) return null;
   runBar = run;
   const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  const H = 56; // 8 + the 40 pt targets + 8
-  // Bottom centre, 24 pt above the work area's bottom, clear of the Dock.
-  const at = (w: number) => ({ x: Math.round(wa.x + (wa.width - w) / 2), y: Math.round(wa.y + wa.height - 24 - H), width: w, height: H });
+  const { width, narrow } = barSize(wa.width);
+  barNarrow = narrow;
+  // Bottom centre, 24 pt above the work area's bottom, clear of the Dock (WIN-3).
+  const at = (w: number, h: number) => ({
+    x: Math.round(wa.x + (wa.width - w) / 2),
+    y: Math.round(wa.y + wa.height - 24 - h),
+    width: w,
+    height: h,
+  });
   const win = new BrowserWindow({
-    ...at(520), // until the page reports its width
+    ...at(width, 132), // until the page reports its height
     title: 'Capture Options',
     frame: false,
     transparent: true,
@@ -372,119 +385,45 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
     webPreferences: { preload: path.join(__dirname, 'preload.js'), enablePreferredSizeMode: true },
   });
   bar = win;
-  win.once('close', () => barTip(null, true)); // the label goes with the bar, at once, so it is never in a capture (F7, F8)
-  // As wide as its content, so every gap stays 8 pt, also when the Capture label changes (F212).
-  win.webContents.on('preferred-size-changed', (_e, { width }) => win.setBounds(at(width)));
+  // As tall as its content, so a hint that wraps grows the bar instead of hiding a control (F27).
+  win.webContents.on('preferred-size-changed', (_e, { height }) => win.setBounds(at(win.getBounds().width, height)));
   win.setContentProtection(true); // belt and braces: it closes before every capture
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   win.once('ready-to-show', () => {
     win.show();
-    if (!quiet) win.focus(); // never app.focus: over a full-screen app it would slide to another Space
+    win.focus(); // a panel takes the keys without activating Snapmark; never app.focus, which would leave a full-screen Space
   });
+  // Esc closes the bar from every app while it is open, also after a click took the focus elsewhere (CAP-12, EX-7).
+  // Never in quiet runs, which would take the owner's Esc while the tests run beside their apps.
+  if (!quiet) globalShortcut.register('Escape', () => barOpen() && bar!.close());
+  win.once('closed', () => quiet || globalShortcut.unregister('Escape'));
   void win.loadFile(path.join(__dirname, 'bar.html'));
   return win;
 }
 
 const fromBar = (e: { sender: Electron.WebContents }) => !!bar && barOpen() && e.sender === bar.webContents;
-const barInit = (): BarInit => ({
-  ...captureOpts,
-  label: barLabel(captureOpts),
-  last: area ? `${area.width} × ${area.height}` : 'First time: drag the area',
-});
-
-// The bar's Options menu and the Settings window's Capture tab change the same options; an open bar shows them.
-export function setCapture(change: Partial<Record<keyof CaptureOpts, unknown>>) {
-  captureOpts = checkedCapture({ ...captureOpts, ...change }, captureOpts); // a bad value from a renderer is dropped
-  saveState();
+const barInit = (): BarInit => {
+  const cur = menuState().current;
+  return {
+    ...captureOpts,
+    label: barLabel(captureOpts),
+    heads: barHeads(area),
+    session: cur && { label: cur.label, count: cur.count },
+    narrow: barNarrow,
+  };
+};
+function tellBar() {
   if (bar && barOpen()) bar.webContents.send('bar:state', barInit());
 }
 
-// The bar's label (tip.html): a button's name and key, 8 pt above the bar, centred over the button. Its own panel,
-// because the bar's window paints its material over its whole rectangle, and macOS never shows a native tooltip in
-// a panel that does not make Snapmark the active app (guide WIN-2, EX-7). Clicks pass through it; it never takes focus.
-let tip: BrowserWindow | null = null;
-let tipNow: BarTip | null = null;
-let tipSize = { width: 0, height: 0 };
-let tipWatch: ReturnType<typeof setInterval> | undefined;
-export const barTipWindow = () => tip;
-
-function placeTip() {
-  if (!tip || !tipNow || !bar || !barOpen() || !tipSize.width) return;
-  const b = bar.getBounds();
-  const wa = screen.getDisplayMatching(b).workArea;
-  const { width, height } = tipSize;
-  const x = Math.round(b.x + tipNow.at.x + tipNow.at.width / 2 - width / 2);
-  tip.setBounds({ x: Math.min(Math.max(x, wa.x), wa.x + wa.width - width), y: b.y - 8 - height, width, height });
-  if (!tip.isVisible()) tip.showInactive();
+// The bar's Options menu, its Session | One-Shot and the Settings window's Capture tab change the same options; an
+// open bar shows them.
+export function setCapture(change: Partial<Record<keyof CaptureOpts, unknown>>) {
+  captureOpts = checkedCapture({ ...captureOpts, ...change }, captureOpts); // a bad value from a renderer is dropped
+  saveState();
+  tellBar();
 }
-
-// close: the bar is gone, so the window goes too; otherwise it is only hidden, ready for the next button.
-function barTip(t: BarTip | null, close = false) {
-  clearInterval(tipWatch);
-  tipNow = t;
-  if (close) {
-    if (tip && !tip.isDestroyed()) tip.destroy(); // synchronous, unlike close(): gone before the capture's 200 ms wait
-    tip = null;
-    return;
-  }
-  if (!t) return void (tip && !tip.isDestroyed() && tip.hide());
-  if (!tip || tip.isDestroyed()) {
-    const w = new BrowserWindow({
-      width: 160,
-      height: 24,
-      frame: false,
-      transparent: true,
-      hasShadow: true,
-      roundedCorners: true,
-      resizable: false,
-      movable: false,
-      minimizable: false,
-      maximizable: false,
-      fullscreenable: false,
-      focusable: false,
-      skipTaskbar: true,
-      ...(process.platform === 'darwin' ? { type: 'panel' } : {}),
-      vibrancy: 'popover',
-      visualEffectState: 'active',
-      show: false,
-      webPreferences: { preload: path.join(__dirname, 'preload.js'), enablePreferredSizeMode: true },
-    });
-    w.setIgnoreMouseEvents(true);
-    w.setContentProtection(true);
-    w.setAlwaysOnTop(true, 'screen-saver');
-    w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
-    w.webContents.on('preferred-size-changed', (_e, size) => {
-      tipSize = size;
-      placeTip();
-    });
-    w.webContents.once('did-finish-load', () => tipNow && w.webContents.send('tip:show', tipNow)); // asked before it loaded
-    void w.loadFile(path.join(__dirname, 'tip.html'));
-    tip = w;
-    tipSize = { width: 0, height: 0 };
-  }
-  tip.webContents.send('tip:show', { text: t.text, key: t.key });
-  placeTip();
-}
-
-// The pointer left the bar: the label stays while the pointer is on it, on the 8 pt strip under it, or back on the
-// bar (WCAG 1.4.13), and goes once it is anywhere else.
-export function keepsTip(t: Electron.Rectangle, b: Electron.Rectangle, p: Electron.Point) {
-  const inside = (r: Electron.Rectangle) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
-  return inside({ x: t.x, y: t.y, width: t.width, height: b.y - t.y }) || inside(b);
-}
-
-function leaveTip() {
-  clearInterval(tipWatch);
-  if (!tip || !tipNow || !bar || !barOpen()) return; // tipNow, not isVisible(): a label still loading counts too
-  tipWatch = setInterval(() => {
-    if (!tip || !bar || !barOpen()) return barTip(null);
-    if (!keepsTip(tip.getBounds(), bar.getBounds(), screen.getCursorScreenPoint())) barTip(null);
-  }, 100);
-}
-
-ipcMain.on('bar:tip', (e, t: BarTip | null) => fromBar(e) && barTip(t));
-ipcMain.on('bar:tip-leave', (e) => fromBar(e) && leaveTip());
 
 ipcMain.handle('bar:init', (): BarInit => barInit());
 ipcMain.on('bar:close', (e) => fromBar(e) && bar!.close());
@@ -501,17 +440,17 @@ ipcMain.on('bar:capture', (e, mode: CaptureMode) => {
 ipcMain.on('bar:options', (e, mode: CaptureMode, at: Area) => {
   if (!fromBar(e)) return;
   setCapture({ mode });
-  const cur = menuState().current;
-  const items = barOptions(
-    { ...captureOpts, session: cur?.label ?? null, newSession: registered.has(SHORTCUTS.newSession) ? SHORTCUTS.newSession : null },
-    {
-      setOneShot: (oneShot) => setCapture({ oneShot }),
-      setTimer: (timer) => setCapture({ timer }),
-      setPointer: (pointer) => setCapture({ pointer }),
-      newSession,
-    },
-  );
+  const items = barOptions(captureOpts, { setTimer: (timer) => setCapture({ timer }), setPointer: (pointer) => setCapture({ pointer }) });
   popUnder(bar!, items, at);
+});
+// Session | One-Shot replaces Options ▸ Save to (F20, F24).
+ipcMain.on('bar:one-shot', (e, oneShot: boolean) => fromBar(e) && setCapture({ oneShot }));
+// The session pop-up, shared with the editor: a pick makes that session current, as the menu bar's makeCurrent (F23).
+// One-Shot captures go to no session, so it does not open then (F21).
+ipcMain.on('bar:sessions', (e, at: Area) => {
+  if (!fromBar(e) || captureOpts.oneShot) return;
+  const pick = { moveTo: setActive, older: () => void otherSession(), newSession };
+  popUnder(bar!, editorSessionMenu(menuState(), active ?? '', pick), at);
 });
 
 // One frame of the area, as `screencapture -R` gives it: Retina displays give 2x pixels.
@@ -707,6 +646,7 @@ ipcMain.on('editor:sessions-menu', (e, at: Area) => {
     ed.win,
     editorSessionMenu(menuState(), ed.session, {
       moveTo,
+      older: () => void otherSession().then((name) => name && moveTo(name)),
       // As the menu bar's New Session; an empty current session is kept, and the editor moves to it either way.
       newSession: () => {
         newSession();
@@ -1157,7 +1097,8 @@ function renameFromMenu(name: string, why?: string, typed?: string) {
   });
 }
 
-async function otherSession() {
+// Resolves to the session made current, or null.
+async function otherSession(): Promise<string | null> {
   focusApp();
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Choose a session',
@@ -1166,10 +1107,13 @@ async function otherSession() {
     properties: ['openDirectory'],
   });
   const dir = filePaths[0];
-  if (canceled || !dir) return;
-  if (path.dirname(dir) !== path.resolve(root) || !fs.existsSync(path.join(dir, 'session.md')))
-    return notify(`That folder is not a session in ${tilde(root)}.`);
+  if (canceled || !dir) return null;
+  if (path.dirname(dir) !== path.resolve(root) || !fs.existsSync(path.join(dir, 'session.md'))) {
+    notify(`That folder is not a session in ${tilde(root)}.`);
+    return null;
+  }
   setActive(path.basename(dir));
+  return path.basename(dir);
 }
 
 let shortcutsWin: BrowserWindow | null = null;

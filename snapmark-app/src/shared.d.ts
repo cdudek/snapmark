@@ -73,24 +73,19 @@ interface ScrollStatus {
 }
 
 // The capture bar (bar.html, ⌃⇧5): what it captures, where it goes and how. Kept in state.json under `capture`.
-type CaptureMode = 'window' | 'area' | 'last' | 'scroll';
+type CaptureMode = 'area' | 'window' | 'full' | 'last' | 'scroll';
 interface CaptureOpts {
   mode: CaptureMode;
-  oneShot: boolean; // Save to: One-Shot, else Current Session
-  timer: number; // seconds after the area is known: 0, 5 or 10
-  pointer: boolean; // Show Mouse Pointer (areas only)
+  oneShot: boolean; // the bar's Session | One-Shot
+  timer: number; // seconds after the area is known: 0, 3, 5 or 10
+  pointer: boolean; // Show Mouse Pointer (not for Window or Scrolling)
 }
 
 interface BarInit extends CaptureOpts {
   label: string; // the Capture button: "Capture" or "Capture One-Shot"
-  last: string; // Capture Last Area's suffix: "1280 × 720" or "First time: drag the area"
-}
-
-// The capture bar's label (tip.html): a button's name and key, centred over the button.
-interface BarTip {
-  text: string;
-  key: string; // as a keycap shows it: "1", "Esc", "↩"; empty for none
-  at: Area;
+  heads: Record<CaptureMode, [headline: string, hint: string]>; // capture.ts barHeads
+  session: { label: string; count: number } | null; // the session pop-up's face; null: no session yet
+  narrow: boolean; // under 1000 pt of work area: the hint wraps under the headline (F27)
 }
 
 // The Settings window (settings.html): what its three tabs show.
@@ -123,10 +118,9 @@ interface Window {
     barCapture(mode: CaptureMode): void; // closes the bar, then runs the mode
     barOptions(mode: CaptureMode, at: Area): void; // the Options menu under `at` (window points), for the chosen mode
     barClose(): void;
-    onBarState(cb: (s: BarInit) => void): void; // an option changed in the Options menu or in Settings
-    barTip(t: BarTip | null): void; // the label above the bar for one button (`at` in bar window points), or none
-    barTipLeave(): void; // the pointer left the bar: the label stays while the pointer is on it
-    onTip(cb: (t: { text: string; key: string }) => void): void; // tip.html: what the label says
+    barOneShot(on: boolean): void; // the bar's Session | One-Shot
+    barSessions(at: Area): void; // the session pop-up under `at` (window points); nothing while One-Shot is chosen
+    onBarState(cb: (s: BarInit) => void): void; // an option or the current session changed
     areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
     scrollDone(ok: boolean): void; // Capture Scrolling: Done (true) or Cancel (false)
     onScrollStatus(cb: (status: ScrollStatus) => void): void;
