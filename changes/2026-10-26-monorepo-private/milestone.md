@@ -18,9 +18,14 @@ Kind: milestone of one. Changes that joined it record `milestone.slug` in their 
 
 In build order. `state` is `todo`, `building`, `done <sha>` (one go: a commit on the milestone branch), `merged` (feature PRs) or `blocked: <reason>`.
 
-| #   | Change                      | Feature                                  | PR or commit | State |
-| --- | --------------------------- | ---------------------------------------- | ------------ | ----- |
-| 1   | 2026-10-26-monorepo-private | Planned at the plan gate (see `plan.md`) | none         | todo  |
+| #   | Change                      | Feature                                    | PR or commit                               | State                                   |
+| --- | --------------------------- | ------------------------------------------ | ------------------------------------------ | --------------------------------------- |
+| 0   | 2026-10-26-monorepo-private | Owner: billing linked to `snapmark-ai`     | none                                       | blocked: billing off                    |
+| 1   | 2026-10-26-monorepo-private | GCP: bucket, public read, WIF, uploader    | none                                       | blocked: needs 0                        |
+| 2   | 2026-10-26-monorepo-private | Updates from the bucket; upload and prune  | bf4d120                                    | done bf4d120                            |
+| 3   | 2026-10-26-monorepo-private | The app in `snapmark-app/`; root workspace | 5be9bd4, ebe2eee, 3a8f7b6, 76857cf         | done 76857cf                            |
+| 4   | 2026-10-26-monorepo-private | ADR and design index                       | 9bd5f90                                    | done 9bd5f90                            |
+| PR  | 2026-10-26-monorepo-private | milestone/monorepo-private-1 → main        | https://github.com/cdudek/snapmark/pull/97 | open, CI green; auto-merge after 1 (Q1) |
 
 ## Done
 
