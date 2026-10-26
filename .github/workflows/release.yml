@@ -101,11 +101,11 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           if [ "$SIGNED" = true ]; then
-            CSC_NAME="$CERT_NAME" npx electron-builder --mac --publish never
+            CSC_NAME="$CERT_NAME" sh scripts/electron-builder.sh --mac --publish never
           else
             # Missing secrets arrive as empty strings, which electron-builder reads as "set".
             unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
-            npx electron-builder --mac --publish never -c.mac.identity=-
+            sh scripts/electron-builder.sh --mac --publish never -c.mac.identity=-
           fi
       # Installed copies read their updates from this bucket (package.json build.publish), so the repo can be private.
       - uses: google-github-actions/auth@v2
