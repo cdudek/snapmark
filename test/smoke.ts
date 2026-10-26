@@ -442,10 +442,14 @@ app
     const dbg = win.webContents.debugger;
     dbg.attach('1.3');
     await dbg.sendCommand('Accessibility.enable');
-    const { nodes } = (await dbg.sendCommand('Accessibility.getFullAXTree')) as { nodes: { role?: { value: string }; name?: { value: string } }[] };
+    const { nodes } = (await dbg.sendCommand('Accessibility.getFullAXTree')) as {
+      nodes: { role?: { value: string }; name?: { value: string } }[];
+    };
     dbg.detach();
     const fieldNames = nodes.filter((n) => n.role?.value === 'textbox').map((n) => n.name?.value ?? '');
-    const refNums: string[] = await win.webContents.executeJavaScript(`[...document.querySelectorAll('#refs .ref b')].map((b) => b.textContent)`);
+    const refNums: string[] = await win.webContents.executeJavaScript(
+      `[...document.querySelectorAll('#refs .ref b')].map((b) => b.textContent)`,
+    );
     console.log('F12 F13 names', JSON.stringify({ fieldNames, refNums }));
     inPage['F12 the top box is headed General comment'] &&= fieldNames.includes('General comment');
     inPage['F13 a note asks What about n'] &&= refNums.length > 0 && refNums.every((n) => fieldNames.includes(`Note for reference ${n}`));
@@ -1220,8 +1224,7 @@ app
     await sleep(150);
     const notYet = tipShown(); // the label waits 300 ms
     const hovered = await tipSays();
-    viewer['F5 the label names the button under the pointer'] =
-      !notYet && hovered === 'Capture Window 1' && (await centredOver('window'));
+    viewer['F5 the label names the button under the pointer'] = !notYet && hovered === 'Capture Window 1' && (await centredOver('window'));
     console.log('F5', JSON.stringify({ notYet, hovered }));
     const tw = barTipWindow()!;
     viewer['F8 the label is part of the bar, never in a capture'] =
@@ -1239,16 +1242,26 @@ app
     // F6 and F9: a key shows the focused button's label; 1–4 only choose a mode
     keyTo(barWin, '4');
     const afterFour = await tipSays();
-    const fourChose = await inWin(barWin, `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`);
+    const fourChose = await inWin(
+      barWin,
+      `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`,
+    );
     keyTo(barWin, '1');
     const afterOne = await tipSays();
-    const oneChose = await inWin(barWin, `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`);
+    const oneChose = await inWin(
+      barWin,
+      `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`,
+    );
     keyTo(barWin, 'Right');
     const afterRight = await tipSays();
     viewer['F6 the label follows the keyboard, not the opening'] =
       !atOpening && afterFour === 'Capture Scrolling 4' && afterRight.startsWith('Choose New Area 2') && (await centredOver('area'));
     viewer['F9 keys 1-4 choose a mode and never capture'] =
-      fourChose === 'scroll|scroll' && oneChose === 'window|window' && afterOne === 'Capture Window 1' && runs.length === 0 && !barWin.isDestroyed();
+      fourChose === 'scroll|scroll' &&
+      oneChose === 'window|window' &&
+      afterOne === 'Capture Window 1' &&
+      runs.length === 0 &&
+      !barWin.isDestroyed();
     viewer['F10 every bar button announces its key'] =
       (await inWin(
         barWin,
