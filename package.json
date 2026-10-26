@@ -1,89 +1,23 @@
 {
-  "name": "snapmark",
-  "version": "0.4.0",
+  "name": "snapmark-monorepo",
   "private": true,
-  "description": "Capture, annotate and collect screenshots into Markdown sessions",
-  "main": "dist/src/main.js",
+  "description": "Snapmark: the Mac app, the Chrome extension and the website",
+  "workspaces": [
+    "snapmark-app"
+  ],
   "scripts": {
-    "build": "tsc && cp src/editor.html src/viewer.html src/area.html src/scroll.html src/bar.html src/settings.html src/shortcuts.html src/tip.html dist/src/ && esbuild src/md-notes.ts --bundle --format=iife --global-name=MdNotes --minify --log-level=warning --outfile=dist/src/md-notes.js",
-    "start": "npm run build && electron .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "npm run build && node dist/test/sessions.test.js && node dist/test/menu.test.js && node dist/test/keys.test.js && node dist/test/capture.test.js && node dist/test/focus.test.js && node dist/test/exporter.test.js && node dist/test/stitch.test.js && node dist/test/parts.test.js && node dist/test/beautify.test.js && node dist/test/redact.test.js && node dist/test/ocr.test.js && node dist/test/uuid.test.js && node dist/test/colour.test.js && node dist/test/guide.test.js && sh test/prune.test.sh && vitest run tests/sdlc.test.ts",
-    "smoke": "npm run build && electron dist/test/smoke.js",
-    "smoke:background": "sh test/smoke-background.sh",
-    "dist": "npm run build && electron-builder --mac --publish never -c.mac.identity=-",
+    "lint": "npm run lint -w snapmark-app",
+    "typecheck": "npm run typecheck -w snapmark-app",
+    "build": "npm run build -w snapmark-app",
+    "start": "npm start -w snapmark-app",
+    "test": "npm test -w snapmark-app && vitest run tests/sdlc.test.ts",
+    "smoke": "npm run smoke -w snapmark-app",
+    "smoke:background": "npm run smoke:background -w snapmark-app",
+    "dist": "npm run dist -w snapmark-app",
     "sdlc:tools": "curl -fsSL https://plannotator.ai/install.sh | bash && claude plugin marketplace add backnotprop/plannotator && claude plugin install plannotator@plannotator && npx skills add backnotprop/plannotator/apps/skills/extra --global --skill plannotator-setup-goal --agent claude-code --yes"
   },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@milkdown/kit": "^7.22.3",
-    "@types/node": "^24.19.2",
-    "electron": "^45.0.0",
-    "electron-builder": "^26.18.0",
-    "esbuild": "^0.28.2",
-    "eslint": "^10.13.0",
-    "prettier": "^3.9.10",
-    "semantic-release": "^25.0.9",
-    "typescript": "~6.0",
-    "typescript-eslint": "^8.72.0",
-    "vitest": "^5.0.5"
-  },
-  "dependencies": {
-    "electron-updater": "^6.8.11",
-    "fabric": "^7.4.0",
-    "marked": "^18.1.1"
-  },
   "author": "Calvin Dudek",
-  "repository": "github:cdudek/snapmark",
-  "build": {
-    "appId": "com.cdudek.snapmark",
-    "afterPack": "scripts/after-pack.cjs",
-    "productName": "Snapmark",
-    "copyright": "© 2026 Calvin Dudek",
-    "files": [
-      "dist/src/**",
-      "assets/*.png",
-      "package.json"
-    ],
-    "directories": {
-      "buildResources": "build",
-      "output": "release"
-    },
-    "mac": {
-      "category": "public.app-category.productivity",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        }
-      ],
-      "hardenedRuntime": true,
-      "extendInfo": {
-        "LSUIElement": true
-      },
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
-    },
-    "dmg": {
-      "title": "Snapmark ${version}"
-    },
-    "publish": {
-      "provider": "generic",
-      "url": "https://storage.googleapis.com/snapmark-updates/mac"
-    }
-  }
+  "repository": "github:cdudek/snapmark"
 }

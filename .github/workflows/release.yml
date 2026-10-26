@@ -59,7 +59,7 @@ jobs:
           cache: npm
       - run: npm ci
       # The version lives in the release tag, not in git: main takes only PRs, so no bot commit bumps package.json.
-      - run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+      - run: npm version "$VERSION" --no-git-tag-version --allow-same-version -w snapmark-app
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
@@ -90,6 +90,7 @@ jobs:
           echo "name=${id#Developer ID Application: }" >> "$GITHUB_OUTPUT"
           echo "signed=true" >> "$GITHUB_OUTPUT"
       - name: Build DMG and ZIP
+        working-directory: snapmark-app
         env:
           # With the certificate imported, the app is signed with the Developer ID and notarized,
           # which auto-update on macOS requires. Without it the build is ad-hoc signed.
@@ -114,6 +115,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
       # latest-mac.yml goes last and uncached: until it lands, clients still see the previous version, complete.
       - name: Upload to the update bucket
+        working-directory: snapmark-app
         run: |
           gcloud storage cp release/*.zip release/*.dmg release/*.blockmap gs://snapmark-updates/mac/
           gcloud storage cp --cache-control=no-cache release/latest-mac.yml gs://snapmark-updates/mac/latest-mac.yml
@@ -123,6 +125,7 @@ jobs:
       # it refuses to publish once main has moved on, which a merge during this ~8 minute build does,
       # and it then exits 0, so a release silently went missing.
       - name: Publish GitHub release
+        working-directory: snapmark-app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "v$VERSION" --target "$GITHUB_SHA" --generate-notes release/*.dmg release/*.zip release/*.blockmap release/latest-mac.yml

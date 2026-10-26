@@ -17,3 +17,5 @@ __pycache__/
 # verify_gate.py output; lock.json is committed
 /changes/*/verify/
 __pycache__/
+# the guardrail test JSON report
+.vitest/

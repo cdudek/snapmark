@@ -87,7 +87,7 @@ assert.ok(page.indexOf('src="tools.js"') > 0 && page.indexOf('src="tools.js"') <
 assert.ok(page.includes("content=\"default-src 'self'; style-src 'self' 'unsafe-inline'\""), 'F229 CSP as area.html');
 
 // F20 no old key: no screen, hint or doc still tells the owner to press ⌃⇧1
-for (const f of [...srcFiles, 'README.md', 'docs/ux/setup.md']) assert.ok(!read(f).includes('⌃⇧1'), `${f} still names ⌃⇧1`);
+for (const f of [...srcFiles, 'README.md', '../docs/ux/setup.md']) assert.ok(!read(f).includes('⌃⇧1'), `${f} still names ⌃⇧1`);
 
 // F103 captions: ⌘1 to ⌘7 under groups 1 to 7, whatever the Single-Key Tools setting
 for (const on of [true, false])
