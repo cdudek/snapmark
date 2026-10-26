@@ -1,0 +1,735 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Each tag sits beside @2026-10-26-picked-designs in its check's title. A desktop app: widths are window sizes in points, zoom is 100 and 150 percent.",
+  "facts": [
+    {
+      "id": "F1",
+      "tag": "@F1",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "area picker",
+      "states": ["default"]
+    },
+    {
+      "id": "F2",
+      "tag": "@F2",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "area picker",
+      "states": ["default"]
+    },
+    {
+      "id": "F3",
+      "tag": "@F3",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "editor",
+      "states": ["One-Shot"]
+    },
+    {
+      "id": "F4",
+      "tag": "@F4",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "editor",
+      "states": ["Session"]
+    },
+    {
+      "id": "F5",
+      "tag": "@F5",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "editor",
+      "states": ["Session"]
+    },
+    {
+      "id": "F6",
+      "tag": "@F6",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "area picker",
+      "states": ["first time"]
+    },
+    {
+      "id": "F7",
+      "tag": "@F7",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "area picker",
+      "states": ["after New Session"]
+    },
+    {
+      "id": "F8",
+      "tag": "@F8",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "menu bar menu",
+      "states": ["default"]
+    },
+    {
+      "id": "F9",
+      "tag": "@F9",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "Keyboard Shortcuts window",
+      "states": ["default"]
+    },
+    {
+      "id": "F10",
+      "tag": "@F10",
+      "milestone": 1,
+      "asks": ["A1", "A4"],
+      "screen": "busy",
+      "states": ["default"]
+    },
+    {
+      "id": "F11",
+      "tag": "@F11",
+      "milestone": 1,
+      "asks": ["A1"],
+      "screen": "capture bar",
+      "states": ["lost focus"]
+    },
+    {
+      "id": "F12",
+      "tag": "@F12",
+      "milestone": 1,
+      "asks": ["A1"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F13",
+      "tag": "@F13",
+      "milestone": 1,
+      "asks": ["A2", "A3", "A10"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F14",
+      "tag": "@F14",
+      "milestone": 1,
+      "asks": ["A2", "A10"],
+      "screen": "capture bar",
+      "states": ["each mode"]
+    },
+    {
+      "id": "F15",
+      "tag": "@F15",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F16",
+      "tag": "@F16",
+      "milestone": 1,
+      "asks": ["A2", "A3"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F17",
+      "tag": "@F17",
+      "milestone": 1,
+      "asks": ["A2"],
+      "screen": "capture bar",
+      "states": ["each mode"]
+    },
+    {
+      "id": "F18",
+      "tag": "@F18",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F19",
+      "tag": "@F19",
+      "milestone": 1,
+      "asks": ["A4"],
+      "screen": "capture bar",
+      "states": ["pointer resting"]
+    },
+    {
+      "id": "F20",
+      "tag": "@F20",
+      "milestone": 1,
+      "asks": ["A6", "A10"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F21",
+      "tag": "@F21",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "capture bar",
+      "states": ["One-Shot chosen"]
+    },
+    {
+      "id": "F22",
+      "tag": "@F22",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "capture bar",
+      "states": ["One-Shot chosen"]
+    },
+    {
+      "id": "F23",
+      "tag": "@F23",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "session pop-up",
+      "states": ["open"]
+    },
+    {
+      "id": "F24",
+      "tag": "@F24",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F25",
+      "tag": "@F25",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F26",
+      "tag": "@F26",
+      "milestone": 1,
+      "asks": ["A6", "A10"],
+      "screen": "capture bar",
+      "states": ["Options open"]
+    },
+    {
+      "id": "F27",
+      "tag": "@F27",
+      "milestone": 1,
+      "asks": ["A1"],
+      "screen": "capture bar",
+      "states": ["narrow"]
+    },
+    {
+      "id": "N1",
+      "tag": "@N1",
+      "milestone": 1,
+      "asks": ["A2"],
+      "screen": "capture bar and editor",
+      "states": ["chosen"]
+    },
+    {
+      "id": "F28",
+      "tag": "@F28",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "countdown",
+      "states": ["default"]
+    },
+    {
+      "id": "F29",
+      "tag": "@F29",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "countdown",
+      "states": ["default"]
+    },
+    {
+      "id": "F30",
+      "tag": "@F30",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "countdown",
+      "states": ["counting"]
+    },
+    {
+      "id": "F31",
+      "tag": "@F31",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "countdown",
+      "states": ["cancelled"]
+    },
+    {
+      "id": "F32",
+      "tag": "@F32",
+      "milestone": 1,
+      "asks": ["A6"],
+      "screen": "countdown",
+      "states": ["Reduce Motion"]
+    },
+    {
+      "id": "F33",
+      "tag": "@F33",
+      "milestone": 1,
+      "asks": ["A13"],
+      "screen": "`docs/ux/interaction-guidelines.md`",
+      "states": ["default"]
+    },
+    {
+      "id": "F34",
+      "tag": "@F34",
+      "milestone": 1,
+      "asks": ["A4", "A13"],
+      "screen": "the guide",
+      "states": ["default"]
+    },
+    {
+      "id": "F35",
+      "tag": "@F35",
+      "milestone": 1,
+      "asks": ["A13"],
+      "screen": "docs",
+      "states": ["default"]
+    },
+    {
+      "id": "F36",
+      "tag": "@F36",
+      "milestone": 2,
+      "asks": ["A5", "A12"],
+      "screen": "editor toolbar",
+      "states": ["Session"]
+    },
+    {
+      "id": "F37",
+      "tag": "@F37",
+      "milestone": 2,
+      "asks": ["A5", "A6"],
+      "screen": "editor toolbar",
+      "states": ["One-Shot"]
+    },
+    {
+      "id": "F38",
+      "tag": "@F38",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "editor toolbar",
+      "states": ["Session"]
+    },
+    {
+      "id": "F39",
+      "tag": "@F39",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "editor",
+      "states": ["One-Shot"]
+    },
+    {
+      "id": "F40",
+      "tag": "@F40",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "Discarded",
+      "states": ["default"]
+    },
+    {
+      "id": "F41",
+      "tag": "@F41",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "editor",
+      "states": ["One-Shot", "note focused"]
+    },
+    {
+      "id": "F42",
+      "tag": "@F42",
+      "milestone": 2,
+      "asks": ["A6", "A12"],
+      "screen": "session pop-up",
+      "states": ["default"]
+    },
+    {
+      "id": "F43",
+      "tag": "@F43",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "session pop-up",
+      "states": ["default"]
+    },
+    {
+      "id": "F44",
+      "tag": "@F44",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "editor toolbar",
+      "states": ["moving failed"]
+    },
+    {
+      "id": "F45",
+      "tag": "@F45",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "editor toolbar",
+      "states": ["One-Shot and Edit Again"]
+    },
+    {
+      "id": "F46",
+      "tag": "@F46",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "editor",
+      "states": ["default"]
+    },
+    {
+      "id": "F47",
+      "tag": "@F47",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "editor",
+      "states": ["default"]
+    },
+    {
+      "id": "F48",
+      "tag": "@F48",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "editor",
+      "states": ["a mark selected"]
+    },
+    {
+      "id": "F49",
+      "tag": "@F49",
+      "milestone": 2,
+      "asks": ["A5", "A6"],
+      "screen": "notes column",
+      "states": ["One-Shot"]
+    },
+    {
+      "id": "F50",
+      "tag": "@F50",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "editor",
+      "states": ["One-Shot"]
+    },
+    {
+      "id": "F51",
+      "tag": "@F51",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "editor footer",
+      "states": ["default"]
+    },
+    {
+      "id": "N2",
+      "tag": "@N2",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "editor toolbar",
+      "states": ["narrow"]
+    },
+    {
+      "id": "F52",
+      "tag": "@F52",
+      "milestone": 2,
+      "asks": ["A5", "A7"],
+      "screen": "notes column",
+      "states": ["default"]
+    },
+    {
+      "id": "F53",
+      "tag": "@F53",
+      "milestone": 2,
+      "asks": ["A7"],
+      "screen": "notes column",
+      "states": ["with references"]
+    },
+    {
+      "id": "F54",
+      "tag": "@F54",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "hex field",
+      "states": ["pasted"]
+    },
+    {
+      "id": "F55",
+      "tag": "@F55",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "Beautify",
+      "states": ["default"]
+    },
+    {
+      "id": "F56",
+      "tag": "@F56",
+      "milestone": 2,
+      "asks": ["A5"],
+      "screen": "hex field",
+      "states": ["error"]
+    },
+    {
+      "id": "F57",
+      "tag": "@F57",
+      "milestone": 2,
+      "asks": ["A9"],
+      "screen": "session window",
+      "states": ["first open"]
+    },
+    {
+      "id": "F58",
+      "tag": "@F58",
+      "milestone": 2,
+      "asks": ["A9"],
+      "screen": "session window",
+      "states": ["later opens"]
+    },
+    {
+      "id": "F59",
+      "tag": "@F59",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "capture bar",
+      "states": ["Record chosen"]
+    },
+    {
+      "id": "F60",
+      "tag": "@F60",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "capture bar",
+      "states": ["Options open"]
+    },
+    {
+      "id": "F61",
+      "tag": "@F61",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "area picker",
+      "states": ["record"]
+    },
+    {
+      "id": "F62",
+      "tag": "@F62",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "countdown",
+      "states": ["default"]
+    },
+    {
+      "id": "F63",
+      "tag": "@F63",
+      "milestone": 3,
+      "asks": ["A8"],
+      "screen": "recording control",
+      "states": ["default"]
+    },
+    {
+      "id": "F64",
+      "tag": "@F64",
+      "milestone": 3,
+      "asks": ["A8"],
+      "screen": "recording control",
+      "states": ["default"]
+    },
+    {
+      "id": "F65",
+      "tag": "@F65",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "recording control",
+      "states": ["default"]
+    },
+    {
+      "id": "F66",
+      "tag": "@F66",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "recording control",
+      "states": ["default"]
+    },
+    {
+      "id": "F67",
+      "tag": "@F67",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "recording control",
+      "states": ["cancelled"]
+    },
+    {
+      "id": "F68",
+      "tag": "@F68",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "recording control",
+      "states": ["default"]
+    },
+    {
+      "id": "F69",
+      "tag": "@F69",
+      "milestone": 3,
+      "asks": ["A11"],
+      "screen": "recording editor",
+      "states": ["default"]
+    },
+    {
+      "id": "F70",
+      "tag": "@F70",
+      "milestone": 3,
+      "asks": ["A11"],
+      "screen": "GIF",
+      "states": ["default"]
+    },
+    {
+      "id": "F71",
+      "tag": "@F71",
+      "milestone": 3,
+      "asks": ["A8"],
+      "screen": "session folder",
+      "states": ["default"]
+    },
+    {
+      "id": "F72",
+      "tag": "@F72",
+      "milestone": 3,
+      "asks": ["A11"],
+      "screen": "recording editor",
+      "states": ["default"]
+    },
+    {
+      "id": "F73",
+      "tag": "@F73",
+      "milestone": 3,
+      "asks": ["A11"],
+      "screen": "recording editor",
+      "states": ["all frames"]
+    },
+    {
+      "id": "F74",
+      "tag": "@F74",
+      "milestone": 3,
+      "asks": ["A11"],
+      "screen": "recording editor",
+      "states": ["marked extra frame"]
+    },
+    {
+      "id": "F75",
+      "tag": "@F75",
+      "milestone": 3,
+      "asks": ["A8"],
+      "screen": "Edit Again on a recording",
+      "states": ["default"]
+    },
+    {
+      "id": "F76",
+      "tag": "@F76",
+      "milestone": 3,
+      "asks": ["A6", "A8"],
+      "screen": "recording editor",
+      "states": ["One-Shot"]
+    },
+    {
+      "id": "F77",
+      "tag": "@F77",
+      "milestone": 3,
+      "asks": ["A11"],
+      "screen": "recording editor",
+      "states": ["evenly spaced"]
+    },
+    {
+      "id": "F78",
+      "tag": "@F78",
+      "milestone": 3,
+      "asks": ["A8"],
+      "screen": "session.md",
+      "states": ["default"]
+    },
+    {
+      "id": "F79",
+      "tag": "@F79",
+      "milestone": 3,
+      "asks": ["A8", "A11"],
+      "screen": "session window",
+      "states": ["recording entry"]
+    },
+    {
+      "id": "F80",
+      "tag": "@F80",
+      "milestone": 3,
+      "asks": ["A8"],
+      "screen": "export",
+      "states": ["default"]
+    },
+    {
+      "id": "F81",
+      "tag": "@F81",
+      "milestone": 3,
+      "asks": ["A6"],
+      "screen": "recording control",
+      "states": ["error"]
+    },
+    {
+      "id": "F82",
+      "tag": "@F82",
+      "milestone": 4,
+      "asks": ["A2", "A3"],
+      "screen": "scrolling control",
+      "states": ["auto"]
+    },
+    {
+      "id": "F83",
+      "tag": "@F83",
+      "milestone": 4,
+      "asks": ["A2"],
+      "screen": "scrolling control",
+      "states": ["auto"]
+    },
+    {
+      "id": "F84",
+      "tag": "@F84",
+      "milestone": 4,
+      "asks": ["A3"],
+      "screen": "scrolling control",
+      "states": ["fell back"]
+    },
+    {
+      "id": "F85",
+      "tag": "@F85",
+      "milestone": 4,
+      "asks": ["A3"],
+      "screen": "scrolling control",
+      "states": ["owner took over"]
+    },
+    {
+      "id": "F86",
+      "tag": "@F86",
+      "milestone": 4,
+      "asks": ["A3"],
+      "screen": "scrolling control",
+      "states": ["no permission"]
+    },
+    {
+      "id": "F87",
+      "tag": "@F87",
+      "milestone": 4,
+      "asks": ["A3"],
+      "screen": "Settings ▸ Capture",
+      "states": ["default"]
+    },
+    {
+      "id": "F88",
+      "tag": "@F88",
+      "milestone": 4,
+      "asks": ["A1", "A3"],
+      "screen": "scrolling control",
+      "states": ["default"]
+    }
+  ],
+  "pages": [],
+  "widths": {
+    "feature": [],
+    "milestone": [820, 1180, 1440],
+    "zoom": [100, 150]
+  },
+  "asks": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13"],
+  "turns": {
+    "run": 200
+  }
+}
