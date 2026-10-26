@@ -370,54 +370,112 @@ function renderToolbar() {
       b.onclick = () => pickGroup(i);
       const cap = document.createElement('div');
       cap.className = 'cap';
-      const kbd = document.createElement('kbd');
-      kbd.textContent = capFor(g, singleKeys);
-      cap.append(kbd);
+      cap.append(keycap(capFor(g, singleKeys)));
       wrap.append(b, cap);
       return wrap;
     }),
   );
 }
 
-// ---------- annotation colour: the swatch, its presets and Custom… (the macOS colour panel) ----------
+// One keycap style everywhere (A18): a <kbd>, styled once in editor.html.
+function keycap(keys: string) {
+  const k = document.createElement('kbd');
+  k.textContent = keys;
+  return k;
+}
+
+// ---------- annotation colour: the swatch, its presets, the Custom row, the hex field and Custom… (the macOS colour panel) ----------
 
 // The colour input holds the current colour; it is also Custom…, so the colour panel writes straight into it.
 const swatchBtn = $<HTMLButtonElement>('swatch');
 const paletteEl = $<HTMLDivElement>('palette');
-const presetsEl = $<HTMLDivElement>('presets');
-const presetBtns = PALETTE.map(([name, c]) => {
+const customsEl = $<HTMLDivElement>('customs');
+const hexEl = $<HTMLInputElement>('hex');
+const hexError = $<HTMLParagraphElement>('hex-error');
+const PRESETS = PALETTE.map(([, c]) => c);
+let customs: string[] = []; // the Custom row, newest first; saved in state.json through the main process
+
+function colourBtn(name: string, c: string) {
   const b = document.createElement('button');
   b.dataset.color = c;
   b.title = name;
   b.setAttribute('aria-label', name);
-  b.style.color = c; // the swatch and its picked ring
+  b.style.color = c; // the dot and its picked ring
   b.onclick = () => {
     setColor(c);
     closePalette();
   };
   return b;
-});
-presetsEl.replaceChildren(...presetBtns);
+}
+const presetBtns = PALETTE.map(([name, c]) => colourBtn(name, c));
+$('presets').replaceChildren(...presetBtns);
+// Every colour dot in the popover, presets first, in reading order: the arrows walk them, setColor marks the picked one.
+const colourBtns = () => [...paletteEl.querySelectorAll<HTMLButtonElement>('.swatches button')];
+
+// The Custom row: the owner's colours, then dashed free places, so the row keeps its shape from the first open.
+function renderCustoms() {
+  const slots = Array.from({ length: CUSTOM_MAX - customs.length }, () => {
+    const s = document.createElement('span');
+    s.className = 'slot';
+    s.setAttribute('aria-hidden', 'true');
+    return s;
+  });
+  customsEl.replaceChildren(...customs.map((c) => colourBtn(c, c)), ...slots);
+  for (const b of colourBtns()) b.setAttribute('aria-pressed', String(b.dataset.color === colorEl.value));
+}
+
+// A colour that came from the hex field or the colour panel joins the Custom row (a preset never does).
+function addCustom(c: string) {
+  const next = withCustom(customs, c, PRESETS);
+  if (next.join() === customs.join()) return;
+  customs = next;
+  window.snapmark.customColors(customs);
+  renderCustoms();
+}
 
 // keep: the owner picked it, so the next editor starts with it (not the start-up colour or the saved one)
 function setColor(c: string, keep = true) {
   colorEl.value = c;
-  swatchBtn.querySelector('i')!.style.background = c;
-  for (const b of presetBtns) b.setAttribute('aria-pressed', String(b.dataset.color === c));
+  const dot = swatchBtn.querySelector('i')!;
+  dot.style.background = dot.style.color = c;
+  for (const b of colourBtns()) b.setAttribute('aria-pressed', String(b.dataset.color === c));
   if (keep) window.snapmark.color(c);
   applyTool();
 }
 
+function showHexError(on: boolean) {
+  hexError.hidden = !on;
+  if (on) hexEl.setAttribute('aria-invalid', 'true');
+  else hexEl.removeAttribute('aria-invalid');
+}
+
+// Enter or leaving the field: a good code becomes the colour; a bad one says so and changes nothing.
+function applyHex(): boolean {
+  const c = normalizeHex(hexEl.value);
+  showHexError(!c);
+  if (!c) return false;
+  hexEl.value = c.slice(1);
+  if (c !== colorEl.value) {
+    setColor(c);
+    addCustom(c);
+  }
+  return true;
+}
+
 function openPalette() {
-  const r = swatchBtn.getBoundingClientRect();
-  Object.assign(paletteEl.style, { left: `${r.left}px`, top: `${r.bottom + 6}px` });
+  // Under the toolbar, not the swatch, so it never covers Undo's and Redo's keys.
+  const top = swatchBtn.closest('header')!.getBoundingClientRect().bottom + 4;
+  Object.assign(paletteEl.style, { left: `${swatchBtn.getBoundingClientRect().left}px`, top: `${top}px` });
+  hexEl.value = colorEl.value.slice(1);
+  showHexError(false);
   paletteEl.hidden = false;
   swatchBtn.setAttribute('aria-expanded', 'true');
-  (presetBtns.find((b) => b.dataset.color === colorEl.value) ?? presetBtns[0]).focus();
+  (colourBtns().find((b) => b.dataset.color === colorEl.value) ?? presetBtns[0]).focus();
 }
 
 function closePalette(refocus = true) {
   if (paletteEl.hidden) return;
+  if (document.activeElement === hexEl) applyHex(); // a click away is a blur too
   paletteEl.hidden = true;
   swatchBtn.setAttribute('aria-expanded', 'false');
   if (refocus) swatchBtn.focus();
@@ -425,16 +483,28 @@ function closePalette(refocus = true) {
 
 swatchBtn.onclick = () => (paletteEl.hidden ? openPalette() : closePalette());
 colorEl.oninput = () => setColor(colorEl.value);
-// Arrows walk the two rows of five and stop here, so they never also nudge the selected mark. Esc stops here too:
-// the editor's own Esc would step back a tool or close the window.
+colorEl.onchange = () => addCustom(colorEl.value); // once, when the colour panel settles, not on every drag step
+hexEl.oninput = () => showHexError(false);
+hexEl.onblur = () => void (paletteEl.hidden || applyHex());
+hexEl.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.metaKey) return;
+  e.preventDefault();
+  if (applyHex()) closePalette();
+});
+// Arrows walk the rows of five and stop here, so they never also nudge the selected mark. Esc stops here too:
+// the editor's own Esc would step back a tool or close the window. Esc from the hex field drops what was typed.
 paletteEl.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') return void (e.stopPropagation(), closePalette());
+  if (e.key === 'Escape') {
+    hexEl.value = colorEl.value.slice(1);
+    return void (e.stopPropagation(), closePalette());
+  }
   const step = ({ ArrowLeft: -1, ArrowRight: 1, ArrowUp: -5, ArrowDown: 5 } as Record<string, number>)[e.key];
-  const i = presetBtns.indexOf(document.activeElement as HTMLButtonElement);
+  const btns = colourBtns();
+  const i = btns.indexOf(document.activeElement as HTMLButtonElement);
   if (!step || i < 0) return;
   e.preventDefault();
   e.stopPropagation();
-  presetBtns[(i + step + presetBtns.length) % presetBtns.length].focus();
+  btns[(i + step + btns.length) % btns.length].focus();
 });
 document.addEventListener('mousedown', (e) => {
   if (!paletteEl.contains(e.target as Node) && !swatchBtn.contains(e.target as Node)) closePalette(false);
@@ -1046,7 +1116,10 @@ document.addEventListener('keydown', (e) => {
     return oneShot ? saveImageAs() : void save();
   }
   if (e.metaKey && e.key === 'w') return window.close();
-  const typing = e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable);
+  const typing =
+    e.target instanceof HTMLTextAreaElement ||
+    (e.target instanceof HTMLInputElement && e.target.type === 'text') || // the hex field
+    (e.target instanceof HTMLElement && e.target.isContentEditable);
   const field = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement; // a slider or the colour well
   // ⌘C copies the image, unless text has the cursor (interaction guidelines, Copy and paste). The selection stays.
   if (e.metaKey && !e.shiftKey && e.key === 'c' && !typing) {
@@ -1219,36 +1292,40 @@ window.snapmark.onSingleKeys((on) => {
   singleKeys = on;
   renderToolbar();
 });
-window.snapmark.init().then(async ({ src, session, count, state, replacing, oneShot: one, beautify, singleKeys: keys, color: saved }) => {
-  singleKeys = keys;
-  if (saved) setColor(saved, false); // also draws the toolbar
-  renderToolbar();
-  switchable = !replacing && !one;
-  showSession(session, count);
-  if (replacing) saveBtn.textContent = `Save changes ⌘↵`;
-  if (one) {
-    oneShot = true;
-    beauty = { ...DEFAULT_BEAUTY, ...beautify };
-    document.body.classList.add('one-shot');
-    $('beautify').hidden = false;
-    sessionEl.replaceChildren('One-shot · not in a session');
-    sessionEl.title = 'One-shot · not in a session';
-    saveBtn.textContent = 'Copy Image ⌘C';
-    saveBtn.title = 'Copy the image with its background, at full resolution';
-    renderBeauty();
-  }
-  captionField = await MdNotes.mount($('caption'), state?.caption ?? '', { placeholder: 'Add a comment…', onChange: markDirty });
-  background = await fabric.FabricImage.fromURL(src);
-  background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });
-  // A tall scrolling capture counts as twice its width high: the strokes suit the part in view, not the whole page.
-  unit = Math.max(2, Math.round(Math.max(background.width, Math.min(background.height, 2 * background.width)) / 400));
-  canvas.setDimensions({ width: background.width, height: background.height });
-  canvas.backgroundImage = background;
-  canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-  fit();
-  if (state) await restore(state.items as Item[]);
-  applyTool();
-  redacted = !!state?.redacted;
-  if (!redacted) redacting = autoRedact();
-});
+window.snapmark
+  .init()
+  .then(async ({ src, session, count, state, replacing, oneShot: one, beautify, singleKeys: keys, color: saved, customColors }) => {
+    singleKeys = keys;
+    customs = customColors;
+    renderCustoms();
+    if (saved) setColor(saved, false); // also draws the toolbar
+    renderToolbar();
+    switchable = !replacing && !one;
+    showSession(session, count);
+    if (replacing) saveBtn.replaceChildren('Save changes ', keycap('⌘↵'));
+    if (one) {
+      oneShot = true;
+      beauty = { ...DEFAULT_BEAUTY, ...beautify };
+      document.body.classList.add('one-shot');
+      $('beautify').hidden = false;
+      sessionEl.replaceChildren('One-shot · not in a session');
+      sessionEl.title = 'One-shot · not in a session';
+      saveBtn.replaceChildren('Copy Image ', keycap('⌘C'));
+      saveBtn.title = 'Copy the image with its background, at full resolution';
+      renderBeauty();
+    }
+    captionField = await MdNotes.mount($('caption'), state?.caption ?? '', { placeholder: 'Add a comment…', onChange: markDirty });
+    background = await fabric.FabricImage.fromURL(src);
+    background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });
+    // A tall scrolling capture counts as twice its width high: the strokes suit the part in view, not the whole page.
+    unit = Math.max(2, Math.round(Math.max(background.width, Math.min(background.height, 2 * background.width)) / 400));
+    canvas.setDimensions({ width: background.width, height: background.height });
+    canvas.backgroundImage = background;
+    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+    fit();
+    if (state) await restore(state.items as Item[]);
+    applyTool();
+    redacted = !!state?.redacted;
+    if (!redacted) redacting = autoRedact();
+  });
 setColor(colorEl.value, false); // shows it on the swatch and draws the toolbar

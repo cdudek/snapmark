@@ -152,4 +152,20 @@ function tipFor(g: ToolGroup, variant: number, singleKeys: boolean): string {
   return `${t.label} (${keysFor(g, singleKeys)})${t.tip ? `: ${t.tip}` : ''}` + (g.tools.length > 1 ? ` · ${again} for ${next.label}` : '');
 }
 
-if (typeof module !== 'undefined') module.exports = { GROUPS, capFor, tipFor };
+// A hex code as typed or pasted into the colour panel: with or without "#", 3 or 6 digits, any case, spaces around it.
+// "#E5484D", "e5484d", " f00 " → "#e5484d", "#e5484d", "#ff0000"; anything else is null.
+function normalizeHex(text: string): string | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(text.trim());
+  if (!m) return null;
+  const digits = m[1].length === 3 ? [...m[1]].map((d) => d + d).join('') : m[1];
+  return `#${digits.toLowerCase()}`;
+}
+
+// The colour panel's Custom row: one row of five, newest first, each colour once, never a preset.
+const CUSTOM_MAX = 5;
+function withCustom(customs: string[], c: string, presets: string[]): string[] {
+  if (presets.includes(c)) return customs;
+  return [c, ...customs.filter((x) => x !== c)].slice(0, CUSTOM_MAX);
+}
+
+if (typeof module !== 'undefined') module.exports = { GROUPS, capFor, tipFor, normalizeHex, withCustom, CUSTOM_MAX };

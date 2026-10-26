@@ -9,6 +9,7 @@ interface EditorInit {
   beautify?: Beautify; // one-shot: the settings to start from (the reopened discard's, else the last used)
   singleKeys: boolean; // Settings ▸ Single-Key Tools; off, a plain letter or digit picks no tool and ⌘1–⌘7 still do
   color?: string; // the annotation colour last picked in any editor, also before a restart
+  customColors: string[]; // the colour panel's Custom row, newest first, kept in state.json
 }
 
 // Everything on a screenshot except the screenshot, as plain data (editor.ts writes and reads the items).
@@ -86,6 +87,7 @@ interface Window {
     onSession(cb: (session: string, count: number) => void): void; // the editor's session was renamed or its count changed
     onSingleKeys(cb: (on: boolean) => void): void; // Settings ▸ Single-Key Tools changed while the editor is open
     color(c: string): void; // the owner picked an annotation colour: the next editor starts with it
+    customColors(list: string[]): void; // the Custom row changed: up to five #rrggbb, newest first
     sessionsMenu(at: Area): void; // the session label's menu, under `at` (window points)
     shareMenu(at: Area): void; // the Copy or Save menu, under `at`
     onShare(cb: (what: 'copy' | 'saveAs') => void): void; // picked in the Copy or Save menu

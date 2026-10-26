@@ -12,6 +12,7 @@ const api: Window['snapmark'] = {
   onSession: (cb) => void ipcRenderer.on('editor:session', (_e, session: string, count: number) => cb(session, count)),
   onSingleKeys: (cb) => void ipcRenderer.on('editor:single-keys', (_e, on: boolean) => cb(on)),
   color: (c) => ipcRenderer.send('editor:color', c),
+  customColors: (list) => ipcRenderer.send('editor:custom-colors', list),
   sessionsMenu: (at) => ipcRenderer.send('editor:sessions-menu', at),
   shareMenu: (at) => ipcRenderer.send('editor:share-menu', at),
   onShare: (cb) => void ipcRenderer.on('editor:share', (_e, what: 'copy' | 'saveAs') => cb(what)),

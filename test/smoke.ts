@@ -201,6 +201,63 @@ app
     r['palette: remove marks stay coral red'] = canvas.getObjects().at(-1).stroke === '#e5484d';
     key('z', { metaKey: true }); key('z', { metaKey: true });
     sw.click(); presets[0].click(); // back to coral red
+    // A15: the hex field takes a code with or without "#", 3 or 6 digits, any case, spaces around it; Enter or leaving it
+    // applies it; a bad code says so and changes nothing, and keys typed there never pick a tool
+    const hex = document.getElementById('hex'), hexErr = document.getElementById('hex-error');
+    const typeHex = (v, enter) => { hex.focus(); hex.value = v; hex.dispatchEvent(new Event('input', { bubbles: true })); if (enter) hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); else hex.blur(); };
+    const customRow = () => [...document.querySelectorAll('#customs button')].map((b) => b.dataset.color).join();
+    sw.click();
+    const shown = hex.value === 'e5484d' && document.querySelector('#palette .hex').textContent.trim().startsWith('#') && customRow() === '' && document.querySelectorAll('#customs .slot').length === 5;
+    typeHex('  #12AB9F ', false);
+    const byBlur = colorEl.value === '#12ab9f' && hexErr.hidden && !pal.hidden;
+    typeHex('F0A', true);
+    const byEnter = colorEl.value === '#ff00aa' && pal.hidden;
+    const toolBefore = tool(), marksBefore = canvas.getObjects().length;
+    canvas.setActiveObject(canvas.getObjects().at(-1)); // so a stray Backspace would show
+    sw.click(); typeHex('zz12', true);
+    const refused = colorEl.value === '#ff00aa' && !pal.hidden && !hexErr.hidden && hex.getAttribute('aria-invalid') === 'true' && document.activeElement === hex;
+    ['3', 'c', 'Backspace'].forEach((k) => hex.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })));
+    const noTool = tool() === toolBefore && canvas.getObjects().length === marksBefore;
+    canvas.discardActiveObject();
+    hex.value = 'zz1'; hex.dispatchEvent(new Event('input', { bubbles: true }));
+    const cleared = hexErr.hidden && !hex.hasAttribute('aria-invalid');
+    hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    r['A15 a hex code with or without #, 3 or 6 digits, any case, trimmed; a bad one says so and changes nothing'] = shown && byBlur && byEnter && refused && noTool && cleared && pal.hidden && colorEl.value === '#ff00aa';
+    // A16: one row of custom colours under the two rows of presets, newest first, no presets, no repeats; the panel
+    // opens on the colour picked last
+    sw.click(); typeHex('e5484d', true); // a preset typed as hex stays out of the row
+    const noPreset = colorEl.value === '#e5484d' && customRow() === '#ff00aa,#12ab9f';
+    sw.click(); typeHex('12ab9f', true); // again: moves to the front, once
+    const order = customRow() === '#12ab9f,#ff00aa' && document.querySelectorAll('#customs .slot').length === 3;
+    sw.click();
+    const opensOnIt = document.activeElement.closest('#customs') && document.activeElement.dataset.color === '#12ab9f' && document.activeElement.getAttribute('aria-pressed') === 'true';
+    const rows = [...document.querySelectorAll('#palette .swatches')].map((g) => g.id).join() === 'presets,customs' && document.getElementById('customs-label').textContent === 'Custom' && !!pal.querySelector('.custom input[type="color"]');
+    r['A16 two rows of presets, then a Custom row: newest first, no presets, no repeats; opens on the last pick'] = noPreset && order && !!opensOnIt && rows;
+    // A17: the swatch and every dot in the panel are one 24 px circle, and the picked colour wears the same ring in both
+    const swDot = sw.querySelector('i');
+    const dot = (el) => { const s = getComputedStyle(el); return [s.width, s.height, s.borderRadius].join(); };
+    const ring = (el) => { const s = getComputedStyle(el); return [s.outlineStyle, s.outlineWidth, s.outlineOffset, s.outlineColor].join(); };
+    const picked = pal.querySelector('.swatches [aria-pressed="true"]'), other = pal.querySelector('.swatches [aria-pressed="false"]');
+    r['A17 one 24 px circle for the swatch and the panel, one ring on the picked colour'] = dot(swDot) === '24px,24px,50%' && [...pal.querySelectorAll('.swatches > *')].every((b) => dot(b) === '24px,24px,50%') && ring(swDot) === ring(picked) && ring(picked).startsWith('solid,2px,2px') && getComputedStyle(other).outlineWidth === '0px';
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    sw.click(); presets[0].click(); // back to coral red; the Custom row stays for the A16 check in the next editor
+    // A18: one keycap style. Every key the editor shows is a <kbd> at 11 px, weight 500, in the system font, in the
+    // colour of its text (a disabled button's in --muted), at 4.5:1 or more; under every icon button, after the label of every text button
+    const kbds = [...document.querySelectorAll('kbd')];
+    const keyStyle = (k) => { const s = getComputedStyle(k); return [s.fontSize, s.fontWeight, s.fontFamily.split(',')[0].trim()].join(); };
+    const rgb = (c) => c.match(/[0-9.]+/g).slice(0, 3).map(Number);
+    const ink = (k, ground) => contrast(rgb(getComputedStyle(k).color), rgb(getComputedStyle(ground).backgroundColor)) >= 4.5;
+    const iconBtns = [...document.querySelectorAll('#tools button'), document.getElementById('undo'), document.getElementById('redo')];
+    const below = (b) => { const c = b.parentElement.querySelector(':scope > .cap'), br = b.getBoundingClientRect(), cr = c.getBoundingClientRect(); return !!c.querySelector('kbd') && cr.top >= br.bottom && Math.abs(cr.left + cr.right - br.left - br.right) < 2; };
+    const textBtns = [document.getElementById('cancel'), document.getElementById('save')];
+    const after = (b) => { const k = b.lastElementChild, kr = k.getBoundingClientRect(), br = b.getBoundingClientRect(); return k.tagName === 'KBD' && b.firstChild.nodeType === 3 && kr.top > br.top && kr.bottom < br.bottom; };
+    const heights = (els) => new Set(els.map((e) => e.getBoundingClientRect().height + '/' + getComputedStyle(e).paddingTop + '/' + getComputedStyle(e).paddingLeft)).size === 1;
+    r['A18 one keycap style: 11 px, 500, system glyphs, its text colour at 4.5:1; under icon buttons, after text labels'] =
+      kbds.length === 12 && kbds.every((k) => keyStyle(k) === '11px,500,-apple-system' && getComputedStyle(k).color === getComputedStyle(k.parentElement).color) &&
+      iconBtns.every(below) && iconBtns.every((b) => ink(b.parentElement.querySelector('.cap kbd'), document.querySelector('header'))) &&
+      textBtns.every((b) => after(b) && ink(b.querySelector('kbd'), b)) &&
+      document.getElementById('save').textContent === 'Add to session ⌘↵' && document.getElementById('cancel').textContent === 'Discard ⌘W' &&
+      heights([...document.querySelectorAll('header button')].filter((b) => b.id !== 'session')) && heights(textBtns);
     r['toolbar shows the session name alone while it is empty, then the count'] = document.getElementById('session').textContent === 'smoke' && shotsLabel('Ledgerly Q4 review', 12) === 'Ledgerly Q4 review · 12 screenshots' && shotsLabel('s', 1) === 's · 1 screenshot';
     const tail = bubbleTail(50, 20, { x: -200, y: -100 }, 2);
     r['card: the bubble tail leaves the top edge toward its target; none when the target is inside'] = !!tail && tail[2].y < -20 && tail[2].x < tail[0].x && tail[0].y === -18 && bubbleTail(50, 20, { x: 10, y: 5 }, 2) === null;
@@ -1286,6 +1343,14 @@ app
     inPage['F117 the next editor keeps the colour'] =
       (await inWin(nextColour, `return colorEl.value`)) === '#8b3dff' &&
       JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).color === '#8b3dff';
+    // A16: the Custom row reaches state.json and the next editor; the main process keeps only up to five #rrggbb
+    await inWin(nextColour, `window.snapmark.customColors(['red']); window.snapmark.customColors(Array(6).fill('#000000'));`);
+    await sleep(200);
+    inPage['A16 the Custom row is kept in state.json, checked at the IPC boundary'] =
+      (await inWin(nextColour, `return [...document.querySelectorAll('#customs button')].map((b) => b.dataset.color).join()`)) ===
+        '#12ab9f,#ff00aa' &&
+      JSON.stringify(JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).customColors) ===
+        '["#12ab9f","#ff00aa"]';
     await inWin(nextColour, `setColor('#e5484d');`); // back to coral red
     await sleep(200);
     nextColour.destroy();

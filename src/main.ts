@@ -52,6 +52,7 @@ let used: Record<string, number> = {}; // session name → last made current or 
 let area: Area | null = null; // what Capture Last Area captures, in global screen points
 let singleKeys = true; // Settings ▸ Single-Key Tools
 let color: string | null = null; // the annotation colour last picked; every new editor starts with it
+let customColors: string[] = []; // the colour panel's Custom row, newest first (withCustom in tools.ts)
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
 let tray: Tray | null = null;
@@ -100,6 +101,7 @@ function loadState() {
     beautify = state.beautify ?? null;
     singleKeys = state.singleKeys ?? true;
     color = state.color ?? null;
+    customColors = state.customColors ?? [];
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -109,7 +111,7 @@ function loadState() {
 
 function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
-  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys, color }));
+  fs.writeFileSync(statePath(), JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys, color, customColors }));
 }
 
 // Settings ▸ Single-Key Tools: plain letters and digits pick tools in the editor. WCAG 2.1.4 asks that such keys can be
@@ -423,7 +425,17 @@ ipcMain.handle('editor:init', (e): EditorInit => {
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
   const picked = color ?? undefined;
   if (oneShot)
-    return { src, session, count: 0, state, oneShot, beautify: state?.beautify ?? beautify ?? undefined, singleKeys, color: picked };
+    return {
+      src,
+      session,
+      count: 0,
+      state,
+      oneShot,
+      beautify: state?.beautify ?? beautify ?? undefined,
+      singleKeys,
+      color: picked,
+      customColors,
+    };
   return {
     src,
     session: sessions.shortName(session),
@@ -432,13 +444,20 @@ ipcMain.handle('editor:init', (e): EditorInit => {
     replacing: replace,
     singleKeys,
     color: picked,
+    customColors,
   };
 });
 
+// The page is not trusted to send a colour: only #rrggbb is kept in state.json.
+const isHex = (c: unknown): c is string => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c);
 ipcMain.on('editor:color', (_e, c: unknown) => {
-  // The page is not trusted to send a colour: only #rrggbb is kept in state.json.
-  if (typeof c !== 'string' || !/^#[0-9a-f]{6}$/i.test(c)) return;
+  if (!isHex(c)) return;
   color = c;
+  saveState();
+});
+ipcMain.on('editor:custom-colors', (_e, list: unknown) => {
+  if (!Array.isArray(list) || list.length > 5 || !list.every(isHex)) return;
+  customColors = list;
   saveState();
 });
 
