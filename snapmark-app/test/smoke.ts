@@ -2037,14 +2037,20 @@ app
     const cd = await timed();
     const first = await look(cd);
     const cdBounds = cd.getBounds();
+    // read while it is up: the countdown is destroyed once the capture runs
+    const cdKind = { focusable: cd.isFocusable(), isProtected: process.platform === 'linux' || cd.isContentProtected() }; // macOS and Windows only
     const notYet = shots.length === shotsBeforeTimed; // nothing captured while it counts
     let closedAt = 0;
     cd.once('closed', () => (closedAt = Date.now()));
     const cdDbg = cd.webContents.debugger;
     cdDbg.attach('1.3');
     await cdDbg.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
-    await sleep(900); // past the first second, before the second
-    const still = cd.isDestroyed() ? null : await look(cd);
+    // the digit after the first second, read before the next: main's 100 ms steps drift, so wait for the change
+    let still: { digit: string; anim: string } | null = null;
+    for (let i = 0; i < 30 && !cd.isDestroyed() && still?.digit !== '2'; i++) {
+      await sleep(50);
+      still = await look(cd);
+    }
     const timedEditor = await loadedWindow([...windowsBeforeTimed, cd]);
     // the area is 200 × 150 at (50, 60) on the display: its centre (150, 135), the square centred on it
     viewer['@F28 a timed capture shows the countdown on the area: the digit and "Esc cancels"'] =
@@ -2056,7 +2062,7 @@ app
       (['x', 'y', 'width', 'height'] as const).every((k) => cdBounds[k] === display[k]) &&
       notYet;
     viewer['@F29 the countdown lets clicks through, never takes focus and is content-protected'] =
-      ignoring.has(cd) && !cd.isFocusable() && (process.platform === 'linux' || cd.isContentProtected()); // macOS and Windows only
+      ignoring.has(cd) && !cdKind.focusable && cdKind.isProtected;
     viewer['@F30 the countdown closes 200 ms before the capture'] =
       shots.length === shotsBeforeTimed + 1 && !overlayAtShot && closedAt > 0 && shotAt - closedAt >= 190;
     viewer['@F32 with Reduce Motion the digits change without scale or fade'] =
