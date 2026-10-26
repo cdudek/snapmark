@@ -44,7 +44,7 @@ After it, the owner switches Session and One-Shot in the editor, picks any sessi
 | --- | ------------------------------------------------------------ | ----------- | ---------------------------- | ----- |
 | 2.1 | Editor destination: live switch, session pop-up, Copy closes | F36–F51, N2 | `milestone/picked-designs-2` | done  |
 | 2.2 | Notes spacing and hairline; hex fields                       | F52–F56     | `milestone/picked-designs-2` | done  |
-| 2.3 | Session window opens at 90 % and remembers its size          | F57, F58    | `milestone/picked-designs-2` | todo  |
+| 2.3 | Session window opens at 90 % and remembers its size          | F57, F58    | `milestone/picked-designs-2` | done  |
 
 ### Milestone 3: GIF recording with key frames
 
@@ -195,7 +195,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 - [x] 6. Destination IPC, toolbar controls, pop-up, Copy closes, ⌘C guard. Proof: `@F36`–`@F51` and `@N2` pass.
 - [x] 7. Notes spacing and hex fields. Proof: `@F52`–`@F56` pass.
-- [ ] 8. Session window size. Proof: `@F57`, `@F58` pass.
+- [x] 8. Session window size. Proof: `@F57`, `@F58` pass.
 - [ ] 9. Gate. Proof: `VERIFY PASS milestone`.
 
 ### Milestone 3

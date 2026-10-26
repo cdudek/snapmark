@@ -47,6 +47,7 @@ let singleKeys = true; // Settings ▸ Single-Key Tools
 let color: string | null = null; // the annotation colour last picked; every new editor starts with it
 let customColors: string[] = []; // the colour panel's Custom row, newest first (withCustom in tools.ts)
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
+let viewerSize: { width: number; height: number } | null = null; // the size the owner last gave a session window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
 let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, Session | One-Shot, Timer and Show Mouse Pointer, as last used
 let tray: Tray | null = null;
@@ -92,6 +93,7 @@ function loadState() {
     used = state.used ?? {};
     area = state.area ?? null;
     editorSize = state.editorSize ?? null;
+    viewerSize = state.viewerSize ?? null;
     beautify = state.beautify ?? null;
     singleKeys = state.singleKeys ?? true;
     color = state.color ?? null;
@@ -108,7 +110,7 @@ function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
   fs.writeFileSync(
     statePath(),
-    JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys, color, customColors, capture: captureOpts }),
+    JSON.stringify({ active, root, used, area, editorSize, viewerSize, beautify, singleKeys, color, customColors, capture: captureOpts }),
   );
 }
 
@@ -592,6 +594,15 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
 // Opens the editor on a screenshot file, which it owns and deletes on close. `session` is where it saves (default:
 // the current one); `state` puts marks back; `replace` makes saving replace that entry (Edit Again); `oneShot` opens
 // it in one-shot mode, which has no session and never makes or changes one.
+// An editor or session window opens centred on the screen with the pointer: at 90 % of it the first time, then at the
+// size the owner last gave that kind of window, never larger than that screen.
+function openingBounds(remembered: { width: number; height: number } | null) {
+  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const want = remembered ?? { width: wa.width * 0.9, height: wa.height * 0.9 };
+  const [width, height] = [Math.min(want.width, wa.width), Math.min(want.height, wa.height)].map(Math.round);
+  return { x: Math.round(wa.x + (wa.width - width) / 2), y: Math.round(wa.y + (wa.height - height) / 2), width, height };
+}
+
 export function openEditor(
   image: string,
   opts: { session?: string; state?: EditState; replace?: number; oneShot?: boolean } = {},
@@ -599,15 +610,8 @@ export function openEditor(
   const { oneShot } = opts;
   const session = oneShot ? '' : (opts.session ?? active ?? sessions.create(root));
   if (!opts.replace && !oneShot) setActive(session);
-  // 90% of the screen with the pointer, or the size the owner last gave an editor, never larger than that screen.
-  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  const want = editorSize ?? { width: wa.width * 0.9, height: wa.height * 0.9 };
-  const [width, height] = [Math.min(want.width, wa.width), Math.min(want.height, wa.height)].map(Math.round);
   const win = new BrowserWindow({
-    x: Math.round(wa.x + (wa.width - width) / 2),
-    y: Math.round(wa.y + (wa.height - height) / 2),
-    width,
-    height,
+    ...openingBounds(editorSize),
     // At the minimum size the toolbar still fits on one line (F108).
     minWidth: 820,
     minHeight: 520,
@@ -888,8 +892,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
     return open.win;
   }
   const win = new BrowserWindow({
-    width: 1100,
-    height: 900,
+    ...openingBounds(viewerSize),
     minWidth: 720,
     minHeight: 480,
     title: `${sessions.shortName(name)} — Snapmark`,
@@ -903,6 +906,11 @@ export function openViewer(name: string, into = root): BrowserWindow {
   viewers.set(id, v);
   watch(v);
   win.once('focus', updateDock);
+  win.on('resized', () => {
+    const [w, h] = win.getSize();
+    viewerSize = { width: w, height: h };
+    saveState();
+  });
   win.on('closed', () => {
     v.watcher?.close();
     viewers.delete(id);

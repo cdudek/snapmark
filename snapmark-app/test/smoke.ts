@@ -684,6 +684,14 @@ app
     const waitFor = (cond: string) =>
       inView(`for (let i = 0; i < 50 && !(${cond}); i++) await new Promise((r) => setTimeout(r, 100)); return !!(${cond});`);
     const viewer: Record<string, boolean> = {};
+    // @F57 the first session window fills 90 % of the work area of the pointer's display, centred (1 pt for rounding)
+    const viewWa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+    const within1 = (a: number, b: number) => Math.abs(a - b) <= 1;
+    const centred = (b: Electron.Rectangle) =>
+      within1(b.x + b.width / 2, viewWa.x + viewWa.width / 2) && within1(b.y + b.height / 2, viewWa.y + viewWa.height / 2);
+    const firstOpen = view.getBounds();
+    viewer['@F57 the first session window fills 90 % of the work area, centred'] =
+      within1(firstOpen.width, viewWa.width * 0.9) && within1(firstOpen.height, viewWa.height * 0.9) && centred(firstOpen);
     viewer['viewer shows the screenshot inline'] = await waitFor(`document.querySelector('#doc img[src^="img/"]')?.naturalWidth > 0`);
     viewer['viewer shows the caption'] = await waitFor(`document.getElementById('doc').textContent.includes('Smoke test caption')`);
     await inView(
@@ -970,6 +978,10 @@ app
     await rename('smoke', 'Return');
     await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     watching.destroy();
+    // @F58 the owner leaves the window at 900 × 640: the next one opens at that size. setSize stands in for the drag; it
+    // does not report 'resized' itself
+    view.setSize(900, 640);
+    view.emit('resized');
     view.close();
 
     // A date-stamped session reads as a date, and a rename keeps the date in front
@@ -982,6 +994,13 @@ app
       inDated(
         `for (let i = 0; i < 50 && document.getElementById('title').textContent !== ${JSON.stringify(text)}; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('title').textContent === ${JSON.stringify(text)};`,
       );
+    const datedBounds = dated.getBounds();
+    const remembered = JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).viewerSize;
+    const keptSize =
+      datedBounds.width === 900 &&
+      datedBounds.height === 640 &&
+      centred(datedBounds) &&
+      JSON.stringify(remembered) === '{"width":900,"height":640}';
     viewer['F2 the session window shows the readable date'] =
       (await datedTitle('2026-10-24, 23:38')) && dated.getTitle() === '2026-10-24, 23:38 — Snapmark';
     fs.copyFileSync(shotCopy, path.join(root, 'dated.png'));
@@ -1023,7 +1042,17 @@ app
     dated.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
     viewer['snap-bmr.14.3 gap: ↩ on an emptied field goes back to the bare date'] =
       (await datedTitle('2026-10-24, 23:38')) && fs.existsSync(path.join(root, '2026-10-24 23.38', 'session.md'));
-    dated.close();
+    // @F58 a size remembered from a larger display opens no larger than this one's work area
+    dated.getSize = () => [viewWa.width + 400, viewWa.height + 400];
+    dated.emit('resized');
+    await new Promise<void>((r) => (dated.once('closed', () => r()), dated.close())); // gone from the open windows, so a new one opens
+    const capped = openViewer(stamped, root);
+    const cb = capped.getBounds();
+    viewer['@F58 the session window opens at the size the owner left it, never larger than the display'] =
+      keptSize && within1(cb.width, viewWa.width) && within1(cb.height, viewWa.height) && centred(cb);
+    capped.setSize(1100, 900); // the size the later session windows were checked at before F57
+    capped.emit('resized');
+    capped.close();
 
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks
     fs.copyFileSync(shotCopy, path.join(root, 'discard.png'));
