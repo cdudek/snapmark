@@ -129,8 +129,10 @@ app
     card.exitEditing();
     r.cardWithPointer = card instanceof Card && card.text === 'Make this bigger' && !!card.pointAt;
 
+    const under = px(.32, .32);                       // logged with the result: the macOS release runner differs here
     drag('6', [[.25,.3],[.4,.35]]);                   // highlighter
     const lit = px(.32, .32);
+    console.log('F102', JSON.stringify({ under, lit }));
     r['F102 a highlight over white is as before'] = [253, 232, 150].every((v, i) => Math.abs(lit[i] - v) <= 2);
     const dark = px(.37, .04);
     drag(null, [[.30,.02],[.45,.06]]);                // over the mock's dark header
