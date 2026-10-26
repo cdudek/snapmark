@@ -1,0 +1,167 @@
+{
+  "generated": "2026-10-26",
+  "source": { "stack": "electron-menu-bar", "routeRoot": "snapmark-app/src/menu.ts", "ref": "2bde678" },
+  "scope": "changes/2026-10-26-picked-designs/spec",
+  "locales": ["en"],
+  "defaultLocale": "en",
+  "localePrefix": null,
+  "hosts": null,
+  "navigation": null,
+  "pages": [
+    {
+      "route": "keys/global",
+      "label": { "en": "⌃⇧1 ⌃⇧2 ⌃⇧3 ⌃⇧4 ⌃⇧5 ⌃⇧N" },
+      "type": "entry",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "key", "via": "any app", "source": "snapmark-app/src/keys.ts:6" }],
+      "source": "snapmark-app/src/keys.ts:6-11",
+      "status": "as-built",
+      "change": "⌃⇧4 Capture Last Area, ⌃⇧3 Capture Full Screen, ⌃⇧1 Capture New Area…, ⌃⇧2 Capture One-Shot… (A4)"
+    },
+    {
+      "route": "menu/capture-rows",
+      "label": { "en": "Capture Last Area · Capture New Area… · Capture Full Screen · Capture One-Shot… · Capture Options…" },
+      "type": "menu",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "menu", "via": "menu bar icon", "source": "snapmark-app/src/menu.ts:98" }],
+      "source": "snapmark-app/src/menu.ts:98-105",
+      "status": "as-built",
+      "change": "five rows; Capture Screenshot… removed"
+    },
+    {
+      "route": "capture-bar",
+      "label": { "en": "Capture Options" },
+      "type": "panel",
+      "tabs": [],
+      "reachedFrom": [
+        { "kind": "key", "via": "⌃⇧5", "source": "snapmark-app/src/keys.ts:9" },
+        { "kind": "menu", "via": "Capture Options…", "source": "snapmark-app/src/menu.ts:105" }
+      ],
+      "source": "snapmark-app/src/main.ts:319",
+      "status": "as-built",
+      "change": "two rows, modes 1–6 with Full Screen and Record, Session | One-Shot, session pop-up, blue Capture ↩"
+    },
+    {
+      "route": "capture-bar/tip",
+      "label": { "en": "name and key" },
+      "type": "panel",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "hover", "via": "bar controls", "source": "snapmark-app/src/bar.ts:13" }],
+      "source": "snapmark-app/src/tip.html",
+      "status": "removed",
+      "change": "names and keys show on the bar (Q3, answered)"
+    },
+    {
+      "route": "countdown",
+      "label": { "en": "3 · Esc cancels" },
+      "type": "panel",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "panel", "via": "capture bar Record or Timer", "source": "proposed" }],
+      "source": "proposed",
+      "status": "proposed",
+      "change": "new (J5, A6)"
+    },
+    {
+      "route": "recording-control",
+      "label": { "en": "0:07 of 0:30 · 10 fps" },
+      "type": "panel",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "panel", "via": "countdown in Record", "source": "proposed" }],
+      "source": "proposed",
+      "status": "proposed",
+      "change": "new (J5, A8)"
+    },
+    {
+      "route": "scrolling-control",
+      "label": { "en": "Scrolling · 12 frames · 4,200 px tall" },
+      "type": "panel",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "panel", "via": "capture bar Scrolling", "source": "snapmark-app/src/main.ts:532" }],
+      "source": "snapmark-app/src/scroll.html",
+      "status": "as-built",
+      "change": "scrolls by itself; manual fallback (A2, A3)"
+    },
+    {
+      "route": "editor",
+      "label": { "en": "Snapmark — <session>" },
+      "type": "record",
+      "tabs": [],
+      "reachedFrom": [
+        { "kind": "capture", "via": "every capture", "source": "snapmark-app/src/main.ts:571" },
+        { "kind": "button", "via": "Edit Again", "source": "snapmark-app/src/viewer.html:523" }
+      ],
+      "source": "snapmark-app/src/editor.html:678",
+      "status": "as-built",
+      "change": "toolbar Session | One-Shot and session pop-up; notes spacing; Beautify hex field"
+    },
+    {
+      "route": "editor/recording",
+      "label": { "en": "Snapmark — <session>" },
+      "type": "record",
+      "tabs": [],
+      "reachedFrom": [
+        { "kind": "panel", "via": "recording control Done", "source": "proposed" },
+        { "kind": "button", "via": "Edit Again on a recording", "source": "proposed" }
+      ],
+      "source": "proposed",
+      "status": "proposed",
+      "change": "new: key frames canvas (J6, A11)"
+    },
+    {
+      "route": "menu/session-pop-up",
+      "label": { "en": "<session> (<n>) · Older Sessions… · New Session" },
+      "type": "menu",
+      "tabs": [],
+      "reachedFrom": [
+        { "kind": "button", "via": "editor session pop-up", "source": "snapmark-app/src/main.ts:677" },
+        { "kind": "button", "via": "capture bar session pop-up", "source": "proposed" }
+      ],
+      "source": "snapmark-app/src/menu.ts:196-212",
+      "status": "as-built",
+      "change": "counts, Older Sessions…, also in the bar"
+    },
+    {
+      "route": "session-window",
+      "label": { "en": "<session> — Snapmark" },
+      "type": "record",
+      "tabs": [
+        { "label": "Document", "count": false, "primary": "Open in Markdown App" },
+        { "label": "Screenshots", "count": false, "primary": "Open in Markdown App" },
+        { "label": "Discarded", "count": true, "primary": "Open in Markdown App" }
+      ],
+      "reachedFrom": [{ "kind": "menu", "via": "Open Current Session", "source": "snapmark-app/src/menu.ts:107" }],
+      "source": "snapmark-app/src/main.ts:838",
+      "status": "as-built",
+      "change": "90 % first size, remembered; recording entries with Play (A8, A9)"
+    },
+    {
+      "route": "settings/capture",
+      "label": { "en": "Capture" },
+      "type": "settings",
+      "tabs": [
+        { "label": "General", "count": false, "primary": "none" },
+        { "label": "Capture", "count": false, "primary": "none" },
+        { "label": "Shortcuts", "count": false, "primary": "none" }
+      ],
+      "reachedFrom": [{ "kind": "menu", "via": "Settings…", "source": "snapmark-app/src/menu.ts:156" }],
+      "source": "snapmark-app/src/settings.html:179",
+      "status": "as-built",
+      "change": "Capture Scrolling Accessibility row"
+    },
+    {
+      "route": "keyboard-shortcuts",
+      "label": { "en": "Keyboard Shortcuts" },
+      "type": "settings",
+      "tabs": [],
+      "reachedFrom": [{ "kind": "key", "via": "⌘/", "source": "snapmark-app/src/menu.ts:171" }],
+      "source": "snapmark-app/src/main.ts:1171",
+      "status": "as-built",
+      "change": "rows for the new keys"
+    }
+  ],
+  "redirects": [],
+  "findings": [
+    { "id": "SM-3", "impact": "Low", "page": "editor/recording", "note": "one way in from a new capture; Edit Again is the second" },
+    { "id": "SM-11", "impact": "Medium", "page": "keys/global", "note": "⌃⇧3 and ⌃⇧4 change meaning; no redirect possible" }
+  ]
+}

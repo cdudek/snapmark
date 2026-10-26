@@ -1,0 +1,3 @@
+![Session](shots/1-editor--session.png)
+
+![Destination menu open](shots/2-editor--destination-menu.png)

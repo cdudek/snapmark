@@ -17,23 +17,64 @@ const read = (f: string) => fs.readFileSync(path.join(root, f), 'utf8');
 const srcFiles = fs.readdirSync(path.join(root, 'src')).map((f) => `src/${f}`);
 const main = read('src/main.ts');
 
-// F1 capture key: ⌃⇧4, like macOS's ⇧⌘4
-assert.strictEqual(SHORTCUTS.capture, 'Control+Shift+4');
-assert.ok(main.includes('SHORTCUTS.capture'), 'main.ts registers the capture key from SHORTCUTS');
-
-// F2 unchanged keys: ⌃⇧3 Capture Last Area, ⌃⇧N New Session; ⌃⇧5 the capture options
-assert.strictEqual(SHORTCUTS.area, 'Control+Shift+3');
-assert.strictEqual(SHORTCUTS.newSession, 'Control+Shift+N');
-assert.strictEqual(SHORTCUTS.options, 'Control+Shift+5');
-for (const k of ['area', 'newSession', 'options']) assert.ok(main.includes(`SHORTCUTS.${k}`), `main.ts registers SHORTCUTS.${k}`);
-
-// F5 freed keys: ⌃⇧1 is no longer Snapmark's, and macOS's own ⇧⌘3/4/5 never were
-for (const f of srcFiles) {
-  const s = read(f);
-  assert.ok(!/Control\+Shift\+1\b/.test(s), `${f} names Control+Shift+1`);
-  assert.ok(!/(Command|CommandOrControl|Cmd)\+Shift\+[345]\b/.test(s), `${f} registers a macOS screenshot key`);
-}
+// Keys follow macOS (ADR 2026-10-25, as A4 gives them): ⌃⇧1–⌃⇧5 for ⇧⌘1–⇧⌘5, and ⌃⇧N. Replaces F1, F2, F5 and F217.
+assert.deepStrictEqual(
+  { ...SHORTCUTS },
+  {
+    newArea: 'Control+Shift+1',
+    oneShot: 'Control+Shift+2',
+    fullScreen: 'Control+Shift+3',
+    capture: 'Control+Shift+4',
+    options: 'Control+Shift+5',
+    newSession: 'Control+Shift+N',
+  },
+  '@F1 @F3 @F4 @F5 the keys',
+);
+// macOS's own ⇧⌘3/4/5 are never Snapmark's; main.ts takes every global key from SHORTCUTS and registers them all
+for (const f of srcFiles)
+  assert.ok(!/(Command|CommandOrControl|Cmd)\+Shift\+[345]\b/.test(read(f)), `${f} registers a macOS screenshot key`);
 assert.ok(!/['"]Control\+Shift\+\w['"]/.test(main), 'main.ts takes every global key from SHORTCUTS');
+assert.ok(
+  main.includes('Object.entries(SHORTCUTS)') && main.includes('globalShortcut.register(key, keyHandlers[name])'),
+  'every key registered',
+);
+// What each key does: @F1 ⌃⇧1 picks a new area and captures it, @F3 ⌃⇧2 macOS's overlay in One-Shot, @F4 ⌃⇧3 every
+// display, @F5 ⌃⇧4 the last area, ⌃⇧5 the capture bar (F201), ⌃⇧N a new session
+const handlers = main.slice(main.indexOf('export const keyHandlers'), main.indexOf('\n};\n', main.indexOf('export const keyHandlers')));
+for (const line of [
+  'newArea: () => void captureArea(true),',
+  "oneShot: () => void (busy() || shoot(['-i'], true)),",
+  'fullScreen: () => void captureFullScreen(),',
+  'capture: () => void captureArea(),',
+  'options: () => void (cancelCountdown ? cancelCountdown() : openCaptureBar()),',
+  'newSession: () => void (capturing() || newSession()),',
+])
+  assert.ok(handlers.includes(line), `keyHandlers: ${line}`);
+// @F7 a New Session forgets the area, so the next ⌃⇧4 asks, saying why
+const fresh = main.slice(main.indexOf('function newSession'), main.indexOf('\n}\n', main.indexOf('function newSession')));
+assert.ok(fresh.includes('area = null;') && fresh.includes('areaForgotten = true;'), '@F7 newSession forgets the area');
+assert.ok(main.includes("pickArea(!choose && area ? 'gone' : !choose && areaForgotten ? 'new' : '')"), '@F7 the picker says why');
+const areaPage = read('src/area.ts');
+assert.ok(areaPage.includes("hint.textContent = 'New session: drag the area. ⌃⇧4 captures it again. Esc cancels.'"), '@F7 hint');
+assert.ok(
+  read('src/area.html').includes('<div id="hint">Drag over the area to capture. ⌃⇧4 captures it again. Esc cancels.</div>'),
+  '@F1 @F6 the picker hint names ⌃⇧4',
+);
+
+// @F10 busy: while a picker, countdown or capture runs, ⌃⇧1, ⌃⇧2, ⌃⇧3, ⌃⇧4 and ⌃⇧N do nothing. The open bar is busy for
+// the capture keys only: its session pop-up offers New Session with ⌃⇧N.
+assert.ok(main.includes('const capturing = () => picking || scrolling || shooting || counting || launching;'), '@F10');
+// @F10 and in the 200 ms between the bar closing and its capture starting: set at close, cleared just before the run
+const barCapture = main.slice(main.indexOf("ipcMain.on('bar:capture'"), main.indexOf('\n});\n', main.indexOf("ipcMain.on('bar:capture'")));
+assert.ok(
+  /launching = true;[^]*launching = false;\s+void run\(o\);[^]*win\.close\(\);/.test(barCapture),
+  '@F10 busy until the bar capture runs',
+);
+assert.ok(main.includes('const busy = () => capturing() || barOpen();'), '@F10');
+for (const fn of ['async function captureArea', 'function captureFullScreen']) {
+  const body = main.slice(main.indexOf(fn), main.indexOf('\n}\n', main.indexOf(fn)));
+  assert.ok(body.includes('if (busy()) return;'), `@F10 ${fn} does nothing while busy`);
+}
 
 // F236 key groups (replaces F19): Anywhere, Capture bar, Snapmark windows, Editor and Session window, with the rows of
 // spec/microcopy.md and spec/capture-and-settings.md, in order
@@ -43,28 +84,60 @@ assert.deepStrictEqual(
   'F236',
 );
 const keys = (title: string) => KEY_GROUPS.find((g) => g.title === title)!.rows.map(([k]) => k);
-assert.deepStrictEqual(keys('Anywhere'), ['⌃⇧4', '⌃⇧3', '⌃⇧5', '⌃⇧N', '↩ / Esc'], 'F236');
+// @F9 the Keyboard Shortcuts window's Anywhere rows: screens.md's global keys, in its order and words; each ⌃⇧ row is a
+// key in SHORTCUTS, and every key has its row. ⌃⇧5's "while recording or scrolling, Done" waits for milestones 3 and 4.
 assert.deepStrictEqual(
-  KEY_GROUPS[0].rows[2],
-  ['⌃⇧5', 'Capture options', 'the capture bar: window, new area, last area or scrolling, and where it goes'],
-  'F236',
+  KEY_GROUPS[0].rows,
+  [
+    ['⌃⇧4', 'Capture Last Area', 'the first time, or after New Session, drag the area'],
+    ['⌃⇧1', 'Capture New Area', 'drag an area, capture it, and keep it for ⌃⇧4'],
+    ['⌃⇧3', 'Capture Full Screen', 'every display at once, one screenshot each'],
+    ['⌃⇧2', 'Capture One-Shot', 'drag an area; not added to a session'],
+    ['⌃⇧5', 'Capture Options', 'the capture bar'],
+    ['⌃⇧N', 'New Session', 'also forgets the area'],
+    ['↩ / Esc', 'Done / Cancel', 'while Capture Scrolling runs'],
+  ],
+  '@F9',
 );
+assert.deepStrictEqual(
+  keys('Anywhere')
+    .filter((k) => k.startsWith('⌃⇧'))
+    .map((k) => `Control+Shift+${k.slice(2)}`)
+    .sort(),
+  Object.values(SHORTCUTS).sort(),
+  '@F9 one row per global key',
+);
+// Settings ▸ Shortcuts lists the same global keys, from these rows
+assert.ok(main.includes("keys: KEY_GROUPS[0].rows\n    .filter(([k]) => k.startsWith('⌃⇧'))"), '@F9 Settings ▸ Shortcuts');
 // F11 the capture bar group lists 1-4 (first, before F236's rows)
 assert.deepStrictEqual(
   KEY_GROUPS[1].rows,
   [
-    ['1–4', 'Pick a mode', 'window, new area, last area, scrolling'],
-    ['← →', 'Move between modes', 'Tab moves on to Options and Capture'],
-    ['↩', 'Capture', ''],
-    ['Esc', 'Close', ''],
+    ['1–5', 'Pick a mode', 'new area, window, full screen, last area, scrolling'],
+    ['← →', 'Move between modes', 'Tab moves on to Options, Capture and Session or One-Shot'],
+    ['↩ / ⌘↩', 'Capture', ''],
+    ['⇧⌘O', 'Session or One-Shot', 'where the capture goes'],
+    ['⇧⌘P', 'Switch Session', 'pick the current session'],
+    ['⌥O', 'Options', 'Timer and Show Mouse Pointer'],
+    ['Esc', 'Close', 'also from another app while the bar is open'],
   ],
-  'F11 and F236 Capture bar',
+  '@F18 F236 Capture bar',
 );
+// @F18 the bar's controls carry the keys the group lists, in bar order: the destination row, then Esc, 1–5, Options and
+// Capture
 const bar = read('src/bar.html');
 assert.deepStrictEqual(
   [...bar.matchAll(/aria-keyshortcuts="([^"]+)"/g)].map((m) => m[1]),
-  ['Escape', '1', '2', '3', '4', 'Enter'],
-  'F11 the bar buttons carry the keys the group lists',
+  ['Shift+Meta+O', 'Shift+Meta+O', 'Shift+Meta+P', 'Escape', '1', '2', '3', '4', '5', 'Alt+O', 'Enter Meta+Enter'],
+  '@F18 the bar buttons carry the keys the group lists',
+);
+// @F18 and show them: native tooltips never show in this panel, so ⇧⌘O and ⇧⌘P are captions on the bar too
+assert.deepStrictEqual(
+  [...bar.slice(bar.indexOf('<div id="head">'), bar.indexOf('<div class="hairline"')).matchAll(/class="key"[^>]*>([^<]+)</g)].map(
+    (m) => m[1],
+  ),
+  ['⇧⌘O', '⇧⌘P'],
+  '@F18 the destination row shows ⇧⌘O and ⇧⌘P',
 );
 assert.deepStrictEqual(
   KEY_GROUPS[2].rows,
@@ -86,8 +159,8 @@ const page = read('src/shortcuts.html');
 assert.ok(page.indexOf('src="tools.js"') > 0 && page.indexOf('src="tools.js"') < page.indexOf('src="shortcuts.js"'), 'F229 tools.js first');
 assert.ok(page.includes("content=\"default-src 'self'; style-src 'self' 'unsafe-inline'\""), 'F229 CSP as area.html');
 
-// F20 no old key: no screen, hint or doc still tells the owner to press ⌃⇧1
-for (const f of [...srcFiles, 'README.md', '../docs/ux/setup.md']) assert.ok(!read(f).includes('⌃⇧1'), `${f} still names ⌃⇧1`);
+// F20 no old key: no screen or hint still tells the owner ⌃⇧3 captures the last area, or ⌃⇧4 drags a region
+for (const f of srcFiles) assert.ok(!/⌃⇧3 captures|Capture Screenshot…/.test(read(f)), `${f} still names an old key`);
 
 // F103 captions: ⌘1 to ⌘7 under groups 1 to 7, whatever the Single-Key Tools setting
 for (const on of [true, false])
@@ -157,20 +230,8 @@ const script = read('src/shortcuts.ts');
 assert.ok(script.includes('toolKey(g, v, singleKeys)') && script.includes('singleKeysLine(singleKeys)'), 'F109 the window uses them');
 
 // F201 ⌃⇧5 opens the bar: the options key opens the capture bar, and the popup menu is gone
-assert.ok(main.includes('[SHORTCUTS.options, () => void openCaptureBar()]'), 'F201 ⌃⇧5 opens the bar');
 assert.ok(!main.includes('popOptions'), 'F201 no popup menu');
 assert.ok(main.includes("loadFile(path.join(__dirname, 'bar.html'))"), 'F201 the bar is bar.html');
-
-// F217 keys unchanged: the bar's options never reach ⌃⇧4, ⌃⇧3 and ⌃⇧N
-assert.deepStrictEqual(
-  { ...SHORTCUTS },
-  { capture: 'Control+Shift+4', area: 'Control+Shift+3', options: 'Control+Shift+5', newSession: 'Control+Shift+N' },
-  'F217',
-);
-assert.ok(main.includes('[SHORTCUTS.capture, capture]'), 'F217 ⌃⇧4');
-assert.ok(main.includes('[SHORTCUTS.area, () => void captureArea()]'), 'F217 ⌃⇧3 without the bar’s options');
-assert.ok(main.includes('[SHORTCUTS.newSession, newSession]'), 'F217 ⌃⇧N');
-assert.ok(main.includes("const capture = () => void (busy() || shoot(['-i']));"), 'F217 ⌃⇧4 is screencapture -i');
 
 const setter = main.slice(main.indexOf('function setSingleKeys'), main.indexOf('\n}\n', main.indexOf('function setSingleKeys')));
 assert.ok(setter.includes('shortcutsWin') && setter.includes('reload()'), 'F109 setSingleKeys redraws an open Keyboard Shortcuts window');

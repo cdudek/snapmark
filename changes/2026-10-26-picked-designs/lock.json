@@ -1,0 +1,9 @@
+{
+  "approved_at": "2026-10-26T18:11:38+00:00",
+  "sha": "bcee394b01daee07d2d35409b4b15592cc8ec95b",
+  "criteria": {
+    "facts.md": "82f68f8fcfdb45e39d4f5e11ad523102c905b10fb4e14b0b63ae7e3c687823e2",
+    "done.json": "381dec8747270caa202087d77be76359080ef222c2a5e02ee94b14bf743efbb0",
+    "checks": "07e1ed0cd700c938ec8884e98c8fb9ddfd90a6334394ee7a497733265c0858fc"
+  }
+}

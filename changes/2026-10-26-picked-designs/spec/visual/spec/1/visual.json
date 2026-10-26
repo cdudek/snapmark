@@ -1,0 +1,151 @@
+{
+  "method": "Spec conformance, round 1, 2026-10-26. The picked mockups are linked (file symlinks) from design-explorations/, not copied. Each was opened with the Read image tool in this session before writing its row.",
+  "screenshots": [
+    {
+      "file": "shots/prototype/bold-1-capture-bar--session.png",
+      "screen_state": "Capture bar / default, New Area chosen, Session / light / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-capture-workflow/02-bold/shots/1-capture-bar--session.png, this session",
+      "sha256": "0875611435ad17387ab2066646124b62e017565afc236f2f4b714372427c11df",
+      "observations": "Two-row bar at the bottom centre. Headline 'Capture Area' with hint 'Drag to choose the area'. Segmented Session | One-Shot and a session pop-up at the right. Esc, five modes with labels and keys 1-5, Options with a key hint, one blue 'Capture ↩'. The chosen mode has a grey fill and blue icon. Only Capture is filled blue. Area outline dashed blue.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "id": "VIS-001",
+          "summary": "Mode 2 reads 'Capture Area', while ⌃⇧4 is 'Capture Last Area'; one place, two near names",
+          "verdict": "violates docs/ux/interaction-guidelines.md#WRD-4",
+          "quote": "- **WRD-4 (accepted).** One word per thing, everywhere: session, screenshot, mark, reference, card, Discarded."
+        }
+      ]
+    },
+    {
+      "file": "shots/prototype/bold-2-capture-bar--record-options.png",
+      "screen_state": "Capture bar / Record chosen, Options menu open / dark / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-capture-workflow/02-bold/shots/2-capture-bar--record-options.png, this session",
+      "sha256": "77304c558d68b8250f7b951cac4b2a203b2798ef618524bba0e268e86030d62a",
+      "observations": "Headline 'Record', hint 'Up to 30 seconds'. Options menu: Save to (Session, One-Shot), Frame rate (15, 10 checked, 5, 4, 2 fps), Timer (None, 3, 5, 10 seconds), Show Mouse Pointer. Record fill is grey with a blue icon. Capture stays the only blue fill. Dark material legible.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "id": "VIS-002",
+          "summary": "Options ▸ Save to repeats the Session | One-Shot segmented control in the same bar",
+          "verdict": "no convention",
+          "proposal": "DST-1: the destination has one control per surface, the Session | One-Shot segmented control; no menu repeats it."
+        },
+        {
+          "id": "VIS-003",
+          "summary": "Group header 'Frame rate' is sentence case; macOS menus head groups in title case like 'Frame Rate'",
+          "verdict": "violates docs/ux/interaction-guidelines.md#WRD-1",
+          "quote": "- **WRD-1 (accepted).** Menus, buttons, tabs and window titles use title case, as macOS does. Headings, labels, placeholders and messages use sentence case."
+        }
+      ]
+    },
+    {
+      "file": "shots/prototype/bold-3-countdown--3.png",
+      "screen_state": "Countdown overlay / 3 / light / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-capture-workflow/02-bold/shots/3-countdown--3.png, this session",
+      "sha256": "fee2aa6615e2231e3695e72a956685656e40fc497ba8e4d64a593821704f4ddf",
+      "observations": "Screen dimmed outside the area. A frosted square centred on the area with a large '3' and 'Esc cancels'. The menu bar shows the Snapmark icon with '3' beside it. Bar is gone. Digit is legible against the frosted fill.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/prototype/bold-4-recording--running.png",
+      "screen_state": "Recording control / recording / dark / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-capture-workflow/02-bold/shots/4-recording--running.png, this session",
+      "sha256": "df4d699d6f61ef33ef4212b95c4c45eef7530e9190277dda51147353cef7652e",
+      "observations": "Dark panel below the area: a round grey stop button, '0:07 of 0:30 · 10 fps', blue 'Done ↩', 'Esc cancels'. The area outline is solid blue. The panel sits outside the area.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "id": "VIS-004",
+          "summary": "The stop button and Done do the same thing; two controls for one action",
+          "verdict": "no convention",
+          "proposal": "One control per action in a capture panel: a red dot shows recording; Done is the only stop."
+        }
+      ]
+    },
+    {
+      "file": "shots/prototype/toolbar-1-editor--session.png",
+      "screen_state": "Editor / Session, toolbar destination / light / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-editor-target/02-toolbar/shots/1-editor--session.png, this session",
+      "sha256": "3ffe32a509912a3d3dda9ba281afa7a47891f598fc623ca05ba00fa39680a359",
+      "observations": "Toolbar: tools with ⌘ keys, colour swatch, Undo ⌘Z, Redo ⇧⌘Z, grey segmented Session | One-Shot with Session selected in blue text, pop-up 'Ledgerly Q4 review (6)'. A grey line 'Ledgerly Q4 review · 6 screenshots' sits under the pop-up. Notes column: 'General comment' with room above, a hairline, 'References' with two notes. Footer Discard ⌘W and blue 'Add to Session ⌘↩'. Copy or Save button is not drawn.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "id": "VIS-005",
+          "summary": "The grey line under the pop-up repeats the pop-up's name and count",
+          "verdict": "no convention",
+          "proposal": "A control's face is its only label; no caption repeats it."
+        }
+      ]
+    },
+    {
+      "file": "shots/prototype/toolbar-2-editor--destination-menu.png",
+      "screen_state": "Session pop-up / open / light / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-editor-target/02-toolbar/shots/2-editor--destination-menu.png, this session",
+      "sha256": "faf91bd7676e21f1b54398777b1b4a17a615324dce67d5b1d740b81eabab7fea",
+      "observations": "Native menu under the pop-up: four sessions with counts, a check on 'Ledgerly Q4 review (6)', separator, 'Older Sessions…', 'New Session ⌃⇧N'. The menu covers the notes column top; acceptable for a transient menu.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/prototype/keyframes-1-editor--recording.png",
+      "screen_state": "Recording editor / key frames, two references / light / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-recording-review/03-key-frames/shots/1-editor--recording.png, this session",
+      "sha256": "82aa8d4ae0efc29404f929d29d9c99191beca2e3b4f7115998948a7f9924dafb",
+      "observations": "Canvas: 'Recording 0:03.2 · 10 fps · 32 frames', 'Key frames 4 of 32 frames', 'Show all 32 frames ⌥A'. Four frames in a row labelled 0.0 s Page, 0.4 s Spinner appears, 2.4 s Rows appear, 3.2 s Settled. Two references with times in the notes. A 'Recording' block repeats the facts in the notes column. Previous frame / Next frame links. Toolbar ends with a link '→ Ledgerly Q4 review ⌘⇧O', not the picked destination controls. Primary reads 'Add to session'.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "id": "VIS-006",
+          "summary": "The toolbar lacks the picked Session | One-Shot control and pop-up",
+          "verdict": "violates design-explorations/2026-10-26-editor-target/feedback.md#Round 2 feedback",
+          "quote": "- At the right end of the toolbar, after Undo/Redo: a grey segmented control `Session | One-Shot` (selected: grey fill, blue text), then a pop-up button `<session> (<count>) ⌄`."
+        },
+        {
+          "id": "VIS-007",
+          "summary": "Primary button 'Add to session' is sentence case",
+          "verdict": "violates docs/ux/interaction-guidelines.md#WRD-1",
+          "quote": "- **WRD-1 (accepted).** Menus, buttons, tabs and window titles use title case, as macOS does. Headings, labels, placeholders and messages use sentence case."
+        },
+        {
+          "id": "VIS-008",
+          "summary": "Frame captions like 'Spinner appears' cannot be known by Snapmark",
+          "verdict": "no convention",
+          "proposal": "Key frames carry their time only; any caption is the owner's note."
+        },
+        {
+          "id": "VIS-009",
+          "summary": "The notes column 'Recording' block repeats the canvas facts line",
+          "verdict": "no convention",
+          "proposal": "Facts appear once per window; the notes column holds notes only."
+        }
+      ]
+    },
+    {
+      "file": "shots/prototype/keyframes-2-session--recording-entry.png",
+      "screen_state": "Session window / Screenshots, recording entry / light / 100%",
+      "width": 1536,
+      "opened_with": "Read image, design-explorations/2026-10-26-recording-review/03-key-frames/shots/2-session--recording-entry.png, this session",
+      "sha256": "015fcb53b51c3ea50465f8841e3b82d07c97aa61f03776dfdd79a20fe2ebfad6",
+      "observations": "Header tabs Document ⌘1, Screenshots ⌘2, Discarded 3 ⌘3, Open in Markdown App ⇧⌘M. Entry 007 badge 'Recording', '0:03.2 · 10 fps · 32 frames', Edit Again ⌘O. 'Filmstrip · for AI PNG' with four frames and marks; 'GIF · for people' with Play Space. Notes with times. Neighbour entry 006 Screenshot.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "id": "VIS-010",
+          "summary": "Tab keys ⌘1–⌘3 and ⇧⌘M appear, which no rule or spec defines",
+          "verdict": "no convention",
+          "proposal": "Do not add tab keys in this change; record them as a separate ask if wanted."
+        }
+      ]
+    }
+  ]
+}

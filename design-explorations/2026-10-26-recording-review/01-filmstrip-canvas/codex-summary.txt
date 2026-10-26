@@ -1,0 +1,3 @@
+![Editor](shots/1-editor--recording.png)
+
+![Session](shots/2-session--recording-entry.png)

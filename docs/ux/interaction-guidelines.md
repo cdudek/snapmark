@@ -11,7 +11,7 @@ change: 2026-10-26-interaction-guide-polish
 
 This guide says how Snapmark should feel and behave, in one place. A builder, human or agent, checks a screen against it. Every rule can be answered yes or no.
 
-The owner accepted every rule and exception on 2026-10-26. A new rule starts as `(proposed)` and is not a promise until the owner accepts it.
+The owner accepted every rule and exception on 2026-10-26, and the rules added by change 2026-10-26-picked-designs at its plan gate the same day. A new rule starts as `(proposed)` and is not a promise until the owner accepts it.
 
 How to read a rule: the first line is the rule, what must be true. Under it:
 
@@ -22,9 +22,9 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 
 ## 1. How Snapmark should feel
 
-1. **Quiet and fast.** One chord does the common thing, with no question it could answer itself. Example: ⌃⇧3 captures the last area at once, with no picker and no dialog.
+1. **Quiet and fast.** One chord does the common thing, with no question it could answer itself. Example: ⌃⇧4 captures the last area at once, with no picker and no dialog.
 2. **Never in the way of the screen.** Snapmark is never in its own capture and never moves you to another Space. Example: the capture bar closes and waits 200 ms before the shot is taken.
-3. **A Mac app.** It uses macOS's keys, words and windows, so nothing has to be learned twice. Example: ⌃⇧4, ⌃⇧3 and ⌃⇧5 mirror macOS's ⇧⌘4, ⇧⌘3 and ⇧⌘5.
+3. **A Mac app.** It uses macOS's keys, words and windows, so nothing has to be learned twice. Example: ⌃⇧3, ⌃⇧4 and ⌃⇧5 mirror macOS's ⇧⌘3, ⇧⌘4 and ⇧⌘5.
 4. **The agent reads what you mean.** Every mark and note says in words what it means. Example: a Cross reaches the agent as "remove this", not as red pixels to decode.
 5. **Nothing is lost.** Every way out can be undone or recovered, so Snapmark rarely asks first. Example: ⌘W discards a screenshot to Discarded, where it stays for 7 days.
 6. **It explains itself where you look.** Every icon tells its name and key on hover. Example: hovering the Box tool shows "Box (2 or ⌘2) · press again for Ellipse".
@@ -33,15 +33,15 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 
 ### Capture
 
-- **CAP-1 (accepted).** ⌃⇧4, ⌃⇧3 and ⌃⇧5 work from any app, Space or full-screen app, and never switch Spaces.
+- **CAP-1 (accepted).** ⌃⇧1 to ⌃⇧5 work from any app, Space or full-screen app, and never switch Spaces.
   - **Why:** Flow. A review keeps its rhythm only if capturing never pulls you out of the app.
-  - **Today:** `src/keys.ts:6-11`; bar shown on every Space at `src/main.ts:354`.
+  - **Today:** `src/keys.ts:6-13`; bar shown on every Space at `src/main.ts:446`.
 - **CAP-2 (accepted).** No Snapmark window, bar, picker or counter ever appears in a capture.
   - **Why:** Mental Model. A screenshot must show the screen as you saw it before you pressed the key.
   - **Today:** the bar closes, then waits 200 ms (capture bar ADR); content protection at `src/main.ts:352`.
-- **CAP-3 (accepted).** In the capture bar, keys 1–4 pick a mode in bar order: Window, New Area, Last Area, Scrolling. ↩ captures, Esc closes, ← → still move.
+- **CAP-3 (accepted).** In the capture bar, keys 1–6 pick a mode in bar order and match the global digits: 1 New Area, 2 Window, 3 Full Screen, 4 Last Area, 5 Scrolling, 6 Record. Each mode shows its name and key under its icon. ↩ or ⌘↩ captures, Esc closes, ← → still move.
   - **Why:** Fitts's Law. A key needs no aiming, so a frequent choice costs no trip to the pointer.
-  - **Today:** ← → ↩ Esc at `src/bar.ts:46-54`. Not yet: keys 1–4.
+  - **Today:** ← → ↩ Esc at `src/bar.ts:46-54`. Not yet: this order, Full Screen and the labels (2026-10-26-picked-designs, milestone 1); Record joins as 6 in milestone 3.
 - **CAP-4 (accepted).** Clicking a mode only chooses it. Only Capture or ↩ takes the shot.
   - **Why:** Jakob's Law. macOS's own ⇧⌘5 bar works this way.
   - **Today:** `src/bar.ts:39`.
@@ -51,18 +51,24 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 - **CAP-6 (accepted).** An option a mode cannot use is greyed, never hidden. Timer and Show Mouse Pointer grey for Window and Scrolling.
   - **Why:** Mental Model. A greyed item says the option exists and why it is off now.
   - **Today:** capture bar ADR, decision 5; `src/main.ts:308`.
-- **CAP-7 (accepted).** The bar's Options apply only to captures started from the bar. ⌃⇧4 and ⌃⇧3 never change.
+- **CAP-7 (accepted).** The bar's Options apply only to captures started from the bar. The global keys never change.
   - **Why:** Mental Model. One key keeps one meaning, so a forgotten One-Shot never steals a capture.
   - **Today:** capture bar ADR, decision 4.
 - **CAP-8 (accepted).** The area picker shows a hint and the live size. A click or a sliver starts over. Esc cancels.
   - **Why:** Postel's Law. It accepts a slip and never sends a broken capture on.
   - **Today:** `src/area.html:66-69`.
-- **CAP-9 (accepted).** Capture Scrolling says what to do, counts as it grabs, and ends on ↩ (Done) or Esc (Cancel).
+- **CAP-9 (accepted).** Capture Scrolling scrolls the area by itself and falls back to your own scrolling, with the reason, when it cannot. It says what it does, counts as it grabs, and ends on ↩, ⌃⇧5 or the menu bar icon (Done), or Esc or ⓧ (Cancel).
   - **Why:** Goal-Gradient Effect. A visible count shows how close you are to done.
-  - **Today:** `src/scroll.html:61-63`; the height limit notice at `src/main.ts:460`.
-- **CAP-10 (accepted).** A Timer shows the seconds left beside the menu bar icon. Esc cancels it. No other capture starts meanwhile.
+  - **Today:** `src/scroll.html:61-63`; the height limit notice at `src/main.ts:460`. Not yet: auto-scroll and ⓧ (2026-10-26-picked-designs, milestone 4).
+- **CAP-10 (accepted).** A Timer, and the countdown before a recording, shows the seconds left in an overlay on the area and beside the menu bar icon. Esc, ⌃⇧5 or a click on the icon cancels it. While a capture runs, ⌃⇧1–⌃⇧4 and ⌃⇧N do nothing, and ⌃⇧5 means Done or Cancel.
   - **Why:** Doherty Threshold. Each second answers at once, so you never wonder if it is still running.
-  - **Today:** `src/main.ts:205-236`.
+  - **Today:** the menu bar digits at `src/main.ts:205-236`. Not yet: the overlay (2026-10-26-picked-designs, milestone 1).
+- **CAP-12 (accepted).** Esc is taken from every app while the bar or a countdown is open, and only then. A recording takes no plain key.
+  - **Why:** Mental Model. Esc closes what you just opened, even after a click took the focus elsewhere.
+  - **Today:** not yet: the countdown holds a global Esc (`src/main.ts:205-236`); the bar does not (2026-10-26-picked-designs, milestone 1).
+- **CAP-13 (accepted).** The capture bar is a key, non-activating panel: its keys never reach the app behind.
+  - **Why:** Flow. The app you review stays in front and never receives a key meant for the bar.
+  - **Today:** not yet: the bar is non-activating but not key (`src/main.ts:343`), so Esc reached the app behind (2026-10-26-picked-designs, milestone 1).
 
 ### Editing
 
@@ -118,11 +124,20 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
   - **Why:** Occam's Razor. An empty heading adds a thing to read and nothing to do.
   - **Today:** `src/editor.html:727` (`hidden`).
 
+### Recording
+
+- **REC-1 (accepted).** A recording keeps the first, every changed and the settled last frame, at most 24, plus marked frames; the GIF keeps real timing.
+  - **Why:** Cognitive Load. The agent reads what changed, not dozens of near-identical frames.
+  - **Today:** not yet: `src/keyframes.ts` (2026-10-26-picked-designs, milestone 3); ADR "Recording with key frames".
+- **REC-2 (accepted).** A mark belongs to the frame where it starts and is clipped to it.
+  - **Why:** Law of Common Region. A frame's border holds its marks, so each mark is read with its moment.
+  - **Today:** not yet: the recording editor (2026-10-26-picked-designs, milestone 3).
+
 ### Keys
 
-- **KEY-1 (accepted).** Global keys are ⌃⇧ plus macOS's screenshot digits: ⌃⇧4 capture, ⌃⇧3 last area, ⌃⇧5 capture bar. ⌃⇧N starts a new session.
+- **KEY-1 (accepted).** Global keys are ⌃⇧ plus macOS's screenshot digits: ⌃⇧1 Capture New Area…, ⌃⇧2 Capture One-Shot…, ⌃⇧3 Capture Full Screen (every display, at once), ⌃⇧4 Capture Last Area, ⌃⇧5 capture bar. ⌃⇧N starts a new session and forgets the area.
   - **Why:** Jakob's Law. The digits are the ones the owner's fingers already know.
-  - **Today:** `src/keys.ts:6-11`; ADR "Keys follow macOS".
+  - **Today:** `src/keys.ts:6-13`; ADR "Keys follow macOS".
 - **KEY-2 (accepted).** In every Snapmark window, Mac keys keep their Mac meaning: ⌘W, ⌘S, ⌘C, ⌘Z, ⌘, for Settings, ⌘/ for Keyboard Shortcuts.
   - **Why:** Jakob's Law. A key that means the same everywhere is never learned twice.
   - **Today:** `src/keys.ts:35-68`; app menu at `src/menu.ts:166-179`.
@@ -138,6 +153,9 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 - **KEY-6 (accepted).** Every key is listed in the Keyboard Shortcuts window. The list and the keys come from one source.
   - **Why:** Paradox of the Active User. People look keys up only when stuck, so the list must be right.
   - **Today:** `src/keys.ts:13`; `src/shortcuts.html`.
+- **KEY-7 (accepted).** New editor keys use ⌘ chords, never a plain ⌥ letter, which types a character.
+  - **Why:** Jakob's Law. On a Mac, ⌥ plus a letter types a character, so ⌥A is "å", not a command.
+  - **Today:** ⇧⌘O, ⇧⌘P and ⇧⌘F (2026-10-26-picked-designs, milestones 2 and 3).
 
 ### Feedback
 
@@ -168,13 +186,13 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 - **WIN-1 (accepted).** Every icon-only control has a tooltip with its name and key, e.g. "Undo (⌘Z)", "Close (Esc)".
   - **Why:** Paradox of the Active User. People hover to find out; they do not read a manual.
   - **Today:** editor tools (`src/tools.ts:148`), Undo and Redo (`src/editor.html:676-690`), session window (`src/viewer.html:518-524`). Not yet: the capture bar's titles have no keys (`src/bar.html:105-139`).
-- **WIN-2 (accepted).** Tooltips also appear in panels that never become key windows. The capture bar draws its own label above itself, on hover and on keyboard focus, with the name and the key.
-  - **Why:** Selective Attention. The label shows right where the eye already is, over the icon.
-  - **Today:** not yet: the bar is a non-activating panel (`src/main.ts:343`), so native titles never show.
+- **WIN-2 (accepted).** A panel that never shows native tooltips names its controls on the panel itself. The capture bar shows each mode's name and key under its icon, and Capture its ↩ keycap. It draws no hover label.
+  - **Why:** Selective Attention. The name and key show right where the eye already is, on the control.
+  - **Today:** the drawn hover label `src/tip.html`, retired by 2026-10-26-picked-designs (milestone 1, Q3).
 - **WIN-3 (accepted).** The capture bar opens at the bottom centre of the display with the pointer, over full-screen apps. Focus is on the chosen mode.
   - **Why:** Jakob's Law. macOS's own bar opens in the same place.
   - **Today:** `src/main.ts:336-358`; `src/bar.ts:18`.
-- **WIN-4 (accepted).** Esc closes or steps back in the front Snapmark window only. One press never closes two things.
+- **WIN-4 (accepted).** Esc closes or steps back in the front Snapmark window only. One press never closes two things. Only the capture bar and a countdown take Esc from every app (CAP-12, EX-7).
   - **Why:** Mental Model. One press, one step, so Esc is always safe to press.
   - **Today:** bar at `src/bar.ts:49`; session window "All Screenshots (Esc)" at `src/viewer.html:518`; editor per KEY-5.
 - **WIN-5 (accepted).** The editor has tools on top in key order, the image in the middle, notes on the right. Discard and Add to session sit bottom right, Add as the primary button.
@@ -198,7 +216,7 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 - **WRD-1 (accepted).** Menus, buttons, tabs and window titles use title case, as macOS does. Headings, labels, placeholders and messages use sentence case.
   - **Why:** Jakob's Law. The capitals match every other Mac app.
   - **Today:** `src/menu.ts` and Settings follow it. Not yet: the editor's "Add to session" button (`src/editor.html:743`).
-- **WRD-2 (accepted).** A tooltip is "Name (key)". A short hint may follow after a colon or a "·". A label Snapmark draws itself shows the key as a keycap instead, e.g. "Capture Window `1`" (WIN-2).
+- **WRD-2 (accepted).** A tooltip is "Name (key)". A short hint may follow after a colon or a "·". A label on the control itself shows the key as a keycap instead, e.g. "Window `2`" (WIN-2).
   - **Why:** Cognitive Load. The same shape everywhere is read at a glance.
   - **Today:** `src/tools.ts:148`; "Previous (←)" at `src/viewer.html:519`.
 - **WRD-3 (accepted).** A placeholder asks or gives an example. It never replaces the label, because it vanishes when you type.
@@ -237,6 +255,9 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 - **ACC-5 (accepted).** With Reduce Motion on, nothing slides or zooms; changes simply appear.
   - **Why:** Cognitive Load. Motion that cannot be turned off costs attention.
   - **Today:** not yet: no window reads `prefers-reduced-motion`.
+- **ACC-6 (accepted).** Every status line in a capture panel, and every inline error, is a polite live region.
+  - **Why:** Selective Attention. A screen reader hears the change without the focus moving to it.
+  - **Today:** not yet: the scrolling count and the hex error are not announced (2026-10-26-picked-designs, milestones 1 to 4).
 
 ## 3. Exceptions
 
@@ -248,10 +269,10 @@ Deliberate departures from the rules above. Each one is accepted, like the rules
 - **EX-4 (accepted). Redactions cannot be moved, resized or pasted** (bends EDT-4). Moving one would uncover what it hides.
 - **EX-5 (accepted). References have a fixed size** (bends EDT-4). An even size keeps every number readable across a session.
 - **EX-6 (accepted). Pen strokes are pointer only** (no keyboard route). A freehand path cannot be typed.
-- **EX-7 (accepted). The capture bar draws its own tooltips** (the only tooltip that is not macOS's own). A non-activating panel never shows native tooltips. The label stays while the pointer rests on it, and Esc dismisses it with the bar.
+- **EX-7 (accepted). The capture bar and a countdown take Esc from every app** (bends WIN-4). Esc must close the bar even after a click on another app (A1). Only Esc is taken; digits, Tab and arrows stay with the app in front (CAP-12, CAP-13).
 - **EX-8 (accepted). Quit with unsaved marks, and Move to Trash, ask first** (bends FBK-4). After them, there is nothing left to undo.
 - **EX-9 (accepted). Copy keeps its notification** (bends FBK-1). The clipboard cannot show that it changed.
-- **EX-10 (accepted). ⌃⇧4 uses macOS's own capture overlay, not the area picker** (CAP-8 does not apply). It is the system's own, and accessible as it is.
+- **EX-10 (accepted). ⌃⇧2 uses macOS's own capture overlay, not the area picker** (CAP-8 does not apply). It is the system's own, and accessible as it is. Space in it still picks a window.
 - **EX-11 (accepted). Global keys use ⌃⇧, not ⇧⌘** (bends principle 3, "A Mac app"). macOS keeps ⇧⌘3, ⇧⌘4 and ⇧⌘5 for itself.
 
 ## Enforcement
@@ -261,6 +282,6 @@ Deliberate departures from the rules above. Each one is accepted, like the rules
 | KEY-6, KEY-1 | `src/keys.ts` feeds the shortcuts window; `test/keys.test.ts` | yes     |
 | WIN-1, WRD-2 | `tipFor` in `src/tools.ts` builds every tool tooltip          | yes     |
 | EDT-7, EX-1  | `color` on a group in `src/tools.ts`                          | yes     |
-| WIN-2, CAP-3 | a test that every bar control has a label and a key           | no      |
+| WIN-2, CAP-3 | a test that every bar control shows a label and a key         | no      |
 | NTE-1, NTE-3 | a test on the editor's heading and placeholders               | no      |
 | All          | `omr-ux:conformance` against this file, on every UI PR        | yes     |

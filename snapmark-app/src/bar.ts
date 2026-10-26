@@ -1,105 +1,96 @@
-// Renderer script for bar.html (classic script, like scroll.ts): the capture bar ⌃⇧5 opens. The modes are one radio
-// group with roving focus; a click, an arrow or 1–4 chooses a mode, ↩ or Capture captures, Esc closes.
+// Renderer script for bar.html (classic script, like scroll.ts): the capture bar ⌃⇧5 opens. Two rows: the chosen mode's
+// headline and hint with where the capture goes, then the controls. A click, an arrow or 1–5 chooses a mode; ↩ or ⌘↩
+// captures, as Capture is the default button; Esc closes; ⇧⌘O switches Session and One-Shot, ⇧⌘P opens the session
+// pop-up, ⌥O the Options menu. Names and keys are on the bar itself: native tooltips never show in this panel (WIN-2).
 // Wrapped in a function so its names stay out of the other pages' scope.
 (() => {
-  const el = (id: string) => document.getElementById(id)!;
-  const modes = [...document.querySelectorAll<HTMLButtonElement>('[role=radio]')];
-  const buttons = [...document.querySelectorAll<HTMLButtonElement>('button')];
-  const [capture, options] = [el('capture'), el('options')];
+  const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+  const modes = [...document.querySelectorAll<HTMLButtonElement>('#modes [role=radio]')];
+  const segs = [...document.querySelectorAll<HTMLButtonElement>('#dest [role=radio]')];
+  const [capture, options, pop] = [el('capture'), el('options'), el('session')];
+  const box = (b: HTMLElement) => {
+    const r = b.getBoundingClientRect();
+    return { x: r.left, y: r.top, width: r.width, height: r.height };
+  };
+  let s: BarInit | null = null;
   let mode: CaptureMode = 'area';
   if (/Mac/.test(navigator.platform)) document.body.classList.add('mac'); // vibrancy only on macOS
 
-  // The label above the bar (tip.html): the button's name and key. Native titles never show in this panel, because
-  // it never makes Snapmark the active app (guide WIN-2, EX-7).
-  const KEYCAPS: Record<string, string> = { Escape: 'Esc', Enter: '↩' };
-  let tipped: HTMLElement | null = null; // the button the label names, so a change of its words redraws it
-  const tip = (b: HTMLElement | null) => {
-    tipped = b;
-    if (!b) return window.snapmark.barTip(null);
-    const r = b.getBoundingClientRect();
-    const key = b.getAttribute('aria-keyshortcuts') ?? '';
-    window.snapmark.barTip({
-      text: b.getAttribute('aria-label') ?? '',
-      key: KEYCAPS[key] ?? key,
-      at: { x: r.left, y: r.top, width: r.width, height: r.height },
-    });
+  // A radio group with roving focus: only the chosen one is in the Tab order.
+  const check = (group: HTMLButtonElement[], on: HTMLButtonElement, focus: boolean) => {
+    for (const b of group) {
+      b.setAttribute('aria-checked', String(b === on));
+      b.tabIndex = b === on ? 0 : -1;
+    }
+    if (focus) on.focus();
   };
-
-  // Only the chosen mode is in the Tab order: Close → the chosen mode → Options → Capture.
+  const head = () => {
+    if (!s) return;
+    [el('headline').textContent, el('hint').textContent] = s.heads[mode];
+  };
   const choose = (m: CaptureMode) => {
     mode = m;
-    for (const b of modes) {
-      const on = b.dataset.mode === m;
-      b.setAttribute('aria-checked', String(on));
-      b.tabIndex = on ? 0 : -1;
-      if (on) b.focus();
-    }
+    check(
+      modes,
+      modes.find((b) => b.dataset.mode === m)!,
+      true,
+    );
+    head();
   };
-  const render = (s: BarInit) => {
-    capture.textContent = s.label;
+  const render = (next: BarInit) => {
+    s = next;
+    document.body.classList.toggle('narrow', s.narrow);
+    el('capture-label').textContent = s.label; // "Capture One-Shot" while One-Shot is chosen (F22)
     capture.setAttribute('aria-label', s.label);
-    modes.find((b) => b.dataset.mode === 'last')!.setAttribute('aria-label', `Capture Last Area · ${s.last}`);
-    if (tipped) requestAnimationFrame(() => tipped && tip(tipped)); // after the bar has its new width
+    check(segs, segs[s.oneShot ? 1 : 0], segs.includes(document.activeElement as HTMLButtonElement));
+    // One-Shot captures go to no session, so the pop-up is greyed with its reason (F21)
+    const cur = s.session;
+    pop.setAttribute('aria-disabled', String(s.oneShot));
+    const face = s.oneShot ? 'Not in a session' : !cur ? 'No session yet' : cur.count ? `${cur.label} (${cur.count})` : cur.label;
+    el('session-face').textContent = face;
+    pop.setAttribute('aria-label', `Session: ${face}`); // the face without its ⇧⌘P caption, which aria-keyshortcuts gives
+    pop.title = !s.oneShot && cur ? `Current session: ${cur.label}` : '';
+    head();
   };
+  const oneShot = (on: boolean) => window.snapmark.barOneShot(on); // main answers with the new state
+  const sessions = () => s && !s.oneShot && window.snapmark.barSessions(box(pop));
 
-  void window.snapmark.barInit().then((s) => {
-    render(s);
-    choose(s.mode); // focus without a label: only a key or the pointer shows one (F6)
+  void window.snapmark.barInit().then((init) => {
+    render(init);
+    choose(init.mode);
   });
   window.snapmark.onBarState(render);
-  for (const b of modes) b.onclick = () => choose(b.dataset.mode as CaptureMode); // chooses; never captures (as macOS)
+  for (const b of modes) b.onclick = () => choose(b.dataset.mode as CaptureMode); // chooses; never captures (CAP-4)
+  segs.forEach((b, i) => (b.onclick = () => oneShot(i === 1)));
+  pop.onclick = sessions;
   el('close').onclick = () => window.snapmark.barClose();
   capture.onclick = () => window.snapmark.barCapture(mode);
-  options.onclick = () => {
-    tip(null);
-    const r = options.getBoundingClientRect();
-    window.snapmark.barOptions(mode, { x: r.left, y: r.top, width: r.width, height: r.height });
-  };
+  options.onclick = () => window.snapmark.barOptions(mode, box(options));
 
-  // The pointer: a label after resting 300 ms on a button, at once when one already shows; gone on a click. Leaving
-  // the bar is the main process's call, since the pointer may rest on the label itself (WCAG 1.4.13).
-  let shown = false;
-  let wait = 0;
-  let byKey = false; // the focus moved by a key (shows a label), not by the opening or a click (none)
-  for (const b of buttons) {
-    b.addEventListener('mouseenter', () => {
-      clearTimeout(wait);
-      if (shown) return tip(b);
-      wait = window.setTimeout(() => {
-        shown = true;
-        tip(b);
-      }, 300);
-    });
-    b.addEventListener('mouseleave', () => clearTimeout(wait)); // onto padding or a separator: no label for it
-    b.addEventListener('mousedown', () => {
-      clearTimeout(wait);
-      shown = false;
-      byKey = false; // the click's focus shows no label
-      tip(null);
-    });
-  }
-  document.documentElement.addEventListener('mouseleave', () => {
-    clearTimeout(wait);
-    shown = false;
-    window.snapmark.barTipLeave();
-  });
-
-  // The keyboard: a label for whatever a key moved the focus to, never for the focus the bar opens with.
-  document.addEventListener('focusin', (e) => {
-    if (byKey && e.target instanceof HTMLButtonElement) tip(e.target);
-  });
   document.addEventListener('keydown', (e) => {
-    byKey = true;
-    const at = modes.indexOf(document.activeElement as HTMLButtonElement);
+    // The physical key, so ⌥O works although it types "ø"
+    const is = (letter: string) => e.code === `Key${letter}` || e.key.toUpperCase() === letter;
+    const cmd = e.metaKey || e.ctrlKey;
     const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number | undefined>)[e.key]; // as a radio group
-    const n = !e.metaKey && !e.ctrlKey && !e.altKey ? '1234'.indexOf(e.key) : -1;
+    const n = !cmd && !e.altKey && e.key.length === 1 ? '12345'.indexOf(e.key) : -1;
+    const [inModes, inSegs] = [modes, segs].map((g) => g.indexOf(document.activeElement as HTMLButtonElement));
     if (e.key === 'Escape') window.snapmark.barClose();
-    else if ((n >= 0 && e.key.length === 1) || (at >= 0 && step)) {
-      const b = n >= 0 ? modes[n] : modes[(at + step! + modes.length) % modes.length];
-      choose(b.dataset.mode as CaptureMode); // a number only chooses, as a click does (F9)
-      tip(b); // also when the mode already had the focus, so no focusin fires
-    } else if (at >= 0 && e.key === 'Enter') window.snapmark.barCapture(mode);
-    else return; // Space chooses a mode, ↩ and Space press Close, Options and Capture: the buttons' own behaviour
+    else if (e.key === 'Enter')
+      window.snapmark.barCapture(mode); // ↩ and ⌘↩, wherever the focus is (F16)
+    else if (n >= 0)
+      choose(modes[n].dataset.mode as CaptureMode); // a digit only chooses, as a click does (F15)
+    else if (step && inModes >= 0) choose(modes[(inModes + step + modes.length) % modes.length].dataset.mode as CaptureMode);
+    else if (step && inSegs >= 0) {
+      segs[1 - inSegs].focus(); // two segments: either arrow moves to the other one and chooses it
+      oneShot(inSegs === 0);
+    } else if (e.key === 'ArrowDown' && document.activeElement === pop)
+      sessions(); // ↓ opens a pop-up button, as in macOS
+    else if (cmd && e.shiftKey && is('O'))
+      oneShot(!s?.oneShot); // F24
+    else if (cmd && e.shiftKey && is('P'))
+      sessions(); // F25
+    else if (e.altKey && !cmd && is('O')) options.click();
+    else return; // Space presses the focused button: its own behaviour
     e.preventDefault();
   });
 })();
