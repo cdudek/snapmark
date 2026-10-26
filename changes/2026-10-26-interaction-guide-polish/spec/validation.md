@@ -1,14 +1,27 @@
 ---
 type: validation
 change: 2026-10-26-interaction-guide-polish
-verdict: not-ready
-status: draft
-reviewed_by: null
-approved_at: null
+verdict: ready
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-26
 created: 2026-10-26
 ---
 
 # Validation
+
+## Resolution, before the plan gate
+
+The one pass below found the spec not ready. Its blocking items were fixed in `spec/screens.md`, `facts.md` and `decisions.json` before the owner approved the plan on 2026-10-26. That makes the verdict above `ready`. The pass itself is kept unchanged below.
+
+- **F001:** "General comment" and "References" are `h2` headings (spec Screen 2, F12).
+- **F002:** each reference note's editable is named "Note for reference n" (spec Words, F13).
+- **F003:** the comment's name sits on the editable through `aria-labelledby`, and F12 reads the computed name.
+- **F004:** the label stays while the pointer rests on it, and Esc dismisses it with the bar (spec Screen 1, F7, guide EX-7).
+- **Activities:** brief, IA, interaction, conformance and prototype are skipped with reasons in `decisions.json` `skips`.
+- **Concerns:** the guide was accepted at the same gate. Conformance against it runs in the milestone's UX review.
+- **Words:** the Capture button's text comes from `barLabel` ("Capture", "Capture One-Shot"), and Capture Last Area's label keeps its size or first-time hint (spec Words).
+- Medium and Low findings go to the milestone's UX review, as the plan's Risks say.
 
 One text-only spec pass of `spec/screens.md` (size M, sdlc mode). One reviewer ran the three lenses in turn: Nielsen, the Laws of UX, and a screen critique against the scenes and J1–J5. Each claim was checked against `src/bar.*`, `src/editor.*`, `src/md-notes.ts`, `src/main.ts`, `src/capture.ts` and `src/keys.ts`. The app was not launched, and there is no prototype yet.
 
