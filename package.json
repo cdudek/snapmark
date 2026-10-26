@@ -19,22 +19,22 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@milkdown/kit": "^7.22.2",
-    "@types/node": "^24.13.6",
-    "electron": "^44.4.5",
-    "electron-builder": "^26.15.3",
+    "@milkdown/kit": "^7.22.3",
+    "@types/node": "^24.19.2",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.11.0",
-    "prettier": "^3.9.9",
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
     "semantic-release": "^25.0.9",
     "typescript": "~6.0",
-    "typescript-eslint": "^8.70.1",
-    "vitest": "^4.1.11"
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
-    "electron-updater": "^6.8.9",
+    "electron-updater": "^6.8.11",
     "fabric": "^7.4.0",
-    "marked": "^18.0.14"
+    "marked": "^18.1.1"
   },
   "author": "Calvin Dudek",
   "repository": "github:cdudek/snapmark",
