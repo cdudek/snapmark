@@ -31,7 +31,7 @@ After it, the owner captures with ⌃⇧1–⌃⇧5 as macOS does, closes the ba
 
 | #   | Feature                                                                           | Facts       | Branch                       | State |
 | --- | --------------------------------------------------------------------------------- | ----------- | ---------------------------- | ----- |
-| 1.1 | Guide rules and ADRs                                                              | F33–F35     | `milestone/picked-designs-1` | todo  |
+| 1.1 | Guide rules and ADRs                                                              | F33–F35     | `milestone/picked-designs-1` | done  |
 | 1.2 | Global keys, menu rows, Keyboard Shortcuts, busy rule                             | F1–F10      | `milestone/picked-designs-1` | todo  |
 | 1.3 | Capture bar: focus, global Esc, two rows, modes 1–5, destination, Options, tokens | F11–F27, N1 | `milestone/picked-designs-1` | todo  |
 | 1.4 | Countdown overlay                                                                 | F28–F32     | `milestone/picked-designs-1` | todo  |
@@ -185,7 +185,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 ### Milestone 1
 
-- [ ] 1. Write the guide rules and the three ADRs; regenerate the index. Proof: `python3 scripts/design_index.py write` leaves no diff, and `@F33`–`@F35` pass.
+- [x] 1. Write the guide rules and the three ADRs; regenerate the index. Proof: `python3 scripts/design_index.py write` leaves no diff, and `@F33`–`@F35` pass.
 - [ ] 2. Keys, menu rows, busy rule, area reset. Proof: `@F1`–`@F10` pass.
 - [ ] 3. The bar: focus, global Esc, rows, modes, destination, Options, tokens; delete `tip`. Proof: `@F11`–`@F27` and `@N1` pass.
 - [ ] 4. The countdown overlay. Proof: `@F28`–`@F32` pass.
@@ -263,4 +263,4 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 
 ## Revisions
 
-None yet.
+- 1.1: `test/guide.test.ts` F3 (accepted rules match `guideAccepted`) also counts the six rules this change's gate accepted (CAP-12, CAP-13, REC-1, REC-2, KEY-7, ACC-6), listed in the test with `@F33`; otherwise F3 would reject any rule added after the interaction-guide-polish gate. EX-7 keeps its id and now records the global Esc (it bends WIN-4), since the drawn label it excused is retired (Q3).
