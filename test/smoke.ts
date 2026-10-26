@@ -1160,7 +1160,6 @@ app
       );
     };
     // The Options menu as main builds it: with desk.popup swapped, a click on Options hands over its items (F207, F223)
-    type Item = Electron.MenuItemConstructorOptions;
     let popped: Item[] = [];
     const realPopup = desk.popup;
     desk.popup = (_w, items) => void (popped = items);

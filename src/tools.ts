@@ -181,4 +181,5 @@ function singleKeysLine(on: boolean): string {
     : 'Settings ▸ Shortcuts ▸ Pick tools with single keys is off: only ⌘1–⌘7 pick tools, and Esc goes back to Select.';
 }
 
-if (typeof module !== 'undefined') module.exports = { GROUPS, capFor, tipFor, normalizeHex, withCustom, CUSTOM_MAX, toolKey, singleKeysLine };
+if (typeof module !== 'undefined')
+  module.exports = { GROUPS, capFor, tipFor, normalizeHex, withCustom, CUSTOM_MAX, toolKey, singleKeysLine };

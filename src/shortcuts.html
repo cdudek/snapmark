@@ -90,12 +90,17 @@
         margin: 0 8px;
         font-size: 12px;
       }
+      /* The editor's one keycap style (A18): 11 px, weight 500, system glyphs, tabular digits, the text's colour;
+         here drawn as a cap, which F231 asks for. */
       kbd {
         display: inline-block;
         font:
-          500 12px -apple-system,
+          500 11px/14px -apple-system,
           system-ui,
           sans-serif;
+        font-variant-numeric: tabular-nums;
+        color: inherit;
+        white-space: nowrap;
         min-width: 16px;
         text-align: center;
         padding: 4px 10px; /* the glyph never touches the border */

@@ -100,11 +100,15 @@
         display: grid;
         gap: 12px;
       }
+      /* The editor's one keycap style (A18), drawn as a cap like the Keyboard Shortcuts window's. */
       kbd {
         font:
-          500 12px -apple-system,
+          500 11px/14px -apple-system,
           system-ui,
           sans-serif;
+        font-variant-numeric: tabular-nums;
+        color: inherit;
+        white-space: nowrap;
         display: inline-block;
         min-width: 16px;
         text-align: center;
