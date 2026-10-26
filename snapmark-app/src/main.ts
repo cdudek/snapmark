@@ -239,7 +239,7 @@ async function captureArea(choose = false, o?: CaptureOpts) {
 }
 
 // ⌃⇧3, like macOS's ⇧⌘3: every display at once, no picker, one editor per display, the pointer's in front.
-// `o`: the capture bar's Full Screen, with its Timer, Show Mouse Pointer and One-Shot; ⌃⇧3 captures without them.
+// `o`: the capture bar's Full Screen, with its Timer, Show Mouse Pointer and One-Shot; the ⌃⇧3 key passes none.
 // shortcut: Electron's display order is taken as screencapture's (the main display first), true for two displays; match
 // by bounds if a third ever lands in the wrong editor.
 async function captureFullScreen(o?: CaptureOpts) {

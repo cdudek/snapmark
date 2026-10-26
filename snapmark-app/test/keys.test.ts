@@ -44,9 +44,9 @@ const handlers = main.slice(main.indexOf('export const keyHandlers'), main.index
 for (const line of [
   'newArea: () => void captureArea(true),',
   "oneShot: () => void (busy() || shoot(['-i'], true)),",
-  'fullScreen: captureFullScreen,',
+  'fullScreen: () => void captureFullScreen(),',
   'capture: () => void captureArea(),',
-  'options: () => void openCaptureBar(),',
+  'options: () => void (cancelCountdown ? cancelCountdown() : openCaptureBar()),',
   'newSession: () => void (capturing() || newSession()),',
 ])
   assert.ok(handlers.includes(line), `keyHandlers: ${line}`);
