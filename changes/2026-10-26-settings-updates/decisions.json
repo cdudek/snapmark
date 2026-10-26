@@ -1,0 +1,19 @@
+{
+  "size": "L",
+  "kind": "bug",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "single",
+    "slug": "settings-updates"
+  },
+  "milestones": [
+    {
+      "n": 1,
+      "slug": "settings-updates-1",
+      "title": "Settings opens in its final colours, says what the updater is doing, and Restart to Update installs"
+    }
+  ],
+  "milestoneNote": "2026-10-26: ticket, size, kind and milestone from the owner's 1.1 dialog: \"Widen snap-bmr.25 (Recommended)\", \"L, new Settings design file\", \"Bug fix, milestone of one (Recommended)\". Project none: a milestone of one needs no project.",
+  "ticket": "snap-bmr.25",
+  "design": "docs/designs/2026-10-26-design-settings-window.md"
+}

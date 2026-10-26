@@ -48,3 +48,7 @@ One line: title · status · date · tags. Newest first within each type.
 - [Discard keeps the screenshot and its marks for 7 days](2026-09-25-adr-discard-keeps-the-screenshot-and-its.md) · accepted · 2026-09-25 · ux
 - [Build as two changes](2026-09-25-adr-build-as-two-changes.md) · accepted · 2026-09-25 · ux
 - [Bug](2026-09-25-adr-bug.md) · accepted · 2026-09-25 · ux
+
+## design (1)
+
+- [The Settings window](2026-10-26-design-settings-window.md) · draft · 2026-10-26 · ux, settings, updates, copy
