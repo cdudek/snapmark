@@ -4,9 +4,9 @@ type: facts
 change: 2026-10-26-picked-designs
 design: null
 author: Claude (orchestrator)
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-26
 created: 2026-10-26
 ---
 
