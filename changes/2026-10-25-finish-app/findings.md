@@ -27,3 +27,10 @@ Review of `origin/main...milestone/finish-app-1`, code and UX lenses, plus the m
 - **M1-8** (Low) in Edit Again and one-shot the session label is a disabled menu button, which screen readers call "dimmed"; the spec says plain text.
 - **M1-9** (Low) if a rename fails after the folder moved, `tryRename` says "Couldn't rename" while the app still points at the old name.
 - The colour panel writes `state.json` on every drag event (part of M1-3); harmless, a debounce would do.
+
+### Owner asks during the milestone, and what the gates found in them
+
+- [x] **A14** top bar spacing and stacked icons (42fe719); **A15–A18** hex field, Custom row, round swatch, one keycap style (5ddf377).
+- [x] **G2** (gate) the toolbar smoke script declared `toolBefore` twice in one in-page script. Fixed.
+- [x] **G3** (gate) the A15 check relied on `blur()`, which fires no event in a hidden smoke window. The check now dispatches it, as F127's does.
+- [x] **M1 gaps** packaged LC_UUID proven on two local builds; audit findings F028, F041, F043 fixed and F025, F027 confirmed; multi-selection drag undone as one step (04e0fe0).
