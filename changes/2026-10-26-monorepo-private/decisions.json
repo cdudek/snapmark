@@ -1,0 +1,22 @@
+{
+  "size": "none",
+  "kind": "chore",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "single",
+    "slug": "monorepo-private"
+  },
+  "milestones": [
+    {
+      "n": 1,
+      "slug": "monorepo-private-1",
+      "title": "Updates from a GCS bucket, the app in snapmark-app/, the repo private"
+    }
+  ],
+  "milestoneNote": "2026-10-26: ticket, size, kind and milestone from the owner's 1.1 dialog (all four recommended options). Design none and project none are the kit defaults: no design file covers repo layout or update hosting, and a milestone of one needs no project.",
+  "ticket": "snap-bmr.23",
+  "design": "none",
+  "skips": {
+    "ux": "skip -- size none: no screen changes (orchestrator, 2026-10-26)"
+  }
+}
