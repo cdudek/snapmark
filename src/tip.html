@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Capture Options label</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --sep: rgb(128 128 128 / 0.45);
+      }
+      html,
+      body {
+        margin: 0;
+        user-select: none;
+        white-space: nowrap; /* the window is as wide as its content (preferred size) */
+        font:
+          12px -apple-system,
+          system-ui,
+          sans-serif;
+      }
+      /* Opaque where there is no vibrancy (Linux); on macOS the window's popover material shows through, as on the bar. */
+      body {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border: 1px solid var(--sep);
+        border-radius: 6px;
+        background: Canvas;
+        color: CanvasText;
+      }
+      body.mac {
+        background: transparent;
+      }
+      /* The Keyboard Shortcuts window's keycap, sized for one line of 12 px text. */
+      kbd {
+        font:
+          500 11px/14px -apple-system,
+          system-ui,
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+        min-width: 8px;
+        text-align: center;
+        padding: 0 5px;
+        border: 1px solid var(--sep);
+        border-radius: 4px;
+        box-shadow: 0 1px 0 var(--sep);
+      }
+      kbd:empty {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <span id="text"></span><kbd id="key"></kbd>
+    <script src="tip.js"></script>
+  </body>
+</html>

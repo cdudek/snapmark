@@ -36,6 +36,9 @@ const api: Window['snapmark'] = {
   barOptions: (mode, at) => ipcRenderer.send('bar:options', mode, at),
   barClose: () => ipcRenderer.send('bar:close'),
   onBarState: (cb) => void ipcRenderer.on('bar:state', (_e, s: BarInit) => cb(s)),
+  barTip: (t) => ipcRenderer.send('bar:tip', t),
+  barTipLeave: () => ipcRenderer.send('bar:tip-leave'),
+  onTip: (cb) => void ipcRenderer.on('tip:show', (_e, t: { text: string; key: string }) => cb(t)),
   onScrollStatus: (cb) => void ipcRenderer.on('scroll:status', (_e, status: ScrollStatus) => cb(status)),
 };
 

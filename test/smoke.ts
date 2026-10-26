@@ -43,6 +43,7 @@ const {
   menuItems,
   moveEditor,
   openCaptureBar,
+  barTipWindow,
   setCapture,
   openSettings,
   showShortcuts,
@@ -1161,6 +1162,74 @@ app
           g.querySelectorAll('[role=radio]').length === 4 && g.querySelectorAll('[aria-checked="true"]').length === 1 &&
           document.querySelector('[aria-label^="Capture Last Area · "]')?.getAttribute('aria-label') === 'Capture Last Area · First time: drag the area';`,
       ));
+    // The label above the bar (F5–F10): its own panel, shown by the pointer or a key, never by the opening
+    const tipShown = () => {
+      const t = barTipWindow();
+      return !!t && !t.isDestroyed() && t.isVisible();
+    };
+    const tipSays = async () => {
+      for (let i = 0; i < 20 && !tipShown(); i++) await sleep(50);
+      await sleep(150); // the text and its preferred size land a moment after
+      const t = barTipWindow();
+      return t && tipShown() ? ((await inWin(t, `return document.body.innerText.replace(/\\s+/g, ' ').trim()`)) as string) : '';
+    };
+    const centredOver = async (mode: string) => {
+      const r = JSON.parse(
+        await inWin(barWin, `return JSON.stringify(document.querySelector('[data-mode="${mode}"]').getBoundingClientRect())`),
+      );
+      const [t, b] = [barTipWindow()!.getBounds(), barWin.getBounds()];
+      return Math.abs(t.x + t.width / 2 - (b.x + r.left + r.width / 2)) <= 1 && t.y + t.height === b.y - 8;
+    };
+    const atOpening = tipShown();
+    await inWin(barWin, `document.querySelector('[data-mode="window"]').dispatchEvent(new MouseEvent('mouseenter'));`);
+    await sleep(150);
+    const notYet = tipShown(); // the label waits 300 ms
+    const hovered = await tipSays();
+    viewer['F5 the label names the button under the pointer'] =
+      !notYet && hovered === 'Capture Window 1' && (await centredOver('window'));
+    console.log('F5', JSON.stringify({ notYet, hovered }));
+    const tw = barTipWindow()!;
+    viewer['F8 the label is part of the bar, never in a capture'] =
+      !tw.isFocusable() && tw.isContentProtected() && tw.isAlwaysOnTop() && tw.isVisibleOnAllWorkspaces() && !barWin.isDestroyed();
+    // F7: leaving the bar keeps the label while the pointer is on it (here: the label moved under the pointer), and
+    // drops it once the pointer is elsewhere
+    const p = screen.getCursorScreenPoint();
+    tw.setBounds({ ...tw.getBounds(), x: p.x - 10, y: p.y - 5 });
+    await inWin(barWin, `document.documentElement.dispatchEvent(new MouseEvent('mouseleave'));`);
+    await sleep(350);
+    const staysOnIt = tipShown();
+    tw.setBounds({ ...tw.getBounds(), x: p.x + 400 > screen.getPrimaryDisplay().bounds.width ? p.x - 600 : p.x + 400 });
+    await sleep(350);
+    const goneElsewhere = !tipShown();
+    // F6 and F9: a key shows the focused button's label; 1–4 only choose a mode
+    keyTo(barWin, '4');
+    const afterFour = await tipSays();
+    const fourChose = await inWin(barWin, `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`);
+    keyTo(barWin, '1');
+    const afterOne = await tipSays();
+    const oneChose = await inWin(barWin, `return document.querySelector('[aria-checked="true"]').dataset.mode + '|' + document.activeElement.dataset.mode`);
+    keyTo(barWin, 'Right');
+    const afterRight = await tipSays();
+    viewer['F6 the label follows the keyboard, not the opening'] =
+      !atOpening && afterFour === 'Capture Scrolling 4' && afterRight.startsWith('Choose New Area 2') && (await centredOver('area'));
+    viewer['F9 keys 1-4 choose a mode and never capture'] =
+      fourChose === 'scroll|scroll' && oneChose === 'window|window' && afterOne === 'Capture Window 1' && runs.length === 0 && !barWin.isDestroyed();
+    viewer['F10 every bar button announces its key'] =
+      (await inWin(
+        barWin,
+        `return JSON.stringify([...document.querySelectorAll('button')].map((b) => [b.id || b.dataset.mode, b.getAttribute('aria-keyshortcuts')]))`,
+      )) ===
+      JSON.stringify([
+        ['close', 'Escape'],
+        ['window', '1'],
+        ['area', '2'],
+        ['last', '3'],
+        ['scroll', '4'],
+        ['options', null],
+        ['capture', 'Enter'],
+      ]);
+    console.log('F6 F7 F9', JSON.stringify({ atOpening, staysOnIt, goneElsewhere, afterFour, afterOne, afterRight, fourChose, oneChose }));
+    await inWin(barWin, `document.querySelector('[data-mode="area"]').focus();`); // back where the bar opened, for F207's checks
     const barSays = () =>
       inWin(
         barWin,
@@ -1208,6 +1277,7 @@ app
     const tabsOk =
       JSON.stringify(tabs) === JSON.stringify(['Close', 'Capture Last Area', 'Options', 'Capture', 'Options', 'Capture Last Area']);
     viewer['F205 the bar is gone when the capture starts'] = runs.length === 1 && runs[0].barGone;
+    const tipGoneOnCapture = !barTipWindow();
     // Reopened: on the mode last used; Esc closes it without capturing
     const barReopened = openCaptureBar(runner)!;
     await barReady(barReopened);
@@ -1224,8 +1294,13 @@ app
       reLabel === 'Capture One-Shot' &&
       reOptions === 'One-Shot,5 Seconds,Show Mouse Pointer' &&
       saved === lastOpts;
+    keyTo(barReopened, '3');
+    const tipBeforeEsc = await tipSays();
     keyTo(barReopened, 'Escape');
     for (let i = 0; i < 30 && !barReopened.isDestroyed(); i++) await sleep(100);
+    viewer['F7 the label goes with the pointer and the bar'] =
+      staysOnIt && goneElsewhere && tipGoneOnCapture && tipBeforeEsc.startsWith('Capture Last Area') && !barTipWindow();
+    console.log('F7', JSON.stringify({ staysOnIt, goneElsewhere, tipGoneOnCapture, tipBeforeEsc }));
     viewer['F204 arrows pick, Return captures, Esc closes'] =
       arrowsOk && tabsOk && runs.length === 1 && runs[0].o.mode === 'last' && barReopened.isDestroyed() && !barUp().length;
     // One-Shot: a scrolling capture opens in one-shot mode, never in a session
