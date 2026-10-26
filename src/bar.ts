@@ -12,7 +12,9 @@
   // The label above the bar (tip.html): the button's name and key. Native titles never show in this panel, because
   // it never makes Snapmark the active app (guide WIN-2, EX-7).
   const KEYCAPS: Record<string, string> = { Escape: 'Esc', Enter: '↩' };
+  let tipped: HTMLElement | null = null; // the button the label names, so a change of its words redraws it
   const tip = (b: HTMLElement | null) => {
+    tipped = b;
     if (!b) return window.snapmark.barTip(null);
     const r = b.getBoundingClientRect();
     const key = b.getAttribute('aria-keyshortcuts') ?? '';
@@ -37,6 +39,7 @@
     capture.textContent = s.label;
     capture.setAttribute('aria-label', s.label);
     modes.find((b) => b.dataset.mode === 'last')!.setAttribute('aria-label', `Capture Last Area · ${s.last}`);
+    if (tipped) requestAnimationFrame(() => tipped && tip(tipped)); // after the bar has its new width
   };
 
   void window.snapmark.barInit().then((s) => {
@@ -57,6 +60,7 @@
   // the bar is the main process's call, since the pointer may rest on the label itself (WCAG 1.4.13).
   let shown = false;
   let wait = 0;
+  let byKey = false; // the focus moved by a key (shows a label), not by the opening or a click (none)
   for (const b of buttons) {
     b.addEventListener('mouseenter', () => {
       clearTimeout(wait);
@@ -66,9 +70,11 @@
         tip(b);
       }, 300);
     });
+    b.addEventListener('mouseleave', () => clearTimeout(wait)); // onto padding or a separator: no label for it
     b.addEventListener('mousedown', () => {
       clearTimeout(wait);
       shown = false;
+      byKey = false; // the click's focus shows no label
       tip(null);
     });
   }
@@ -79,7 +85,6 @@
   });
 
   // The keyboard: a label for whatever a key moved the focus to, never for the focus the bar opens with.
-  let byKey = false;
   document.addEventListener('focusin', (e) => {
     if (byKey && e.target instanceof HTMLButtonElement) tip(e.target);
   });

@@ -347,7 +347,7 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
     webPreferences: { preload: path.join(__dirname, 'preload.js'), enablePreferredSizeMode: true },
   });
   bar = win;
-  win.once('closed', () => barTip(null, true)); // the label goes with the bar, so it is never in a capture (F7, F8)
+  win.once('close', () => barTip(null, true)); // the label goes with the bar, at once, so it is never in a capture (F7, F8)
   // As wide as its content, so every gap stays 8 pt, also when the Capture label changes (F212).
   win.webContents.on('preferred-size-changed', (_e, { width }) => win.setBounds(at(width)));
   win.setContentProtection(true); // belt and braces: it closes before every capture
@@ -399,7 +399,7 @@ function barTip(t: BarTip | null, close = false) {
   clearInterval(tipWatch);
   tipNow = t;
   if (close) {
-    if (tip && !tip.isDestroyed()) tip.close();
+    if (tip && !tip.isDestroyed()) tip.destroy(); // synchronous, unlike close(): gone before the capture's 200 ms wait
     tip = null;
     return;
   }
@@ -446,7 +446,7 @@ function barTip(t: BarTip | null, close = false) {
 // bar (WCAG 1.4.13), and goes once it is anywhere else.
 function leaveTip() {
   clearInterval(tipWatch);
-  if (!tip || !tip.isVisible() || !bar || !barOpen()) return;
+  if (!tip || !tipNow || !bar || !barOpen()) return; // tipNow, not isVisible(): a label still loading counts too
   const inside = (r: Electron.Rectangle, p: Electron.Point) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
   tipWatch = setInterval(() => {
     if (!tip || !bar || !barOpen()) return barTip(null);

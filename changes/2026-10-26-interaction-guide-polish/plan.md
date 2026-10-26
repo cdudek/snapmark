@@ -68,16 +68,16 @@ The draft guide in `docs/ux/interaction-guidelines.md` is part of this gate. **E
 
 ## Order of work
 
-- [ ] 1.1 Interaction guide: set accepted rules from `decisions.json` `guideAccepted` to `accepted`; write `test/guide.test.ts` (F1–F3); commit. Proof at the end: unit tests pass.
-- [ ] 1.2 Capture bar label and keys: smoke checks F5–F10 first. Then `tip.html`/`tip.ts`, the window and `bar:tip` in `main.ts`, keys 1–4 and `aria-keyshortcuts` in `bar.*`. Then the `1–4` row in `keys.ts` with F11's unit test, and the ADR's Decision section; commit. Proof at the end: smoke F5–F10 and unit F11.
-- [ ] 1.3 General comment and notes: smoke checks F12–F14 first. Then `editor.html`/`editor.ts`, `h2` headings, and the `label` option in `md-notes.ts`. Update the old placeholder check; commit. Proof at the end: smoke F12–F14, unit N1.
+- [x] 1.1 Interaction guide: set accepted rules from `decisions.json` `guideAccepted` to `accepted`; write `test/guide.test.ts` (F1–F3); commit. Proof at the end: unit tests pass.
+- [x] 1.2 Capture bar label and keys: smoke checks F5–F10 first. Then `tip.html`/`tip.ts`, the window and `bar:tip` in `main.ts`, keys 1–4 and `aria-keyshortcuts` in `bar.*`. Then the `1–4` row in `keys.ts` with F11's unit test, and the ADR's Decision section; commit. Proof at the end: smoke F5–F10 and unit F11.
+- [x] 1.3 General comment and notes: smoke checks F12–F14 first. Then `editor.html`/`editor.ts`, `h2` headings, and the `label` option in `md-notes.ts`. Update the old placeholder check; commit. Proof at the end: smoke F12–F14, unit N1.
 
 ### At the milestone's end
 
 - [ ] a. `python3 scripts/verify_gate.py milestone 2026-10-26-interaction-guide-polish` — proof: ends `VERIFY PASS milestone 2026-10-26-interaction-guide-polish <sha>`, `<sha>` = `git rev-parse HEAD`. It runs `smoke:background`, the milestone's one local E2E run.
-- [ ] b. In parallel: `omr-ux:review` on the bar and the notes column (headless shots only), `omr-dev:pr-review`, `omr-dev:accessibility-audit`. Proof: one `findings.md` section.
+- [x] b. In parallel: `omr-ux:review` on the bar and the notes column (headless shots only), `omr-dev:pr-review`, `omr-dev:accessibility-audit`. Proof: one `findings.md` section.
 - [ ] c. Validation: one row per fact and per ask in `validation.md` (expected, observed, evidence, verdict). Proof: no `not met` row after the fix round.
-- [ ] d. One fix round on the blocking findings; rerun a.
+- [x] d. One fix round on the blocking findings; rerun a.
 - [ ] e. PR `milestone/interaction-guide-polish-1` → `main`, title `feat(capture): the capture bar names its icons and keys, and the editor heads its General comment`, `findings.md` and `validation.md` linked. Then `gh pr merge --squash --auto`. Ask the owner first if a Critical or High is deferred.
 - [ ] f. When it merges and the release is out, install it from the release ZIP, signature and Gatekeeper checked. Say the version, close snap-bmr.17.4, and mark the rows `merged` in `milestone.md`.
 
@@ -117,3 +117,9 @@ The kit's `templates/goal/run.txt` (fixed 2026-10-26: met once the PR is merged 
 ## Revisions
 
 Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`.
+
+- 2026-10-26 — 1.2: the label stays while the pointer rests on it by polling the pointer from the main process (`leaveTip`), not by `setIgnoreMouseEvents(true, { forward: true })` as the spec named. Same outcome (F7), and the page needs no pointer events from a window that lets clicks through.
+- 2026-10-26 — 1.2: the bar's buttons lost their `title` attributes. macOS never showed them, and the drawn label replaces them.
+- 2026-10-26 — 1.2: `test/keys.test.ts` F236's Capture bar rows now start with the `1–4` row (F11). The old assertion listed the rows before this change.
+- 2026-10-26 — 1.3: the smoke check `comment is one line` now reads the new placeholder, since A4 replaced the words "Add a comment…".
+- 2026-10-26 — fix round (findings M3, M4): `← →` reads "Move between modes", so it no longer repeats "Pick a mode". The notes column's headings sit 4 px from their box, with 20 px before References.

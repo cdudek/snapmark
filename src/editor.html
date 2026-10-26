@@ -408,9 +408,12 @@
       /* The notes column's headings: General comment and References (guide NTE-1, WRD-3). */
       #caption-label,
       #refs-label {
-        margin: 0;
+        margin: 0 0 -6px; /* 4 px to its own box, under the column's 10 px gap (Law of Proximity) */
         font-size: inherit;
         font-weight: 600;
+      }
+      #refs-label {
+        margin-top: 10px; /* 20 px between the comment and References, more than between two notes */
       }
       /* Reference notes stand apart (guide NTE-4). */
       #refs {

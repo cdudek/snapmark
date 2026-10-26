@@ -54,7 +54,7 @@ assert.deepStrictEqual(
   KEY_GROUPS[1].rows,
   [
     ['1–4', 'Pick a mode', 'window, new area, last area, scrolling'],
-    ['← →', 'Pick a mode', 'Tab moves on to Options and Capture'],
+    ['← →', 'Move between modes', 'Tab moves on to Options and Capture'],
     ['↩', 'Capture', ''],
     ['Esc', 'Close', ''],
   ],
