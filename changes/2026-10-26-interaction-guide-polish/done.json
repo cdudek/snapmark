@@ -1,0 +1,47 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Tags name the unit test block or the smoke check key. One go: every check runs once, for the milestone.",
+  "facts": [
+    {
+      "id": "F1",
+      "tag": "`test/guide.test.ts` › \"F1 the guide has its sections and fits 400 lines\"",
+      "screen": "docs/ux/interaction-guidelines.md"
+    },
+    {
+      "id": "F2",
+      "tag": "`test/guide.test.ts` › \"F2 every rule has an id, a status and a law\"",
+      "screen": "docs/ux/interaction-guidelines.md"
+    },
+    {
+      "id": "F3",
+      "tag": "`test/guide.test.ts` › \"F3 accepted rules match decisions.json guideAccepted\"",
+      "screen": "docs/ux/interaction-guidelines.md"
+    },
+    { "id": "F4", "tag": "`tests/sdlc.test.ts` link check (existing)", "screen": "docs/ux/audits/" },
+    {
+      "id": "F5",
+      "tag": "smoke `viewer['F5 the label names the button under the pointer']`",
+      "screen": "capture bar, pointer on Capture Window"
+    },
+    {
+      "id": "F6",
+      "tag": "smoke `viewer['F6 the label follows the keyboard, not the opening']`",
+      "screen": "capture bar, after → and after opening"
+    },
+    {
+      "id": "F7",
+      "tag": "smoke `viewer['F7 the label goes with the pointer and the bar']`",
+      "screen": "capture bar, after Esc and after capture"
+    },
+    { "id": "F8", "tag": "smoke `viewer['F8 the label is part of the bar, never in a capture']`", "screen": "capture bar, label shown" },
+    { "id": "F9", "tag": "smoke `viewer['F9 keys 1-4 choose a mode and never capture']`", "screen": "capture bar" },
+    { "id": "F10", "tag": "smoke `viewer['F10 every bar button announces its key']`", "screen": "capture bar" },
+    { "id": "F11", "tag": "`test/keys.test.ts` › \"F11 the capture bar group lists 1-4\"", "screen": "Keyboard Shortcuts window" },
+    { "id": "F12", "tag": "smoke `r['F12 the top box is headed General comment']`", "screen": "editor, session and one-shot" },
+    { "id": "F13", "tag": "smoke `r['F13 a note asks What about n']`", "screen": "editor, two references" },
+    { "id": "F14", "tag": "smoke `r['F14 notes stand 12 pt apart']`", "screen": "editor, three references" },
+    { "id": "N1", "tag": "`test/sessions.test.ts` entry tests (existing, unchanged)", "screen": "session.md" },
+    { "id": "F15", "tag": "manual: validation.md row with codesign and spctl output", "screen": "/Applications/Snapmark.app" }
+  ],
+  "asks": ["A1", "A2", "A3", "A4", "A5"],
+  "turns": { "run": 200 }
+}

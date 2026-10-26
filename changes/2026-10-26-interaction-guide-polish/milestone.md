@@ -18,11 +18,11 @@ Kind: a milestone of one, delivered in one go: one branch, one PR, one release.
 
 In build order. `state` is `todo`, `building`, `done <sha>` (a commit on the milestone branch), `merged` (its milestone PR merged) or `blocked: <reason>`.
 
-| #   | Change                              | Feature                          | PR or commit | State |
-| --- | ----------------------------------- | -------------------------------- | ------------ | ----- |
-| 1   | 2026-10-26-interaction-guide-polish | 1.1 Interaction guide            | —            | todo  |
-| 2   | 2026-10-26-interaction-guide-polish | 1.2 Capture bar labels and keys  | —            | todo  |
-| 3   | 2026-10-26-interaction-guide-polish | 1.3 General comment and notes    | —            | todo  |
+| #   | Change                              | Feature                         | PR or commit | State |
+| --- | ----------------------------------- | ------------------------------- | ------------ | ----- |
+| 1   | 2026-10-26-interaction-guide-polish | 1.1 Interaction guide           | —            | todo  |
+| 2   | 2026-10-26-interaction-guide-polish | 1.2 Capture bar labels and keys | —            | todo  |
+| 3   | 2026-10-26-interaction-guide-polish | 1.3 General comment and notes   | —            | todo  |
 
 ## Milestone PRs
 

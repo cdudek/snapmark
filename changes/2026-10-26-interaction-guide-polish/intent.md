@@ -18,14 +18,14 @@ created: 2026-10-26
 
 Every request that this change answers, in the asker's own words. Never paraphrased.
 
-| #   | Date       | Source                                                 | Words                                                                                                                                                                                                                     | Screen                 | Resources                                                                      |
-| --- | ---------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------ |
-| A1  | 2026-10-26 | owner, chat, on the installed 0.21.1                   | "works now, but symbols are confusing, could use tooltips, shortcuts, e.g. escape button or enter or cmd plus enter or something"                                                                                        | Capture bar            | [the bar's key](asks/2026-10-26-chat/capture-bar-key.png)                      |
-| A2  | 2026-10-26 | owner, dialog: how the bar explains its icons and keys | "Tooltip above the bar + keys (Recommended)"                                                                                                                                                                              | Capture bar            | none                                                                           |
-| A3  | 2026-10-26 | owner, chat, with a screenshot of the editor           | "Can we leave more spacing between the different references and also make sure that the comment at the top has "global comment" or something like "in general"? It would be nice to have good UX writing.."            | Editor, notes column   | [comment and references](asks/2026-10-26-chat/comment-and-references.png)      |
-| A4  | 2026-10-26 | owner, dialog: how the comment box and notes read      | "Heading 'General comment' (Recommended)"                                                                                                                                                                                 | Editor, notes column   | none                                                                           |
-| A5  | 2026-10-26 | owner, dialog: which ticket                            | "can we have proper ux / ui interaction writing so its clear how the app generally should behave using laws of ux? generally thinking about how the app should feel and be used"                                         | all                    | none                                                                           |
-| A6  | 2026-10-26 | owner, chat, with a screenshot of the editor           | "color of the drawings is not matching the selected color"                                                                                                                                                                | Editor canvas          | [Remove marks](asks/2026-10-26-chat/remove-marks-colour.png)                   |
+| #   | Date       | Source                                                 | Words                                                                                                                                                                                                       | Screen               | Resources                                                                 |
+| --- | ---------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------- |
+| A1  | 2026-10-26 | owner, chat, on the installed 0.21.1                   | "works now, but symbols are confusing, could use tooltips, shortcuts, e.g. escape button or enter or cmd plus enter or something"                                                                           | Capture bar          | [the bar's key](asks/2026-10-26-chat/capture-bar-key.png)                 |
+| A2  | 2026-10-26 | owner, dialog: how the bar explains its icons and keys | "Tooltip above the bar + keys (Recommended)"                                                                                                                                                                | Capture bar          | none                                                                      |
+| A3  | 2026-10-26 | owner, chat, with a screenshot of the editor           | "Can we leave more spacing between the different references and also make sure that the comment at the top has "global comment" or something like "in general"? It would be nice to have good UX writing.." | Editor, notes column | [comment and references](asks/2026-10-26-chat/comment-and-references.png) |
+| A4  | 2026-10-26 | owner, dialog: how the comment box and notes read      | "Heading 'General comment' (Recommended)"                                                                                                                                                                   | Editor, notes column | none                                                                      |
+| A5  | 2026-10-26 | owner, dialog: which ticket                            | "can we have proper ux / ui interaction writing so its clear how the app generally should behave using laws of ux? generally thinking about how the app should feel and be used"                            | all                  | none                                                                      |
+| A6  | 2026-10-26 | owner, chat, with a screenshot of the editor           | "color of the drawings is not matching the selected color"                                                                                                                                                  | Editor canvas        | [Remove marks](asks/2026-10-26-chat/remove-marks-colour.png)              |
 
 A2 and A4 picked these options, as the dialogs worded them:
 
@@ -36,13 +36,13 @@ A6: the owner answered "ignore, its already implemented" when asked what the swa
 
 ## Job stories
 
-| #   | When …                                              | I want to …                                                                  | So I can …                                          | Evidence           |
-| --- | --------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------- | ------------------ |
-| J1  | the capture bar is open and I don't know an icon    | to see its name and its key without clicking                                 | I pick the right capture the first time             | reported — A1, A2  |
-| J2  | I use the capture bar often                         | to pick a mode and capture from the keyboard                                 | I capture without reaching for the mouse            | reported — A1, A2  |
-| J3  | I write feedback in the editor                      | to see at once which box is about the whole screenshot and which about a mark | my notes land in the right place for the agent      | reported — A3, A4  |
-| J4  | I scan a list of reference notes                    | each note to stand apart from its neighbours                                 | I find and edit the right note quickly              | reported — A3      |
-| J5  | anyone, me or an agent, changes a Snapmark screen   | one short guide that says how Snapmark behaves and why                       | every screen feels like the same app                | reported — A5      |
+| #   | When …                                            | I want to …                                                                   | So I can …                                     | Evidence          |
+| --- | ------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------- | ----------------- |
+| J1  | the capture bar is open and I don't know an icon  | to see its name and its key without clicking                                  | I pick the right capture the first time        | reported — A1, A2 |
+| J2  | I use the capture bar often                       | to pick a mode and capture from the keyboard                                  | I capture without reaching for the mouse       | reported — A1, A2 |
+| J3  | I write feedback in the editor                    | to see at once which box is about the whole screenshot and which about a mark | my notes land in the right place for the agent | reported — A3, A4 |
+| J4  | I scan a list of reference notes                  | each note to stand apart from its neighbours                                  | I find and edit the right note quickly         | reported — A3     |
+| J5  | anyone, me or an agent, changes a Snapmark screen | one short guide that says how Snapmark behaves and why                        | every screen feels like the same app           | reported — A5     |
 
 ## Success measure
 
@@ -67,11 +67,11 @@ Snapmark has no analytics, so the measure is the owner's own check on the releas
 
 ## Affected users and systems
 
-| Kind    | Name                                                         | How                                                   |
-| ------- | ------------------------------------------------------------ | ----------------------------------------------------- |
-| users   | the owner, later every buyer                                 | the bar explains itself; the notes column reads clearly |
+| Kind    | Name                                                                       | How                                                     |
+| ------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| users   | the owner, later every buyer                                               | the bar explains itself; the notes column reads clearly |
 | service | `src/bar.html`, `src/bar.ts`, `src/main.ts`, `src/editor.*`, `src/keys.ts` | label above the bar, new keys, new words and spacing    |
-| docs    | `docs/ux/interaction-guidelines.md`, `docs/ux/audits/`       | the guide is replaced by a short, accepted one        |
+| docs    | `docs/ux/interaction-guidelines.md`, `docs/ux/audits/`                     | the guide is replaced by a short, accepted one          |
 
 ## Constraints
 

@@ -15,5 +15,12 @@
   ],
   "milestoneNote": "2026-10-26: size, kind, design and milestone from the owner's 1.1 dialog. The ticket fork was answered with a new ask (A5); the recommended default, a new bead under snap-bmr.17, was taken.",
   "ticket": "snap-bmr.17.4",
-  "design": "docs/designs/2026-10-25-adr-capture-bar-and-settings-window.md"
+  "design": "docs/designs/2026-10-25-adr-capture-bar-and-settings-window.md",
+  "skips": {
+    "brief": "skip -- no new screen or route; the asks and job stories are in intent.md (orchestrator, 2026-10-26)",
+    "ia": "skip -- no new screen, route or object (orchestrator, 2026-10-26)",
+    "interaction": "skip -- the states and keys are in spec/screens.md (orchestrator, 2026-10-26)",
+    "conformance": "skip -- the guide is drafted in this change and accepted at its gate; omr-ux:review checks conformance at the milestone (orchestrator, 2026-10-26)",
+    "prototype": "skip -- the UI is not risky: a label and words on existing screens (orchestrator, 2026-10-26)"
+  }
 }

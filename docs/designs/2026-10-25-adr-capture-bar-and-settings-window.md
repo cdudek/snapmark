@@ -50,6 +50,7 @@ The bar is a non-activating panel at the bottom centre of the display with the p
 ## Milestones
 
 - fixes: changes/2026-10-25-finish-app (milestone 2)
+- fixes: changes/2026-10-26-interaction-guide-polish (the bar's label and keys 1–4)
 
 | Date       | Decision                                      | Answer (quoted)                                             | By whom      |
 | ---------- | --------------------------------------------- | ----------------------------------------------------------- | ------------ |
