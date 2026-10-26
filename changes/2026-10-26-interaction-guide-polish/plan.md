@@ -78,8 +78,8 @@ The draft guide in `docs/ux/interaction-guidelines.md` is part of this gate. **E
 - [x] b. In parallel: `omr-ux:review` on the bar and the notes column (headless shots only), `omr-dev:pr-review`, `omr-dev:accessibility-audit`. Proof: one `findings.md` section.
 - [x] c. Validation: one row per fact and per ask in `validation.md` (expected, observed, evidence, verdict). Proof: no `not met` row after the fix round.
 - [x] d. One fix round on the blocking findings; rerun a.
-- [ ] e. PR `milestone/interaction-guide-polish-1` → `main`, title `feat(capture): the capture bar names its icons and keys, and the editor heads its General comment`, `findings.md` and `validation.md` linked. Then `gh pr merge --squash --auto`. Ask the owner first if a Critical or High is deferred.
-- [ ] f. When it merges and the release is out, install it from the release ZIP, signature and Gatekeeper checked. Say the version, close snap-bmr.17.4, and mark the rows `merged` in `milestone.md`.
+- [x] e. PR `milestone/interaction-guide-polish-1` → `main`, title `feat(capture): the capture bar names its icons and keys, and the editor heads its General comment`, `findings.md` and `validation.md` linked. Then `gh pr merge --squash --auto`. Ask the owner first if a Critical or High is deferred.
+- [x] f. When it merges and the release is out, install it from the release ZIP, signature and Gatekeeper checked. Say the version, close snap-bmr.17.4, and mark the rows `merged` in `milestone.md`.
 
 ## Risks
 
