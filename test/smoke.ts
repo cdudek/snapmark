@@ -418,19 +418,19 @@ app
     // references added here are undone again, so what follows sees the session as before.
     document.activeElement?.blur?.();
     const refsBefore = document.querySelectorAll('#refs .ref').length;
-    let added = 0;
+    let refsAdded = 0; // names unique in this page script: it is one scope, and tsc never sees it
     for (const fx of [.05, .1, .15]) {
       if (document.querySelectorAll('#refs .ref').length >= 3) break;
       key('1'); if (tool() !== 'marker') key('1');
-      drag(null, [[fx, .92]]); added++; await sleep(150); document.activeElement?.blur?.();
+      drag(null, [[fx, .92]]); refsAdded++; await sleep(150); document.activeElement?.blur?.();
     }
-    const rows = [...document.querySelectorAll('#refs .ref')];
-    const gaps = rows.slice(1).map((row, i) => row.getBoundingClientRect().top - rows[i].getBoundingClientRect().bottom);
+    const refRows = [...document.querySelectorAll('#refs .ref')];
+    const refGaps = refRows.slice(1).map((row, i) => row.getBoundingClientRect().top - refRows[i].getBoundingClientRect().bottom);
     r['F13 a note asks What about n'] =
-      rows.length >= 2 && rows.every((row) => row.querySelector('.md').dataset.placeholder === 'What about ' + row.querySelector('b').textContent + '?');
-    r['F14 notes stand 12 pt apart'] = rows.length >= 3 && gaps.every((g) => Math.abs(g - 12) <= 1);
-    console.log('F13 F14 ' + JSON.stringify({ rows: rows.length, gaps, added }));
-    for (let i = 0; i < added; i++) key('z', { metaKey: true });
+      refRows.length >= 2 && refRows.every((row) => row.querySelector('.md').dataset.placeholder === 'What about ' + row.querySelector('b').textContent + '?');
+    r['F14 notes stand 12 pt apart'] = refRows.length >= 3 && refGaps.every((g) => Math.abs(g - 12) <= 1);
+    console.log('F13 F14 ' + JSON.stringify({ rows: refRows.length, gaps: refGaps, refsAdded }));
+    for (let i = 0; i < refsAdded; i++) key('z', { metaKey: true });
     await sleep(100);
     r['F13/F14 the added references are undone'] = document.querySelectorAll('#refs .ref').length === refsBefore;
     setMd(cap, ['Smoke test caption']); document.activeElement.blur();
