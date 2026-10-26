@@ -279,9 +279,9 @@ app
     await sleep(100); setMd(ref1, ['Button is misaligned']); await sleep(100);
     r['restored reference note'] = ref1.textContent === 'Button is misaligned'; document.activeElement.blur();
     ref1.querySelector('.ProseMirror').focus();
-    const toolBefore = tool();
+    const toolBeforeNote = tool();
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true }));
-    r['tool keys do nothing while typing a note'] = tool() === toolBefore;
+    r['tool keys do nothing while typing a note'] = tool() === toolBeforeNote;
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '3', metaKey: true, bubbles: true, cancelable: true }));
     r['⌘3 picks Arrow from inside a note and leaves the note'] = tool() === 'arrow' && !document.activeElement?.closest?.('.md');
     ref1.querySelector('.ProseMirror').focus();
