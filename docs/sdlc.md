@@ -32,16 +32,16 @@ That installs plannotator and its plugin. Linear: in Claude Code run `/mcp` and 
 
 ## Stages
 
-| Stage       | What happens                                                                                                                                         | Touchpoint                                            |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| 1 Intent    | One dialog (ticket, design file, size, kind, milestone); asks verbatim; the agent drafts `intent.md`.                                                | engineer confirms intent                              |
-| 2 UX plan   | `omr-ux` design, sitemap, conformance, words; one validation pass. Skipped for size `none` or `ux: off`.                                             | none                                                  |
-| 3 Facts     | Facts cite asks, screens and the E2E tag that proves them; plain-language lint.                                                                      | none                                                  |
-| 4 Tech plan | Where things go, feature PRs, Done, the goal per feature.                                                                                            | one gate for all three, then `verify_gate.py approve` |
-| 5 Build     | Per feature inside `/goal`: tests, build, `verify_gate.py feature`, a PR into `milestone/<slug>`, a UX review of the screens it changes, auto-merge. | none                                                  |
-| 6 Milestone | Heavy checks on the milestone diff, one findings list, one fix round, `verify_gate.py milestone`, one PR to the milestone's parent.                  | engineer accepts                                      |
-| 6p Project  | Only for work spanning several milestones: rebase `project/<slug>`, re-check the whole project diff, one PR to the default branch.                   | engineer accepts                                      |
-| 7 Outcome   | Archive on merge; read the success measure after release.                                                                                            | engineer reads it                                     |
+| Stage       | What happens                                                                                                                                                                                                                                                                      | Touchpoint                                            |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| 1 Intent    | One dialog (ticket, design file, size, kind, milestone); asks verbatim; the agent drafts `intent.md`.                                                                                                                                                                             | engineer confirms intent                              |
+| 2 UX plan   | `omr-ux` design, sitemap, conformance, words; one validation pass. Skipped for size `none` or `ux: off`.                                                                                                                                                                          | none                                                  |
+| 3 Facts     | Facts cite asks, screens and the E2E tag that proves them; plain-language lint.                                                                                                                                                                                                   | none                                                  |
+| 4 Tech plan | Where things go, milestones and their features, Done, one goal for all of it.                                                                                                                                                                                                     | one gate for all three, then `verify_gate.py approve` |
+| 5 Build     | One go (default): one `/goal` builds every milestone in order; per feature, tests, build, commit, and nothing else runs between features. Questions go to `questions.md` and never block; answers become asks of the next milestone. (`delivery: feature-prs`: a PR per feature.) | none                                                  |
+| 6 Milestone | Checks and E2E once on the milestone diff, validation of every fact and ask against the built app (`validation.md`), one findings list, one fix round, `verify_gate.py milestone`, one PR that releases it.                                                                       | only when a Critical or High would be deferred        |
+| 6p Project  | Only for work spanning several milestones: rebase `project/<slug>`, re-check the whole project diff, one PR to the default branch.                                                                                                                                                | engineer accepts                                      |
+| 7 Outcome   | Archive on merge; read the success measure after release.                                                                                                                                                                                                                         | engineer reads it                                     |
 
 ### Branches
 
@@ -55,29 +55,24 @@ none.
 
 ## sdlc.json keys
 
-| Key                                                      | Meaning                                                                                   |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `checks.feature[]`, `checks.milestone[]`                 | what `scripts/verify_gate.py` runs, cheapest first                                        |
-| `milestones`, `hotfix`                                   | milestone branch prefix and rebase rule; the hotfix lane                                  |
-| `goal`                                                   | turn caps for the feature and milestone goals                                             |
-| `languages`, `responsiveTier`, `ux`                      | what the product ships, the device matrix tier, UX on or off                              |
-| `protected`                                              | paths refused after approval                                                              |
-| `verify`, `verifyStop`                                   | full command before PR; fast Stop hook command                                            |
-| `planGate`                                               | `owner` or `self`; self is barred for data safety, irreversible writes, security or money |
-| `testGlobs`, `prototypeDirs`, `feedback`                 | locked tests, prototype paths, owner-words files                                          |
-| `verifyDirty`, `lintOnEdit`, `blocked[]`                 | hook inputs                                                                               |
-| `tiers`, `askGatesMerge`, `codeowners`, `claude`, `keep` | generated workflow policy                                                                 |
+| Key                                                      | Meaning                                                                                        |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `checks.feature[]`, `checks.milestone[]`                 | what `scripts/verify_gate.py` runs, cheapest first                                             |
+| `milestones`, `hotfix`                                   | milestone branch prefix and rebase rule; the hotfix lane                                       |
+| `delivery`                                               | `one-go` (default) or `feature-prs`                                                            |
+| `goal`                                                   | turn caps: `runTurns` for the one-go goal, `featureTurns` and `milestoneTurns` for feature PRs |
+| `languages`, `responsiveTier`, `ux`                      | what the product ships, the device matrix tier, UX on or off                                   |
+| `protected`                                              | paths refused after approval                                                                   |
+| `verify`, `verifyStop`                                   | full command before PR; fast Stop hook command                                                 |
+| `planGate`                                               | `owner` or `self`; self is barred for data safety, irreversible writes, security or money      |
+| `testGlobs`, `prototypeDirs`, `feedback`                 | locked tests, prototype paths, owner-words files                                               |
+| `verifyDirty`, `lintOnEdit`, `blocked[]`                 | hook inputs                                                                                    |
+| `tiers`, `askGatesMerge`, `codeowners`, `claude`, `keep` | generated workflow policy                                                                      |
 
 ## Where a change stands
 
-`scripts/sdlc_status.py` turns one verb into a status line. The skill writes
-`changes/<id>/status.json` at every step; the status line reads it.
-
-    status line    Stage 5/7 Build · Building F3 · writing e2e F3.1+F3.2 (2 agents) · 2/5 done
-
-Add `python3 scripts/sdlc_status.py line` to your own status-line script; it reads the same stdin
-JSON and prints nothing outside an adopted repo. `python3 scripts/sdlc_status.py map` shows every
-milestone and the features of the current one.
+`python3 scripts/sdlc_status.py map` shows every milestone, the features of the current one and
+the stage, all read from the change folder's files.
 
 ## Hooks
 
@@ -92,9 +87,9 @@ milestone and the features of the current one.
 
 ## Build and test
 
-After the one gate, `python3 scripts/verify_gate.py approve <id>` locks the criteria. Every
-feature then runs inside `/goal` with the condition from `plan.md` `## Goal handover`, and ends
-on one line from `python3 scripts/verify_gate.py feature <id>`: `VERIFY PASS`, `VERIFY FAIL`
+After the one gate, `python3 scripts/verify_gate.py approve <id>` locks the criteria. One
+`/goal` from `plan.md` `## Goal handover` then builds every milestone. Each milestone ends on
+one line from `python3 scripts/verify_gate.py milestone <id>`: `VERIFY PASS`, `VERIFY FAIL`
 (fix and rerun) or `VERIFY BLOCKED reason=<code>` (stop and ask the engineer).
 
 For a bug, commit the failing test first and set `testLocked: true`. While locked, test files
