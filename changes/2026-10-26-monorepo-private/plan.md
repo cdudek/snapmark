@@ -101,14 +101,14 @@ One go: each row is a commit on `milestone/monorepo-private-1`, with no checks b
 
 Each step has a proof. The proof is a command, a file, or a fact.
 
-- [ ] 0. Owner links a billing account to `snapmark-ai` in the console — proof: `gcloud billing projects describe snapmark-ai` says `billingEnabled: true`.
-- [ ] 1. With the owner's account `calvindudek@googlemail.com`: enable `iamcredentials`, `sts` and `iam`. Create the bucket `snapmark-updates`: europe-west3, Standard, uniform access, public access prevention off. Grant `allUsers` `roles/storage.objectViewer`. Create pool `github`, provider `snapmark` (issuer `https://token.actions.githubusercontent.com`, condition `assertion.repository=='cdudek/snapmark'`). Create service account `release-uploader`, bind `roles/storage.objectAdmin` on the bucket only and `roles/iam.workloadIdentityUser` for the repo's principal set. Record every command in the ADR — proof: F8 and F9 checks.
+- [x] 0. Owner links a billing account to `snapmark-ai` in the console — proof: `gcloud billing projects describe snapmark-ai` says `billingEnabled: true`.
+- [x] 1. With the owner's account `calvindudek@googlemail.com`: enable `iamcredentials`, `sts` and `iam`. Create the bucket `snapmark-updates`: europe-west3, Standard, uniform access, public access prevention off. Grant `allUsers` `roles/storage.objectViewer`. Create pool `github`, provider `snapmark` (issuer `https://token.actions.githubusercontent.com`, condition `assertion.repository=='cdudek/snapmark'`). Create service account `release-uploader`, bind `roles/storage.objectAdmin` on the bucket only and `roles/iam.workloadIdentityUser` for the repo's principal set. Record every command in the ADR — proof: F8 and F9 checks.
 - [x] 2. Record N1's baseline: `npm ls --all --json` into `checks/deps-before.json` — proof: the file exists.
 - [x] 3. `publish` → generic; `release.yml` upload, prune and `id-token`; prune script and test — proof: `sh snapmark-app/test/prune.test.sh` exits 0 (F7).
 - [x] 4. Move the app into `snapmark-app/` and add the root `package.json`. Run a plain `npm install`. Fix paths in the listed docs — proof: `checks/layout.sh` (F1) and `checks/deps.sh` (N1) exit 0.
 - [x] 5. `npx electron-builder --mac dir --publish never -c.mac.identity=-` in `snapmark-app/` — proof: `checks/asar.sh` (F3) exits 0, and `app-update.yml` names the bucket (F4).
 - [x] 6. The ADR, `python3 scripts/design_index.py write` — proof: `INDEX.md` lists it.
-- [ ] 7. Milestone checks: `python3 scripts/verify_gate.py milestone 2026-10-26-monorepo-private` — proof: `VERIFY PASS milestone` (F2).
+- [x] 7. Milestone checks: `python3 scripts/verify_gate.py milestone 2026-10-26-monorepo-private` — proof: `VERIFY PASS milestone` (F2).
 - [ ] 8. PR `milestone/monorepo-private-1` → `main`, titled `fix(updates): …` so it releases a patch; auto-merge armed after asking (workflow and lockfile change) — proof: CI `check` green.
 - [ ] 9. After the merge: the release run uploads to the bucket — proof: F5, F6 checks.
 - [ ] 10. The owner confirms both Macs; ask, then make the repo private — proof: F10, F11.
