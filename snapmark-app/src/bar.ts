@@ -46,13 +46,9 @@
     // One-Shot captures go to no session, so the pop-up is greyed with its reason (F21)
     const cur = s.session;
     pop.setAttribute('aria-disabled', String(s.oneShot));
-    el('session-face').textContent = s.oneShot
-      ? 'Not in a session'
-      : !cur
-        ? 'No session yet'
-        : cur.count
-          ? `${cur.label} (${cur.count})`
-          : cur.label;
+    const face = s.oneShot ? 'Not in a session' : !cur ? 'No session yet' : cur.count ? `${cur.label} (${cur.count})` : cur.label;
+    el('session-face').textContent = face;
+    pop.setAttribute('aria-label', `Session: ${face}`); // the face without its ⇧⌘P caption, which aria-keyshortcuts gives
     pop.title = !s.oneShot && cur ? `Current session: ${cur.label}` : '';
     head();
   };
@@ -87,7 +83,9 @@
     else if (step && inSegs >= 0) {
       segs[1 - inSegs].focus(); // two segments: either arrow moves to the other one and chooses it
       oneShot(inSegs === 0);
-    } else if (cmd && e.shiftKey && is('O'))
+    } else if (e.key === 'ArrowDown' && document.activeElement === pop)
+      sessions(); // ↓ opens a pop-up button, as in macOS
+    else if (cmd && e.shiftKey && is('O'))
       oneShot(!s?.oneShot); // F24
     else if (cmd && e.shiftKey && is('P'))
       sessions(); // F25

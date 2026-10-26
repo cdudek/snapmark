@@ -11,6 +11,12 @@
         --countdown-square: 240px;
         --countdown-digit: 160px;
       }
+      /* About 150 % (countdown.ts sets --zoom, the page zoom): a 300 pt square and a 200 pt digit on screen, where CSS
+         pixels are already zoomed. */
+      :root.zoomed {
+        --countdown-square: calc(300px / var(--zoom));
+        --countdown-digit: calc(200px / var(--zoom));
+      }
       html,
       body {
         margin: 0;
@@ -38,6 +44,8 @@
         box-sizing: border-box;
         width: var(--countdown-square);
         height: var(--countdown-square);
+        max-width: 100vw; /* never larger than the display */
+        max-height: 100vh;
         display: flex;
         flex-direction: column;
         align-items: center;

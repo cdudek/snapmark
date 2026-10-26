@@ -209,11 +209,12 @@ let picking = false; // the area picker is open
 let scrolling = false; // Capture Scrolling is grabbing what scrolls under its area
 let shooting = false; // screencapture runs: its crosshair is up, or it is writing the file
 let counting = false; // the capture bar's Timer counts down
+let launching = false; // the bar has closed for a capture, which starts once the window server has dropped it
 let bar: BrowserWindow | null = null; // the capture bar (⌃⇧5)
 const barOpen = () => !!bar && !bar.isDestroyed();
 // One capture at a time: a capture key or item while one is running does nothing, ⌃⇧N included. An open bar counts
 // for captures, or it would be in the picture of the macOS overlay; its session pop-up offers New Session.
-const capturing = () => picking || scrolling || shooting || counting;
+const capturing = () => picking || scrolling || shooting || counting || launching;
 const busy = () => capturing() || barOpen();
 
 // The same area every time, e.g. the page in a browser. The first time, after Choose New Area, or when the display
@@ -432,6 +433,14 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
   bar = win;
   // As tall as its content, so a hint that wraps grows the bar instead of hiding a control (F27).
   win.webContents.on('preferred-size-changed', (_e, { height }) => win.setBounds(at(win.getBounds().width, height)));
+  // The page's zoom is known once it loads: at about 150 % the bar is narrow and wider (F27).
+  // shortcut: a zoom changed while the bar is open shows the next time it opens; follow it live if the bar ever stays up.
+  win.webContents.once('did-finish-load', () => {
+    const fit = barSize(wa.width, win.webContents.getZoomFactor());
+    barNarrow = fit.narrow;
+    win.setBounds(at(fit.width, win.getBounds().height));
+    tellBar();
+  });
   win.setContentProtection(true); // belt and braces: it closes before every capture
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
@@ -479,7 +488,13 @@ ipcMain.on('bar:capture', (e, mode: CaptureMode) => {
   const [win, run] = [bar!, runBar];
   setCapture({ mode });
   const o = captureOpts;
-  win.once('closed', () => setTimeout(() => void run(o), 200));
+  launching = true; // the 200 ms between bar and capture are busy too (F10)
+  win.once('closed', () =>
+    setTimeout(() => {
+      launching = false;
+      void run(o);
+    }, 200),
+  );
   win.close();
 });
 ipcMain.on('bar:options', (e, mode: CaptureMode, at: Area) => {
@@ -681,7 +696,11 @@ export function moveEditor(win: BrowserWindow, name: string) {
 }
 
 // Native menus under a control in the editor's header or the capture bar; `at` is the control's box in window points.
-const popUnder = (...a: Parameters<typeof desk.popup>) => desk.popup(...a);
+// `at` comes from a renderer: anything but four finite numbers is dropped.
+const popUnder = (...[win, items, at]: Parameters<typeof desk.popup>) => {
+  const { x, y, width, height } = Object(at) as Area;
+  if ([x, y, width, height].every(Number.isFinite)) desk.popup(win, items, at);
+};
 
 ipcMain.on('editor:sessions-menu', (e, at: Area) => {
   const ed = editors.get(e.sender.id);

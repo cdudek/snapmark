@@ -63,7 +63,13 @@ assert.ok(
 
 // @F10 busy: while a picker, countdown or capture runs, ⌃⇧1, ⌃⇧2, ⌃⇧3, ⌃⇧4 and ⌃⇧N do nothing. The open bar is busy for
 // the capture keys only: its session pop-up offers New Session with ⌃⇧N.
-assert.ok(main.includes('const capturing = () => picking || scrolling || shooting || counting;'), '@F10');
+assert.ok(main.includes('const capturing = () => picking || scrolling || shooting || counting || launching;'), '@F10');
+// @F10 and in the 200 ms between the bar closing and its capture starting: set at close, cleared just before the run
+const barCapture = main.slice(main.indexOf("ipcMain.on('bar:capture'"), main.indexOf('\n});\n', main.indexOf("ipcMain.on('bar:capture'")));
+assert.ok(
+  /launching = true;[^]*launching = false;\s+void run\(o\);[^]*win\.close\(\);/.test(barCapture),
+  '@F10 busy until the bar capture runs',
+);
 assert.ok(main.includes('const busy = () => capturing() || barOpen();'), '@F10');
 for (const fn of ['async function captureArea', 'function captureFullScreen']) {
   const body = main.slice(main.indexOf(fn), main.indexOf('\n}\n', main.indexOf(fn)));
@@ -111,7 +117,7 @@ assert.deepStrictEqual(
     ['← →', 'Move between modes', 'Tab moves on to Options, Capture and Session or One-Shot'],
     ['↩ / ⌘↩', 'Capture', ''],
     ['⇧⌘O', 'Session or One-Shot', 'where the capture goes'],
-    ['⇧⌘P', 'Session pop-up', 'pick the current session'],
+    ['⇧⌘P', 'Switch Session', 'pick the current session'],
     ['⌥O', 'Options', 'Timer and Show Mouse Pointer'],
     ['Esc', 'Close', 'also from another app while the bar is open'],
   ],
@@ -124,6 +130,14 @@ assert.deepStrictEqual(
   [...bar.matchAll(/aria-keyshortcuts="([^"]+)"/g)].map((m) => m[1]),
   ['Shift+Meta+O', 'Shift+Meta+O', 'Shift+Meta+P', 'Escape', '1', '2', '3', '4', '5', 'Alt+O', 'Enter Meta+Enter'],
   '@F18 the bar buttons carry the keys the group lists',
+);
+// @F18 and show them: native tooltips never show in this panel, so ⇧⌘O and ⇧⌘P are captions on the bar too
+assert.deepStrictEqual(
+  [...bar.slice(bar.indexOf('<div id="head">'), bar.indexOf('<div class="hairline"')).matchAll(/class="key"[^>]*>([^<]+)</g)].map(
+    (m) => m[1],
+  ),
+  ['⇧⌘O', '⇧⌘P'],
+  '@F18 the destination row shows ⇧⌘O and ⇧⌘P',
 );
 assert.deepStrictEqual(
   KEY_GROUPS[2].rows,

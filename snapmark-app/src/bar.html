@@ -53,8 +53,9 @@
         justify-content: center;
         flex: none;
       }
+      /* The accent text colour: 3:1 or more on the bar in light and dark, and around the blue Capture too. */
       button:focus-visible {
-        outline: 2px solid var(--accent-fill);
+        outline: 2px solid var(--accent-text);
         outline-offset: 2px;
       }
       svg {
@@ -101,12 +102,13 @@
       #dest {
         border: 1px solid var(--hairline);
         border-radius: 8px;
-        padding: 1px;
+        padding: 2px;
       }
+      /* 24 + 2 × 2 padding + 2 × 1 border: 30 high, level with the pop-up */
       #dest [role='radio'] {
         width: 100px;
-        height: 28px;
-        border-radius: 6px;
+        height: 24px;
+        border-radius: 5px;
       }
       #session {
         height: 30px;
@@ -210,9 +212,6 @@
       #capture kbd {
         font: inherit;
       }
-      #capture:focus-visible {
-        outline-color: var(--accent);
-      }
 
       /* Under 1000 pt of work area, or at 150 %: the hint goes under the headline and the destination shrinks. */
       body.narrow #title {
@@ -229,15 +228,17 @@
   </head>
   <body>
     <div id="head">
-      <div id="title"><span id="headline"></span><span id="hint"></span></div>
+      <div id="title"><span id="headline"></span><span id="hint" aria-live="polite"></span></div>
       <div id="dest" role="radiogroup" aria-label="Save to">
         <button role="radio" aria-checked="true" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">Session</button>
         <button role="radio" aria-checked="false" tabindex="-1" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">
           One-Shot
         </button>
       </div>
+      <span class="key" aria-hidden="true">⇧⌘O</span>
       <button id="session" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P">
-        <span id="session-face"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+        <span id="session-face"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg
+        ><span class="key">⇧⌘P</span>
       </button>
     </div>
     <div class="hairline" aria-hidden="true"></div>

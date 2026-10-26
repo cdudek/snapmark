@@ -72,6 +72,10 @@ assert.deepStrictEqual(barHeads(null).last, ['Capture Last Area', 'No area yet: 
 assert.deepStrictEqual(barSize(1440), { width: 960, narrow: false }, '@F27');
 assert.deepStrictEqual(barSize(1000), { width: 952, narrow: false }, '@F27');
 assert.deepStrictEqual(barSize(900), { width: 852, narrow: true }, '@F27');
+// @F27 at 150 % (a page zoom; ⌘+ steps to 1.44) narrow too, and wider by the zoom as far as the work area allows
+assert.deepStrictEqual(barSize(1512, 1.5), { width: 1440, narrow: true }, '@F27 150 %');
+assert.deepStrictEqual(barSize(1440, 1.44), { width: 1382, narrow: true }, '@F27 150 % capped by the work area');
+assert.deepStrictEqual(barSize(1440, 1.2), { width: 1152, narrow: false }, '@F27 120 % is not narrow');
 
 // F210 screencapture arguments: each mode as its menu item did; Full Screen is ⌃⇧3's, with -C for the pointer
 assert.deepStrictEqual(captureArgs('window', { pointer: false }), ['-i', '-w', '-o'], 'F210 window');

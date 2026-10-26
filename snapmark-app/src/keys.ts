@@ -34,7 +34,7 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
       ['← →', 'Move between modes', 'Tab moves on to Options, Capture and Session or One-Shot'],
       ['↩ / ⌘↩', 'Capture', ''],
       ['⇧⌘O', 'Session or One-Shot', 'where the capture goes'],
-      ['⇧⌘P', 'Session pop-up', 'pick the current session'],
+      ['⇧⌘P', 'Switch Session', 'pick the current session'],
       ['⌥O', 'Options', 'Timer and Show Mouse Pointer'],
       ['Esc', 'Close', 'also from another app while the bar is open'],
     ],

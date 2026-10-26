@@ -2,7 +2,14 @@
 // The query gives the first digit and the area in window points (none for Full Screen); main sends each next digit.
 (() => {
   const q = new URLSearchParams(location.search);
-  const [x, y, w, h] = ['x', 'y', 'w', 'h'].map((k) => Number(q.get(k)));
+  // The page zoom: the window and the area are in points, the page in zoomed CSS pixels. About 150 % gets the larger
+  // square.
+  const zoom = innerWidth ? outerWidth / innerWidth : 1;
+  if (zoom >= 1.4) {
+    document.documentElement.style.setProperty('--zoom', String(zoom));
+    document.documentElement.classList.add('zoomed');
+  }
+  const [x, y, w, h] = ['x', 'y', 'w', 'h'].map((k) => Number(q.get(k)) / zoom);
   const hasArea = q.has('w');
   const outline = document.getElementById('outline')!;
   const square = document.getElementById('square')!;

@@ -35,7 +35,7 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 
 - **CAP-1 (accepted).** ⌃⇧1 to ⌃⇧5 work from any app, Space or full-screen app, and never switch Spaces.
   - **Why:** Flow. A review keeps its rhythm only if capturing never pulls you out of the app.
-  - **Today:** `src/keys.ts:6-11`; bar shown on every Space at `src/main.ts:354`. Not yet: ⌃⇧1 and ⌃⇧2 (2026-10-26-picked-designs, milestone 1).
+  - **Today:** `src/keys.ts:6-13`; bar shown on every Space at `src/main.ts:446`.
 - **CAP-2 (accepted).** No Snapmark window, bar, picker or counter ever appears in a capture.
   - **Why:** Mental Model. A screenshot must show the screen as you saw it before you pressed the key.
   - **Today:** the bar closes, then waits 200 ms (capture bar ADR); content protection at `src/main.ts:352`.
@@ -137,7 +137,7 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 
 - **KEY-1 (accepted).** Global keys are ⌃⇧ plus macOS's screenshot digits: ⌃⇧1 Capture New Area…, ⌃⇧2 Capture One-Shot…, ⌃⇧3 Capture Full Screen (every display, at once), ⌃⇧4 Capture Last Area, ⌃⇧5 capture bar. ⌃⇧N starts a new session and forgets the area.
   - **Why:** Jakob's Law. The digits are the ones the owner's fingers already know.
-  - **Today:** `src/keys.ts:6-11`; ADR "Keys follow macOS". Not yet: ⌃⇧1, ⌃⇧2 and ⌃⇧3 as listed (2026-10-26-picked-designs, milestone 1).
+  - **Today:** `src/keys.ts:6-13`; ADR "Keys follow macOS".
 - **KEY-2 (accepted).** In every Snapmark window, Mac keys keep their Mac meaning: ⌘W, ⌘S, ⌘C, ⌘Z, ⌘, for Settings, ⌘/ for Keyboard Shortcuts.
   - **Why:** Jakob's Law. A key that means the same everywhere is never learned twice.
   - **Today:** `src/keys.ts:35-68`; app menu at `src/menu.ts:166-179`.

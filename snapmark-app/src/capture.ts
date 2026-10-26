@@ -24,8 +24,12 @@ export const barHeads = (area: Area | null): Record<CaptureMode, [headline: stri
 });
 
 // The bar's width on a display's work area: 960 pt, or narrower under 1000 pt, where the hint wraps under the headline
-// and the destination shrinks, so no control hides (F27).
-export const barSize = (workWidth: number) => ({ width: Math.min(960, workWidth - 48), narrow: workWidth < 1000 });
+// and the destination shrinks, so no control hides (F27). At about 150 % (`zoom`, the page's zoom factor; the View
+// menu's ⌘+ steps through 1.44 and 1.58) it is narrow too, and wider by the zoom as far as the work area allows.
+export const barSize = (workWidth: number, zoom = 1) => ({
+  width: Math.min(Math.round(960 * zoom), workWidth - 48),
+  narrow: workWidth < 1000 || zoom >= 1.4,
+});
 
 // The first time the bar opens (F207).
 export const FIRST: CaptureOpts = { mode: 'area', oneShot: false, timer: 0, pointer: false };
