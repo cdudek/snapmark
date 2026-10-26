@@ -6,7 +6,7 @@
       {
         "rule": "broken-image",
         "value": "*",
-        "files": ["src/viewer.html"],
+        "files": ["snapmark-app/src/viewer.html"],
         "createdAt": "2026-10-25T10:28:44.500Z",
         "reason": "orchestrator: the three imgs (#shot, thumb-t and gone-t templates) get their src from viewer.ts at runtime; code read 2026-10-25"
       }

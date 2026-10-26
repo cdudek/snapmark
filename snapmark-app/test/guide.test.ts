@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // The interaction guide (docs/ux/interaction-guidelines.md): short, every rule tied to a Law of UX, accepted by the owner.
-const root = path.join(__dirname, '../..');
+const root = path.join(__dirname, '../../..'); // the repo root, above snapmark-app/
 const guide = fs.readFileSync(path.join(root, 'docs/ux/interaction-guidelines.md'), 'utf8');
 const lines = guide.split('\n');
 

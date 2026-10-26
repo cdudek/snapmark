@@ -20,7 +20,7 @@ Every `ux:` skill reads this file first. Keep it short and true.
 
 ## The rules it must follow
 
-- **Design system:** none. The editor's colours are CSS tokens in `src/editor.html` (`--accent: #e11d48`); app and menu bar icons in `assets/`.
+- **Design system:** none. The editor's colours are CSS tokens in `snapmark-app/src/editor.html` (`--accent: #e11d48`); app and menu bar icons in `snapmark-app/assets/`.
 - **Glossary:** none yet — `docs/ux/glossary-proposal.md`.
 - **Voice and writing rules:** none in the repo.
 - **Hard rules** that override UX preferences (from the owner's words):
@@ -70,8 +70,8 @@ App-wide parts: menu bar icon and menu, global shortcuts `⌃⇧4` (capture), `�
 ## How to run it for an audit
 
 - **Build and run:** `npm ci && npm run smoke`. It renders a mock app page, opens the real editor on it, uses every tool, saves, exports a PDF, and writes `editor.png` (the editor window) and `smoke/img/001.png` (the saved image) to a temp folder it prints as `root:`.
-- **Scale check:** `npm run build && npx electron --force-device-scale-factor=1 dist/test/smoke.js` for a non-Retina screen.
-- **Test data:** the mock page inside `test/smoke.ts`; `SNAPMARK_ROOT` points sessions at a temp folder. Never the owner's screen.
+- **Scale check:** `npm run build && (cd snapmark-app && npx electron --force-device-scale-factor=1 dist/test/smoke.js)` for a non-Retina screen.
+- **Test data:** the mock page inside `snapmark-app/test/smoke.ts`; `SNAPMARK_ROOT` points sessions at a temp folder. Never the owner's screen.
 - **Screenshots go to:** `docs/ux/audits/<YYYY-MM-DD>/shots/`
 - **Window sizes:** editor at its minimum 1180 × 600, and 1440 and 1920 wide; Retina (2×) and 1×.
 - **Builds to audit:** `main` (v0.9.0 and later). No open pull requests.
