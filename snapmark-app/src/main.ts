@@ -906,11 +906,13 @@ export function openViewer(name: string, into = root): BrowserWindow {
   viewers.set(id, v);
   watch(v);
   win.once('focus', updateDock);
-  win.on('resized', () => {
+  const keepSize = () => {
     const [w, h] = win.getSize();
     viewerSize = { width: w, height: h };
     saveState();
-  });
+  };
+  win.on('resized', keepSize);
+  win.on('close', keepSize); // Zoom and window tiling may not send 'resized'
   win.on('closed', () => {
     v.watcher?.close();
     viewers.delete(id);

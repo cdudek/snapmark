@@ -204,14 +204,17 @@
         height: 20px;
       }
       /* Where this screenshot goes, at the toolbar's right end: Session | One-Shot, 12 pt, then the session pop-up. Both
-         behave as the capture bar's; the flexible gap sits before them. */
+         behave as the capture bar's; the flexible gap sits before them. One wrapper, so a greyed pair has one reason. */
       #dest-wrap {
+        display: flex;
         flex: none;
+        gap: 4px;
+        align-items: flex-start;
         margin-left: auto;
-        padding-top: 3px;
       }
       #dest {
         display: flex;
+        margin-top: 3px;
         padding: 2px;
         border: 1px solid var(--line);
         border-radius: 8px;
@@ -247,8 +250,11 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      header #session:disabled {
+      /* Greyed by colour, not opacity, so "Not in a session" still reads; aria-disabled keeps it in Tab and VoiceOver (F45) */
+      header #session[aria-disabled='true'] {
         padding-right: 10px;
+        background: transparent;
+        cursor: default;
       }
       /* Too narrow for one line (N2), in the spec's order: the name to 96 pt, the segments to 72, then the tool captions
          go and the tools and separators tighten (editor.ts fitToolbar). */
@@ -389,7 +395,7 @@
       }
       .hex:focus-within {
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-tint);
+        outline: 2px solid var(--focus); /* --accent and its tint are under 3:1 on the panels */
       }
       .hex:has([aria-invalid='true']) {
         border-color: var(--danger);
@@ -822,19 +828,20 @@
         </svg>
       </button>
       <span id="dest-wrap">
+        <span id="dest-reason" class="sr"></span>
         <span id="dest" role="radiogroup" aria-label="Save to">
           <button role="radio" aria-checked="true" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">Session</button>
           <button role="radio" aria-checked="false" tabindex="-1" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">
             One-Shot
           </button>
         </span>
+        <button id="session" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P" aria-describedby="dest-reason" aria-disabled="true">
+          <span id="session-name"></span><span id="session-count"></span>
+          <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
+        </button>
       </span>
-      <button id="session" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P" disabled>
-        <span id="session-name"></span><span id="session-count"></span>
-        <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
-      </button>
     </header>
-    <p id="move-error" role="alert" hidden></p>
+    <p id="move-error" role="status" hidden></p>
     <p id="announce" class="sr" aria-live="polite"></p>
     <div id="palette" role="dialog" aria-label="Annotation colour" hidden>
       <div id="presets" class="swatches"></div>
@@ -851,7 +858,7 @@
           aria-label="Hex colour"
           aria-describedby="hex-error"
       /></label>
-      <p id="hex-error" class="hex-error" role="alert" hidden>Use 3 or 6 hex digits, like e5484d.</p>
+      <p id="hex-error" class="hex-error" role="status" hidden>Use 3 or 6 hex digits, like e5484d.</p>
       <label class="custom"><input type="color" id="color" value="#e5484d" /><i class="ring"></i>Custom…</label>
     </div>
     <main>
@@ -883,7 +890,7 @@
                   aria-label="Custom background hex colour"
                   aria-describedby="backdrop-hex-error"
               /></label>
-              <p id="backdrop-hex-error" class="hex-error" role="alert" hidden>Use 3 or 6 hex digits, like e5484d.</p>
+              <p id="backdrop-hex-error" class="hex-error" role="status" hidden>Use 3 or 6 hex digits, like e5484d.</p>
             </div>
           </div>
           <h3 id="ratio-label">Ratio</h3>

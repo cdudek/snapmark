@@ -247,7 +247,9 @@ app
     const noTool = tool() === toolBefore && canvas.getObjects().length === marksBefore;
     canvas.discardActiveObject();
     hex.value = 'zz1'; hex.dispatchEvent(new Event('input', { bubbles: true }));
-    const cleared = hexErr.hidden && !hex.hasAttribute('aria-invalid');
+    const kept = !hexErr.hidden; // the error stays until the value is valid
+    hex.value = 'abc'; hex.dispatchEvent(new Event('input', { bubbles: true }));
+    const cleared = kept && hexErr.hidden && !hex.hasAttribute('aria-invalid');
     hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     r['A15 a hex code with or without #, 3 or 6 digits, any case, trimmed; a bad one says so and changes nothing'] = shown && byBlur && byEnter && refused && noTool && cleared && pal.hidden && colorEl.value === '#ff00aa';
     // A16: one row of custom colours under the two rows of presets, newest first, no presets, no repeats; the panel
@@ -269,10 +271,10 @@ app
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     sw.click(); presets[0].click(); // back to coral red; the Custom row stays for the A16 check in the next editor
     // @F54 a pasted "#2492ff" reads "2492ff" and applies at once; a typed "#" goes, and typing applies at six digits.
-    // @F56 a bad value on Enter or blur shows the hex error, outlined in red and announced; typing clears it. Blue is a
+    // @F56 a bad value on Enter or blur shows the hex error, outlined in red and announced; it clears once valid. Blue is a
     // preset, so the Custom row stays as the next editor's A16 check expects.
     const typeIn = (el, v, inputType) => { el.value = v; el.dispatchEvent(new InputEvent('input', { inputType, bubbles: true })); };
-    const hexErrorShown = (el) => { const p = document.getElementById(el.getAttribute('aria-describedby')); return !p.hidden && p.getAttribute('role') === 'alert' && p.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && getComputedStyle(el.closest('.hex')).borderTopColor === getComputedStyle(p).color; };
+    const hexErrorShown = (el) => { const p = document.getElementById(el.getAttribute('aria-describedby')); return !p.hidden && p.getAttribute('role') === 'status' && p.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && getComputedStyle(el.closest('.hex')).borderTopColor === getComputedStyle(p).color; };
     sw.click(); hex.focus(); typeIn(hex, '#2492ff', 'insertFromPaste');
     const pastedIn = hex.value === '2492ff' && colorEl.value === '#2492ff' && !pal.hidden;
     typeIn(hex, '#', 'insertText');
@@ -284,9 +286,11 @@ app
     typeHex('12345', true);
     const onEnter = hexErrorShown(hex) && !pal.hidden;
     typeIn(hex, '1234', 'insertText');
-    const clearedOnType = hexErr.hidden && !hex.hasAttribute('aria-invalid');
+    const keptWhileBad = hexErrorShown(hex);
+    typeIn(hex, '123', 'insertText');
+    const clearedOnType = keptWhileBad && hexErr.hidden && !hex.hasAttribute('aria-invalid');
     typeHex('zz', false);
-    r['@F56 a bad hex value on Enter or blur shows the hex error; typing clears it'] = onEnter && clearedOnType && hexErrorShown(hex) && colorEl.value === '#e5484d';
+    r['@F56 a bad hex value on Enter or blur shows the hex error; a valid one clears it'] = onEnter && clearedOnType && hexErrorShown(hex) && colorEl.value === '#e5484d';
     hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     if (!pal.hidden) sw.click();
     sw.click(); presets[0].click();
@@ -812,15 +816,19 @@ app
     );
     // F115: Edit Again (and one-shot, below) shows the session as plain text, with no chevron and no menu
     const noSessionMenu = (w: BrowserWindow) =>
-      inWin(w, `const s = document.getElementById('session'); return s.disabled && !s.querySelector('.chevron');`);
+      inWin(
+        w,
+        `const s = document.getElementById('session'); return s.getAttribute('aria-disabled') === 'true' && !s.querySelector('.chevron');`,
+      );
     const noMenuAgain = await noSessionMenu(again);
-    // @F45 Edit Again: Session | One-Shot and the pop-up are greyed, the reason on their wrapper; ⇧⌘O changes nothing
+    // @F45 Edit Again: Session | One-Shot and the pop-up are greyed, the reason on their wrapper and read with the pop-up;
+    // ⇧⌘O changes nothing
     for (const type of ['keyDown', 'keyUp'] as const)
       again.webContents.sendInputEvent({ type, keyCode: 'O', modifiers: ['shift', 'meta'] });
     await sleep(200);
     viewer['@F45 Edit Again greys the destination, with its reason'] = await inWin(
       again,
-      `return [...document.querySelectorAll('#dest button')].every((b) => b.disabled) && document.getElementById('dest-wrap').title === 'Edit Again saves back into smoke.' && document.getElementById('session').disabled && !oneShot && document.querySelector('#dest [aria-checked="true"]').textContent.trim() === 'Session';`,
+      `return [...document.querySelectorAll('#dest button')].every((b) => b.disabled) && document.getElementById('dest-wrap').title === 'Edit Again saves back into smoke.' && document.getElementById('dest-wrap').contains(document.getElementById('session')) && document.getElementById('session').getAttribute('aria-disabled') === 'true' && document.getElementById(document.getElementById('session').getAttribute('aria-describedby')).textContent === 'Edit Again saves back into smoke.' && !oneShot && document.querySelector('#dest [aria-checked="true"]').textContent.trim() === 'Session';`,
     );
     await inWin(again, `captionField.focus();`);
     for (const ch of 'Edited ') again.webContents.sendInputEvent({ type: 'char', keyCode: ch });
@@ -1823,7 +1831,7 @@ app
         const pasted = el.value === '2492ff' && bg() === 'rgb(36, 146, 255)';
         typeIn('zz', 'insertText');
         el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-        const refused = !err.hidden && err.getAttribute('role') === 'alert' && err.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && bg() === 'rgb(36, 146, 255)';
+        const refused = !err.hidden && err.getAttribute('role') === 'status' && err.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && bg() === 'rgb(36, 146, 255)';
         typeIn('123456', 'insertText');
         el.blur(); el.dispatchEvent(new FocusEvent('blur'));
         return JSON.stringify({ beside, shows, pasted, refused, back: err.hidden && bg() === 'rgb(18, 52, 86)' });`,
@@ -2079,9 +2087,9 @@ app
           `const shown = (id) => getComputedStyle(document.getElementById(id)).display !== 'none';
           const h = document.querySelector('header');
           return JSON.stringify({
-            ends: [...h.children].slice(-2).map((c) => c.id),
+            ends: [h.lastElementChild.id, ...[...h.lastElementChild.children].filter((c) => !c.classList.contains('sr')).map((c) => c.id)],
             segs: [...document.querySelectorAll('#dest [role=radio]')].map((b) => b.textContent.trim() + ':' + b.getAttribute('aria-checked')).join(),
-            face: document.getElementById('session').textContent, greyed: document.getElementById('session').disabled,
+            face: document.getElementById('session').textContent, greyed: document.getElementById('session').getAttribute('aria-disabled') === 'true',
             primary: document.getElementById('save').textContent, beautify: shown('beautify'),
             notes: shown('caption') && shown('caption-label') && shown('refs'),
             kept: shown('notes-kept') ? document.getElementById('notes-kept').textContent : '',
@@ -2091,7 +2099,7 @@ app
       );
     const s0 = await destLook();
     viewer['@F36 the toolbar ends with Session | One-Shot, then the pop-up "<session> (<n>)"'] =
-      s0.ends.join() === 'dest-wrap,session' && s0.segs === 'Session:true,One-Shot:false' && s0.face === 'moved (1)' && !s0.greyed;
+      s0.ends.join() === 'dest-wrap,dest,session' && s0.segs === 'Session:true,One-Shot:false' && s0.face === 'moved (1)' && !s0.greyed;
     viewer['@F51 the primary button reads Add to Session ⌘↩'] = s0.primary === 'Add to Session ⌘↩';
     // Notes and marks to keep: a comment, a reference with a note, and a box, selected for @F48
     const box0 = await inWin(
@@ -2150,29 +2158,36 @@ app
       destRows.find((i) => i.checked)?.label === 'moved (1)' && menuShape(destRows).endsWith('—|Older Sessions…|New Session');
     // @F43 a pick moves the screenshot there and makes it current at once
     const smokeRow = destRows.find((i) => i.type === 'checkbox' && !i.checked && /^smoke( \(\d+\))?$/.test(i.label ?? ''))!;
+    // The menu's current-session line reads "smoke · 2 screenshots" once smoke holds some, as @F23 reads it
+    const menuNow = () => (menuItems()[1] as { label?: string }).label ?? '';
+    const isSmoke = (line: string) => /^smoke( · |$)/.test(line);
     pick(destRows, smokeRow.label!);
-    await sleep(300);
+    for (let i = 0; i < 30 && (await destLook()).face !== smokeRow.label; i++) await sleep(100);
     const s5 = await destLook();
+    why.F43 = { picked: smokeRow.label, face: s5.face, menuSays: menuNow(), title: dest.getTitle() };
     viewer['@F43 a session picked in the editor takes the screenshot, and is current'] =
-      s5.face === smokeRow.label && (menuItems()[1] as { label?: string }).label === 'smoke' && dest.getTitle() === 'Snapmark — smoke';
+      s5.face === smokeRow.label && isSmoke(menuNow()) && dest.getTitle() === 'Snapmark — smoke';
     // @F44 the picked session's folder is gone: the old session stays, and the error stands under the pop-up
     const goneName = sessions.create(root, 'gone');
     fs.rmSync(path.join(root, goneName), { recursive: true, force: true });
     moveEditor(dest, goneName);
-    await sleep(300);
     const goneSays = JSON.parse(
       await inWin(
         dest,
-        `const m = document.getElementById('move-error'), p = document.getElementById('session').getBoundingClientRect(), r = m.getBoundingClientRect();
-        return JSON.stringify({ text: m.hidden ? '' : m.textContent, alert: m.getAttribute('role'), under: r.top >= p.bottom && Math.abs(r.right - p.right) <= 1 });`,
+        `const m = document.getElementById('move-error');
+        for (let i = 0; i < 30 && m.hidden; i++) await new Promise((r) => setTimeout(r, 100));
+        const p = document.getElementById('session').getBoundingClientRect(), r = m.getBoundingClientRect();
+        return JSON.stringify({ text: m.hidden ? '' : m.textContent, role: m.getAttribute('role'), under: r.top >= p.bottom && Math.abs(r.right - p.right) <= 1, at: [r.top, r.right, p.bottom, p.right] });`,
       ),
     );
+    const goneFace = (await destLook()).face;
+    why.F44 = { ...goneSays, face: goneFace, menuSays: menuNow() };
     viewer['@F44 a gone session keeps the old one and says so under the pop-up'] =
       goneSays.text === "Couldn't move to gone: its folder is gone. Choose another session or New Session." &&
-      goneSays.alert === 'alert' &&
+      goneSays.role === 'status' &&
       goneSays.under &&
-      (await destLook()).face === s5.face &&
-      (menuItems()[1] as { label?: string }).label === 'smoke';
+      goneFace === s5.face &&
+      isSmoke(menuNow());
     // @N2 at the 820 × 520 minimum, with a long session name, the toolbar keeps one line in Session and in One-Shot
     const longest = sessions.create(root, 'Ledgerly Q4 review of checkout, payments and refunds');
     moveEditor(dest, longest);

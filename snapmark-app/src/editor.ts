@@ -455,7 +455,7 @@ function hexField(input: HTMLInputElement, error: HTMLElement, apply: (c: string
     else input.removeAttribute('aria-invalid');
   };
   input.addEventListener('input', (e) => {
-    showError(false);
+    if (normalizeHex(input.value)) showError(false); // the error stays until the value is valid
     const typed = hexInput(input.value, (e as InputEvent).inputType === 'insertFromPaste');
     if (typed.text !== input.value) input.value = typed.text;
     if (typed.colour) apply(typed.colour);
@@ -1137,7 +1137,7 @@ const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRigh
 const saveImageAs = () => void (background && redacting.then(() => window.snapmark.saveImageAs(flatten())));
 
 document.addEventListener('keydown', (e) => {
-  if (e.metaKey && e.key === 'Enter') return void (oneShot ? copyImage() : save()); // the primary button
+  if (e.metaKey && e.key === 'Enter') return primary();
   // ⇧⌘C, ⇧⌘S, ⇧⌘O and ⇧⌘P from anywhere, also inside a note: plain ⌘C there still copies its text. The physical key
   // for O and P, as the capture bar reads them.
   const k = e.metaKey && e.shiftKey && (e.code.startsWith('Key') ? e.code.slice(3) : e.key).toLowerCase();
@@ -1219,7 +1219,7 @@ canvas.on('object:added', () => quiet || markDirty());
 let captionField: import('./md-notes').MdField | null = null; // mounted once init says what it holds
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
-saveBtn.onclick = () => (oneShot ? copyImage() : void save());
+saveBtn.onclick = () => primary();
 // Native menus under their control, in window points (plain numbers: a DOMRect does not cross IPC).
 const boxOf = (el: HTMLElement): Area => {
   const r = el.getBoundingClientRect();
@@ -1350,9 +1350,10 @@ function showSession(session: string, count: number) {
   nameEl.textContent = oneShot ? 'Not in a session' : session;
   countEl.textContent = !oneShot && count ? ` (${count})` : '';
   sessionEl.replaceChildren(nameEl, countEl, ...(switchable() ? [chevron] : []));
-  sessionEl.title = switchable() ? `${session} · Switch Session` : nameEl.textContent; // the full name, also when it shortens
+  // The full name, also when it shortens; in Edit Again the wrapper's reason shows instead
+  sessionEl.title = switchable() ? `${session} · Switch Session` : replacing ? '' : nameEl.textContent;
   sessionEl.setAttribute('aria-label', `Session: ${nameEl.textContent}${countEl.textContent}`);
-  sessionEl.disabled = !switchable();
+  sessionEl.setAttribute('aria-disabled', String(!switchable())); // not disabled: it stays in Tab and VoiceOver (F45)
   fitToolbar();
 }
 const openSessions = () => switchable() && window.snapmark.sessionsMenu(boxOf(sessionEl));
@@ -1380,7 +1381,9 @@ function renderDestination(session: string, count: number) {
     b.tabIndex = i === Number(oneShot) ? 0 : -1;
     b.disabled = replacing;
   });
-  $('dest-wrap').title = replacing ? `Edit Again saves back into ${session}.` : '';
+  const reason = replacing ? `Edit Again saves back into ${session}.` : '';
+  $('dest-wrap').title = reason;
+  $('dest-reason').textContent = reason; // the pop-up's description, for VoiceOver
   renderPrimary();
   renderNotesKept();
   showSession(session, count);
@@ -1388,12 +1391,23 @@ function renderDestination(session: string, count: number) {
 }
 
 // The main process moves the screenshot between Session and One-Shot; this window stays, with its marks and undo.
+// While a switch is on its way, ⇧⌘O, ⌘↩ and the primary button wait: they would act on the old destination.
+let switching = false;
 async function setDestination(one: boolean) {
-  if (replacing || one === oneShot) return;
-  const { session, count } = await window.snapmark.destination(one);
-  oneShot = one;
-  renderDestination(session, count);
+  if (replacing || switching || one === oneShot) return;
+  switching = true;
+  try {
+    const { session, count } = await window.snapmark.destination(one);
+    oneShot = one;
+    renderDestination(session, count);
+  } finally {
+    switching = false;
+  }
   $('announce').textContent = one ? 'One-Shot. Notes are not copied.' : 'Session';
+}
+// The primary button and ⌘↩
+function primary() {
+  if (!switching) void (oneShot ? copyImage() : save());
 }
 // A click hands the keys back to the canvas, so the arrows still nudge the selected mark (F48); Space keeps the focus.
 segs.forEach((b, i) =>

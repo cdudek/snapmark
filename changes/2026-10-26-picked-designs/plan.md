@@ -287,3 +287,8 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/smoke.ts`: the one-shot block is split, since Copy closes the window. F134 keeps its Session part; One-Shot's ⌘↩ is `@F39`.
   - `test/keys.test.ts`: F236's Editor rows gain ⇧⌘O and ⇧⌘P.
 - 2.1 (N2): hiding the tool captions frees no width. The last shrink step also narrows the tools to 32 pt and tightens the gaps (questions.md).
+- Milestone 2 fix round (findings.md 17–24): `snapmark-app/README.md` and `docs/ux/setup.md` were edited, a departure from Files that change. They described the old editor toolbar, keys, sizes and tokens.
+- Milestone 2 fix round: tests this change owns follow the fixes.
+  - `test/smoke.ts`: `@F43` and `@F44` read the menu's current line as "smoke" or "smoke · <n> screenshots", wait for the editor instead of a fixed sleep, and record `why.F43` and `why.F44`.
+  - `test/smoke.ts`: the pop-up is greyed by `aria-disabled`, inside `#dest-wrap`, with its reason as `aria-describedby` (`@F36`, `@F45`, F115).
+  - `test/smoke.ts`: the move and hex errors are `role="status"` (`@F44`, `@F56`); A15 and `@F56` keep the hex error while the value is bad and clear it once valid, as interaction.md says.
