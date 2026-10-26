@@ -54,7 +54,7 @@ After it, the owner records up to 30 s, marks the key frames, and the session ho
 | --- | -------------------------------------------------------------------------- | ------------- | ---------------------------- | ----- |
 | 3.1 | Spike: frames from `desktopCapturer` at 15 fps, a GIF from ImageIO via JXA | none (proof)  | `milestone/picked-designs-3` | done  |
 | 3.2 | Record mode, Frame Rate, picker keep, recording control, stop and cancel   | F59–F68, F81  | `milestone/picked-designs-3` | todo  |
-| 3.3 | Key frames and GIF timing (pure functions)                                 | F69, F70, F77 | `milestone/picked-designs-3` | todo  |
+| 3.3 | Key frames and GIF timing (pure functions)                                 | F69, F70, F77 | `milestone/picked-designs-3` | done  |
 | 3.4 | Recording editor and frame data                                            | F71–F76       | `milestone/picked-designs-3` | todo  |
 | 3.5 | Session window entry, `session.md` and export                              | F78–F80       | `milestone/picked-designs-3` | todo  |
 
@@ -202,7 +202,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 - [x] 10. Spike: 15 fps frames from a test page, and a 3-frame GIF with set delays. Proof: `test/spike-gif.ts` reads back three frames and their delays.
 - [ ] 11. Record mode, panel, stop and cancel. Proof: `@F59`–`@F68`, `@F81` pass.
-- [ ] 12. Key frames and GIF timing. Proof: `@F69`, `@F70`, `@F77` pass.
+- [x] 12. Key frames and GIF timing. Proof: `@F69`, `@F70`, `@F77` pass.
 - [ ] 13. Recording editor and frame data. Proof: `@F71`–`@F76` pass.
 - [ ] 14. Session window, `session.md`, export. Proof: `@F78`–`@F80` pass.
 - [ ] 15. Gate. Proof: `VERIFY PASS milestone`.
@@ -297,3 +297,6 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 - 3.1: the GIF half is proven. JXA bridges plain objects to ImageIO's CF dictionaries with no extra work, and `test/spike-gif.ts` reads back 3 frames, delays 0.1, 0.5 and 1 s, and LoopCount 0. No dependency is needed.
   - ImageIO labels the file `GIF87a` though it writes the 89a delay and loop blocks. `gif.ts` rewrites the label to `GIF89a`.
   - The 15 fps `desktopCapturer` half is not proven locally, since no Electron runs here. The milestone 3 smoke proves it at the gate.
+- 3.3 was built before 3.2 (step 12 before step 11): key frames and GIF timing are pure functions that need nothing from Record mode.
+  - `keyFrames` compares each frame with the last key frame, as a 64-cell-wide grid of grey means. The threshold counts changed cells and starts at 0. The settled last frame is a key frame when it is a new picture. A fade can leave a key frame mid-fade until the cap raises the threshold.
+  - `gifTiming` rounds the clock to hundredths, not each delay, so the GIF's total is the recording's length.
