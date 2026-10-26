@@ -1,6 +1,7 @@
 ---
 type: interaction-guidelines
-status: proposed
+status: accepted
+accepted: 2026-10-26 by Calvin Dudek, at the plan gate of change 2026-10-26-interaction-guide-polish
 created: 2026-10-26
 build: v0.21.1
 change: 2026-10-26-interaction-guide-polish
@@ -10,7 +11,7 @@ change: 2026-10-26-interaction-guide-polish
 
 This guide says how Snapmark should feel and behave, in one place. A builder, human or agent, checks a screen against it. Every rule can be answered yes or no.
 
-Every rule is proposed. The owner accepts them one by one at the plan gate. A rule marked `(proposed)` is not yet a promise.
+The owner accepted every rule and exception on 2026-10-26. A new rule starts as `(proposed)` and is not a promise until the owner accepts it.
 
 How to read a rule: the first line is the rule, what must be true. Under it:
 
@@ -32,226 +33,226 @@ The older, longer proposal for v0.9.0 is kept at `docs/ux/audits/2026-09-28/inte
 
 ### Capture
 
-- **CAP-1 (proposed).** ⌃⇧4, ⌃⇧3 and ⌃⇧5 work from any app, Space or full-screen app, and never switch Spaces.
+- **CAP-1 (accepted).** ⌃⇧4, ⌃⇧3 and ⌃⇧5 work from any app, Space or full-screen app, and never switch Spaces.
   - **Why:** Flow. A review keeps its rhythm only if capturing never pulls you out of the app.
   - **Today:** `src/keys.ts:6-11`; bar shown on every Space at `src/main.ts:354`.
-- **CAP-2 (proposed).** No Snapmark window, bar, picker or counter ever appears in a capture.
+- **CAP-2 (accepted).** No Snapmark window, bar, picker or counter ever appears in a capture.
   - **Why:** Mental Model. A screenshot must show the screen as you saw it before you pressed the key.
   - **Today:** the bar closes, then waits 200 ms (capture bar ADR); content protection at `src/main.ts:352`.
-- **CAP-3 (proposed).** In the capture bar, keys 1–4 pick a mode in bar order: Window, New Area, Last Area, Scrolling. ↩ captures, Esc closes, ← → still move.
+- **CAP-3 (accepted).** In the capture bar, keys 1–4 pick a mode in bar order: Window, New Area, Last Area, Scrolling. ↩ captures, Esc closes, ← → still move.
   - **Why:** Fitts's Law. A key needs no aiming, so a frequent choice costs no trip to the pointer.
   - **Today:** ← → ↩ Esc at `src/bar.ts:46-54`. Not yet: keys 1–4.
-- **CAP-4 (proposed).** Clicking a mode only chooses it. Only Capture or ↩ takes the shot.
+- **CAP-4 (accepted).** Clicking a mode only chooses it. Only Capture or ↩ takes the shot.
   - **Why:** Jakob's Law. macOS's own ⇧⌘5 bar works this way.
   - **Today:** `src/bar.ts:39`.
-- **CAP-5 (proposed).** The Capture button names what it will do: "Capture", or "Capture One-Shot" when One-Shot is chosen.
+- **CAP-5 (accepted).** The Capture button names what it will do: "Capture", or "Capture One-Shot" when One-Shot is chosen.
   - **Why:** Cognitive Load. You read the outcome on the button instead of remembering the Options.
   - **Today:** `src/bar.ts:26`.
-- **CAP-6 (proposed).** An option a mode cannot use is greyed, never hidden. Timer and Show Mouse Pointer grey for Window and Scrolling.
+- **CAP-6 (accepted).** An option a mode cannot use is greyed, never hidden. Timer and Show Mouse Pointer grey for Window and Scrolling.
   - **Why:** Mental Model. A greyed item says the option exists and why it is off now.
   - **Today:** capture bar ADR, decision 5; `src/main.ts:308`.
-- **CAP-7 (proposed).** The bar's Options apply only to captures started from the bar. ⌃⇧4 and ⌃⇧3 never change.
+- **CAP-7 (accepted).** The bar's Options apply only to captures started from the bar. ⌃⇧4 and ⌃⇧3 never change.
   - **Why:** Mental Model. One key keeps one meaning, so a forgotten One-Shot never steals a capture.
   - **Today:** capture bar ADR, decision 4.
-- **CAP-8 (proposed).** The area picker shows a hint and the live size. A click or a sliver starts over. Esc cancels.
+- **CAP-8 (accepted).** The area picker shows a hint and the live size. A click or a sliver starts over. Esc cancels.
   - **Why:** Postel's Law. It accepts a slip and never sends a broken capture on.
   - **Today:** `src/area.html:66-69`.
-- **CAP-9 (proposed).** Capture Scrolling says what to do, counts as it grabs, and ends on ↩ (Done) or Esc (Cancel).
+- **CAP-9 (accepted).** Capture Scrolling says what to do, counts as it grabs, and ends on ↩ (Done) or Esc (Cancel).
   - **Why:** Goal-Gradient Effect. A visible count shows how close you are to done.
   - **Today:** `src/scroll.html:61-63`; the height limit notice at `src/main.ts:460`.
-- **CAP-10 (proposed).** A Timer shows the seconds left beside the menu bar icon. Esc cancels it. No other capture starts meanwhile.
+- **CAP-10 (accepted).** A Timer shows the seconds left beside the menu bar icon. Esc cancels it. No other capture starts meanwhile.
   - **Why:** Doherty Threshold. Each second answers at once, so you never wonder if it is still running.
   - **Today:** `src/main.ts:205-236`.
 
 ### Editing
 
-- **EDT-1 (proposed).** A box, ellipse or arrow starts where the pointer goes down and grows with the drag.
+- **EDT-1 (accepted).** A box, ellipse or arrow starts where the pointer goes down and grows with the drag.
   - **Why:** Jakob's Law. Every drawing app the owner uses works this way.
   - **Today:** the editor canvas, since v0.9.0.
-- **EDT-2 (proposed).** After a tool key, the next shape shows as a ghost under the pointer before you click.
+- **EDT-2 (accepted).** After a tool key, the next shape shows as a ghost under the pointer before you click.
   - **Why:** Doherty Threshold. You see the result of the key at once, without drawing first.
   - **Today:** `src/editor.ts:310` (`drawGhost`).
-- **EDT-3 (proposed).** Drawing tools always draw, even on top of marks. Only Select moves, resizes or deletes.
+- **EDT-3 (accepted).** Drawing tools always draw, even on top of marks. Only Select moves, resizes or deletes.
   - **Why:** Mental Model. One tool, one job, so a stroke never grabs a mark by surprise.
   - **Today:** `src/editor.ts:295`.
-- **EDT-4 (proposed).** Select (C) works like Preview. Click selects, drag moves, ⌫ deletes, arrows nudge 1 pt (⇧ 10), ⌘A selects all.
+- **EDT-4 (accepted).** Select (C) works like Preview. Click selects, drag moves, ⌫ deletes, arrows nudge 1 pt (⇧ 10), ⌘A selects all.
   - **Why:** Jakob's Law. These are the keys the owner already uses in Preview and Finder.
   - **Today:** `src/keys.ts:45-49`; `src/editor.ts:1143-1163`.
-- **EDT-5 (proposed).** ⌘Z undoes every change to marks and notes, and ⇧⌘Z redoes it. The toolbar has both buttons.
+- **EDT-5 (accepted).** ⌘Z undoes every change to marks and notes, and ⇧⌘Z redoes it. The toolbar has both buttons.
   - **Why:** Paradox of the Active User. People learn by trying, so trying must be safe.
   - **Today:** `src/editor.html:676-690`.
-- **EDT-6 (proposed).** A key with two tools swaps tools when pressed again. Its icon shows the current tool, stacked to show there is another.
+- **EDT-6 (accepted).** A key with two tools swaps tools when pressed again. Its icon shows the current tool, stacked to show there is another.
   - **Why:** Hick's Law. Seven keys are faster to choose from than twelve.
   - **Today:** `src/editor.ts:348-372`.
-- **EDT-7 (proposed).** Remove marks are always coral red (#e5484d). Highlight marks are always yellow (#facc15), whatever colour is picked.
+- **EDT-7 (accepted).** Remove marks are always coral red (#e5484d). Highlight marks are always yellow (#facc15), whatever colour is picked.
   - **Why:** Law of Similarity. One colour keeps one meaning across every screenshot and session.
   - **Today:** `src/tools.ts:20-21` and `src/editor.ts:55`.
-- **EDT-8 (proposed).** Buttons and chrome use Snapmark's own palette. Only marks use the picked colour.
+- **EDT-8 (accepted).** Buttons and chrome use Snapmark's own palette. Only marks use the picked colour.
   - **Why:** Von Restorff Effect. Marks stand out only if the interface does not compete with them.
   - **Today:** colour tokens in `src/editor.html`; owner's words, 2026-10-25.
 
 ### Notes
 
-- **NTE-1 (proposed).** The editor's top box is headed "General comment". Its placeholder reads "About the whole screenshot…".
+- **NTE-1 (accepted).** The editor's top box is headed "General comment". Its placeholder reads "About the whole screenshot…".
   - **Why:** Cognitive Load. You see at once which box covers the whole screenshot and which covers a mark.
   - **Today:** not yet: no heading; the placeholder "Add a comment…" is its only label (`src/editor.ts:1317`).
-- **NTE-2 (proposed).** Placing a Reference (1) puts the cursor in its note at once.
+- **NTE-2 (accepted).** Placing a Reference (1) puts the cursor in its note at once.
   - **Why:** Flow. Point, then type, with no click in between.
   - **Today:** `src/editor.ts:615`.
-- **NTE-3 (proposed).** Each reference note's placeholder asks about its number: "What about 1?".
+- **NTE-3 (accepted).** Each reference note's placeholder asks about its number: "What about 1?".
   - **Why:** Cognitive Load. A question prompts the answer the agent needs, so you never stare at a blank box.
   - **Today:** not yet: "Note for 1" (`src/editor.ts:989`).
-- **NTE-4 (proposed).** Reference notes have 12 pt between them. Each starts with its number in a diamond of the mark's colour.
+- **NTE-4 (accepted).** Reference notes have 12 pt between them. Each starts with its number in a diamond of the mark's colour.
   - **Why:** Law of Proximity. Space between notes shows where one ends and the next begins.
   - **Today:** the diamond at `src/editor.html:592`. Not yet: `#refs` has no gap, so notes touch.
-- **NTE-5 (proposed).** Notes grow to fit their text, the column scrolls, and Discard and Add to session stay in view.
+- **NTE-5 (accepted).** Notes grow to fit their text, the column scrolls, and Discard and Add to session stay in view.
   - **Why:** Working Memory. You reread a whole note instead of holding the hidden part in mind.
   - **Today:** `src/editor.html:487-503`.
-- **NTE-6 (proposed).** The general comment and reference notes render Markdown as you type. Cards stay plain text.
+- **NTE-6 (accepted).** The general comment and reference notes render Markdown as you type. Cards stay plain text.
   - **Why:** Jakob's Law. It writes like Notion, which the owner asked for.
   - **Today:** ADR "Markdown rendered as you type", 2026-09-25.
-- **NTE-7 (proposed).** A card is a yellow speech bubble whose tail and line point at what it is about. You type on the card.
+- **NTE-7 (accepted).** A card is a yellow speech bubble whose tail and line point at what it is about. You type on the card.
   - **Why:** Law of Uniform Connectedness. The line ties the words to their target.
   - **Today:** `src/tools.ts` (Card).
-- **NTE-8 (proposed).** The References heading shows only once there is a reference.
+- **NTE-8 (accepted).** The References heading shows only once there is a reference.
   - **Why:** Occam's Razor. An empty heading adds a thing to read and nothing to do.
   - **Today:** `src/editor.html:727` (`hidden`).
 
 ### Keys
 
-- **KEY-1 (proposed).** Global keys are ⌃⇧ plus macOS's screenshot digits: ⌃⇧4 capture, ⌃⇧3 last area, ⌃⇧5 capture bar. ⌃⇧N starts a new session.
+- **KEY-1 (accepted).** Global keys are ⌃⇧ plus macOS's screenshot digits: ⌃⇧4 capture, ⌃⇧3 last area, ⌃⇧5 capture bar. ⌃⇧N starts a new session.
   - **Why:** Jakob's Law. The digits are the ones the owner's fingers already know.
   - **Today:** `src/keys.ts:6-11`; ADR "Keys follow macOS".
-- **KEY-2 (proposed).** In every Snapmark window, Mac keys keep their Mac meaning: ⌘W, ⌘S, ⌘C, ⌘Z, ⌘, for Settings, ⌘/ for Keyboard Shortcuts.
+- **KEY-2 (accepted).** In every Snapmark window, Mac keys keep their Mac meaning: ⌘W, ⌘S, ⌘C, ⌘Z, ⌘, for Settings, ⌘/ for Keyboard Shortcuts.
   - **Why:** Jakob's Law. A key that means the same everywhere is never learned twice.
   - **Today:** `src/keys.ts:35-68`; app menu at `src/menu.ts:166-179`.
-- **KEY-3 (proposed).** Single-key tools (C, 1–7) are on by default and can be switched off in Settings. They never fire while typing.
+- **KEY-3 (accepted).** Single-key tools (C, 1–7) are on by default and can be switched off in Settings. They never fire while typing.
   - **Why:** Flow. One finger picks a tool mid-review, without a chord.
   - **Today:** `src/editor.ts:52` and `:1166`; `src/settings.html:205`.
-- **KEY-4 (proposed).** ⌘1–⌘7 always pick a tool, even while typing a note.
+- **KEY-4 (accepted).** ⌘1–⌘7 always pick a tool, even while typing a note.
   - **Why:** Mental Model. One route that works everywhere is the one people trust.
   - **Today:** `src/editor.ts:1130`.
-- **KEY-5 (proposed).** Esc steps back one level: out of the text, then the selection, then back to Select, then the editor closes.
+- **KEY-5 (accepted).** Esc steps back one level: out of the text, then the selection, then back to Select, then the editor closes.
   - **Why:** Mental Model. Esc always means "one step back", never "lose everything".
   - **Today:** `src/editor.ts:1153-1162`; ADR "Esc on Select closes the editor".
-- **KEY-6 (proposed).** Every key is listed in the Keyboard Shortcuts window. The list and the keys come from one source.
+- **KEY-6 (accepted).** Every key is listed in the Keyboard Shortcuts window. The list and the keys come from one source.
   - **Why:** Paradox of the Active User. People look keys up only when stuck, so the list must be right.
   - **Today:** `src/keys.ts:13`; `src/shortcuts.html`.
 
 ### Feedback
 
-- **FBK-1 (proposed).** A routine success shows itself in the changed thing, with no message. Adding closes the editor and the menu count goes up.
+- **FBK-1 (accepted).** A routine success shows itself in the changed thing, with no message. Adding closes the editor and the menu count goes up.
   - **Why:** Selective Attention. A message for every success trains people to ignore messages.
   - **Today:** the editor closes on Add to session; the menu shows the count.
-- **FBK-2 (proposed).** A macOS notification appears only for results you cannot see: copied, exported, a new session, a failure.
+- **FBK-2 (accepted).** A macOS notification appears only for results you cannot see: copied, exported, a new session, a failure.
   - **Why:** Selective Attention. A notice is worth reading only when nothing else shows the result.
   - **Today:** `src/main.ts:172` and `:721`.
-- **FBK-3 (proposed).** An error says what happened, what it means, and what to do next.
+- **FBK-3 (accepted).** An error says what happened, what it means, and what to do next.
   - **Why:** Peak-End Rule. A failure is the moment people remember, so it must leave a way forward.
   - **Today:** partly: "Couldn't save x.png: <reason>." names the event, not the next step (`src/main.ts:738`).
-- **FBK-4 (proposed).** Removing acts at once and can be undone or recovered. Use ⌘Z or Discarded, not an "Are you sure?" question.
+- **FBK-4 (accepted).** Removing acts at once and can be undone or recovered. Use ⌘Z or Discarded, not an "Are you sure?" question.
   - **Why:** Paradox of the Active User. People act first, so the fix must come after, not before.
   - **Today:** ⌘⌫ then ⌘Z in the session window (`src/keys.ts:66-68`); ⌘W to Discarded.
-- **FBK-5 (proposed).** Ask first only before what cannot be undone. The button names the action; Cancel is the default.
+- **FBK-5 (accepted).** Ask first only before what cannot be undone. The button names the action; Cancel is the default.
   - **Why:** Cognitive Bias. People press the default without reading, so the default must be safe.
   - **Today:** "Move to Trash" / "Cancel" with Cancel as default (`src/main.ts:153-160`).
-- **FBK-6 (proposed).** Anything over a second shows progress where you look. Anything under 400 ms shows nothing.
+- **FBK-6 (accepted).** Anything over a second shows progress where you look. Anything under 400 ms shows nothing.
   - **Why:** Doherty Threshold. Under 400 ms feels instant; longer needs a sign that work is happening.
   - **Today:** the scrolling count; "Downloading Snapmark …" (`src/main.ts:945`).
-- **FBK-7 (proposed).** A notification is never the only copy of something you need. The file, path or text stays reachable.
+- **FBK-7 (accepted).** A notification is never the only copy of something you need. The file, path or text stays reachable.
   - **Why:** Working Memory. A message that disappears cannot be read twice.
   - **Today:** copied paths are on the clipboard; exports open in Finder.
 
 ### Windows
 
-- **WIN-1 (proposed).** Every icon-only control has a tooltip with its name and key, e.g. "Undo (⌘Z)", "Close (Esc)".
+- **WIN-1 (accepted).** Every icon-only control has a tooltip with its name and key, e.g. "Undo (⌘Z)", "Close (Esc)".
   - **Why:** Paradox of the Active User. People hover to find out; they do not read a manual.
   - **Today:** editor tools (`src/tools.ts:148`), Undo and Redo (`src/editor.html:676-690`), session window (`src/viewer.html:518-524`). Not yet: the capture bar's titles have no keys (`src/bar.html:105-139`).
-- **WIN-2 (proposed).** Tooltips also appear in panels that never become key windows. The capture bar draws its own label above itself, on hover and on keyboard focus, with the name and the key.
+- **WIN-2 (accepted).** Tooltips also appear in panels that never become key windows. The capture bar draws its own label above itself, on hover and on keyboard focus, with the name and the key.
   - **Why:** Selective Attention. The label shows right where the eye already is, over the icon.
   - **Today:** not yet: the bar is a non-activating panel (`src/main.ts:343`), so native titles never show.
-- **WIN-3 (proposed).** The capture bar opens at the bottom centre of the display with the pointer, over full-screen apps. Focus is on the chosen mode.
+- **WIN-3 (accepted).** The capture bar opens at the bottom centre of the display with the pointer, over full-screen apps. Focus is on the chosen mode.
   - **Why:** Jakob's Law. macOS's own bar opens in the same place.
   - **Today:** `src/main.ts:336-358`; `src/bar.ts:18`.
-- **WIN-4 (proposed).** Esc closes or steps back in the front Snapmark window only. One press never closes two things.
+- **WIN-4 (accepted).** Esc closes or steps back in the front Snapmark window only. One press never closes two things.
   - **Why:** Mental Model. One press, one step, so Esc is always safe to press.
   - **Today:** bar at `src/bar.ts:49`; session window "All Screenshots (Esc)" at `src/viewer.html:518`; editor per KEY-5.
-- **WIN-5 (proposed).** The editor has tools on top in key order, the image in the middle, notes on the right. Discard and Add to session sit bottom right, Add as the primary button.
+- **WIN-5 (accepted).** The editor has tools on top in key order, the image in the middle, notes on the right. Discard and Add to session sit bottom right, Add as the primary button.
   - **Why:** Serial Position Effect. The last thing you see is the thing you do last.
   - **Today:** `src/editor.html:661-745`.
-- **WIN-6 (proposed).** The session window has Document and Screenshots tabs. ← → flip screenshots, ↩ renames, ⌘O opens Edit Again.
+- **WIN-6 (accepted).** The session window has Document and Screenshots tabs. ← → flip screenshots, ↩ renames, ⌘O opens Edit Again.
   - **Why:** Jakob's Law. It uses Finder's keys for the same jobs.
   - **Today:** `src/viewer.html:493-524`; `src/keys.ts:62-69`.
-- **WIN-7 (proposed).** Settings is one window with General, Capture and Shortcuts tabs. A change applies at once, with no Save button.
+- **WIN-7 (accepted).** Settings is one window with General, Capture and Shortcuts tabs. A change applies at once, with no Save button.
   - **Why:** Jakob's Law. macOS's own settings work this way.
   - **Today:** `src/settings.html:133-211`.
-- **WIN-8 (proposed).** Keyboard Shortcuts is its own window, opened by ⌘/ from any Snapmark window. It can stay open beside the editor.
+- **WIN-8 (accepted).** Keyboard Shortcuts is its own window, opened by ⌘/ from any Snapmark window. It can stay open beside the editor.
   - **Why:** Working Memory. A list kept in view beats a list kept in your head.
   - **Today:** `src/shortcuts.html`; capture bar ADR, decision 8.
-- **WIN-9 (proposed).** The menu bar menu stays short. Current session actions first, then sessions, then Settings… and Quit. Each item names its object.
+- **WIN-9 (accepted).** The menu bar menu stays short. Current session actions first, then sessions, then Settings… and Quit. Each item names its object.
   - **Why:** Hick's Law. Fewer, clearer items are quicker to choose from.
   - **Today:** `src/menu.ts:107-157`.
 
 ### Words
 
-- **WRD-1 (proposed).** Menus, buttons, tabs and window titles use title case, as macOS does. Headings, labels, placeholders and messages use sentence case.
+- **WRD-1 (accepted).** Menus, buttons, tabs and window titles use title case, as macOS does. Headings, labels, placeholders and messages use sentence case.
   - **Why:** Jakob's Law. The capitals match every other Mac app.
   - **Today:** `src/menu.ts` and Settings follow it. Not yet: the editor's "Add to session" button (`src/editor.html:743`).
-- **WRD-2 (proposed).** A tooltip is "Name (key)". A short hint may follow after a colon or a "·". A label Snapmark draws itself shows the key as a keycap instead, e.g. "Capture Window `1`" (WIN-2).
+- **WRD-2 (accepted).** A tooltip is "Name (key)". A short hint may follow after a colon or a "·". A label Snapmark draws itself shows the key as a keycap instead, e.g. "Capture Window `1`" (WIN-2).
   - **Why:** Cognitive Load. The same shape everywhere is read at a glance.
   - **Today:** `src/tools.ts:148`; "Previous (←)" at `src/viewer.html:519`.
-- **WRD-3 (proposed).** A placeholder asks or gives an example. It never replaces the label, because it vanishes when you type.
+- **WRD-3 (accepted).** A placeholder asks or gives an example. It never replaces the label, because it vanishes when you type.
   - **Why:** Working Memory. The heading stays when the placeholder is gone.
   - **Today:** not yet: the general comment's placeholder is its only label (NTE-1).
-- **WRD-4 (proposed).** One word per thing, everywhere: session, screenshot, mark, reference, card, Discarded.
+- **WRD-4 (accepted).** One word per thing, everywhere: session, screenshot, mark, reference, card, Discarded.
   - **Why:** Law of Similarity. The same word signals the same thing on every screen.
   - **Today:** mostly; see `docs/ux/glossary-proposal.md`.
-- **WRD-5 (proposed).** Use macOS's words: Settings, Trash, Finder, Quit. "…" ends a label only when more input follows.
+- **WRD-5 (accepted).** Use macOS's words: Settings, Trash, Finder, Quit. "…" ends a label only when more input follows.
   - **Why:** Jakob's Law. The owner already knows what these words do.
   - **Today:** "Settings…" and "Quit Snapmark" at `src/menu.ts:156-157`.
-- **WRD-6 (proposed).** Keys use Mac symbols in Mac order: ⌃ ⌥ ⇧ ⌘, then ↩, ⌫, Esc and the arrows.
+- **WRD-6 (accepted).** Keys use Mac symbols in Mac order: ⌃ ⌥ ⇧ ⌘, then ↩, ⌫, Esc and the arrows.
   - **Why:** Jakob's Law. These are the symbols macOS menus show.
   - **Today:** `src/keys.ts`.
-- **WRD-7 (proposed).** Messages have no exclamation marks, no "please", no "oops". Outcomes are past tense and give the number.
+- **WRD-7 (accepted).** Messages have no exclamation marks, no "please", no "oops". Outcomes are past tense and give the number.
   - **Why:** Cognitive Load. Plain words say the result with nothing extra to read.
   - **Today:** "Moved 3 old sessions to the Trash." (`src/main.ts:167`).
-- **WRD-8 (proposed).** Screens show a session's readable name, e.g. "2026-10-24 · Ledgerly Q4 review". The folder keeps its date stamp.
+- **WRD-8 (accepted).** Screens show a session's readable name, e.g. "2026-10-24 · Ledgerly Q4 review". The folder keeps its date stamp.
   - **Why:** Mental Model. You know a session by its name, the Finder by its date.
   - **Today:** ADR "Session folders keep their date stamp".
 
 ### Accessibility
 
-- **ACC-1 (proposed).** Every control has a name a screen reader reads. An icon-only button has an `aria-label`; a control with a key also has `aria-keyshortcuts`.
+- **ACC-1 (accepted).** Every control has a name a screen reader reads. An icon-only button has an `aria-label`; a control with a key also has `aria-keyshortcuts`.
   - **Why:** Postel's Law. Snapmark accepts every way of working: pointer, keyboard and VoiceOver.
   - **Today:** bar and editor buttons are named (`src/bar.html:105-139`, `src/editor.html`). Not yet: `aria-keyshortcuts` anywhere.
-- **ACC-2 (proposed).** Everything the pointer can do, the keyboard can do, except EX-6. Focus always shows as a 2 pt blue ring.
+- **ACC-2 (accepted).** Everything the pointer can do, the keyboard can do, except EX-6. Focus always shows as a 2 pt blue ring.
   - **Why:** Postel's Law. A keyboard user meets no dead end.
   - **Today:** `:focus-visible` rings in every window (`src/bar.html:50-53`).
-- **ACC-3 (proposed).** Text reaches 4.5:1 against its background, and controls and focus rings 3:1, in light and dark.
+- **ACC-3 (accepted).** Text reaches 4.5:1 against its background, and controls and focus rings 3:1, in light and dark.
   - **Why:** Selective Attention. What cannot be seen cannot be attended to.
   - **Today:** the bar's chosen mode, 3.5:1 or more (`src/bar.html:65-70`).
-- **ACC-4 (proposed).** Click targets are at least 24 × 24 pt; the capture bar's are 40 × 40 pt.
+- **ACC-4 (accepted).** Click targets are at least 24 × 24 pt; the capture bar's are 40 × 40 pt.
   - **Why:** Fitts's Law. Small, far targets are slow and easy to miss.
   - **Today:** `src/bar.html:63`; editor tools 36 pt.
-- **ACC-5 (proposed).** With Reduce Motion on, nothing slides or zooms; changes simply appear.
+- **ACC-5 (accepted).** With Reduce Motion on, nothing slides or zooms; changes simply appear.
   - **Why:** Cognitive Load. Motion that cannot be turned off costs attention.
   - **Today:** not yet: no window reads `prefers-reduced-motion`.
 
 ## 3. Exceptions
 
-Deliberate departures from the rules above. Each one is proposed, like the rules.
+Deliberate departures from the rules above. Each one is accepted, like the rules.
 
-- **EX-1 (proposed). Remove and Highlight ignore the picked colour** (bends EDT-8). Red and yellow carry a meaning the agent reads (EDT-7).
-- **EX-2 (proposed). Single-key tools** (bends KEY-2). On Mac, plain letters type. On a canvas they pick tools, as the owner asked. They can be switched off and never fire in text.
-- **EX-3 (proposed). Esc on Select closes the editor** (bends WIN-4's "always safe"). The screenshot goes to Discarded, so the close can be undone.
-- **EX-4 (proposed). Redactions cannot be moved, resized or pasted** (bends EDT-4). Moving one would uncover what it hides.
-- **EX-5 (proposed). References have a fixed size** (bends EDT-4). An even size keeps every number readable across a session.
-- **EX-6 (proposed). Pen strokes are pointer only** (no keyboard route). A freehand path cannot be typed.
-- **EX-7 (proposed). The capture bar draws its own tooltips** (the only tooltip that is not macOS's own). A non-activating panel never shows native tooltips. The label stays while the pointer rests on it, and Esc dismisses it with the bar.
-- **EX-8 (proposed). Quit with unsaved marks, and Move to Trash, ask first** (bends FBK-4). After them, there is nothing left to undo.
-- **EX-9 (proposed). Copy keeps its notification** (bends FBK-1). The clipboard cannot show that it changed.
-- **EX-10 (proposed). ⌃⇧4 uses macOS's own capture overlay, not the area picker** (CAP-8 does not apply). It is the system's own, and accessible as it is.
-- **EX-11 (proposed). Global keys use ⌃⇧, not ⇧⌘** (bends principle 3, "A Mac app"). macOS keeps ⇧⌘3, ⇧⌘4 and ⇧⌘5 for itself.
+- **EX-1 (accepted). Remove and Highlight ignore the picked colour** (bends EDT-8). Red and yellow carry a meaning the agent reads (EDT-7).
+- **EX-2 (accepted). Single-key tools** (bends KEY-2). On Mac, plain letters type. On a canvas they pick tools, as the owner asked. They can be switched off and never fire in text.
+- **EX-3 (accepted). Esc on Select closes the editor** (bends WIN-4's "always safe"). The screenshot goes to Discarded, so the close can be undone.
+- **EX-4 (accepted). Redactions cannot be moved, resized or pasted** (bends EDT-4). Moving one would uncover what it hides.
+- **EX-5 (accepted). References have a fixed size** (bends EDT-4). An even size keeps every number readable across a session.
+- **EX-6 (accepted). Pen strokes are pointer only** (no keyboard route). A freehand path cannot be typed.
+- **EX-7 (accepted). The capture bar draws its own tooltips** (the only tooltip that is not macOS's own). A non-activating panel never shows native tooltips. The label stays while the pointer rests on it, and Esc dismisses it with the bar.
+- **EX-8 (accepted). Quit with unsaved marks, and Move to Trash, ask first** (bends FBK-4). After them, there is nothing left to undo.
+- **EX-9 (accepted). Copy keeps its notification** (bends FBK-1). The clipboard cannot show that it changed.
+- **EX-10 (accepted). ⌃⇧4 uses macOS's own capture overlay, not the area picker** (CAP-8 does not apply). It is the system's own, and accessible as it is.
+- **EX-11 (accepted). Global keys use ⌃⇧, not ⇧⌘** (bends principle 3, "A Mac app"). macOS keeps ⇧⌘3, ⇧⌘4 and ⇧⌘5 for itself.
 
 ## Enforcement
 
