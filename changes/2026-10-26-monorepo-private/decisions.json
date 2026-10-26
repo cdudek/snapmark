@@ -16,6 +16,14 @@
   "milestoneNote": "2026-10-26: ticket, size, kind and milestone from the owner's 1.1 dialog (all four recommended options). Design none and project none are the kit defaults: no design file covers repo layout or update hosting, and a milestone of one needs no project.",
   "ticket": "snap-bmr.23",
   "design": "none",
+  "protectedEdit": {
+    "file": "facts.md",
+    "fact": "F7",
+    "words": "can we make sure that we only keeping the last 10 versions around?",
+    "by": "Calvin Dudek",
+    "date": "2026-10-26",
+    "what": "F7 keeps the newest 10 versions instead of 5"
+  },
   "skips": {
     "ux": "skip -- size none: no screen changes (orchestrator, 2026-10-26)",
     "brief": "skip -- size none: no screen changes (orchestrator, 2026-10-26)",

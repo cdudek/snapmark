@@ -42,7 +42,7 @@ Size `none`: no screen changes, so no fact names a screen. Every fact names the 
 - [ ] **F4** (A2) The app built from this change shall read its updates from `https://storage.googleapis.com/snapmark-updates/mac/`. Tag: `@F4`.
 - [ ] **F5** (A2) When a release is published, the release workflow shall upload its ZIPs, DMGs, blockmaps and `latest-mac.yml` to `gs://snapmark-updates/mac/`. Tag: `@F5`.
 - [ ] **F6** (A2) The release workflow shall upload `latest-mac.yml` after every other file, with `Cache-Control: no-cache`. Tag: `@F6`.
-- [ ] **F7** (A2, J3) When the bucket holds more than 5 versions, the release workflow shall delete the files of every version except the newest 5. Tag: `@F7`.
+- [ ] **F7** (A2, J3) When the bucket holds more than 10 versions, the release workflow shall delete the files of every version except the newest 10. Tag: `@F7`.
 - [ ] **F8** (A2) Anyone shall be able to download from the bucket without signing in. Tag: `@F8`.
 - [ ] **F9** (A2) Only the release workflow of `cdudek/snapmark` shall be able to write to the bucket, through Workload Identity Federation, with no service account key. Tag: `@F9`.
 
@@ -52,7 +52,7 @@ Size `none`: no screen changes, so no fact names a screen. Every fact names the 
 - F4 — tag `@F4`: `Contents/Resources/app-update.yml` of a local `--mac dir` build names `provider: generic` and that URL.
 - F5 — tag `@F5`: the first release run's log, then `gcloud storage ls gs://snapmark-updates/mac/` lists that version's 8 files and `latest-mac.yml`.
 - F6 — tag `@F6`: the upload step's order in `release.yml`, and `gcloud storage objects describe …/latest-mac.yml` shows `cacheControl: no-cache`.
-- F7 — tag `@F7`: `snapmark-app/test/prune.test.sh` feeds 7 versions to `scripts/prune-releases.sh` and expects the oldest 2 versions' files.
+- F7 — tag `@F7`: `snapmark-app/test/prune.test.sh` feeds 12 versions to `scripts/prune-releases.sh` and expects the oldest 2 versions' files.
 - F8 — tag `@F8`: anonymous `curl -sI https://storage.googleapis.com/snapmark-updates/mac/latest-mac.yml` answers 200.
 - F9 — tag `@F9`: the provider's condition names `cdudek/snapmark`. The uploader has no user-managed key. Only the uploader can write to the bucket.
 

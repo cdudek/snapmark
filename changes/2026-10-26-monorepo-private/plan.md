@@ -166,3 +166,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-26 — New `snapmark-app/scripts/electron-builder.sh`: workspaces hoist `electron`, and electron-builder refuses the `^45.0.0` range without the installed version.
 - 2026-10-26 — `snapmark-app/test/guide.test.ts` and `keys.test.ts` read `docs/` from the repo root, one folder further up.
 - 2026-10-26 — New `snapmark-app/scripts/link-hoisted.cjs`, run by `build`: the editor loads Fabric from `../../node_modules`, which workspaces moved to the root in development.
+- 2026-10-26 — F7 keeps the newest 10 versions, not 5 (owner: "can we make sure that we only keeping the last 10 versions around?"; `decisions.json` › `protectedEdit`). Storage is then about 5.5 GB, $0.13 a month.
