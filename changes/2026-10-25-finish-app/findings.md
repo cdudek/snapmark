@@ -78,3 +78,20 @@ Review of `origin/milestone/finish-app-2...milestone/finish-app-3`, checked agai
 - F21 is still checked by hand only: no smoke check saves a marks-only Edit Again and looks at the session window.
 - A crash between moving the old parts to `.old` and writing `session.md` leaves the entry linking a missing folder until that entry is saved again (the next `replaceShot` puts `.old` back); an in-process failure is fully rolled back.
 - Not measured beyond the smoke: N1's budget on slower Macs, and Chromium's PDF page split of a 1280 × 8000 one image (interaction.md:86 accepts it).
+
+## Milestone 4 — Electron 45 and dependency updates
+
+Review of `origin/milestone/finish-app-3...milestone/finish-app-4` after rebasing milestone 4 onto milestone 3's fix round, checked against facts.md M4 (F401–F405), the Electron 45 breaking-change list and the milestone gate on Node 22.21.1. 0 Critical, 0 High, 0 Medium, 1 Low.
+
+### Blocking
+
+- [x] **M4-1** (Low, gate) the first hidden smoke run failed before any check printed: `capturePage` threw `UnknownVizError` on Electron 45 (macOS, Snapmark behind another app); the next run passed. Fixed in `test/smoke.ts`: both captures go through `capture()`, which repaints the window and tries once more. No assertion changed.
+
+### Advisory
+
+- `package.json` changes only the packages Milestone 4 names (electron 45, vitest 5, and the #63 minor and patch updates of electron-updater, marked, @milkdown/kit, @types/node, electron-builder, eslint, prettier, typescript-eslint); nothing added or removed.
+- Electron 45's breaking changes touch nothing in `src/`: `src/preload.ts` uses only `contextBridge`, `ipcRenderer` and `webFrame`; `Buffer` and `.once` appear only in the main process; no `getUserMedia`, `setPermissionRequestHandler`, `window.open`, `safeStorage` or `contentTracing`.
+- CI and the Release workflow already set `node-version: 22` (≥ 22.12); no `.nvmrc` or `engines` exist, so nothing changed. The local default nvm Node is still 20, so a local `npm test` needs Node 22 on PATH (questions.md M4 Q1).
+- questions.md M4 Q3 (`test/smoke.ts` did not typecheck) is resolved by milestone 3's fix round (G4); `tsc` passes.
+- `npm audit --omit=dev --audit-level=high`: found 0 vulnerabilities, exit 0 (F404). The dev-only advisories inside npm's own bundle stay (questions.md M4 Q2).
+- How often `UnknownVizError` occurs is not measured: one failure in two runs; CI's Linux smoke already captures on the CPU.
