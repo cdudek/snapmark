@@ -2059,7 +2059,10 @@ app
       first.said === 'Capture in 3 seconds. Esc cancels.' &&
       first.outline === '150,135,200,150' &&
       first.square === '150,135,240,240' &&
-      (['x', 'y', 'width', 'height'] as const).every((k) => cdBounds[k] === display[k]) &&
+      // xvfb reports a full-display window 1 px short in width and height (CI, 2026-10-26: 1279 × 1023 on 1280 × 1024)
+      (['x', 'y', 'width', 'height'] as const).every(
+        (k) => Math.abs(cdBounds[k] - display[k]) <= (process.platform === 'linux' && (k === 'width' || k === 'height') ? 1 : 0),
+      ) &&
       notYet;
     viewer['@F29 the countdown lets clicks through, never takes focus and is content-protected'] =
       ignoring.has(cd) && !cdKind.focusable && cdKind.isProtected;
