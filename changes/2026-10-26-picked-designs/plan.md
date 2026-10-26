@@ -34,7 +34,7 @@ After it, the owner captures with ⌃⇧1–⌃⇧5 as macOS does, closes the ba
 | 1.1 | Guide rules and ADRs                                                              | F33–F35     | `milestone/picked-designs-1` | done  |
 | 1.2 | Global keys, menu rows, Keyboard Shortcuts, busy rule                             | F1–F10      | `milestone/picked-designs-1` | done  |
 | 1.3 | Capture bar: focus, global Esc, two rows, modes 1–5, destination, Options, tokens | F11–F27, N1 | `milestone/picked-designs-1` | done  |
-| 1.4 | Countdown overlay                                                                 | F28–F32     | `milestone/picked-designs-1` | todo  |
+| 1.4 | Countdown overlay                                                                 | F28–F32     | `milestone/picked-designs-1` | done  |
 
 ### Milestone 2: editor destination, notes, hex field, session window size
 
@@ -188,7 +188,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 - [x] 1. Write the guide rules and the three ADRs; regenerate the index. Proof: `python3 scripts/design_index.py write` leaves no diff, and `@F33`–`@F35` pass.
 - [x] 2. Keys, menu rows, busy rule, area reset. Proof: `@F1`–`@F10` pass.
 - [x] 3. The bar: focus, global Esc, rows, modes, destination, Options, tokens; delete `tip`. Proof: `@F11`–`@F27` and `@N1` pass.
-- [ ] 4. The countdown overlay. Proof: `@F28`–`@F32` pass.
+- [x] 4. The countdown overlay. Proof: `@F28`–`@F32` pass.
 - [ ] 5. Gate. Proof: `python3 scripts/verify_gate.py milestone 2026-10-26-picked-designs` ends `VERIFY PASS`.
 
 ### Milestone 2

@@ -47,6 +47,7 @@ const {
   openSettings,
   showShortcuts,
   keyHandlers,
+  iconClick,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -1996,6 +1997,89 @@ app
       shots.length === shotsBeforeFull + 1 && fullArgs[0] === '-x' && fullArgs.length === 3 && fullEditors().length === 2 && !pickerOpen();
     why.F4 = { fullArgs, editors: fullEditors().length };
     fullEditors().forEach((w) => w.destroy());
+    // @F28–@F32: the bar's 3 s Timer on the set area (⌃⇧1 above), with screencapture stubbed as the fake capture runner
+    const countdownUp = () =>
+      BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.webContents.getURL().includes('countdown.html'));
+    const ignoring = new Set<BrowserWindow>(); // which windows let clicks through: Electron has no getter for it
+    const realIgnore = BrowserWindow.prototype.setIgnoreMouseEvents;
+    BrowserWindow.prototype.setIgnoreMouseEvents = function (this: BrowserWindow, ...a: Parameters<BrowserWindow['setIgnoreMouseEvents']>) {
+      if (a[0]) ignoring.add(this);
+      return realIgnore.apply(this, a);
+    };
+    const realShot = desk.screencapture;
+    let shotAt = 0;
+    let overlayAtShot = true;
+    desk.screencapture = (args, done) => {
+      shotAt = Date.now();
+      overlayAtShot = !!countdownUp();
+      realShot(args, done);
+    };
+    setCapture({ mode: 'last', oneShot: false, timer: 3, pointer: false });
+    const timed = async () => {
+      const b = openCaptureBar()!;
+      await barReady(b);
+      await inWin(b, `document.getElementById('capture').click();`);
+      for (let i = 0; i < 40 && !countdownUp(); i++) await sleep(50);
+      const w = countdownUp()!;
+      for (let i = 0; i < 40 && w.webContents.isLoading(); i++) await sleep(50);
+      return w;
+    };
+    const look = (w: BrowserWindow) =>
+      inWin(
+        w,
+        `const r = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2, b.width, b.height].map(Math.round).join(); };
+        const d = document.getElementById('digit');
+        return JSON.stringify({ digit: d.textContent, line: document.getElementById('line').textContent, said: document.getElementById('say').textContent,
+          outline: r('outline'), square: r('square'), anim: getComputedStyle(d).animationName });`,
+      ).then((s: string) => JSON.parse(s));
+    const shotsBeforeTimed = shots.length;
+    const windowsBeforeTimed = BrowserWindow.getAllWindows();
+    const cd = await timed();
+    const first = await look(cd);
+    const cdBounds = cd.getBounds();
+    const notYet = shots.length === shotsBeforeTimed; // nothing captured while it counts
+    let closedAt = 0;
+    cd.once('closed', () => (closedAt = Date.now()));
+    const cdDbg = cd.webContents.debugger;
+    cdDbg.attach('1.3');
+    await cdDbg.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await sleep(900); // past the first second, before the second
+    const still = cd.isDestroyed() ? null : await look(cd);
+    const timedEditor = await loadedWindow([...windowsBeforeTimed, cd]);
+    // the area is 200 × 150 at (50, 60) on the display: its centre (150, 135), the square centred on it
+    viewer['@F28 a timed capture shows the countdown on the area: the digit and "Esc cancels"'] =
+      first.digit === '3' &&
+      first.line === 'Esc cancels' &&
+      first.said === 'Capture in 3 seconds. Esc cancels.' &&
+      first.outline === '150,135,200,150' &&
+      first.square === '150,135,240,240' &&
+      (['x', 'y', 'width', 'height'] as const).every((k) => cdBounds[k] === display[k]) &&
+      notYet;
+    viewer['@F29 the countdown lets clicks through, never takes focus and is content-protected'] =
+      ignoring.has(cd) && !cd.isFocusable() && (process.platform === 'linux' || cd.isContentProtected()); // macOS and Windows only
+    viewer['@F30 the countdown closes 200 ms before the capture'] =
+      shots.length === shotsBeforeTimed + 1 && !overlayAtShot && closedAt > 0 && shotAt - closedAt >= 190;
+    viewer['@F32 with Reduce Motion the digits change without scale or fade'] =
+      first.anim === 'tick' && still?.digit === '2' && still?.anim === 'none';
+    why.F28 = { first, still, cdBounds, display, shotAfterClose: shotAt - closedAt, overlayAtShot };
+    timedEditor.destroy();
+    // @F31: ⌃⇧5 or a click on the menu bar icon cancels: no capture, no bar, no message; Esc is capture.test.ts's
+    const cancels: Record<string, boolean> = {};
+    for (const [how, cancel] of [
+      ['⌃⇧5', () => keyHandlers.options()],
+      ['icon', () => iconClick()],
+    ] as const) {
+      const w = await timed();
+      const was = { shots: shots.length, notes: notes.length };
+      cancel();
+      await sleep(1500);
+      cancels[how] = w.isDestroyed() && !countdownUp() && !barUp().length && shots.length === was.shots && notes.length === was.notes;
+    }
+    viewer['@F31 ⌃⇧5 or a click on the menu bar icon during the countdown captures nothing'] = cancels['⌃⇧5'] && cancels.icon;
+    why.F31 = cancels;
+    desk.screencapture = realShot;
+    BrowserWindow.prototype.setIgnoreMouseEvents = realIgnore;
+    setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false });
     // @F10: while the picker is open, ⌃⇧1, ⌃⇧2, ⌃⇧3, ⌃⇧4 and ⌃⇧N do nothing
     const busyPicker = await keyWin('newArea');
     const busyWas = { shots: shots.length, windows: BrowserWindow.getAllWindows().length, session: menuItems()[1].label };

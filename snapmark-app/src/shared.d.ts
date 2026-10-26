@@ -124,6 +124,7 @@ interface Window {
     areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
     scrollDone(ok: boolean): void; // Capture Scrolling: Done (true) or Cancel (false)
     onScrollStatus(cb: (status: ScrollStatus) => void): void;
+    onCountdown(cb: (seconds: number) => void): void; // countdown.html: the next digit, each second
     init(): Promise<EditorInit>;
     save(data: EditorSave): Promise<number>;
     copyImage(png: string): Promise<void>; // base64 PNG to the clipboard, not into the session

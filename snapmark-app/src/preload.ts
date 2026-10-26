@@ -39,6 +39,7 @@ const api: Window['snapmark'] = {
   barSessions: (at) => ipcRenderer.send('bar:sessions', at),
   onBarState: (cb) => void ipcRenderer.on('bar:state', (_e, s: BarInit) => cb(s)),
   onScrollStatus: (cb) => void ipcRenderer.on('scroll:status', (_e, status: ScrollStatus) => cb(status)),
+  onCountdown: (cb) => void ipcRenderer.on('countdown:digit', (_e, s: number) => cb(s)),
 };
 
 contextBridge.exposeInMainWorld('snapmark', api);

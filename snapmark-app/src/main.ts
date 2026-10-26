@@ -234,7 +234,7 @@ async function captureArea(choose = false, o?: CaptureOpts) {
     areaForgotten = false;
     saveState();
   }
-  if (o?.timer && !(await countdown(o.timer))) return;
+  if (o?.timer && !(await countdown(o.timer, area))) return;
   shoot(captureArgs(choose ? 'area' : 'last', { pointer: !!o?.pointer }, area), o?.oneShot);
 }
 
@@ -258,27 +258,72 @@ export const keyHandlers: Record<keyof typeof SHORTCUTS, () => void> = {
   oneShot: () => void (busy() || shoot(['-i'], true)), // -i: macOS's overlay; Space picks a window
   fullScreen: () => void captureFullScreen(),
   capture: () => void captureArea(),
-  options: () => void openCaptureBar(),
+  options: () => void (cancelCountdown ? cancelCountdown() : openCaptureBar()), // during a countdown it cancels (F31)
   newSession: () => void (capturing() || newSession()),
 };
 
-// The bar's Timer, once the area is known: the seconds left beside the menu bar icon. Esc is taken from every app
-// only while it counts, and cancels: nothing is captured, and no message shows. False when cancelled.
-async function countdown(seconds: number): Promise<boolean> {
+// The bar's Timer, once the area is known (`at`; none for Full Screen): the countdown overlay and the seconds left
+// beside the menu bar icon (CAP-10). Esc, taken from every app only while it counts (never in quiet runs), ⌃⇧5 and a
+// click on the icon cancel: nothing is captured, and no message shows (F31). False when cancelled.
+let cancelCountdown: (() => void) | null = null;
+async function countdown(seconds: number, at?: Area | null): Promise<boolean> {
   let cancelled = false;
   counting = true;
-  globalShortcut.register('Escape', () => (cancelled = true));
+  cancelCountdown = () => void (cancelled = true);
+  if (!quiet) globalShortcut.register('Escape', cancelCountdown);
+  const win = countdownPanel(seconds, at);
+  // destroy(), synchronous unlike close(): the overlay and the digit are gone before the wait below (F30)
+  const end = () => {
+    if (!win.isDestroyed()) win.destroy();
+    tray?.setTitle('');
+  };
   try {
     for (let s = seconds; s > 0 && !cancelled; s--) {
       tray?.setTitle(String(s));
+      if (s < seconds && !win.isDestroyed()) win.webContents.send('countdown:digit', s);
       for (let t = 0; t < 10 && !cancelled; t++) await new Promise((r) => setTimeout(r, 100));
     }
+    end();
+    if (!cancelled) await new Promise((r) => setTimeout(r, 200)); // the area picker's wait for the window server
     return !cancelled;
   } finally {
-    globalShortcut.unregister('Escape');
-    tray?.setTitle('');
+    end();
+    if (!quiet) globalShortcut.unregister('Escape');
+    cancelCountdown = null;
     counting = false;
   }
+}
+
+// The countdown overlay (countdown.html) over the area's display, or the pointer's for Full Screen: a click-through
+// panel that never takes focus and is kept out of screen captures, built as the bar's old label was (F29).
+function countdownPanel(seconds: number, at?: Area | null): BrowserWindow {
+  const { bounds } = at ? screen.getDisplayMatching(at) : screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const win = new BrowserWindow({
+    ...bounds,
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    focusable: false,
+    skipTaskbar: true,
+    enableLargerThanScreen: true, // over the menu bar too, as the area picker
+    ...(process.platform === 'darwin' ? { type: 'panel' } : {}),
+    show: false,
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  });
+  win.setIgnoreMouseEvents(true);
+  win.setContentProtection(true);
+  win.setAlwaysOnTop(true, 'screen-saver');
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+  win.once('ready-to-show', () => win.showInactive());
+  const local = at && { x: at.x - bounds.x, y: at.y - bounds.y, w: at.width, h: at.height };
+  const query = Object.fromEntries(Object.entries({ s: seconds, ...local }).map(([k, v]) => [k, String(v)]));
+  void win.loadFile(path.join(__dirname, 'countdown.html'), { query });
+  return win;
 }
 
 // `screencapture -i` never says where its region was, so the area to repeat is dragged in Snapmark's own
@@ -1048,6 +1093,8 @@ function menuState(): MenuState {
 // The menu bar menu as it is right now; built on every open, so counts and sessions changed in Finder are never stale.
 export const menuItems = () => menuTemplate(menuState(), actions);
 const popMenu = () => tray?.popUpContextMenu(Menu.buildFromTemplate(menuItems()));
+// A click on the menu bar icon: the menu, or during a countdown, cancel (F31). Exported for the smoke test, which has no icon.
+export const iconClick = () => (cancelCountdown ? cancelCountdown() : popMenu());
 
 // A session moved or deleted outside Snapmark: say so instead of doing nothing.
 function exists(name: string, file = ''): boolean {
@@ -1250,7 +1297,7 @@ app.whenReady().then(() => {
   // "Template" in the file name makes macOS tint the icon for light and dark menu bars; @2x is picked up automatically.
   tray = new Tray(path.join(__dirname, '../../assets/trayTemplate.png'));
   tray.setToolTip('Snapmark');
-  tray.on('click', popMenu);
+  tray.on('click', iconClick);
   tray.on('right-click', popMenu);
   if (app.isPackaged) {
     checkForUpdates();

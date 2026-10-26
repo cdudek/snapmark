@@ -169,4 +169,24 @@ assert.ok(!/tip:show|bar:tip|barTip/.test(main + fs.readFileSync(path.join(src, 
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf8'));
 assert.ok(!pkg.scripts.build.includes('tip.html'), '@F19 the build copies no tip page');
 
+// @F28 the countdown page is built; @F31 while it counts, Esc is a global shortcut that cancels, given back after (never
+// in quiet runs, so smoke checks ⌃⇧5 and the icon, and Esc is checked here and by hand); @F29 its panel lets clicks
+// through, never takes focus and is content-protected; @F30 it is destroyed before the 200 ms wait
+assert.ok(pkg.scripts.build.includes('src/countdown.html') && fs.existsSync(path.join(src, 'countdown.ts')), '@F28 countdown page');
+const counter = main.slice(main.indexOf('async function countdown('), main.indexOf('\n}\n', main.indexOf('function countdownPanel(')));
+assert.ok(counter.includes("if (!quiet) globalShortcut.register('Escape', cancelCountdown);"), '@F31 Esc registered');
+assert.ok(counter.includes("if (!quiet) globalShortcut.unregister('Escape');"), '@F31 Esc given back');
+assert.ok(main.includes('options: () => void (cancelCountdown ? cancelCountdown() : openCaptureBar())'), '@F31 ⌃⇧5 cancels');
+assert.ok(main.includes("tray.on('click', iconClick);"), '@F31 the icon cancels');
+assert.ok(
+  [
+    'focusable: false',
+    'win.setIgnoreMouseEvents(true);',
+    'win.setContentProtection(true);',
+    "win.setAlwaysOnTop(true, 'screen-saver');",
+  ].every((s) => counter.includes(s)),
+  '@F29 click-through, never focused, content-protected',
+);
+assert.ok(/end\(\);\s+if \(!cancelled\) await new Promise\(\(r\) => setTimeout\(r, 200\)\);/.test(counter), '@F30 destroyed, then 200 ms');
+
 console.log('capture: ok');
