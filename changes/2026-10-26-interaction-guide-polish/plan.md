@@ -123,3 +123,4 @@ Only after approval. One line per change: `YYYY-MM-DD — what changed, and why`
 - 2026-10-26 — 1.2: `test/keys.test.ts` F236's Capture bar rows now start with the `1–4` row (F11). The old assertion listed the rows before this change.
 - 2026-10-26 — 1.3: the smoke check `comment is one line` now reads the new placeholder, since A4 replaced the words "Add a comment…".
 - 2026-10-26 — fix round (findings M3, M4): `← →` reads "Move between modes", so it no longer repeats "Pick a mode". The notes column's headings sit 4 px from their box, with 20 px before References.
+- 2026-10-26 — F7's smoke check: "stays while the pointer rests on it" is checked on the rule `keepsTip` at fixed points, and the real path is checked wherever the pointer is. Moving the label under the real pointer failed on the owner's Mac, because macOS keeps windows off the menu bar.

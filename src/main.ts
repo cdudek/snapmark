@@ -444,15 +444,17 @@ function barTip(t: BarTip | null, close = false) {
 
 // The pointer left the bar: the label stays while the pointer is on it, on the 8 pt strip under it, or back on the
 // bar (WCAG 1.4.13), and goes once it is anywhere else.
+export function keepsTip(t: Electron.Rectangle, b: Electron.Rectangle, p: Electron.Point) {
+  const inside = (r: Electron.Rectangle) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
+  return inside({ x: t.x, y: t.y, width: t.width, height: b.y - t.y }) || inside(b);
+}
+
 function leaveTip() {
   clearInterval(tipWatch);
   if (!tip || !tipNow || !bar || !barOpen()) return; // tipNow, not isVisible(): a label still loading counts too
-  const inside = (r: Electron.Rectangle, p: Electron.Point) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
   tipWatch = setInterval(() => {
     if (!tip || !bar || !barOpen()) return barTip(null);
-    const p = screen.getCursorScreenPoint();
-    const [t, b] = [tip.getBounds(), bar.getBounds()];
-    if (!inside({ x: t.x, y: t.y, width: t.width, height: b.y - t.y }, p) && !inside(b, p)) barTip(null);
+    if (!keepsTip(tip.getBounds(), bar.getBounds(), screen.getCursorScreenPoint())) barTip(null);
   }, 100);
 }
 

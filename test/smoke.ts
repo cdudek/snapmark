@@ -44,6 +44,7 @@ const {
   moveEditor,
   openCaptureBar,
   barTipWindow,
+  keepsTip,
   setCapture,
   openSettings,
   showShortcuts,
@@ -1229,16 +1230,20 @@ app
     const tw = barTipWindow()!;
     viewer['F8 the label is part of the bar, never in a capture'] =
       !tw.isFocusable() && tw.isContentProtected() && tw.isAlwaysOnTop() && tw.isVisibleOnAllWorkspaces() && !barWin.isDestroyed();
-    // F7: leaving the bar keeps the label while the pointer is on it (here: the label moved under the pointer), and
-    // drops it once the pointer is elsewhere
-    const p = screen.getCursorScreenPoint();
-    tw.setBounds({ ...tw.getBounds(), x: p.x - 10, y: p.y - 5 });
+    // F7: leaving the bar keeps the label while the pointer is on it, on the strip under it or back on the bar, and drops
+    // it anywhere else. The rule, at fixed points (the real pointer cannot be moved, and macOS keeps windows off the
+    // menu bar and the Dock); then the real path, wherever the owner's pointer is.
+    const [tipB, barB] = [tw.getBounds(), barWin.getBounds()];
+    const staysOnIt =
+      keepsTip(tipB, barB, { x: tipB.x + tipB.width / 2, y: tipB.y + tipB.height / 2 }) &&
+      keepsTip(tipB, barB, { x: tipB.x + 2, y: barB.y - 4 }) &&
+      keepsTip(tipB, barB, { x: barB.x + 2, y: barB.y + 2 }) &&
+      !keepsTip(tipB, barB, { x: tipB.x - 40, y: tipB.y - 40 }) &&
+      !keepsTip(tipB, barB, { x: tipB.x + tipB.width + 2, y: barB.y - 4 });
     await inWin(barWin, `document.documentElement.dispatchEvent(new MouseEvent('mouseleave'));`);
     await sleep(350);
-    const staysOnIt = tipShown();
-    tw.setBounds({ ...tw.getBounds(), x: p.x + 400 > screen.getPrimaryDisplay().bounds.width ? p.x - 600 : p.x + 400 });
-    await sleep(350);
-    const goneElsewhere = !tipShown();
+    const pointerOnIt = keepsTip(tw.getBounds(), barWin.getBounds(), screen.getCursorScreenPoint());
+    const goneElsewhere = tipShown() === pointerOnIt;
     // F6 and F9: a key shows the focused button's label; 1–4 only choose a mode
     keyTo(barWin, '4');
     const afterFour = await tipSays();
