@@ -3,8 +3,9 @@ import fs from 'fs';
 import path from 'path';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { normalizeHex, withCustom, CUSTOM_MAX } = require('../src/tools') as {
+const { normalizeHex, hexInput, withCustom, CUSTOM_MAX } = require('../src/tools') as {
   normalizeHex: (text: string) => string | null;
+  hexInput: (text: string, pasted: boolean) => { text: string; colour: string | null };
   withCustom: (customs: string[], c: string, presets: string[]) => string[];
   CUSTOM_MAX: number;
 };
@@ -28,6 +29,30 @@ assert.strictEqual(normalizeHex('\t0f0 '), '#00ff00');
 // A15 anything else is refused: wrong length, not hex, two "#", spaces inside, empty
 for (const bad of ['', ' ', '#', 'e5484', '#e5484d0', 'zz1234', '##e5484d', 'e5 48 4d', 'rgb(1,2,3)', '#12345678', 'ggg'])
   assert.strictEqual(normalizeHex(bad), null, `"${bad}" is not a hex colour`);
+
+// @F54 a paste drops its leading "#" at once and applies: the field reads "2492ff", with or without "#", any case, trimmed
+assert.deepStrictEqual(hexInput('#2492ff', true), { text: '2492ff', colour: '#2492ff' });
+assert.deepStrictEqual(hexInput('2492ff', true), { text: '2492ff', colour: '#2492ff' });
+assert.deepStrictEqual(hexInput(' #2492FF \n', true), { text: '2492ff', colour: '#2492ff' });
+assert.deepStrictEqual(hexInput('#f0a', true), { text: 'ff00aa', colour: '#ff00aa' });
+// @F54 typing: a "#" goes at once; the colour applies at six good digits, never on the way there
+assert.deepStrictEqual(hexInput('#', false), { text: '', colour: null });
+assert.deepStrictEqual(hexInput('#e5', false), { text: 'e5', colour: null });
+assert.deepStrictEqual(hexInput('f0a', false), { text: 'f0a', colour: null });
+assert.deepStrictEqual(hexInput('e5484', false), { text: 'e5484', colour: null });
+assert.deepStrictEqual(hexInput('E5484D', false), { text: 'E5484D', colour: '#e5484d' });
+// @F56 a bad paste or bad typing applies nothing and is left for ↩ or blur to refuse
+assert.deepStrictEqual(hexInput('#hello', true), { text: 'hello', colour: null });
+assert.deepStrictEqual(hexInput('e5484z', false), { text: 'e5484z', colour: null });
+
+// @F55 @F56 both hex fields, the annotation colour's and Beautify's beside Custom, say the same error (screens.md)
+{
+  const html = fs.readFileSync(path.join(__dirname, '../../src/editor.html'), 'utf8');
+  for (const id of ['hex-error', 'backdrop-hex-error'])
+    assert.ok(new RegExp(`<p id="${id}"[^>]*>Use 3 or 6 hex digits, like e5484d\\.</p>`).test(html), `#${id} says the hex error`);
+  const ts = fs.readFileSync(path.join(__dirname, '../../src/editor.ts'), 'utf8');
+  assert.strictEqual(ts.match(/= hexField\(/g)?.length, 2, 'both fields follow one set of rules');
+}
 
 // A16 Custom row: newest first, each colour once, never a preset, one row of five
 {

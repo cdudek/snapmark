@@ -375,8 +375,8 @@
         border: 0;
         border-top: 1px solid var(--line);
       }
-      /* The hex field: "#" is drawn, the field holds the digits. Enter or leaving it applies them. */
-      #palette .hex {
+      /* The hex fields, the annotation colour's and Beautify's: "#" is drawn, the field holds the digits (HEX-1). */
+      .hex {
         display: flex;
         align-items: center;
         height: 28px;
@@ -387,15 +387,15 @@
         color: var(--muted);
         cursor: text;
       }
-      #palette .hex:focus-within {
+      .hex:focus-within {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-tint);
       }
-      #palette .hex:has([aria-invalid='true']) {
+      .hex:has([aria-invalid='true']) {
         border-color: var(--danger);
         box-shadow: none;
       }
-      #palette .hex input {
+      .hex input {
         flex: 1;
         min-width: 0;
         margin-left: 2px;
@@ -408,7 +408,7 @@
         font-variant-numeric: tabular-nums;
         font-weight: 400;
       }
-      #hex-error {
+      .hex-error {
         margin: 6px 0 0;
         font-size: 11px;
         line-height: 14px;
@@ -479,18 +479,30 @@
       .one-shot #caption-label,
       .one-shot #caption,
       .one-shot #refs,
+      .one-shot #refs-rule,
       .one-shot #refs-label {
         display: none !important;
       }
       /* The notes column's headings: General comment and References (guide NTE-1, WRD-3). */
+      /* 20 pt above each heading, 8 pt to its own box (F52), in the column's 12 px padding and 10 px gap. */
       #caption-label,
       #refs-label {
-        margin: 0 0 -6px; /* 4 px to its own box, under the column's 10 px gap (Law of Proximity) */
+        margin: 8px 0 -2px;
         font-size: inherit;
         font-weight: 600;
       }
       #refs-label {
-        margin-top: 10px; /* 20 px between the comment and References, more than between two notes */
+        margin-top: 10px;
+      }
+      /* The hairline between the comment and References, only with them (F53, NTE-8): 20 pt on each side, 16 pt in
+         from the column's edges. */
+      #refs-rule {
+        margin: 10px 4px 0;
+        border: 0;
+        border-top: 1px solid var(--hairline);
+      }
+      #refs-rule:has(+ #refs-label[hidden]) {
+        display: none;
       }
       /* Reference notes stand apart (guide NTE-4). */
       #refs {
@@ -531,7 +543,8 @@
         justify-content: space-between;
         row-gap: 10px;
       }
-      #backdrops > * {
+      #backdrops button,
+      #backdrops .custom {
         position: relative;
         height: 36px;
         padding: 0;
@@ -548,6 +561,24 @@
       }
       #backdrops .custom:has(input:focus-visible) {
         outline: 2px solid var(--accent);
+      }
+      /* Custom… starts its own row, with the hex field and its error beside it (screens.md, Hex fields). */
+      #backdrops .custom-row {
+        display: contents;
+      }
+      #backdrops .custom {
+        grid-column: 1;
+      }
+      #backdrops .hex,
+      #backdrops .hex-error {
+        grid-column: 2 / -1;
+        align-self: center;
+      }
+      #backdrops .hex {
+        background: var(--field); /* a field on the column, as the notes are */
+      }
+      #backdrops .hex-error {
+        margin-top: -4px; /* 6 px under the field, as in the colour popover, inside the 10 px row gap */
       }
       #backdrops .custom input {
         position: absolute;
@@ -820,7 +851,7 @@
           aria-label="Hex colour"
           aria-describedby="hex-error"
       /></label>
-      <p id="hex-error" hidden>Use 3 or 6 hex digits.</p>
+      <p id="hex-error" class="hex-error" role="alert" hidden>Use 3 or 6 hex digits, like e5484d.</p>
       <label class="custom"><input type="color" id="color" value="#e5484d" /><i class="ring"></i>Custom…</label>
     </div>
     <main>
@@ -830,6 +861,7 @@
       <div class="body">
         <h2 id="caption-label">General comment</h2>
         <div id="caption"></div>
+        <hr id="refs-rule" />
         <h2 id="refs-label" hidden>References</h2>
         <div id="refs"></div>
         <p id="notes-kept" hidden>Notes stay with Session. They are not copied.</p>
@@ -839,7 +871,21 @@
           <label class="row">Rounded corners<output for="radius"></output><input type="range" id="radius" min="0" max="50" /></label>
           <label class="row">Shadow<output for="shadow"></output><input type="range" id="shadow" min="0" max="100" /></label>
           <h3 id="backdrop-label">Background</h3>
-          <div id="backdrops" role="group" aria-labelledby="backdrop-label"></div>
+          <div id="backdrops" role="group" aria-labelledby="backdrop-label">
+            <div class="custom-row">
+              <label class="hex"
+                >#<input
+                  id="backdrop-hex"
+                  type="text"
+                  maxlength="9"
+                  spellcheck="false"
+                  autocomplete="off"
+                  aria-label="Custom background hex colour"
+                  aria-describedby="backdrop-hex-error"
+              /></label>
+              <p id="backdrop-hex-error" class="hex-error" role="alert" hidden>Use 3 or 6 hex digits, like e5484d.</p>
+            </div>
+          </div>
           <h3 id="ratio-label">Ratio</h3>
           <div id="ratios" role="group" aria-labelledby="ratio-label"></div>
         </section>

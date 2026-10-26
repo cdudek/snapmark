@@ -126,6 +126,7 @@ app
     r['F112 Undo and Redo are icons'] = [['undo', 'Undo (⌘Z)'], ['redo', 'Redo (⇧⌘Z)']].every(([id, name]) => { const b = document.getElementById(id); return !!b.querySelector('svg') && b.textContent.trim() === '' && b.title === name && b.getAttribute('aria-label') === name; });
     r['F113 one Copy or Save button'] = !document.getElementById('copy') && !document.getElementById('save-as') && !!document.getElementById('share');
     r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs .md');
+    r['@F53 no hairline before the first reference'] = getComputedStyle(document.getElementById('refs-rule')).display === 'none';
     key('a', { metaKey: true });
     const emptyRefused = !canvas.getActiveObject(); // F12: ⌘A with no marks does nothing
 
@@ -267,6 +268,28 @@ app
     r['A17 one 24 px circle for the swatch and the panel, one ring on the picked colour'] = dot(swDot) === '24px,24px,50%' && [...pal.querySelectorAll('.swatches > *')].every((b) => dot(b) === '24px,24px,50%') && ring(swDot) === ring(picked) && ring(picked).startsWith('solid,2px,2px') && getComputedStyle(other).outlineWidth === '0px';
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     sw.click(); presets[0].click(); // back to coral red; the Custom row stays for the A16 check in the next editor
+    // @F54 a pasted "#2492ff" reads "2492ff" and applies at once; a typed "#" goes, and typing applies at six digits.
+    // @F56 a bad value on Enter or blur shows the hex error, outlined in red and announced; typing clears it. Blue is a
+    // preset, so the Custom row stays as the next editor's A16 check expects.
+    const typeIn = (el, v, inputType) => { el.value = v; el.dispatchEvent(new InputEvent('input', { inputType, bubbles: true })); };
+    const hexErrorShown = (el) => { const p = document.getElementById(el.getAttribute('aria-describedby')); return !p.hidden && p.getAttribute('role') === 'alert' && p.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && getComputedStyle(el.closest('.hex')).borderTopColor === getComputedStyle(p).color; };
+    sw.click(); hex.focus(); typeIn(hex, '#2492ff', 'insertFromPaste');
+    const pastedIn = hex.value === '2492ff' && colorEl.value === '#2492ff' && !pal.hidden;
+    typeIn(hex, '#', 'insertText');
+    const hashDropped = hex.value === '';
+    typeIn(hex, 'e5484', 'insertText');
+    const hexNotYet = colorEl.value === '#2492ff' && hexErr.hidden;
+    typeIn(hex, 'e5484d', 'insertText');
+    r['@F54 a pasted #2492ff reads 2492ff and applies; a typed # goes; typing applies at six digits'] = pastedIn && hashDropped && hexNotYet && colorEl.value === '#e5484d';
+    typeHex('12345', true);
+    const onEnter = hexErrorShown(hex) && !pal.hidden;
+    typeIn(hex, '1234', 'insertText');
+    const clearedOnType = hexErr.hidden && !hex.hasAttribute('aria-invalid');
+    typeHex('zz', false);
+    r['@F56 a bad hex value on Enter or blur shows the hex error; typing clears it'] = onEnter && clearedOnType && hexErrorShown(hex) && colorEl.value === '#e5484d';
+    hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    if (!pal.hidden) sw.click();
+    sw.click(); presets[0].click();
     // A18: one keycap style. Every key the editor shows is a <kbd> at 11 px, weight 500, in the system font, in the
     // colour of its text (a disabled button's in --muted), at 4.5:1 or more; under every icon button, after the label of every text button
     const kbds = [...document.querySelectorAll('kbd')];
@@ -431,6 +454,21 @@ app
       refRows.length >= 2 && refRows.every((row) => row.querySelector('.md').dataset.placeholder === 'What about ' + row.querySelector('b').textContent + '?');
     r['F14 notes stand 12 pt apart'] = refRows.length >= 3 && refGaps.every((g) => Math.abs(g - 12) <= 1);
     console.log('F13 F14 ' + JSON.stringify({ rows: refRows.length, gaps: refGaps, refsAdded }));
+    // @F52, @F53, measured like F14: 20 pt above each notes heading and 8 pt below it; with references, a 1 px hairline
+    // 20 pt under the comment and 20 pt above References, 16 pt in from each side of the column
+    const notesBody = document.querySelector('aside .body');
+    notesBody.scrollTop = 0;
+    const nbox = (id) => document.getElementById(id).getBoundingClientRect();
+    const bodyTop = notesBody.getBoundingClientRect().top, bodyLeft = notesBody.getBoundingClientRect().left, ruleBox = nbox('refs-rule');
+    const notesGaps = {
+      above: [nbox('caption-label').top - bodyTop, nbox('refs-label').top - ruleBox.bottom],
+      below: [nbox('caption').top - nbox('caption-label').bottom, nbox('refs').top - nbox('refs-label').bottom],
+    };
+    const ruleAt = { height: ruleBox.height, under: ruleBox.top - nbox('caption').bottom, left: ruleBox.left - bodyLeft, right: bodyLeft + notesBody.clientWidth - ruleBox.right };
+    r['@F52 each notes heading has 20 pt above it and 8 pt below it'] = [...notesGaps.above.map((g) => g - 20), ...notesGaps.below.map((g) => g - 8)].every((d) => Math.abs(d) <= 1);
+    r['@F53 a 1 px hairline 20 pt under the comment and above References, 16 pt in from each side'] =
+      Math.abs(ruleAt.height - 1) < 0.5 && Math.abs(ruleAt.under - 20) <= 1 && Math.abs(notesGaps.above[1] - 20) <= 1 && [ruleAt.left, ruleAt.right].every((g) => Math.abs(g - 16) <= 1);
+    console.log('F52 F53 ' + JSON.stringify({ notesGaps, ruleAt }));
     for (let i = 0; i < refsAdded; i++) key('z', { metaKey: true });
     await sleep(100);
     r['F13/F14 the added references are undone'] = document.querySelectorAll('#refs .ref').length === refsBefore;
@@ -1741,6 +1779,31 @@ app
     );
     viewer['one-shot: the preview shows the backdrop at the chosen ratio'] =
       Math.abs(preview.ratio - 16 / 9) < 0.02 && preview.bg === 'rgb(18, 52, 86)';
+    // @F55 Beautify's Background has a hex field beside Custom, with the annotation field's rules: a paste applies
+    // (@F54), a bad value on Enter shows the hex error (@F56). Typing 123456 puts the backdrop back for the checks below.
+    const backdropHex = JSON.parse(
+      await inWin(
+        one,
+        `const el = document.getElementById('backdrop-hex'), err = document.getElementById('backdrop-hex-error');
+        const typeIn = (v, inputType) => { el.value = v; el.dispatchEvent(new InputEvent('input', { inputType, bubbles: true })); };
+        const bg = () => getComputedStyle(document.getElementById('stage')).backgroundColor;
+        const custom = document.querySelector('#backdrops .custom').getBoundingClientRect(), field = el.closest('.hex').getBoundingClientRect();
+        const beside = Math.abs(custom.top + custom.bottom - field.top - field.bottom) < 2 && field.left > custom.right && el.closest('#backdrops') !== null;
+        const shows = el.value === '123456' && el.closest('.hex').textContent.trim().startsWith('#');
+        el.focus(); typeIn('#2492ff', 'insertFromPaste');
+        const pasted = el.value === '2492ff' && bg() === 'rgb(36, 146, 255)';
+        typeIn('zz', 'insertText');
+        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        const refused = !err.hidden && err.getAttribute('role') === 'alert' && err.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && bg() === 'rgb(36, 146, 255)';
+        typeIn('123456', 'insertText');
+        el.blur(); el.dispatchEvent(new FocusEvent('blur'));
+        return JSON.stringify({ beside, shows, pasted, refused, back: err.hidden && bg() === 'rgb(18, 52, 86)' });`,
+      ),
+    );
+    console.log('F55 ' + JSON.stringify(backdropHex));
+    viewer['@F55 Beautify Background has a hex field beside Custom'] = backdropHex.beside && backdropHex.shows && backdropHex.back;
+    viewer['@F54 pasting #2492ff into the Beautify hex field reads 2492ff and applies'] = backdropHex.pasted;
+    viewer['@F56 a bad value in the Beautify hex field shows the hex error'] = backdropHex.refused;
     // Its own stubs, so the session-mode checks below still see their copy and file
     const got = { copy: null as Buffer | null, offered: '' };
     const oneSaved = path.join(root, 'one-shot-saved.png');

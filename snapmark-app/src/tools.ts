@@ -161,6 +161,16 @@ function normalizeHex(text: string): string | null {
   return `#${digits.toLowerCase()}`;
 }
 
+// A hex field as the owner types or pastes into it (HEX-1): a leading "#" goes at once. A paste applies any good code
+// and reads as its six digits; typing applies only at six good digits, so "e54" on the way to "e5484d" never flashes a
+// colour. Nothing here is an error: that waits for ↩ or blur. "#2492ff" pasted → "2492ff", "#2492ff".
+function hexInput(text: string, pasted: boolean): { text: string; colour: string | null } {
+  const t = (pasted ? text.trim() : text).replace(/^#/, '');
+  const c = normalizeHex(t);
+  if (pasted) return { text: c ? c.slice(1) : t, colour: c };
+  return { text: t, colour: /^[0-9a-f]{6}$/i.test(t) ? c : null };
+}
+
 // The colour panel's Custom row: one row of five, newest first, each colour once, never a preset.
 const CUSTOM_MAX = 5;
 function withCustom(customs: string[], c: string, presets: string[]): string[] {
@@ -182,4 +192,4 @@ function singleKeysLine(on: boolean): string {
 }
 
 if (typeof module !== 'undefined')
-  module.exports = { GROUPS, capFor, tipFor, normalizeHex, withCustom, CUSTOM_MAX, toolKey, singleKeysLine };
+  module.exports = { GROUPS, capFor, tipFor, normalizeHex, hexInput, withCustom, CUSTOM_MAX, toolKey, singleKeysLine };

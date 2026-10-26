@@ -445,22 +445,43 @@ function setColor(c: string, keep = true) {
   applyTool();
 }
 
-function showHexError(on: boolean) {
-  hexError.hidden = !on;
-  if (on) hexEl.setAttribute('aria-invalid', 'true');
-  else hexEl.removeAttribute('aria-invalid');
+// A hex field (HEX-1), the annotation colour's and Beautify's: a leading "#" goes at once, a paste applies any good
+// code, typing applies at six good digits, and any typing clears the error. commit() is ↩ or leaving it: a good code
+// applies, a bad one shows the error and changes nothing. reset() shows a colour's digits with no error.
+function hexField(input: HTMLInputElement, error: HTMLElement, apply: (c: string) => void) {
+  const showError = (on: boolean) => {
+    error.hidden = !on;
+    if (on) input.setAttribute('aria-invalid', 'true');
+    else input.removeAttribute('aria-invalid');
+  };
+  input.addEventListener('input', (e) => {
+    showError(false);
+    const typed = hexInput(input.value, (e as InputEvent).inputType === 'insertFromPaste');
+    if (typed.text !== input.value) input.value = typed.text;
+    if (typed.colour) apply(typed.colour);
+  });
+  return {
+    commit(): boolean {
+      const c = normalizeHex(input.value);
+      showError(!c);
+      if (c) input.value = c.slice(1);
+      if (c) apply(c);
+      return !!c;
+    },
+    reset(digits: string) {
+      input.value = digits;
+      showError(false);
+    },
+  };
 }
+
+const colourHex = hexField(hexEl, hexError, (c) => void (c !== colorEl.value && setColor(c)));
+let hexFrom = ''; // the colour the palette opened on: a different one from the field joins the Custom row
 
 // Enter or leaving the field: a good code becomes the colour; a bad one says so and changes nothing.
 function applyHex(): boolean {
-  const c = normalizeHex(hexEl.value);
-  showHexError(!c);
-  if (!c) return false;
-  hexEl.value = c.slice(1);
-  if (c !== colorEl.value) {
-    setColor(c);
-    addCustom(c);
-  }
+  if (!colourHex.commit()) return false;
+  if (colorEl.value !== hexFrom) addCustom((hexFrom = colorEl.value));
   return true;
 }
 
@@ -468,8 +489,8 @@ function openPalette() {
   // Under the toolbar, not the swatch, so it never covers Undo's and Redo's keys.
   const top = swatchBtn.closest('header')!.getBoundingClientRect().bottom + 4;
   Object.assign(paletteEl.style, { left: `${swatchBtn.getBoundingClientRect().left}px`, top: `${top}px` });
-  hexEl.value = colorEl.value.slice(1);
-  showHexError(false);
+  colourHex.reset(colorEl.value.slice(1));
+  hexFrom = colorEl.value;
   paletteEl.hidden = false;
   swatchBtn.setAttribute('aria-expanded', 'true');
   (colourBtns().find((b) => b.dataset.color === colorEl.value) ?? presetBtns[0]).focus();
@@ -486,7 +507,6 @@ function closePalette(refocus = true) {
 swatchBtn.onclick = () => (paletteEl.hidden ? openPalette() : closePalette());
 colorEl.oninput = () => setColor(colorEl.value);
 colorEl.onchange = () => addCustom(colorEl.value); // once, when the colour panel settles, not on every drag step
-hexEl.oninput = () => showHexError(false);
 hexEl.onblur = () => void (paletteEl.hidden || applyHex());
 hexEl.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' || e.metaKey) return;
@@ -1267,7 +1287,20 @@ customInput.type = 'color';
 customInput.setAttribute('aria-label', 'Custom background colour');
 customInput.oninput = () => setBeauty({ backdrop: customInput.value });
 customEl.append(customInput);
-$('backdrops').replaceChildren(...backdropBtns, customEl);
+// Beside Custom…, a hex field with the annotation colour's look and rules (F55). Empty while a preset is picked, so
+// leaving it empty is no error and changes nothing.
+const customRow = document.querySelector<HTMLDivElement>('#backdrops .custom-row')!;
+const backdropHexEl = $<HTMLInputElement>('backdrop-hex');
+const backdropHex = hexField(backdropHexEl, $('backdrop-hex-error'), (c) => setBeauty({ backdrop: c }));
+const commitBackdropHex = () => void (backdropHexEl.value.trim() && backdropHex.commit());
+backdropHexEl.onblur = commitBackdropHex;
+backdropHexEl.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.metaKey) return;
+  e.preventDefault();
+  commitBackdropHex();
+});
+customRow.prepend(customEl);
+$('backdrops').replaceChildren(...backdropBtns, customRow);
 const ratioBtns = RATIOS.map((r) => {
   const b = document.createElement('button');
   b.textContent = r === 'auto' ? 'Auto' : r;
@@ -1292,6 +1325,7 @@ function renderBeauty() {
   for (const b of backdropBtns) b.setAttribute('aria-pressed', String(b.dataset.backdrop === beauty.backdrop));
   const custom = beauty.backdrop.startsWith('#');
   if (custom) customInput.value = beauty.backdrop;
+  if (document.activeElement !== backdropHexEl) backdropHex.reset(custom ? beauty.backdrop.slice(1) : '');
   customEl.classList.toggle('picked', custom);
   customEl.style.background = custom
     ? beauty.backdrop
