@@ -50,3 +50,39 @@ Checked on `milestone/calm-style-1` at `1e46df2`, 2026-10-27.
 Verdicts at `1e46df2`: 17 met, 4 partly met, 1 failed. After the owner's fixes, the gate passed at `265f3fc`, and every row above is met. A6 starts in milestone 2.
 
 The findings are in [findings.md](findings.md), milestone 1.
+
+## Milestone 2
+
+Checked on `milestone/calm-style-2` at `c0575fe`, 2026-10-27.
+
+- **Gate:** `VERIFY PASS milestone 2026-10-27-calm-style c0575fe`. Format, lint, typecheck, `npm test` and `npm run smoke:background` all print `ok`.
+- **Screenshots:** 52 shots from each window's own pixels (`webContents.capturePage`). Light and dark, 100 % and 130 %.
+- Windows: countdown 3, 2, 1; area picker empty and dragging; scrolling control running, manual and stuck.
+- Also: recording control at 7 s and 27 s; the bar with Record, with Scrolling, and narrow.
+- The run was in the background. Every window was fully transparent and click-through. Snapmark never took the front.
+- The panels are built with main's own window options, and fed the status main sends. The area picker is the real `pickArea`.
+- Shots are flattened on a flat grey (light `#e5e5ea`, dark `#1c1c1e`). The live panels show the frosted material instead.
+- Contrast on the material is estimated against those greys. The countdown's square is opaque, so its numbers are exact.
+- Shot names below are `<window>--<state>--<theme>--<zoom>.png` in the owner's review folder.
+
+| Fact or ask      | Expected                                                                  | Observed                                                                                                                       | Evidence                                                                                                   | Verdict                       |
+| ---------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| F16              | The four panels use the system material and text colours, light and dark  | Each panel follows the theme, on the material or the tokens' system colours. Ink text, no own greys                            | `test/smoke.ts @F16` (two checks); gate `ok check-5`; every panel's light and dark shots                   | met                           |
+| F17              | At most one accent fill per panel: Done                                   | Done alone is blue in both controls. Esc and ⓧ are plain icons                                                                 | `test/smoke.ts @F17`, `@F20`; `test/style.test.ts @F20`; gate `ok check-4`, `ok check-5`                   | met                           |
+| F18              | The area outline is white with a dark shadow, not blue                    | White line, dark shadow, in the picker and the countdown. At 130 % the countdown's square hides a 300 × 200 outline            | `test/smoke.ts @F18` (two checks); `area-picker--dragging--*`, `countdown--*--100`                         | met                           |
+| F19              | No border or outline at rest; no ring on open                             | No control has an edge or a ring in any panel shot                                                                             | `test/smoke.ts @F19` (two checks), `@F20`; gate `ok check-5`                                               | met                           |
+| F20              | Picked-designs 3 and 4 ship in this style; their facts pass by their tags | Record and auto-scroll run in the calm panels. F59–F88 pass in the gate; see the row below                                     | `test/smoke.ts @F20`; `test/style.test.ts @F20`; gate `ok check-4`, `ok check-5`                           | met                           |
+| F21              | Record is the sixth mode; the bar stays one row, at most 56 pt tall       | Six modes in one 48 pt row at 100 %, as the mock. Narrow at 130 % shows icons only, nothing cut                                | `test/style.test.ts @F21`; `test/smoke.ts @F21`; manifest sizes; `capture-bar--mode-record--*`             | met                           |
+| F22              | The panels' `.html` files use no colour literal                           | No hex, colour function or colour name in the panel files. Source check only                                                   | `test/style.test.ts @F22`; gate `ok check-4`                                                               | met                           |
+| F59–F88 (picked) | Picked-designs milestones 3 and 4 pass by their own tags                  | All pass. Gone with the hint row: `barHeads` @F17, @F59, @F82 and two-row bar checks. The @F59, @F60 and @F63 checks rewritten | gate `ok check-4`, `ok check-5`; plan.md Revisions 2.2, 2.3                                                | met                           |
+| N1               | Text 4.5:1 and the focus ring 3:1, light and dark                         | "Esc cancels" is GrayText `#808080`: 3.95:1 on the white square. "⌃⇧5 stops" is about 3.2:1 light, 4.3:1 dark                  | `countdown--2--light--100`, `recording-control--near-30s--*--100`, measured. No automated check for panels | not met (finding 1)           |
+| N2               | Every v0.24.0 check still passes, except logged replaced styles           | The full unit and smoke runs pass. The replaced checks are listed in plan.md Revisions 2.2 and 2.3                             | gate `ok check-4`, `ok check-5`; plan.md Revisions                                                         | met                           |
+| A1               | Smaller, on the owner's design system                                     | The panels take the starter's tokens. The bar keeps one row with six modes                                                     | F16, F21, F22                                                                                              | met for milestone 2's windows |
+| A2               | System colours, the owner's blue on buttons only, no blue outlines        | System material and text. Only Done is blue. The area outline is white, never blue                                             | F16–F19                                                                                                    | met                           |
+| A3               | Calm and minimal, yet clear                                               | Calm panels. But the scrolling control shows a stray recording clock, and the bar's hint row is gone                           | findings 2 and 3; `scrolling-control--*`                                                                   | partly met (findings 2, 3)    |
+| A5               | The approved direction and mock                                           | The bar with Record matches the mock. With Scrolling chosen, the session name is cut                                           | `capture-bar--mode-record--light--100`, `mock/bar-calm.png`; finding 4                                     | met                           |
+| A6               | Recording and auto-scroll in this change, in the calm style               | Record is the sixth mode. Both controls are calm, and picked-designs' facts pass                                               | F20, F21                                                                                                   | met                           |
+
+Verdicts at `c0575fe`: 13 met, 1 partly met, 1 not met (N1).
+
+The findings are in [findings.md](findings.md), milestone 2.
