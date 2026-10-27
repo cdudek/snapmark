@@ -1272,11 +1272,15 @@ app
     let doneColour = ''; // F120
     let scrollLook: Awaited<ReturnType<typeof calmLook>> | null = null; // @F16, @F17, @F19, once
     let cancelFace = ''; // @F17 Esc is a plain icon
+    // The scrolling control: scroll.html with its ring in the query; `#record` is the recording control
+    const isScrollCtl = (w: BrowserWindow) => /\/scroll\.html(\?[^#]*)?$/.test(w.webContents.getURL());
+    const scrollCtl = () => BrowserWindow.getAllWindows().find(isScrollCtl);
     const fakeGrab = (frames: number[], key: string) => {
       let [i, sent] = [0, false];
       return async () => {
+        if (i > frames.length + 400) throw new Error('the control never took the key'); // a failed check, not a hung smoke run
         await new Promise((r) => setTimeout(r, 20));
-        const ctl = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().endsWith('scroll.html'));
+        const ctl = scrollCtl();
         // From the last frame on, until the control has loaded: on a busy machine it may still be loading at that frame
         if (!sent && i >= frames.length - 1 && ctl && !ctl.webContents.isLoading()) {
           sent = true;
@@ -1295,7 +1299,6 @@ app
     // @F82–@F86, @F88 auto-scroll and its fallbacks, before any other scrolling capture: "needs Accessibility" is said
     // once per launch. A fake scroller moves the synthetic page as a browser would (a 2000-row page, 3 rows a point);
     // no scroll event is ever posted. `drive` grabs it and hands each new status line of the control to `then`.
-    const scrollCtl = () => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().endsWith('scroll.html'));
     const ctlLine = async () => {
       const ctl = scrollCtl();
       return ctl && !ctl.webContents.isLoading()
@@ -1442,7 +1445,7 @@ app
       !!b && (b.y >= scrollArea.y + scrollArea.height || b.y + b.height <= scrollArea.y);
     windows = BrowserWindow.getAllWindows();
     const cancelled2 = await scrollCapture(scrollArea, fakeGrab([0, 400], 'Escape'));
-    const extra = () => BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
+    const extra = () => BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || isScrollCtl(w));
     for (let t = 0; t < 30 && extra(); t++) await new Promise((r) => setTimeout(r, 100)); // the control closes a moment after
     viewer['Capture Scrolling: Esc cancels, no editor, control gone'] = cancelled2 === null && !extra();
     viewer['@F16 @2026-10-27-calm-style the area picker and the scrolling control take the system material and text, light and dark'] =
@@ -2811,7 +2814,9 @@ app
     desk.popup = (_w, items) => void (popped = items);
     const recArea = { x: display.x + 50, y: display.y + 60, width: 200, height: 150 };
     const panelUp = () =>
-      BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && /scroll\.html\?fps=\d+#record$/.test(w.webContents.getURL()));
+      BrowserWindow.getAllWindows().find(
+        (w) => !w.isDestroyed() && /scroll\.html\?fps=\d+&ring=[^#]*#record$/.test(w.webContents.getURL()),
+      );
     const recorderUp = () =>
       BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.webContents.getURL().includes('recorder.html'));
     const loadedPanel = async () => {
