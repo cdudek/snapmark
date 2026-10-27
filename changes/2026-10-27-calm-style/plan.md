@@ -167,3 +167,4 @@ The criteria as data are in [done.json](done.json).
 - Milestone 1 review: smoke @F12 and @F13 expect the face without its date, and "Start Scrolling" while Scrolling is chosen.
 - Milestone 1 review: `test/capture.test.ts` imports `namePart` from `sessions.ts` for the face's name.
 - After merge: the release runner's small screen made the bar narrow, so `@F5` read no names. It now lifts `narrow` while it measures.
+- After merge: smoke clicks Capture after its script answers, as on Linux the closing bar disposed the frame before the answer arrived.
