@@ -67,6 +67,29 @@ import { exportZip, sessionHtml } from '../src/exporter';
     .split('\n');
   for (const f of ['session.md', 'img/001.png', 'img/001/01.png', 'img/001/02.png', 'img/001/03.png'])
     assert.ok(tallZip.includes(f), `F23 ZIP parts: ${f}`);
+
+  // @F80 a recording: the PDF holds its filmstrip, entry line and notes, with no GIF link; the ZIP its GIF too, and
+  // never its raw frames
+  const rec = sessions.create(root, 'rec export');
+  const recDir = path.join(root, rec);
+  const items = [{ t: 'marker', note: 'Use a skeleton here', f: 4 }];
+  const recording = sessions.recordingText({ times: [0, 0.4, 0.8, 1.2, 1.6], end: 2, fps: 10, keys: [0, 2] }, items);
+  const n = sessions.addShot(root, rec, Buffer.from('filmstrip'), { notes: ['Use a skeleton here'], recording });
+  const files = sessions.recordingFiles(root, rec, n);
+  fs.writeFileSync(files.gif, 'GIF89a');
+  fs.mkdirSync(files.frames, { recursive: true });
+  fs.writeFileSync(path.join(files.frames, '0000.png'), 'frame');
+  sessions.saveEdit(root, rec, n, Buffer.from('first'), '{"items":[]}');
+  const recHtml = sessionHtml(recDir);
+  assert.match(recHtml, /<img src="img\/001\.png" alt="Recording 1">/, '@F80 PDF: the filmstrip');
+  assert.ok(recHtml.includes('Recording 2.0 s at 10 fps. Key frames: 0.0 s, 0.8 s, 1.6 s (3 of 5).'), '@F80 PDF: the entry line');
+  assert.ok(recHtml.includes('1 (1.6 s): Use a skeleton here'), '@F80 PDF: the notes, with their times');
+  assert.ok(!recHtml.includes('.gif') && !recHtml.includes('GIF:'), '@F80 PDF: no GIF link');
+  const recZip = execFileSync('unzip', ['-Z1', await exportZip(recDir)], { encoding: 'utf8' })
+    .trim()
+    .split('\n')
+    .sort();
+  assert.deepStrictEqual(recZip, ['img/', 'img/001.gif', 'img/001.png', 'session.md'], '@F80 ZIP: the GIF too, no raw frames');
   console.log('exporter: ok');
 })().catch((e) => {
   console.error(e);

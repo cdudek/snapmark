@@ -397,12 +397,58 @@
         padding: 16px;
         min-height: 0;
       }
-      #shot {
+      #shot,
+      #gif {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
         border-radius: 6px;
         box-shadow: 0 2px 12px rgb(0 0 0 / 0.3);
+      }
+      /* A recording: its badge and facts over its filmstrip and its GIF, side by side (screens.md, Session window) */
+      #shots .stage.rec {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 12px 24px;
+        place-items: stretch;
+      }
+      .stage:not(.rec) .rec-only {
+        display: none;
+      }
+      .stage:not(.rec) .pane:not(.rec-only) {
+        display: contents; /* a screenshot: its image sits in the stage as before */
+      }
+      .pane {
+        margin: 0;
+        min-height: 0;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        justify-items: center;
+        gap: 8px;
+      }
+      .pane figcaption,
+      .rec-head,
+      #gif-missing {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 0;
+      }
+      .rec-head {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .badge {
+        padding: 1px 7px;
+        border-radius: 4px;
+        background: var(--soft);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .thumb .badge {
+        justify-self: start;
       }
       #shots .bar {
         display: flex;
@@ -513,7 +559,21 @@
         <p class="empty" id="grid-empty">No screenshots yet. Capture one with ⌃⇧4.</p>
       </section>
       <section id="shots" hidden>
-        <div class="stage"><img id="shot" alt="" tabindex="-1" /></div>
+        <div class="stage" id="stage">
+          <p class="rec-head rec-only"><span class="badge">Recording</span><span id="rec-facts"></span></p>
+          <figure class="pane">
+            <figcaption class="rec-only">Filmstrip · for the AI</figcaption>
+            <img id="shot" alt="" tabindex="-1" />
+          </figure>
+          <figure class="pane rec-only">
+            <figcaption>GIF · for people</figcaption>
+            <img id="gif" alt="" />
+            <span>
+              <button id="play" title="Play the GIF (Space)">Play</button>
+              <span id="gif-missing" hidden>The GIF is missing. The filmstrip is still in the session.</span>
+            </span>
+          </figure>
+        </div>
         <div class="bar">
           <button id="back" title="All screenshots (Esc)">‹ All Screenshots</button>
           <button id="prev" title="Previous (←)">←</button>
@@ -544,7 +604,7 @@
         <button class="pic"><img alt="" loading="lazy" /></button>
         <button class="edit primary" title="Open it in the editor with its marks">Edit Again</button>
         <button class="more" title="More" aria-label="More" aria-haspopup="menu">…</button>
-        <div class="label"><span class="heading"></span><span class="notes"></span></div>
+        <div class="label"><span class="badge"></span><span class="heading"></span><span class="notes"></span></div>
       </div>
     </template>
     <template id="gone-t">

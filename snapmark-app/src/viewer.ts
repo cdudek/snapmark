@@ -6,6 +6,8 @@
   const docEl = $<HTMLDivElement>('doc');
   const shotsEl = $<HTMLElement>('shots');
   const img = $<HTMLImageElement>('shot');
+  const gif = $<HTMLImageElement>('gif');
+  const playBtn = $<HTMLButtonElement>('play');
   const nameEl = $('name');
   const input = $<HTMLInputElement>('rename');
   const hint = $('hint');
@@ -22,6 +24,8 @@
   let view: View = 'doc';
   let version = 0; // in image URLs, so a screenshot replaced by Edit Again is not shown from the cache
   let menuFor = 0; // the entry the "…" menu is open for
+  let playing = false; // the shown recording's GIF runs
+  let plays = 0; // in the GIF's URL, so each Play starts it from its first frame
 
   // The editor asks for the latest text before it appends a screenshot, so nothing typed here is lost.
   (window as unknown as { __flush: () => string | null }).__flush = () => (edited && field ? field.value() : null);
@@ -86,6 +90,7 @@
           e.stopPropagation();
           openMenu(e.currentTarget as HTMLElement, s.n);
         };
+        q('.badge').textContent = s.recording ? 'Recording' : 'Screenshot';
         q('.heading').textContent = s.heading;
         q('.notes').textContent = s.notes ? plural(s.notes, 'note') : 'No notes';
         return card;
@@ -106,10 +111,25 @@
     );
   }
 
+  // Paused, a recording shows its first frame (.edit/NNN.png, kept for Edit Again); playing, its GIF at the real timing,
+  // looping (F79). With its GIF gone, the first frame stays and says so.
+  function setPlaying(on: boolean) {
+    const s = data.shots[index];
+    playing = on && !!s?.recording?.gif;
+    if (!s?.recording) gif.removeAttribute('src');
+    else gif.src = playing ? `img/${pad(s.n)}.gif?v=${version}&p=${++plays}` : `.edit/${pad(s.n)}.png?v=${version}`;
+    playBtn.textContent = playing ? 'Pause' : 'Play';
+  }
+
   function renderShot() {
     const s = data.shots[index];
     img.hidden = !s;
     if (s) img.src = src(s.n);
+    $('stage').classList.toggle('rec', !!s?.recording);
+    $('rec-facts').textContent = s?.recording?.facts ?? '';
+    playBtn.hidden = !s?.recording?.gif;
+    $('gif-missing').hidden = !s?.recording || s.recording.gif;
+    setPlaying(false);
     $('count').textContent = s ? `${index + 1} of ${data.shots.length}` : 'No screenshots yet';
     $<HTMLButtonElement>('prev').disabled = index <= 0;
     $<HTMLButtonElement>('next').disabled = index >= data.shots.length - 1;
@@ -124,6 +144,7 @@
     $('tab-shots').setAttribute('aria-pressed', String(v === 'grid' || v === 'shot'));
     $('tab-discarded').setAttribute('aria-pressed', String(v === 'discarded'));
     if (v === 'shot') renderShot();
+    else if (playing) setPlaying(false);
     menu.hidden = true;
   }
 
@@ -234,6 +255,7 @@
   $('next').onclick = () => step(1);
   $('edit').onclick = () => window.snapmark.viewerEdit(data.shots[index].n);
   $('remove').onclick = () => remove(data.shots[index]?.n);
+  playBtn.onclick = () => setPlaying(!playing);
   $('menu-remove').onclick = () => remove(menuFor);
   document.addEventListener('click', (e) => {
     if (!menu.contains(e.target as Node)) menu.hidden = true;
@@ -259,6 +281,11 @@
     else if (e.key === 'Escape' && view === 'shot') show('grid');
     else if (view === 'shot' && e.key === 'ArrowLeft') step(-1);
     else if (view === 'shot' && e.key === 'ArrowRight') step(1);
+    // Space plays and pauses a recording's GIF; on a focused button Space is that button's own
+    else if (e.key === ' ' && shown?.recording?.gif && !(e.target instanceof HTMLButtonElement)) {
+      e.preventDefault();
+      setPlaying(!playing);
+    }
   });
 
   window.snapmark.onViewerReload((d) => void load(d));
