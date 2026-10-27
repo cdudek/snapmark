@@ -185,14 +185,14 @@ Feedback given on production v1.4 → fixed in PR #212 → accepted on its previ
 
 **One repo per app (owner, 2026-10-27; replaces the monorepo).** All repos live in the `pokbytes` GitHub organisation. Repo names follow the working name and change with the final product name.
 
-| Repo                  | Holds                                                                                                        |
-| --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `snapmark-context`    | Strategy, audiences, decisions, design-system pointers (exists)                                              |
-| `snapmark`            | The Mac app (today's repo, moved to `pokbytes`; the empty `snapmark-chrome/` and `snapmark-web/` folders go) |
-| `snapmark-web`        | Next.js: public, app and operator areas, REST API, MCP server                                                |
-| `snapmark-chrome`     | The Chrome extension (MV3)                                                                                   |
-| `snapmark-kit`        | Shared packages, published to GitHub Packages (private npm)                                                  |
-| `snapmark-dev-plugin` | The optional build plugin, published to public npm (later)                                                   |
+| Repo                  | Holds                                                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `snapmark-context`    | Strategy, audiences, decisions, design-system pointers (exists)                                                                        |
+| `snapmark-desktop`    | The Mac app (today's repo, moved to `pokbytes` and renamed on 2026-10-27; the empty `snapmark-chrome/` and `snapmark-web/` folders go) |
+| `snapmark-web`        | Next.js: public, app and operator areas, REST API, MCP server                                                                          |
+| `snapmark-chrome`     | The Chrome extension (MV3)                                                                                                             |
+| `snapmark-kit`        | Shared packages, published to GitHub Packages (private npm)                                                                            |
+| `snapmark-dev-plugin` | The optional build plugin, published to public npm (later)                                                                             |
 
 **`snapmark-kit` (Claude's call; the one place code shared across apps lives):**
 
