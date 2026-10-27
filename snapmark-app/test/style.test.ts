@@ -64,4 +64,11 @@ assert.strictEqual((barTs.match(/as CaptureMode, true\)/g) ?? []).length, 1, '@F
 // @A5 @2026-10-27-calm-style Options stays beside the destination; the spare room falls before Capture
 assert.ok(/#options \{\s+margin-right: auto;\s+\}/.test(bar) && !bar.includes('margin-left: auto'), '@A5 Capture alone at the right');
 
+// @F22 @2026-10-27-calm-style the panels' .html files have no colour literal either; their colours are --ds-* tokens
+for (const panel of ['countdown.html', 'area.html', 'scroll.html']) {
+  const html = read(`src/${panel}`);
+  assert.deepStrictEqual(colourLiterals(html), [], `@F22 ${panel} uses no colour literal`);
+  assert.ok(/var\(--ds-color-[a-z-]+\)/.test(html), `@F22 ${panel} takes its colours from the tokens`);
+}
+
 console.log('style: ok');

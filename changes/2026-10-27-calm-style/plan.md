@@ -35,7 +35,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 
 ### Milestone 2: pop-up panels, recording and auto-scroll
 
-- [ ] 2.1 Countdown, area picker and scrolling control in the calm style. F16–F19, F22.
+- [x] 2.1 Countdown, area picker and scrolling control in the calm style. F16–F19, F22.
 - [ ] 2.2 Rebase picked-designs milestones 3 and 4 onto this branch, and restyle the recorder and recording control. F20.
 - [ ] 2.3 Record joins the bar as its sixth mode. F21.
 

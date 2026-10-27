@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="tokens.css" />
     <script src="surface.js"></script>
     <style>
+      /* The calm area picker (spec screens.md, Panels): colours from tokens.css only (F22). */
       html,
       body {
         margin: 0;
@@ -14,31 +15,46 @@
         cursor: crosshair;
         user-select: none;
         font:
-          14px -apple-system,
+          var(--ds-type-control-weight) var(--ds-type-control-size) / var(--ds-type-control-line) -apple-system,
           system-ui,
           sans-serif;
       }
-      /* Dims the screen. While dragging the box's shadow dims instead, leaving the area clear. Never fully
-         transparent: macOS passes clicks on transparent pixels through to the window behind. */
-      body {
-        background: rgb(0 0 0 / 0.3);
+      /* Dims the screen by 30 %: the darkest grey at that opacity, as the tokens have no see-through colour. While
+         dragging the box's shadow dims instead, leaving the area clear. Never fully clear: macOS passes clicks on clear
+         pixels through to the window behind. */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: var(--ds-primitive-color-neutral-950);
+        opacity: 0.3;
       }
-      body.dragging {
-        background: rgb(0 0 0 / 0.01);
+      body.dragging::before {
+        opacity: 0.01;
       }
+      /* The area: the lightest line over a dark shadow, as macOS outlines an area, never the accent (F18) */
       #box {
         position: fixed;
-        outline: 1px solid #fff;
-        box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.3);
-        background: rgb(255 255 255 / 0.01);
+        outline: 1px solid var(--ds-primitive-color-neutral-0);
+        box-shadow: 0 0 3px 1px var(--ds-primitive-color-neutral-950);
       }
+      #box::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        box-shadow: 0 0 0 100vmax var(--ds-primitive-color-neutral-950);
+        opacity: 0.3;
+      }
+      /* The hint and the size on the system's popover colours (F16) */
       #hint,
       #size {
         position: fixed;
-        padding: 8px 14px;
-        border-radius: 8px;
-        background: rgb(0 0 0 / 0.75);
-        color: #fff;
+        padding: var(--ds-space-8) var(--ds-space-12);
+        border-radius: var(--ds-radius);
+        background: var(--ds-color-overlay);
+        box-shadow: var(--ds-e1);
+        color: var(--ds-color-ink);
         pointer-events: none;
       }
       #hint {
@@ -47,10 +63,8 @@
         transform: translate(-50%, -50%);
       }
       #size {
-        padding: 3px 8px;
-        font:
-          600 12px ui-monospace,
-          monospace;
+        padding: var(--ds-space-2) var(--ds-space-8);
+        font: var(--ds-font-weight-semibold) var(--ds-type-caption-size) var(--ds-font-mono);
       }
       #say {
         position: fixed;

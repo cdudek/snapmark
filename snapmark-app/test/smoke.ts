@@ -1116,6 +1116,46 @@ app
     viewer['Reopen brings it back with its marks'] = JSON.parse(await inWin(back, counts))[0] === 1 && !fs.existsSync(kept.dir);
     back.destroy();
 
+    // A token's colour as the page computes it, to compare with what a control has. Read as an outline colour: the
+    // system focus colour (-webkit-focus-ring-color) computes to the ring's colour there, but to another as `color`.
+    const tokenColour = `const token = (v) => { const i = document.createElement('i'); i.style.outline = '1px solid var(' + v + ')'; document.body.append(i);
+      const c = getComputedStyle(i).outlineColor; i.remove(); return c; };`;
+    // @F16–@F19 (calm style): a panel as it looks in light and in dark. `surface` is the element the panel is drawn on
+    // and `fill` the token it is filled with: the window's material or the system's colours on macOS, the tokens'
+    // greys elsewhere. The accent fills at most one control; no control has a border or outline at rest, nor a ring.
+    const panelJs = (surface: string, fill: string) => `${tokenColour} const cs = (e) => getComputedStyle(e);
+      const s = cs(document.querySelector('${surface}')); const accent = token('--ds-color-accent'); const all = [...document.querySelectorAll('body *')];
+      return JSON.stringify({ material: s.backgroundColor === token('${fill}') && s.color === token('--ds-color-ink'), ink: s.color,
+        filled: all.filter((e) => cs(e).backgroundColor === accent).map((e) => e.id),
+        inked: all.filter((e) => { const t = cs(e); return [t.color, t.stroke, t.fill, t.borderTopColor, t.outlineColor].includes(accent); }).map((e) => e.id || e.tagName),
+        rest: [...document.querySelectorAll('button')].every((b) => { const t = cs(b);
+          return ['Top', 'Right', 'Bottom', 'Left'].every((e) => t['border' + e + 'Style'] === 'none' || t['border' + e + 'Width'] === '0px') &&
+            (t.outlineStyle === 'none' || t.outlineWidth === '0px'); }),
+        ring: !!document.querySelector(':focus-visible') });`;
+    const panelLook = async (w: BrowserWindow, surface: string, fill: string) => {
+      const look: Record<string, { material: boolean; ink: string; filled: string[]; inked: string[]; rest: boolean; ring: boolean }> = {};
+      for (const theme of ['light', 'dark'] as const) {
+        nativeTheme.themeSource = theme;
+        await sleep(150);
+        look[theme] = JSON.parse(await inWin(w, panelJs(surface, fill)));
+      }
+      nativeTheme.themeSource = 'system';
+      return look;
+    };
+    // Material and text from the tokens in both themes, following the theme; `filled` the one accent control, if any
+    const calmPanel = (l: Awaited<ReturnType<typeof panelLook>> | null, filled: string[] = []) =>
+      !!l &&
+      l.light.ink !== l.dark.ink &&
+      [l.light, l.dark].every((t) => t.material && JSON.stringify(t.filled) === JSON.stringify(filled) && !t.inked.length);
+    const quietPanel = (l: Awaited<ReturnType<typeof panelLook>> | null) => !!l && [l.light, l.dark].every((t) => t.rest && !t.ring);
+    // @F18 the area's outline: the light line with a dark shadow under it, never the accent
+    const outlineOf = (w: BrowserWindow, id: string) =>
+      inWin(
+        w,
+        `const s = getComputedStyle(document.getElementById('${id}')); return JSON.stringify([s.outlineColor, s.outlineStyle, s.boxShadow]);`,
+      ).then((v: string) => JSON.parse(v) as string[]);
+    const whiteLine = (o?: string[]) =>
+      !!o && o[0] === 'rgb(255, 255, 255)' && o[1] !== 'none' && /^rgb\((\d|[1-5]\d), (\d|[1-5]\d), (\d|[1-5]\d)\)/.test(o[2]);
     // Capture Last Area's picker: a drag in its see-through window gives the area in screen points; Esc gives none
     const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).bounds;
     const pickWith = async (act: (w: BrowserWindow) => void) => {
@@ -1177,6 +1217,21 @@ app
         });
     });
     viewer['snap-bmr.14.3 F043: the area picker speaks the size while dragging'] = speaking === null && spoken === 'polite|1px|true|true';
+    // @F16, @F18, @F19 the area picker while dragging: its size label on the system's colours, the area's outline the
+    // light line with a dark shadow
+    let pickerLook: Awaited<ReturnType<typeof panelLook>> | null = null;
+    let pickerLine: string[] | undefined;
+    await pickWith((w) => {
+      w.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
+      void (async () => {
+        await sleep(100);
+        pickerLook = await panelLook(w, '#size', '--ds-color-overlay');
+        pickerLine = await outlineOf(w, 'box');
+        w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+      })();
+    });
+    why.calmPicker = { pickerLook, pickerLine };
     // The capture bar, loaded: its chosen mode is drawn
     const barReady = async (w: BrowserWindow) => {
       for (let i = 0; i < 50 && w.webContents.isLoading(); i++) await sleep(100);
@@ -1203,6 +1258,8 @@ app
     const scrollArea = { x: display.x + 100, y: display.y + 100, width: 300, height: 200 };
     let ctlBounds: Electron.Rectangle | null = null;
     let doneColour = ''; // F120
+    let scrollLook: Awaited<ReturnType<typeof panelLook>> | null = null; // @F16, @F17, @F19, once
+    let cancelFace = ''; // @F17 Esc is a plain icon
     const fakeGrab = (frames: number[], key: string) => {
       let [i, sent] = [0, false];
       return async () => {
@@ -1213,6 +1270,11 @@ app
           sent = true;
           ctlBounds = ctl.getBounds();
           doneColour = await ctl.webContents.executeJavaScript(`getComputedStyle(document.getElementById('done')).backgroundColor`);
+          scrollLook ??= await panelLook(ctl, 'body', '--ds-color-panel');
+          cancelFace ||= await inWin(
+            ctl,
+            `const c = document.getElementById('cancel'); return [c.title, c.textContent.trim(), !!c.querySelector('svg')].join('|');`,
+          );
           ctl.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
         }
         return frame(frames[Math.min(i++, frames.length - 1)]);
@@ -1266,6 +1328,14 @@ app
     const extra = () => BrowserWindow.getAllWindows().some((w) => !windows.includes(w) || w.webContents.getURL().endsWith('scroll.html'));
     for (let t = 0; t < 30 && extra(); t++) await new Promise((r) => setTimeout(r, 100)); // the control closes a moment after
     viewer['Capture Scrolling: Esc cancels, no editor, control gone'] = cancelled2 === null && !extra();
+    viewer['@F16 @2026-10-27-calm-style the area picker and the scrolling control take the system material and text, light and dark'] =
+      calmPanel(pickerLook) && calmPanel(scrollLook, ['done']);
+    viewer['@F17 @2026-10-27-calm-style the scrolling control fills only Done with the accent; Esc is a plain icon'] =
+      calmPanel(scrollLook, ['done']) && cancelFace === 'Cancel (Esc)||true';
+    viewer['@F18 @2026-10-27-calm-style the area picker outlines the area in the light line with a dark shadow'] = whiteLine(pickerLine);
+    viewer['@F19 @2026-10-27-calm-style at rest no control of the area picker or the scrolling control has a border, outline or ring'] =
+      quietPanel(pickerLook) && quietPanel(scrollLook);
+    why.calmScroll = { scrollLook, cancelFace };
 
     // The capture bar (@F11–@F27; F201, F204–F208, N201), with a swapped runner: screencapture never runs. Replaces
     // F202, F203, F9, F10 and the drawn label's F5–F8 (retired, Q3).
@@ -1311,10 +1381,6 @@ app
           });`,
         ),
       );
-    // A token's colour as the page computes it, to compare with what a control has. Read as an outline colour: the
-    // system focus colour (-webkit-focus-ring-color) computes to the ring's colour there, but to another as `color`.
-    const tokenColour = `const token = (v) => { const i = document.createElement('i'); i.style.outline = '1px solid var(' + v + ')'; document.body.append(i);
-      const c = getComputedStyle(i).outlineColor; i.remove(); return c; };`;
     const t0 = Date.now();
     const barWin = openCaptureBar(runner)!;
     const shownIn = await new Promise<number>((r) => barWin.once('ready-to-show', () => r(Date.now() - t0)));
@@ -2521,6 +2587,9 @@ app
     const cd = await timed();
     const first = await look(cd);
     const cdBounds = cd.getBounds();
+    // @F16, @F18, @F19 the countdown: its square on the system's colours, the area outlined in the light line
+    const cdLook = await panelLook(cd, '#square', '--ds-popover-fill');
+    const cdLine = await outlineOf(cd, 'outline');
     // read while it is up: the countdown is destroyed once the capture runs
     const cdKind = { focusable: cd.isFocusable(), isProtected: process.platform === 'linux' || cd.isContentProtected() }; // macOS and Windows only
     const notYet = shots.length === shotsBeforeTimed; // nothing captured while it counts
@@ -2557,6 +2626,10 @@ app
       // a runner that already reduces motion (GitHub's macOS image does) never shows the tick
       first.anim === (first.reduced ? 'none' : 'tick') && still?.digit === '2' && still?.anim === 'none';
     why.F28 = { first, still, cdBounds, display, shotAfterClose: shotAt - closedAt, overlayAtShot };
+    viewer['@F16 @2026-10-27-calm-style the countdown takes the system colours, light and dark'] = calmPanel(cdLook);
+    viewer['@F18 @2026-10-27-calm-style the countdown outlines the area in the light line with a dark shadow'] = whiteLine(cdLine);
+    viewer['@F19 @2026-10-27-calm-style the countdown shows no border, outline or ring on a control'] = quietPanel(cdLook);
+    why.calmCountdown = { cdLook, cdLine };
     timedEditor.destroy();
     // @F31: ⌃⇧5 or a click on the menu bar icon cancels: no capture, no bar, no message; Esc is capture.test.ts's
     const cancels: Record<string, boolean> = {};

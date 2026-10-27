@@ -7,62 +7,97 @@
     <link rel="stylesheet" href="tokens.css" />
     <script src="surface.js"></script>
     <style>
+      /* The calm scrolling control (spec screens.md, Panels): colours, sizes and shapes from tokens.css only (F22). The
+         window's material and system text on macOS, the tokens' greys elsewhere (F16). */
       html,
       body {
         margin: 0;
         height: 100%;
         user-select: none;
         font:
-          13px -apple-system,
+          var(--ds-type-control-weight) var(--ds-type-control-size) / var(--ds-type-control-line) -apple-system,
           system-ui,
           sans-serif;
       }
       body {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: var(--ds-space-8);
         box-sizing: border-box;
-        padding: 0 8px 0 14px;
-        border-radius: 10px;
-        background: rgb(0 0 0 / 0.8);
-        color: #fff;
+        padding: 0 var(--ds-space-8);
+        border-radius: var(--ds-radius-large);
+        overflow: hidden;
+        background: var(--ds-color-panel);
+        color: var(--ds-color-ink);
       }
       #what {
         flex: 1;
       }
       #count {
         display: block;
-        font:
-          11px ui-monospace,
-          monospace;
-        color: rgb(255 255 255 / 0.7);
+        font: var(--ds-type-caption-size) var(--ds-font-mono);
+        color: var(--ds-color-dim);
       }
       #count.warn {
-        color: #ffb224;
+        color: var(--ds-color-warn-text);
       }
+      /* No border or outline at rest; hover is a faint soft fill (F19). */
       button {
         font: inherit;
-        padding: 5px 12px;
+        color: inherit;
+        height: var(--ds-control-md);
+        padding: 0 var(--ds-button-padding-x);
         border: 0;
-        border-radius: 6px;
-        cursor: pointer;
-        color: #fff;
-        background: rgb(255 255 255 / 0.15);
+        outline: 0;
+        border-radius: var(--ds-radius);
+        background: none;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--ds-space-6);
+        flex: none;
+        white-space: nowrap;
+      }
+      button:hover {
+        background: var(--ds-color-soft-hover);
+      }
+      /* The focus ring after Tab only, in the system's focus colour. */
+      button:focus-visible {
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
+        outline-offset: var(--ds-ring-offset);
+      }
+      /* Esc is a plain icon (spec screens.md); Done is the one control filled with the accent (F17). */
+      #cancel {
+        width: var(--ds-control-md);
+        padding: 0;
+        justify-content: center;
+        color: var(--ds-color-dim);
+      }
+      #cancel svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
       }
       #done {
-        background: #0f72db; /* white text at 4.7:1, where #2492ff is 3.2:1 */
-        font-weight: 600;
+        background: var(--ds-button-fill-primary);
+        color: var(--ds-button-text-primary);
+        font-weight: var(--ds-button-weight-primary);
       }
-      button:focus-visible {
-        outline: 2px solid #fff;
-        outline-offset: 1px;
+      #done kbd {
+        font: inherit;
+        font-weight: var(--ds-font-weight-regular);
+        opacity: 0.75;
       }
     </style>
   </head>
   <body>
+    <button id="cancel" aria-label="Cancel" aria-keyshortcuts="Escape" title="Cancel (Esc)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg>
+    </button>
     <div id="what">Scroll down, then Done<span id="count">Starting…</span></div>
-    <button id="cancel" title="Esc">Cancel</button>
-    <button id="done" title="↩">Done ↩</button>
+    <button id="done" aria-keyshortcuts="Enter" title="Done (↩)">Done<kbd aria-hidden="true">↩</kbd></button>
     <script src="scroll.js"></script>
   </body>
 </html>

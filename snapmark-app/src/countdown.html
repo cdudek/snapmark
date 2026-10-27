@@ -7,9 +7,8 @@
     <link rel="stylesheet" href="tokens.css" />
     <script src="surface.js"></script>
     <style>
+      /* The calm countdown (spec screens.md, Panels): colours from tokens.css only (F22). */
       :root {
-        color-scheme: light dark;
-        --accent: #2492ff; /* the area outline, as the bar's chosen mode */
         --countdown-square: 240px;
         --countdown-digit: 160px;
       }
@@ -27,20 +26,30 @@
         user-select: none;
         pointer-events: none; /* the window ignores the mouse as well; clicks reach the app under it (F29) */
         font:
-          15px -apple-system,
+          var(--ds-type-control-weight) var(--ds-type-control-size) / var(--ds-type-control-line) -apple-system,
           system-ui,
           sans-serif;
       }
-      /* The area, dashed, no handles; its shadow dims the rest of the display by 20 %. */
+      /* The area, dashed, no handles: the lightest line over a dark shadow, as macOS outlines an area, never the accent
+         (F18). Its ::before dims the rest of the display by 20 %: the darkest grey at that opacity, as the tokens have no
+         see-through colour; under the line, over the shadow. */
       #outline {
         position: fixed;
-        outline: 2px dashed var(--accent);
-        box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.2);
+        outline: 2px dashed var(--ds-primitive-color-neutral-0);
+        box-shadow: 0 0 3px 1px var(--ds-primitive-color-neutral-950);
+      }
+      #outline::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        box-shadow: 0 0 0 100vmax var(--ds-primitive-color-neutral-950);
+        opacity: 0.2;
       }
       #outline[hidden] {
         display: none;
       }
-      /* Frosted popover material: the page cannot blur the desktop behind a transparent window, so a near-opaque fill. */
+      /* The system's popover colours: the page cannot blur the desktop behind a see-through window (F16). */
       #square {
         position: fixed;
         box-sizing: border-box;
@@ -52,10 +61,10 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border-radius: 24px;
-        background: light-dark(rgb(246 246 246 / 0.9), rgb(40 40 40 / 0.9));
-        box-shadow: 0 8px 32px rgb(0 0 0 / 0.3);
-        color: CanvasText;
+        border-radius: var(--ds-radius-large);
+        background: var(--ds-popover-fill);
+        box-shadow: var(--ds-popover-shadow);
+        color: var(--ds-color-ink);
       }
       #digit {
         font:
@@ -80,7 +89,7 @@
         }
       }
       #line {
-        color: light-dark(rgb(0 0 0 / 0.6), rgb(255 255 255 / 0.6));
+        color: var(--ds-color-dim);
       }
       #say {
         position: fixed;

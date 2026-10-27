@@ -563,8 +563,11 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
     height: H,
     frame: false,
     transparent: true,
+    roundedCorners: true,
     resizable: false,
     fullscreenable: false,
+    vibrancy: 'popover', // the system material, as the capture bar's (F16)
+    visualEffectState: 'active',
     show: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });

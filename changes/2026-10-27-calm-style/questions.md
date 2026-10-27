@@ -50,3 +50,10 @@ Open questions met while building. Each has the default taken; the owner answers
 - **Default taken:** "Capture One-Shot", so a One-Shot left on is never hidden (CAP-5), as the owner asked to keep it.
 - **Milestone:** 1
 - **Answer:**
+
+## Q8 The panels' dimming and their white line
+
+- **Question:** the countdown and the area picker dim the display (20 % and 30 % black) and outline the area in white with a dark shadow (F18). The tokens have no see-through colour, and no role for white or black. Which tokens do they use?
+- **Default taken:** the primitives `--ds-primitive-color-neutral-0` (the line) and `--ds-primitive-color-neutral-950` (its shadow, and the dimming as a layer at 20 % or 30 % opacity). No colour literal, and the look is as before. A `scrim` role in the system would replace them.
+- **Milestone:** 2
+- **Answer:**
