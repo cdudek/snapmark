@@ -526,6 +526,16 @@ describe('verify-on-stop', () => {
     writeFileSync(join(dir, 'x.ts'), 'export const x = 1;\n');
     expect(runHook('verify-on-stop.sh', { stop_hook_active: false }, { CLAUDE_PROJECT_DIR: dir }).status).toBe(0);
   });
+  it('skips when the dirty diff is unchanged since the last pass', () => {
+    const dir = repo(0);
+    const count = join(dir, '.git', 'count');
+    writeFileSync(join(dir, 'sdlc.json'), JSON.stringify({ verify: `sh -c 'echo ran >> ${count}'`, verifyDirty: ['*.ts'] }));
+    writeFileSync(join(dir, 'x.ts'), 'export const x = 1;\n');
+    const env = { CLAUDE_PROJECT_DIR: dir };
+    runHook('verify-on-stop.sh', { stop_hook_active: false }, env);
+    runHook('verify-on-stop.sh', { stop_hook_active: false }, env);
+    expect(readFileSync(count, 'utf8').split('ran').length - 1).toBe(1);
+  });
   it('never loops', () => {
     const dir = repo(1);
     writeFileSync(join(dir, 'x.ts'), 'export const x = 1;\n');
