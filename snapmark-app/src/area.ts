@@ -1,5 +1,5 @@
 // Renderer script for area.html (classic script, like editor.ts): drag out the area Capture Last Area keeps capturing,
-// or the one Capture Scrolling grabs while the owner scrolls (area.html#scroll).
+// the one Capture Scrolling grabs while the owner scrolls (area.html#scroll), or the one Record records (#record).
 // Wrapped in a function so its names stay out of editor.ts's scope.
 (() => {
   const el = (id: string) => document.getElementById(id)!;
@@ -9,9 +9,21 @@
   if (location.hash === '#gone') hint.textContent = 'The last area was on a display that is not connected. Drag a new area. Esc cancels.';
   let start: { x: number; y: number } | null = null;
   let area: Area | null = null;
+  // Record shows the last area, given in the query in window points, with handles: ↩ keeps it, a drag replaces it (F61).
+  const q = new URLSearchParams(location.search);
+  const kept: Area | null = q.has('w') ? { x: +q.get('x')!, y: +q.get('y')!, width: +q.get('w')!, height: +q.get('h')! } : null;
+  if (location.hash === '#record') {
+    hint.textContent = kept ? '↩ records this area. Drag to choose another. Esc cancels.' : 'Drag over the area to record. Esc cancels.';
+    if (kept) {
+      Object.assign(box.style, { left: `${kept.x}px`, top: `${kept.y}px`, width: `${kept.width}px`, height: `${kept.height}px` });
+      box.classList.add('kept');
+      box.hidden = false;
+    }
+  }
 
   document.addEventListener('mousedown', (e) => {
     start = { x: e.clientX, y: e.clientY };
+    box.classList.remove('kept');
     hint.hidden = true;
     document.body.classList.add('dragging');
   });
@@ -38,5 +50,6 @@
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') window.snapmark.areaDone(null);
+    if (e.key === 'Enter' && kept && box.classList.contains('kept')) window.snapmark.areaDone(kept);
   });
 })();

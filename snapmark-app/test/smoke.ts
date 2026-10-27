@@ -49,6 +49,8 @@ const {
   showShortcuts,
   keyHandlers,
   iconClick,
+  recordArea,
+  recordings,
 } = require('../src/main') as typeof import('../src/main');
 // Never the owner's clipboard, never a dialog that waits for a click: Copy Image and Save As… land here.
 let copied: Buffer | null = null;
@@ -1132,7 +1134,7 @@ app
           return ['Top', 'Right', 'Bottom', 'Left'].every((e) => t['border' + e + 'Style'] === 'none' || t['border' + e + 'Width'] === '0px') &&
             (t.outlineStyle === 'none' || t.outlineWidth === '0px'); }),
         ring: !!document.querySelector(':focus-visible') });`;
-    const panelLook = async (w: BrowserWindow, surface: string, fill: string) => {
+    const calmLook = async (w: BrowserWindow, surface: string, fill: string) => {
       const look: Record<string, { material: boolean; ink: string; filled: string[]; inked: string[]; rest: boolean; ring: boolean }> = {};
       for (const theme of ['light', 'dark'] as const) {
         nativeTheme.themeSource = theme;
@@ -1143,11 +1145,11 @@ app
       return look;
     };
     // Material and text from the tokens in both themes, following the theme; `filled` the one accent control, if any
-    const calmPanel = (l: Awaited<ReturnType<typeof panelLook>> | null, filled: string[] = []) =>
+    const calmPanel = (l: Awaited<ReturnType<typeof calmLook>> | null, filled: string[] = []) =>
       !!l &&
       l.light.ink !== l.dark.ink &&
       [l.light, l.dark].every((t) => t.material && JSON.stringify(t.filled) === JSON.stringify(filled) && !t.inked.length);
-    const quietPanel = (l: Awaited<ReturnType<typeof panelLook>> | null) => !!l && [l.light, l.dark].every((t) => t.rest && !t.ring);
+    const quietPanel = (l: Awaited<ReturnType<typeof calmLook>> | null) => !!l && [l.light, l.dark].every((t) => t.rest && !t.ring);
     // @F18 the area's outline: the light line with a dark shadow under it, never the accent
     const outlineOf = (w: BrowserWindow, id: string) =>
       inWin(
@@ -1219,14 +1221,14 @@ app
     viewer['snap-bmr.14.3 F043: the area picker speaks the size while dragging'] = speaking === null && spoken === 'polite|1px|true|true';
     // @F16, @F18, @F19 the area picker while dragging: its size label on the system's colours, the area's outline the
     // light line with a dark shadow
-    let pickerLook: Awaited<ReturnType<typeof panelLook>> | null = null;
+    let pickerLook: Awaited<ReturnType<typeof calmLook>> | null = null;
     let pickerLine: string[] | undefined;
     await pickWith((w) => {
       w.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
       w.webContents.sendInputEvent({ type: 'mouseMove', x: 400, y: 320, button: 'left', modifiers: ['leftbuttondown'] });
       void (async () => {
         await sleep(100);
-        pickerLook = await panelLook(w, '#size', '--ds-color-overlay');
+        pickerLook = await calmLook(w, '#size', '--ds-color-overlay');
         pickerLine = await outlineOf(w, 'box');
         w.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
       })();
@@ -1258,7 +1260,7 @@ app
     const scrollArea = { x: display.x + 100, y: display.y + 100, width: 300, height: 200 };
     let ctlBounds: Electron.Rectangle | null = null;
     let doneColour = ''; // F120
-    let scrollLook: Awaited<ReturnType<typeof panelLook>> | null = null; // @F16, @F17, @F19, once
+    let scrollLook: Awaited<ReturnType<typeof calmLook>> | null = null; // @F16, @F17, @F19, once
     let cancelFace = ''; // @F17 Esc is a plain icon
     const fakeGrab = (frames: number[], key: string) => {
       let [i, sent] = [0, false];
@@ -1270,7 +1272,7 @@ app
           sent = true;
           ctlBounds = ctl.getBounds();
           doneColour = await ctl.webContents.executeJavaScript(`getComputedStyle(document.getElementById('done')).backgroundColor`);
-          scrollLook ??= await panelLook(ctl, 'body', '--ds-color-panel');
+          scrollLook ??= await calmLook(ctl, 'body', '--ds-color-panel');
           cancelFace ||= await inWin(
             ctl,
             `const c = document.getElementById('cancel'); return [c.title, c.textContent.trim(), !!c.querySelector('svg')].join('|');`,
@@ -1583,7 +1585,7 @@ app
     let modesLook = true;
     const digitRings: string[] = [];
     const labels: string[] = [];
-    for (const k of ['1', '2', '3', '4', '5']) {
+    for (const k of ['1', '2', '3', '4', '5', '6']) {
       keyTo(barWin, k);
       await sleep(80);
       const l = await barLook(barWin);
@@ -1677,8 +1679,8 @@ app
     const viaKey = await popWith(() => keyTo(barWin, 'O', ['alt']));
     const greyedNow = viaKey.filter((i) => i.enabled === false).map((i) => i.label);
     viewer['@F26 Options holds Timer and Show Mouse Pointer, without Save to'] =
-      menuShape(viaKey) === 'Timer|None|3 Seconds|5 Seconds|10 Seconds|—|Show Mouse Pointer' &&
-      greyedNow.join() === 'None,3 Seconds,5 Seconds,10 Seconds,Show Mouse Pointer';
+      menuShape(viaKey) === 'Frame Rate|15 fps|10 fps|5 fps|4 fps|2 fps|—|Timer|None|3 Seconds|5 Seconds|10 Seconds|—|Show Mouse Pointer' &&
+      greyedNow.join() === '15 fps,10 fps,5 fps,4 fps,2 fps,None,3 Seconds,5 Seconds,10 Seconds,Show Mouse Pointer';
     // @F10 a click chooses a mode without the ring
     const areaAt = JSON.parse(
       await inWin(
@@ -1737,13 +1739,13 @@ app
     const barAfter = await barLook(barReopened);
     const reOptions = ticked(await optionsOf(barReopened));
     const saved = JSON.stringify(JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).capture);
-    const lastOpts = JSON.stringify({ mode: 'last', oneShot: true, timer: 5, pointer: true });
+    const lastOpts = JSON.stringify({ mode: 'last', oneShot: true, timer: 5, pointer: true, fps: 10 });
     viewer['F207 the bar remembers the last mode'] =
-      firstOptions === 'None' &&
+      firstOptions === '10 fps,None' &&
       JSON.stringify(runs[0]?.o) === lastOpts &&
       barAfter.mode === 'last' &&
       barAfter.label === 'Capture One-Shot' &&
-      reOptions === '5 Seconds,Show Mouse Pointer' &&
+      reOptions === '10 fps,5 Seconds,Show Mouse Pointer' &&
       saved === lastOpts;
     // @F14 on a 900 pt work area at 130 %: the bar is as wide as fits, the modes show their icons only, and every
     // control sits inside the window, One-Shot's longer Capture included
@@ -1933,7 +1935,7 @@ app
     );
     viewer['F223 Capture tab and bar share their options'] =
       oneShotLabel === 'Capture One-Shot' &&
-      ticked(fromSettings) === '10 Seconds,Show Mouse Pointer' &&
+      ticked(fromSettings) === '10 fps,10 Seconds,Show Mouse Pointer' &&
       backLabel === 'Capture' &&
       settingsShows === 'true,0,false';
     // Shortcuts: the six global keys, each taken here (quiet mode registers none); Show All Shortcuts opens the list
@@ -2588,7 +2590,7 @@ app
     const first = await look(cd);
     const cdBounds = cd.getBounds();
     // @F16, @F18, @F19 the countdown: its square on the system's colours, the area outlined in the light line
-    const cdLook = await panelLook(cd, '#square', '--ds-popover-fill');
+    const cdLook = await calmLook(cd, '#square', '--ds-popover-fill');
     const cdLine = await outlineOf(cd, 'outline');
     // read while it is up: the countdown is destroyed once the capture runs
     const cdKind = { focusable: cd.isFocusable(), isProtected: process.platform === 'linux' || cd.isContentProtected() }; // macOS and Windows only
@@ -2647,7 +2649,196 @@ app
     why.F31 = cancels;
     desk.screencapture = realShot;
     BrowserWindow.prototype.setIgnoreMouseEvents = realIgnore;
-    setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false });
+    // @F59–@F68, @F81: Record on the area set above (⌃⇧1), with the screen source stubbed as screencapture is: recorder.html
+    // records a test pattern (desk.screenSource 'test'), never the owner's screen. This is also the 3.1 spike's other
+    // half: the recorder page grabs and writes frames at 15 fps.
+    const realSource = desk.screenSource;
+    desk.screenSource = async () => 'test';
+    const handed: { r: Recording; oneShot: boolean }[] = [];
+    const realOpen = recordings.open;
+    recordings.open = (r, oneShot) => void handed.push({ r, oneShot });
+    desk.popup = (_w, items) => void (popped = items);
+    const recArea = { x: display.x + 50, y: display.y + 60, width: 200, height: 150 };
+    const panelUp = () =>
+      BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.webContents.getURL().endsWith('scroll.html#record'));
+    const recorderUp = () =>
+      BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.webContents.getURL().includes('recorder.html'));
+    const loadedPanel = async () => {
+      for (let i = 0; i < 80 && !panelUp(); i++) await sleep(100);
+      const p = panelUp()!;
+      for (let i = 0; i < 40 && p.webContents.isLoading(); i++) await sleep(50);
+      return p;
+    };
+    const rates = (items: Item[]) => items.filter((i) => / fps$/.test(i.label ?? ''));
+    // @F59, @F60: 6 chooses Record; Options ▸ Frame Rate is greyed until then, 10 fps ticked; 15 fps is chosen here
+    const recBar = openCaptureBar()!;
+    await barReady(recBar);
+    const greyRates = rates(await optionsOf(recBar));
+    keyTo(recBar, '6');
+    await sleep(150);
+    const recLook = await barLook(recBar);
+    const recRates = rates(await optionsOf(recBar));
+    pick(recRates, '15 fps');
+    await sleep(200);
+    const at15 = await barLook(recBar);
+    viewer['@F59 6 chooses Record, with its headline and hint'] =
+      recLook.mode === 'record' && recLook.headline === 'Record' && recLook.hint === '200 × 150 · up to 30 seconds · 10 fps';
+    viewer['@F60 Frame Rate: 15, 10, 5, 4 and 2 fps, 10 by default, greyed unless Record'] =
+      greyRates.map((i) => i.label).join() === '15 fps,10 fps,5 fps,4 fps,2 fps' &&
+      greyRates.every((i) => i.enabled === false) &&
+      recRates.every((i) => i.enabled !== false) &&
+      ticked(recRates) === '10 fps' &&
+      at15.hint === '200 × 150 · up to 30 seconds · 15 fps';
+    why.F59 = { recLook, at15: at15.hint, ticked: ticked(recRates) };
+    // @F61: Capture opens the picker on the last area, with handles; ↩ keeps it
+    let beforeRec = BrowserWindow.getAllWindows();
+    keyTo(recBar, 'Return');
+    const recPicker = await loadedWindow(beforeRec);
+    const pickLook = JSON.parse(
+      await inWin(
+        recPicker,
+        `const b = document.getElementById('box'); const r = b.getBoundingClientRect();
+        return JSON.stringify({ hint: document.getElementById('hint').textContent, kept: b.classList.contains('kept') && !b.hidden,
+          box: [r.x, r.y, r.width, r.height].map(Math.round).join(), handles: [...b.querySelectorAll('.h')].filter((h) => getComputedStyle(h).display === 'block').length });`,
+      ),
+    );
+    recPicker.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
+    // @F62: the countdown counts 3, as Record's, and nothing records until it ends
+    for (let i = 0; i < 40 && !countdownUp(); i++) await sleep(50);
+    const recCd = countdownUp();
+    for (let i = 0; i < 40 && recCd?.webContents.isLoading(); i++) await sleep(50);
+    const cdSays = recCd && (await look(recCd));
+    const quietDuringCountdown = !panelUp() && !recorderUp();
+    // @F63, @F65, @F68: the recording control, two seconds in
+    const recPanel = await loadedPanel();
+    await sleep(2000);
+    const panelLook = JSON.parse(
+      await inWin(
+        recPanel,
+        `const t = (id) => document.getElementById(id); const vis = (e) => getComputedStyle(e).display !== 'none';
+        return JSON.stringify({ cancel: t('rec-cancel').getAttribute('aria-label'), done: t('rec-done').textContent.trim(), clock: t('clock').textContent,
+          dot: getComputedStyle(t('dot')).backgroundColor, hint: t('rec-hint').textContent,
+          shown: [...document.querySelectorAll('.rec')].every(vis) && ![...document.querySelectorAll('.scroll')].some(vis) });`,
+      ),
+    );
+    const pb = recPanel.getBounds();
+    const outlineWin = countdownUp(); // while recording, the countdown page is the area's outline alone
+    const recWin = recorderUp();
+    const recKinds = {
+      focusable: recPanel.isFocusable(),
+      focused: recPanel.isFocused(),
+      // content protection is macOS's and Windows' only
+      isProtected: process.platform === 'linux' || (recPanel.isContentProtected() && !!outlineWin?.isContentProtected()),
+      recorderHidden: !!recWin && !recWin.isVisible(),
+      keysFree: !globalShortcut.isRegistered('Escape') && !globalShortcut.isRegistered('Return'),
+    };
+    // @F66: Done keeps it, and hands the frames over
+    await inWin(recPanel, `document.getElementById('rec-done').click();`);
+    for (let i = 0; i < 40 && !handed.length; i++) await sleep(50);
+    const viaBar = handed[0]?.r;
+    const rate = viaBar && (viaBar.frames.length - 1) / viaBar.times.at(-1)!;
+    const frameSize = viaBar && nativeImage.createFromPath(viaBar.frames[0]).getSize();
+    const differ = !!viaBar && viaBar.frames.length > 1 && !fs.readFileSync(viaBar.frames[0]).equals(fs.readFileSync(viaBar.frames[1]));
+    console.log(`3.1 spike: ${viaBar?.frames.length} frames in ${viaBar?.end} s, ${rate?.toFixed(1)} fps`);
+    viewer['@F61 Record opens the picker on the last area, with handles; ↩ keeps it'] =
+      pickLook.hint === '↩ records this area. Drag to choose another. Esc cancels.' &&
+      pickLook.kept &&
+      pickLook.box === '50,60,200,150' &&
+      pickLook.handles === 4;
+    viewer['@F62 the countdown counts 3 for Record, then it records at the chosen frame rate'] =
+      !!cdSays &&
+      cdSays.digit === '3' &&
+      cdSays.said === 'Recording starts in 3 seconds. Esc cancels.' &&
+      quietDuringCountdown &&
+      !!rate &&
+      rate >= 12.75 &&
+      rate <= 15.5;
+    viewer['@F63 the recording control: ⓧ, the clock with the frame rate, Done, outside the area'] =
+      panelLook.cancel === 'Cancel recording' &&
+      panelLook.done === 'Done' &&
+      /^0:0[1-3] of 0:30 · 15 fps$/.test(panelLook.clock) &&
+      ['rgb(255, 59, 48)', 'rgb(255, 69, 58)'].includes(panelLook.dot) &&
+      panelLook.hint === '⌃⇧5 stops' &&
+      panelLook.shown &&
+      pb.y >= recArea.y + recArea.height &&
+      pb.width === 600;
+    viewer['@F65 while recording no key is taken and the control never has the focus'] =
+      recKinds.keysFree && !recKinds.focusable && !recKinds.focused;
+    viewer['@F68 the control and the outline are kept out of frames; the recorder never shows'] =
+      recKinds.isProtected && recKinds.recorderHidden;
+    viewer['3.1 spike: frames at 15 fps, 2x, each a new picture'] =
+      !!frameSize && frameSize.width === 400 && frameSize.height === 300 && differ && !!rate && rate >= 12.75;
+    why.F62 = { cdSays, pickLook, panelLook, pb, recKinds, frames: viaBar?.frames.length, end: viaBar?.end, rate, frameSize };
+    // @F61: a drag replaces the area and becomes the last one; ⌃⇧5 cancels the countdown, nothing records
+    const dragBar = openCaptureBar()!;
+    await barReady(dragBar);
+    beforeRec = BrowserWindow.getAllWindows();
+    keyTo(dragBar, 'Return');
+    const dragPicker = await loadedWindow(beforeRec);
+    dragPicker.webContents.sendInputEvent({ type: 'mouseDown', x: 60, y: 70, button: 'left', clickCount: 1 });
+    dragPicker.webContents.sendInputEvent({ type: 'mouseMove', x: 280, y: 230, button: 'left', modifiers: ['leftbuttondown'] });
+    dragPicker.webContents.sendInputEvent({ type: 'mouseUp', x: 280, y: 230, button: 'left', clickCount: 1 });
+    for (let i = 0; i < 40 && !countdownUp(); i++) await sleep(50);
+    const dragCountdown = !!countdownUp();
+    keyHandlers.options();
+    await sleep(400);
+    viewer['@F61 a drag replaces the last area'] =
+      dragCountdown && item('Capture Last Area').sublabel === '220 × 160' && !countdownUp() && !panelUp() && handed.length === 1;
+    // @F64: at the cap it stops as Done does (a 1.2 s cap here; capture.test.ts checks the 30 s)
+    const atCap = await recordArea(recArea, { fps: 10 }, 1200);
+    viewer['@F64 at the cap the recording stops as Done does'] =
+      !!atCap && Math.abs(atCap.end - 1.2) < 0.05 && atCap.frames.length >= 9 && atCap.frames.length <= 13 && !panelUp() && !recorderUp();
+    why.F64 = { frames: atCap?.frames.length, end: atCap?.end };
+    // @F66: ⌃⇧5 and the menu bar icon stop and keep it too, and open no bar or menu
+    const stops: Record<string, boolean> = {};
+    for (const [how, stop] of [
+      ['⌃⇧5', () => keyHandlers.options()],
+      ['icon', () => iconClick()],
+    ] as const) {
+      const going = recordArea(recArea, { fps: 5 });
+      await loadedPanel();
+      await sleep(800);
+      stop();
+      const r = await going;
+      stops[how] = !!r && r.frames.length >= 1 && !barUp().length && !panelUp() && !recorderUp();
+    }
+    viewer['@F66 Done, ⌃⇧5 and the menu bar icon stop and keep the recording'] = !!viaBar && stops['⌃⇧5'] && stops.icon;
+    why.F66 = stops;
+    // @F67: ⓧ puts it in Discarded, with no message
+    const discardsBefore = sessions.discarded(root).length;
+    const notesBefore = notes.length;
+    const cancelling = recordArea(recArea, { fps: 10 });
+    const cancelPanel = await loadedPanel();
+    await sleep(800);
+    await inWin(cancelPanel, `document.getElementById('rec-cancel').click();`);
+    const cancelledRec = await cancelling;
+    const [binned] = sessions.discarded(root);
+    viewer['@F67 ⓧ puts the recording in Discarded, with no message'] =
+      cancelledRec === null &&
+      sessions.discarded(root).length === discardsBefore + 1 &&
+      !!binned?.recording &&
+      fs.readdirSync(path.join(binned.dir, 'frames')).length >= 1 &&
+      notes.length === notesBefore &&
+      !panelUp();
+    if (binned?.recording) fs.rmSync(binned.dir, { recursive: true, force: true }); // the checks below count Discarded
+    // @F81: when the screen cannot be grabbed it stops, keeps nothing and says so
+    desk.screenSource = async () => {
+      throw new Error('macOS gave no picture of that display');
+    };
+    const failing = await recordArea(recArea, { fps: 10 });
+    const failNote = notes.at(-1);
+    viewer['@F81 a failed grab stops and says so; nothing is added'] =
+      failing === null &&
+      failNote?.body === 'Recording failed: macOS gave no picture of that display. Nothing was added. Click to try again.' &&
+      !!failNote.onClick &&
+      sessions.discarded(root).length === discardsBefore &&
+      !panelUp() &&
+      !countdownUp();
+    why.F81 = failNote?.body;
+    desk.screenSource = realSource;
+    recordings.open = realOpen;
+    desk.popup = realPopup;
+    setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false, fps: 10 });
     // @F10: while the picker is open, ⌃⇧1, ⌃⇧2, ⌃⇧3, ⌃⇧4 and ⌃⇧N do nothing
     const busyPicker = await keyWin('newArea');
     const busyWas = { shots: shots.length, windows: BrowserWindow.getAllWindows().length, session: menuItems()[1].label };

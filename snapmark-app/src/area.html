@@ -46,6 +46,23 @@
         box-shadow: 0 0 0 100vmax var(--ds-primitive-color-neutral-950);
         opacity: 0.3;
       }
+      /* Record's last area, kept until a drag replaces it: a thicker line with handles, the rest dimmed as while dragging */
+      #box.kept {
+        outline-width: 2px;
+      }
+      #box .h {
+        display: none;
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        margin: -5px;
+        border-radius: 50%;
+        background: var(--ds-primitive-color-neutral-0);
+        box-shadow: 0 0 3px 1px var(--ds-primitive-color-neutral-950);
+      }
+      #box.kept .h {
+        display: block;
+      }
       /* The hint and the size on the system's popover colours (F16) */
       #hint,
       #size {
@@ -80,7 +97,10 @@
   </head>
   <body>
     <div id="hint">Drag over the area to capture. ⌃⇧4 captures it again. Esc cancels.</div>
-    <div id="box" hidden></div>
+    <div id="box" hidden>
+      <i class="h" style="left: 0; top: 0"></i><i class="h" style="right: 0; top: 0"></i><i class="h" style="left: 0; bottom: 0"></i
+      ><i class="h" style="right: 0; bottom: 0"></i>
+    </div>
     <div id="size" hidden></div>
     <div id="say" aria-live="polite"></div>
     <script src="area.js"></script>

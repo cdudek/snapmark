@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  desktopCapturer,
   nativeTheme,
   systemPreferences,
   Tray,
@@ -26,7 +27,23 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, appMenu, loginState, editorSessionMenu, copyMenu, quitMessage, MenuActions, MenuState, SessionInfo } from './menu';
 import { SHORTCUTS, KEY_GROUPS } from './keys';
-import { FIRST, MODES, barLabel, barOptions, barRing, barSize, captureArgs, checkedCapture, destMenu, rect, shotFiles } from './capture';
+import {
+  FIRST,
+  MODES,
+  REC_CAP_MS,
+  barLabel,
+  barOptions,
+  barRing,
+  barSize,
+  captureArgs,
+  checkedCapture,
+  clock,
+  destMenu,
+  panelAt,
+  recordStatus,
+  rect,
+  shotFiles,
+} from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
@@ -214,21 +231,22 @@ let scrolling = false; // Capture Scrolling is grabbing what scrolls under its a
 let shooting = false; // screencapture runs: its crosshair is up, or it is writing the file
 let counting = false; // the capture bar's Timer counts down
 let launching = false; // the bar has closed for a capture, which starts once the window server has dropped it
+let recording = false; // Record records
 let bar: BrowserWindow | null = null; // the capture bar (⌃⇧5)
 const barOpen = () => !!bar && !bar.isDestroyed();
 // One capture at a time: a capture key or item while one is running does nothing, ⌃⇧N included. An open bar counts
 // for captures, or it would be in the picture of the macOS overlay; its session pop-up offers New Session.
-const capturing = () => picking || scrolling || shooting || counting || launching;
+const capturing = () => picking || scrolling || shooting || counting || launching || recording;
 const busy = () => capturing() || barOpen();
 
 // The same area every time, e.g. the page in a browser. The first time, after Choose New Area, or when the display
 // it was on is gone, the owner drags it first.
 // `o`: the capture bar's options; ⌃⇧1, ⌃⇧4 and the menu rows capture without them (F217).
+const onScreen = (a: Area) =>
+  screen
+    .getAllDisplays()
+    .some(({ bounds: b }) => a.x >= b.x && a.y >= b.y && a.x + a.width <= b.x + b.width && a.y + a.height <= b.y + b.height);
 async function captureArea(choose = false, o?: CaptureOpts) {
-  const onScreen = (a: Area) =>
-    screen
-      .getAllDisplays()
-      .some(({ bounds: b }) => a.x >= b.x && a.y >= b.y && a.x + a.width <= b.x + b.width && a.y + a.height <= b.y + b.height);
   if (busy()) return; // ⌃⇧4 again while dragging, or while Capture Scrolling runs
   if (choose || !area || !onScreen(area)) {
     picking = true;
@@ -263,7 +281,8 @@ export const keyHandlers: Record<keyof typeof SHORTCUTS, () => void> = {
   oneShot: () => void (busy() || shoot(['-i'], true)), // -i: macOS's overlay; Space picks a window
   fullScreen: () => void captureFullScreen(),
   capture: () => void captureArea(),
-  options: () => void (cancelCountdown ? cancelCountdown() : openCaptureBar()), // during a countdown it cancels (F31)
+  // while recording it is Done (F66); during a countdown it cancels (F31)
+  options: () => void (stopRecording ? stopRecording(true) : cancelCountdown ? cancelCountdown() : openCaptureBar()),
   newSession: () => void (capturing() || newSession()),
 };
 
@@ -271,12 +290,12 @@ export const keyHandlers: Record<keyof typeof SHORTCUTS, () => void> = {
 // beside the menu bar icon (CAP-10). Esc, taken from every app only while it counts (never in quiet runs), ⌃⇧5 and a
 // click on the icon cancel: nothing is captured, and no message shows (F31). False when cancelled.
 let cancelCountdown: (() => void) | null = null;
-async function countdown(seconds: number, at?: Area | null): Promise<boolean> {
+async function countdown(seconds: number, at?: Area | null, rec = false): Promise<boolean> {
   let cancelled = false;
   counting = true;
   cancelCountdown = () => void (cancelled = true);
   if (!quiet) globalShortcut.register('Escape', cancelCountdown);
-  const win = countdownPanel(seconds, at);
+  const win = countdownPanel(seconds, at, rec);
   // destroy(), synchronous unlike close(): the overlay and the digit are gone before the wait below (F30)
   const end = () => {
     if (!win.isDestroyed()) win.destroy();
@@ -300,8 +319,9 @@ async function countdown(seconds: number, at?: Area | null): Promise<boolean> {
 }
 
 // The countdown overlay (countdown.html) over the area's display, or the pointer's for Full Screen: a click-through
-// panel that never takes focus and is kept out of screen captures, built as the bar's old label was (F29).
-function countdownPanel(seconds: number, at?: Area | null): BrowserWindow {
+// panel that never takes focus and is kept out of screen captures, built as the bar's old label was (F29). With 0
+// seconds it is the area's outline alone, while Record records; `rec` says the countdown is Record's.
+function countdownPanel(seconds: number, at?: Area | null, rec = false): BrowserWindow {
   const { bounds } = at ? screen.getDisplayMatching(at) : screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const win = new BrowserWindow({
     ...bounds,
@@ -326,16 +346,19 @@ function countdownPanel(seconds: number, at?: Area | null): BrowserWindow {
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   win.once('ready-to-show', () => win.showInactive());
   const local = at && { x: at.x - bounds.x, y: at.y - bounds.y, w: at.width, h: at.height };
-  const query = Object.fromEntries(Object.entries({ s: seconds, ...local }).map(([k, v]) => [k, String(v)]));
-  void win.loadFile(path.join(__dirname, 'countdown.html'), { query });
+  void win.loadFile(path.join(__dirname, 'countdown.html'), { query: strings({ s: seconds, ...local, ...(rec && { rec: 1 }) }) });
   return win;
 }
 
+// A page's query: every value a string.
+const strings = (o: Record<string, string | number>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, String(v)]));
+
 // `screencapture -i` never says where its region was, so the area to repeat is dragged in Snapmark's own
 // see-through window over the display with the pointer. Resolves once that window is off the screen. `mode` picks the
-// hint: Capture Scrolling's, the one saying the last area's display is gone, or the one after a New Session.
-export function pickArea(mode: '' | 'scroll' | 'gone' | 'new' = ''): Promise<Area | null> {
-  const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+// hint: Capture Scrolling's, the one saying the last area's display is gone, the one after a New Session, or Record's.
+// `keep`: Record's last area, shown on its display for ↩ to keep (F61).
+export function pickArea(mode: '' | 'scroll' | 'gone' | 'new' | 'record' = '', keep?: Area | null): Promise<Area | null> {
+  const { bounds } = keep ? screen.getDisplayMatching(keep) : screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const win = new BrowserWindow({
     ...bounds,
     frame: false,
@@ -355,7 +378,8 @@ export function pickArea(mode: '' | 'scroll' | 'gone' | 'new' = ''): Promise<Are
     win.show();
     focusApp();
   });
-  void win.loadFile(path.join(__dirname, 'area.html'), mode ? { hash: mode } : {});
+  const query = keep && strings({ x: keep.x - bounds.x, y: keep.y - bounds.y, w: keep.width, h: keep.height });
+  void win.loadFile(path.join(__dirname, 'area.html'), { ...(mode && { hash: mode }), ...(query && { query }) });
   return new Promise((resolve) => {
     let picked: Area | null = null;
     const done = (e: IpcMainEvent, a: Area | null) => {
@@ -389,7 +413,151 @@ async function runCapture(o: CaptureOpts) {
   if (o.mode === 'window') return void (busy() || shoot(captureArgs('window', o), o.oneShot));
   if (o.mode === 'scroll') return captureScrolling(o.oneShot);
   if (o.mode === 'full') return captureFullScreen(o);
+  if (o.mode === 'record') return captureRecord(o);
   return captureArea(o.mode === 'area', o);
+}
+
+// Record (the capture bar's sixth mode): the picker on the last area, where ↩ keeps it and a drag replaces it (Q11);
+// a countdown of 3, or the Timer's when longer (F62); then the recording until Done, ⌃⇧5, the menu bar icon or 30 s.
+async function captureRecord(o: CaptureOpts) {
+  if (busy()) return;
+  const keep = area && onScreen(area) ? area : null;
+  picking = true;
+  const picked = await pickArea(area && !keep ? 'gone' : 'record', keep).finally(() => (picking = false));
+  if (!picked) return;
+  area = picked;
+  areaForgotten = false;
+  saveState();
+  if (!(await countdown(Math.max(3, o.timer), area, true))) return;
+  const r = await recordArea(area, o);
+  if (r) recordings.open(r, o.oneShot);
+}
+
+// What Done hands over. Swappable, so the smoke test sees the frames.
+// shortcut: a stub until 3.4, which opens the recording editor on the frames here; until then they stay in their
+// temp folder and nothing opens.
+export const recordings = {
+  open: (r: Recording, oneShot: boolean) => console.log(`Recorded ${r.frames.length} frames in ${r.dir}${oneShot ? ' (One-Shot)' : ''}`),
+};
+
+// Done (true) or ⓧ (false) while Record records: ⌃⇧5 and the menu bar icon are Done too (F66).
+let stopRecording: ((keep: boolean) => void) | null = null;
+
+// Records `a` at `o.fps` until Done, ⌃⇧5, the menu bar icon or `cap` (30 s, F64), into one PNG file per frame,
+// written as each comes from recorder.html. Takes no key (F65). ⓧ puts the frames in Discarded (F67); a failed grab
+// stops, keeps nothing and says so (F81). Resolves to the recording Done keeps, else null.
+export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap = REC_CAP_MS): Promise<Recording | null> {
+  recording = true;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
+  const [frames, times]: [string[], number[]] = [[], []];
+  const { id, bounds: b } = screen.getDisplayMatching(a);
+  // The outline and the panel are content-protected and the recorder never shows, so no Snapmark window is in a frame (F68)
+  const outline = countdownPanel(0, a);
+  const panel = recordPanel(a);
+  let rec: BrowserWindow | null = null;
+  let started = 0; // when the first frame came
+  let pending = false; // Done before the first frame: it stops on that frame, so a recording has one
+  let ended = false;
+  return new Promise((resolve) => {
+    const finish = (how: 'done' | 'cancel' | { failed: string }) => {
+      if (ended) return;
+      if (how === 'done' && !frames.length) return void (pending = true);
+      ended = true;
+      clearInterval(tick);
+      ipcMain.off('recorder:frame', onFrame);
+      ipcMain.off('recorder:failed', onFailed);
+      ipcMain.off('scroll:done', onPanel);
+      for (const w of [rec, panel, outline]) if (w && !w.isDestroyed()) w.destroy();
+      tray?.setTitle('');
+      stopRecording = null;
+      recording = false;
+      const r: Recording = { dir, frames, times, end: Math.min(cap, Date.now() - started) / 1000, fps: o.fps };
+      if (how === 'done') return resolve(r);
+      if (how !== 'cancel')
+        notify(`Recording failed: ${how.failed.replace(/\.$/, '')}. Nothing was added. Click to try again.`, () =>
+          busy() ? undefined : void captureRecord({ ...captureOpts, mode: 'record' }),
+        );
+      else if (frames.length) {
+        const session = o.oneShot || !active ? 'one-shot' : active;
+        try {
+          sessions.discardRecording(root, session, r);
+          for (const v of viewers.values()) if (v.root === root && v.session === session) reloadViewer(v); // its Discarded tab
+        } catch (err) {
+          notify(`Couldn't keep the recording in Discarded: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+      fs.rmSync(dir, { recursive: true, force: true });
+      resolve(null);
+    };
+    const failed = (err: unknown) => finish({ failed: err instanceof Error ? err.message : String(err) });
+    const onFrame = (e: IpcMainEvent, t: unknown, png: unknown) => {
+      if (ended || e.sender !== rec?.webContents || typeof t !== 'number' || !Number.isFinite(t) || !(png instanceof Uint8Array)) return;
+      if (t >= cap) return finish('done');
+      const file = path.join(dir, `${String(frames.length).padStart(4, '0')}.png`);
+      try {
+        fs.writeFileSync(file, png);
+      } catch (err) {
+        return failed(err);
+      }
+      frames.push(file);
+      times.push(t / 1000);
+      started ||= Date.now() - t;
+      if (pending) finish('done');
+    };
+    const onFailed = (e: IpcMainEvent, reason: unknown) => e.sender === rec?.webContents && finish({ failed: String(reason) });
+    const onPanel = (e: IpcMainEvent, ok: boolean) => e.sender === panel.webContents && finish(ok ? 'done' : 'cancel');
+    ipcMain.on('recorder:frame', onFrame);
+    ipcMain.on('recorder:failed', onFailed);
+    ipcMain.on('scroll:done', onPanel);
+    stopRecording = (keep) => finish(keep ? 'done' : 'cancel');
+    // The clock on the panel and beside the menu bar icon; at the cap it stops as Done does. No first frame in 10 s
+    // is a failed grab, so a recorder that never starts cannot keep Snapmark busy.
+    const opened = Date.now();
+    const tick = setInterval(() => {
+      const ms = started && Date.now() - started;
+      if (ms >= cap) return finish('done');
+      if (!started && Date.now() - opened > 10_000) return failed(new Error('no picture came from the screen'));
+      if (!panel.isDestroyed())
+        panel.webContents.send('record:status', { clock: recordStatus(ms, o.fps), seconds: ms / 1000 } satisfies RecordStatus);
+      tray?.setTitle(clock(ms));
+    }, 100);
+    desk.screenSource(id).then((source) => {
+      if (ended) return;
+      rec = new BrowserWindow({
+        show: false,
+        webPreferences: { preload: path.join(__dirname, 'preload.js'), backgroundThrottling: false },
+      });
+      rec.webContents.on('render-process-gone', (_e, d) => failed(new Error(`the recorder stopped (${d.reason})`)));
+      const query = strings({ source, x: a.x - b.x, y: a.y - b.y, w: a.width, h: a.height, bw: b.width, bh: b.height, fps: o.fps });
+      void rec.loadFile(path.join(__dirname, 'recorder.html'), { query });
+    }, failed);
+  });
+}
+
+// The recording control (scroll.html#record) beside the area: never focused, so the recorded app keeps every key (F65).
+function recordPanel(a: Area): BrowserWindow {
+  const win = new BrowserWindow({
+    ...panelAt(a, screen.getDisplayMatching(a).workArea, 600, 64),
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    focusable: false,
+    acceptFirstMouse: true, // it is never the key window, so every click must reach ⓧ and Done
+    skipTaskbar: true,
+    ...(process.platform === 'darwin' ? { type: 'panel' } : {}),
+    show: false,
+    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+  });
+  win.setContentProtection(true);
+  win.setAlwaysOnTop(true, 'screen-saver');
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+  win.once('ready-to-show', () => win.showInactive());
+  void win.loadFile(path.join(__dirname, 'scroll.html'), { hash: 'record' });
+  return win;
 }
 
 // The capture bar (⌃⇧5, Capture Options…), like macOS's ⇧⌘5: bottom centre of the display with the pointer, over
@@ -506,7 +674,11 @@ ipcMain.on('bar:capture', (e, mode: CaptureMode) => {
 ipcMain.on('bar:options', (e, mode: CaptureMode, at: Area) => {
   if (!fromBar(e)) return;
   setCapture({ mode });
-  const items = barOptions(captureOpts, { setTimer: (timer) => setCapture({ timer }), setPointer: (pointer) => setCapture({ pointer }) });
+  const items = barOptions(captureOpts, {
+    setFps: (fps) => setCapture({ fps }),
+    setTimer: (timer) => setCapture({ timer }),
+    setPointer: (pointer) => setCapture({ pointer }),
+  });
   popUnder(bar!, items, at);
 });
 // ⇧⌘O: One-Shot or the last session (F13).
@@ -865,6 +1037,13 @@ export const desk = {
   screencapture: (args: string[], done: (err: Error | null, stderr: string) => void): void =>
     void execFile('screencapture', args, (err, _out, stderr) => done(err, String(stderr ?? ''))),
   dock: (on: boolean) => quiet || (on ? void app.dock?.show() : app.dock?.hide()),
+  // Record's picture of a display: its desktopCapturer source, which recorder.html plays. The smoke test's is 'test'.
+  screenSource: async (display: number): Promise<string> => {
+    const all = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
+    const s = all.find((x) => x.display_id === String(display)) ?? (all.length === 1 ? all[0] : undefined);
+    if (!s) throw new Error('macOS gave no picture of that display');
+    return s.id;
+  },
 };
 
 // Copy Image and Save As…: in session mode the image exactly as Add to session would save it, without adding it to the
@@ -1064,6 +1243,8 @@ function tempCopy(file: string): string {
 // ---------- Discarded: closed screenshots and removed entries, kept 7 days ----------
 
 export function reopen(d: sessions.Discarded, into = root) {
+  // shortcut: 3.4 reopens a cancelled recording in the recording editor; until then its frames are handed over as Done's
+  if (d.recording) return recordings.open(sessions.discardedRecording(d), d.session === 'one-shot');
   if (d.kind === 'shot') {
     const n = sessions.restoreShot(into, d);
     notify(`Screenshot ${n} is back in ${sessions.shortName(d.session)}.`);
@@ -1158,7 +1339,8 @@ function menuState(): MenuState {
 export const menuItems = () => menuTemplate(menuState(), actions);
 const popMenu = () => tray?.popUpContextMenu(Menu.buildFromTemplate(menuItems()));
 // A click on the menu bar icon: the menu, or during a countdown, cancel (F31). Exported for the smoke test, which has no icon.
-export const iconClick = () => (cancelCountdown ? cancelCountdown() : popMenu());
+// While recording a click is Done, and shows no menu (F66).
+export const iconClick = () => (stopRecording ? stopRecording(true) : cancelCountdown ? cancelCountdown() : popMenu());
 
 // A session moved or deleted outside Snapmark: say so instead of doing nothing.
 function exists(name: string, file = ''): boolean {

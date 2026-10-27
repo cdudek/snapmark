@@ -286,13 +286,20 @@ export interface Discarded {
   session: string;
   n?: number;
   copied?: boolean; // a One-Shot that Copy Image closed: "Copied One-Shot", so it is not mistaken for a discard
+  recording?: boolean; // a recording cancelled with ⓧ: frames/, recording.json, and image.png its first frame
   at: number; // epoch ms
 }
 
 function discardDir(root: string, meta: Omit<Discarded, 'dir' | 'at'>): string {
   const at = Date.now();
   const d = new Date(at);
-  const what = meta.copied ? 'Copied One-Shot' : meta.kind === 'capture' ? 'not saved' : `screenshot ${meta.n}`;
+  const what = meta.copied
+    ? 'Copied One-Shot'
+    : meta.recording
+      ? 'recording'
+      : meta.kind === 'capture'
+        ? 'not saved'
+        : `screenshot ${meta.n}`;
   // Readable in Finder: "2026-09-26 13.05.12 · <session> · screenshot 2"
   const base = path.join(root, '.discarded', `${stamp(d)}.${two(d.getSeconds())} · ${meta.session} · ${what}`);
   let dir = base;
@@ -308,6 +315,24 @@ export function discardCapture(root: string, session: string, image: string, sta
   fs.copyFileSync(image, path.join(dir, 'image.png'));
   fs.writeFileSync(path.join(dir, 'state.json'), state);
   return dir;
+}
+
+// A recording cancelled with ⓧ (F67): its frames and their times, kept 7 days as a closed screenshot is; the first
+// frame is the Discarded tab's picture. Returns the folder.
+export function discardRecording(root: string, session: string, r: Recording): string {
+  const dir = discardDir(root, { kind: 'capture', session, recording: true });
+  fs.cpSync(r.dir, path.join(dir, 'frames'), { recursive: true });
+  fs.copyFileSync(r.frames[0], path.join(dir, 'image.png'));
+  const { times, end, fps } = r;
+  fs.writeFileSync(path.join(dir, 'recording.json'), JSON.stringify({ frames: r.frames.map((f) => path.basename(f)), times, end, fps }));
+  return dir;
+}
+
+// The recording a discardRecording folder keeps, its frames where they are.
+export function discardedRecording(d: Discarded): Recording {
+  const r = JSON.parse(fs.readFileSync(path.join(d.dir, 'recording.json'), 'utf8')) as Recording;
+  const dir = path.join(d.dir, 'frames');
+  return { ...r, dir, frames: r.frames.map((f) => path.join(dir, f)) };
 }
 
 // Newest first. Folders older than KEEP_DAYS, and folders that are not ours, are deleted.
