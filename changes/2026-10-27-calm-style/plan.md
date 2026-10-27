@@ -43,7 +43,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 
 - [x] 3.1 Editor: pill tools, one blue button, edgeless fields, the More menu. F23–F26, F31.
 - [x] 3.2 Session window. F23–F25.
-- [ ] 3.3 Settings and Keyboard Shortcuts: pill tabs, a window that grows, accent switches. F27, F28.
+- [x] 3.3 Settings and Keyboard Shortcuts: pill tabs, a window that grows, accent switches. F27, F28.
 - [ ] 3.4 Zoom stops at 130 %, and every window fits. No colour literals left. F29, F30, N1.
 
 ## Approach
@@ -198,3 +198,6 @@ The criteria as data are in [done.json](done.json).
 - 3.1: the toolbar's last fit stage, `fit-tools` (captions off, tighter tools), is gone: More takes the tools instead.
 - 3.2: a thumbnail's Edit Again and Discarded's Reopen move to the soft fill, so the window's one accent button is Edit Again under a screenshot shown large (F23).
 - 3.2: smoke F129 flattens the rename field's see-through soft fill onto what is behind it before it measures the placeholder's contrast. The check's 4.5:1 is unchanged.
+- 3.3: `src/preload.ts` and `src/shared.d.ts`, outside Files that change: `settingsFit`, so Settings tells main the page's size and main sizes the window to it at its zoom (F27).
+- 3.3: Settings' Timer pop-up loses the system bezel (an edge at rest) for the soft fill, with its chevron drawn beside it.
+- 3.3: Keyboard Shortcuts keeps its keycaps' edge (F231 asks for a cap); it has no controls, so it gets no ring query, and keys.test's F229 line stays.

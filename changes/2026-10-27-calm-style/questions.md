@@ -106,3 +106,10 @@ Open questions met while building. Each has the default taken; the owner answers
 - **Default taken:** the logo is `src/logo.svg`, the same drawing, shown as an image. It looks as before.
 - **Milestone:** 3
 - **Answer:**
+
+## Q16 Settings' radio buttons and Timer pop-up
+
+- **Question:** the owner rule fills checks and switches that are on with the accent, and keeps chosen states off it. Save to's two radio buttons are both. And the Timer pop-up's system bezel is an edge at rest. How do they look?
+- **Default taken:** a radio that is on takes the accent with a white dot, as a check does (macOS draws them alike). The pop-up is a soft-filled button with its chevron, no bezel. The Settings window is 560 pt wide at 100 %, as before, and as tall as the tab shown.
+- **Milestone:** 3
+- **Answer:**

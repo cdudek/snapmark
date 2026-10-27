@@ -152,6 +152,7 @@ interface Window {
     settingsInit(): Promise<SettingsInit>;
     settingsSet(key: SettingsKey, value: boolean | number): Promise<SettingsInit>;
     settingsRun(what: SettingsRun): Promise<SettingsInit>; // resolves once it is done (a dialog closed)
+    settingsFit(width: number, height: number): void; // the page's size in CSS pixels: main sizes the window to it at its zoom
     barInit(): Promise<BarInit>;
     barCapture(mode: CaptureMode): void; // closes the bar, then runs the mode
     barOptions(mode: CaptureMode, at: Area): void; // the Options menu under `at` (window points), for the chosen mode

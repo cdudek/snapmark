@@ -7,20 +7,14 @@
     <link rel="stylesheet" href="tokens.css" />
     <script src="surface.js"></script>
     <style>
-      /* The round-1 Native palette (design-explorations/2026-10-24-brand-refresh/01-native/notes.md); dark mode takes
-         the system's dark colours. */
-      :root {
-        color-scheme: light dark;
-        --text: light-dark(#1d1d1f, CanvasText);
-        --second: light-dark(#76767c, #a1a1a6);
-        --sep: light-dark(#d8d9dd, #48484c);
-        --bg: light-dark(#ffffff, Canvas);
-      }
+      /* The calm Keyboard Shortcuts window (spec screens.md): colours and shapes from tokens.css only (F30), the
+         system's colours following light and dark. Every text is in the text colour: the system's dim text misses 4.5:1
+         (N1, questions.md). */
       html,
       body {
         margin: 0;
-        background: var(--bg);
-        color: var(--text);
+        background: var(--ds-color-ground);
+        color: var(--ds-color-ink);
         font:
           13px -apple-system,
           system-ui,
@@ -35,7 +29,7 @@
         gap: 0 32px;
       }
       #tools {
-        border-left: 1px solid var(--sep);
+        border-left: var(--ds-border) solid var(--ds-color-edge);
         padding-left: 32px;
       }
       @media (max-width: 760px) {
@@ -56,7 +50,6 @@
       h2 {
         font-size: 13px;
         font-weight: 600;
-        color: var(--second);
         margin: 24px 0 8px;
       }
       table {
@@ -64,7 +57,7 @@
         border-collapse: collapse;
       }
       tr {
-        border-top: 1px solid var(--sep);
+        border-top: var(--ds-border) solid var(--ds-color-edge);
       }
       td {
         padding: 8px 16px 8px 0;
@@ -76,7 +69,6 @@
       }
       td.again {
         width: 1%;
-        color: var(--second);
         font-size: 12px;
       }
       td.name {
@@ -84,16 +76,11 @@
         white-space: nowrap;
         width: 1%;
       }
-      td.what,
-      .or {
-        color: var(--second);
-      }
       .or {
         margin: 0 8px;
         font-size: 12px;
       }
-      /* The editor's one keycap style (A18): 11 px, weight 500, system glyphs, tabular digits, the text's colour;
-         here drawn as a cap, which F231 asks for. */
+      /* A key drawn as a cap, which F231 asks for: 11 px, weight 500, system glyphs, tabular digits, the text's colour. */
       kbd {
         display: inline-block;
         font:
@@ -106,10 +93,10 @@
         min-width: 16px;
         text-align: center;
         padding: 4px 10px; /* the glyph never touches the border */
-        border: 1px solid var(--sep);
+        border: var(--ds-border) solid var(--ds-color-edge);
         border-radius: 6px;
-        box-shadow: 0 1px 0 var(--sep);
-        background: var(--bg);
+        box-shadow: 0 1px 0 var(--ds-color-edge);
+        background: var(--ds-color-ground);
       }
       td.icon {
         width: 1%;
@@ -126,7 +113,6 @@
       }
       #setting {
         margin: 16px 0 0;
-        color: var(--second);
       }
     </style>
   </head>

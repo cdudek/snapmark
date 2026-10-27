@@ -34,6 +34,7 @@ const api: Window['snapmark'] = {
   settingsInit: () => ipcRenderer.invoke('settings:init'),
   settingsSet: (key, value) => ipcRenderer.invoke('settings:set', key, value),
   settingsRun: (what) => ipcRenderer.invoke('settings:run', what),
+  settingsFit: (width, height) => ipcRenderer.send('settings:fit', width, height),
   barInit: () => ipcRenderer.invoke('bar:init'),
   barCapture: (mode) => ipcRenderer.send('bar:capture', mode),
   barOptions: (mode, at) => ipcRenderer.send('bar:options', mode, at),

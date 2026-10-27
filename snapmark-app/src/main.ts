@@ -1645,10 +1645,20 @@ export function openSettings(): BrowserWindow {
     title: 'Settings', // the page names the tab shown
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   }));
-  void win.loadFile(path.join(__dirname, 'settings.html'));
+  void win.loadFile(path.join(__dirname, 'settings.html'), { query: { ring: focusRing() ?? '' } }); // its focus ring (surface.ts)
   focusApp();
   return win;
 }
+
+// The Settings window is as big as the tab it shows, at the page's zoom, so no tab clips or scrolls (F27, F29). The
+// page sends its size in CSS pixels whenever a tab, a note or the zoom changes it.
+ipcMain.on('settings:fit', (e, width: unknown, height: unknown) => {
+  const win = settingsWin;
+  if (!win || win.isDestroyed() || e.sender !== win.webContents) return;
+  if (typeof width !== 'number' || typeof height !== 'number' || !(width > 0 && width < 4000 && height > 0 && height < 4000)) return;
+  const zoom = e.sender.getZoomFactor();
+  win.setContentSize(Math.ceil(width * zoom), Math.ceil(height * zoom));
+});
 
 const settingsInit = (): SettingsInit => ({
   login: loginState(app.isPackaged, app.getLoginItemSettings()),

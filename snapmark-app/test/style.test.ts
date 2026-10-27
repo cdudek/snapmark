@@ -178,4 +178,20 @@ assert.ok(
   '@F25 the session window gets its ring',
 );
 
+// @F27 @F28 @2026-10-27-calm-style Settings: the chosen tab is the soft pill, never the accent; checks and radios that
+// are on take the accent (tokens.css: --ds-check-on-fill is the accent, its mark on-accent white); the window is sized
+// to the page at its zoom
+const settingsHtml = read('src/settings.html');
+assert.ok(/\[role='tab'\]\[aria-selected='true'\] \{\s+background: var\(--ds-color-soft\);\s+\}/.test(settingsHtml), '@F27 the soft pill');
+assert.ok(
+  /input\[type='checkbox'\],\s+input\[type='radio'\] \{\s+accent-color: var\(--ds-check-on-fill\);/.test(settingsHtml) &&
+    tokens.includes('--ds-check-on-fill: var(--ds-color-accent);') &&
+    tokens.includes('--ds-check-on-mark: var(--ds-color-on-accent);'),
+  '@F28 the accent on checks',
+);
+assert.ok(read('src/settings.ts').includes('s.settingsFit(document.body.offsetWidth'), '@F27 the page reports its size');
+assert.ok(read('src/main.ts').includes('win.setContentSize(Math.ceil(width * zoom), Math.ceil(height * zoom));'), '@F27 @F29 main fits it');
+for (const w of ['settings.html', 'shortcuts.html'])
+  assert.ok(!/--ds-color-(?:dim|faint)\b/.test(read(`src/${w}`)), `@N1 ${w} has no dim text`);
+
 console.log('style: ok');

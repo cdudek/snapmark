@@ -2101,6 +2101,15 @@ app
     const firstSettings = openSettings();
     viewer['F219 one Settings window'] = openSettings() === firstSettings;
     await settingsReady(firstSettings);
+    // @F23–@F25 (calm style), as Settings opens: no control has an edge at rest and no ring shows; the chosen tab is the
+    // soft pill in the text colour, the others plain; nothing is filled with the accent or coloured by it
+    const settingsOpen = await calmWindow(firstSettings, '[role=tab]', '[aria-selected="true"]');
+    viewer['@F25 @2026-10-27-calm-style as Settings opens no control has a border or outline, and no focus ring shows'] =
+      settingsOpen.rest && !settingsOpen.ring;
+    viewer['@F24 @2026-10-27-calm-style the chosen Settings tab is the soft pill in the text colour'] = settingsOpen.chosen;
+    viewer['@F23 @2026-10-27-calm-style Settings fills no button with the accent, and colours nothing with it'] =
+      !settingsOpen.filled.length && !settingsOpen.inked.length;
+    why.calmSettings = settingsOpen;
     viewer['F219 one Settings window'] &&=
       BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().includes('/settings.html')).length === 1;
     const tabNames = await inWin(
@@ -2236,6 +2245,46 @@ app
     }
     viewer['F228 Settings controls are labelled and reachable'] =
       named && JSON.stringify(tabMoved) === JSON.stringify(['General|General', 'Shortcuts|Shortcuts', 'General|General']);
+    // @F27 the tabs are a pill segmented control: one row of 32 pt pills, icon and label side by side, the chosen one
+    // the soft pill (@F24 above). The window grows to fit each tab: no scroll and nothing outside it, at 100 % and 130 %.
+    const tabsLook = await inWin(
+      set,
+      `const tabs = [...document.querySelectorAll('[role=tab]')].map((t) => t.getBoundingClientRect());
+      return tabs.length === 3 && tabs.every((r) => r.height === 32 && Math.abs(r.top - tabs[0].top) < 1);`,
+    );
+    const tabsFit = async () => {
+      const fits: string[] = [];
+      for (const id of ['tab-general', 'tab-capture', 'tab-shortcuts']) {
+        await inWin(set, `document.getElementById('${id}').click(); document.activeElement.blur();`);
+        await sleep(400);
+        fits.push(
+          await inWin(
+            set,
+            `const d = document.documentElement; const shown = [...document.querySelectorAll('body *')].filter((e) => e.getClientRects().length);
+            return [d.scrollHeight <= innerHeight, d.scrollWidth <= innerWidth,
+              shown.every((e) => { const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5; })].join();`,
+          ),
+        );
+      }
+      return fits;
+    };
+    const fitAt100 = await tabsFit();
+    set.webContents.setZoomFactor(1.3);
+    await sleep(300);
+    const fitAt130 = await tabsFit();
+    const grownAt130 = set.getContentSize();
+    set.webContents.setZoomFactor(1);
+    await sleep(300);
+    viewer['@F27 @2026-10-27-calm-style Settings: the tabs are a pill segmented control; the window fits each tab at 100 % and 130 %'] =
+      tabsLook && [...fitAt100, ...fitAt130].every((f) => f === 'true,true,true') && grownAt130[0] >= Math.round(560 * 1.3);
+    why.calmF27 = { tabsLook, fitAt100, fitAt130, grownAt130 };
+    // @F28 a check or radio that is on fills with the accent, its mark white (Chromium draws the mark white on a dark
+    // accent): every one of Settings' checks and radios takes the accent
+    viewer['@F28 @2026-10-27-calm-style a check or radio that is on fills with the accent'] = await inWin(
+      set,
+      `${calmJs} const boxes = [...document.querySelectorAll('input[type=checkbox], input[type=radio]')];
+      return boxes.length === 5 && boxes.every((b) => getComputedStyle(b).accentColor === token('--ds-color-accent'));`,
+    );
     set.destroy();
 
     // The Keyboard Shortcuts window (F229–F235): its own page, two columns as in the round-1 mock, Esc closes it
@@ -2250,6 +2299,15 @@ app
       BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().includes('/shortcuts.html')).length === 1;
     viewer['F229 Keyboard Shortcuts is its own page'] =
       keysWin.webContents.getURL().includes('/shortcuts.html') && keysWin.getTitle() === 'Keyboard Shortcuts';
+    // @F23 @F25 (calm style) as it opens: nothing filled with the accent or coloured by it, no edge, no ring
+    const keysLook = JSON.parse(
+      await inWin(
+        keysWin,
+        `${calmJs} return JSON.stringify({ ...accentUse(), rest: restful(), ring: !!document.querySelector(':focus-visible') });`,
+      ),
+    ) as CalmLook;
+    viewer['@F23 @F25 @2026-10-27-calm-style Keyboard Shortcuts uses no accent; no edge and no focus ring as it opens'] =
+      !keysLook.filled.length && !keysLook.inked.length && keysLook.rest && !keysLook.ring;
     keysWin.setSize(980, 680);
     await sleep(200);
     const sheet = JSON.parse(

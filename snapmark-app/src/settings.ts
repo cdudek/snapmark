@@ -77,6 +77,12 @@
       }),
     );
   };
+  // The window is as big as the tab shown, at any zoom: main sizes it to the page, so nothing clips or scrolls (F27,
+  // F29). Again when a tab, a note or the zoom changes the page.
+  const fit = () => s.settingsFit(document.body.offsetWidth, Math.ceil(document.body.getBoundingClientRect().height));
+  new ResizeObserver(fit).observe(document.body);
+  window.addEventListener('resize', fit);
+
   const load = () => void s.settingsInit().then(render);
   load();
   // Login or Accessibility approval given in System Settings, or an option changed in the capture bar, shows when the window comes back.
