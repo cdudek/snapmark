@@ -1,0 +1,17 @@
+{
+  "size": "L",
+  "kind": "feature",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "new",
+    "slug": "calm-style"
+  },
+  "milestones": [
+    { "n": 1, "slug": "calm-style-1", "title": "Tokens from design-system-starter and the one-row capture bar" },
+    { "n": 2, "slug": "calm-style-2", "title": "Pop-up panels (countdown, area picker, recording, scrolling) and picked-designs milestones 3 and 4 in the calm style" },
+    { "n": 3, "slug": "calm-style-3", "title": "Editor, session window, Settings and Keyboard Shortcuts" }
+  ],
+  "milestoneNote": "2026-10-27: owner's 1.1 dialog 'One change, 3 milestones (Recommended)' and picked-designs 3 and 4 'Ship them after milestone 1 (Recommended)'. Ticket snap-bmr.26. Project none: milestones go straight to main and release.",
+  "ticket": "snap-bmr.26",
+  "design": "none"
+}
