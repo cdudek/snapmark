@@ -305,11 +305,11 @@ Open question. Claude's suggestion: server-sent events from the web app for thre
 - **Security:** CSP and security headers, signed URLs for images, rate limits per user and per token, no customer URLs fetched server-side without an allow-list.
 - **Privacy:** EU hosting, on-device redaction, export and deletion per user and per organisation, a data processing agreement template.
 - **Decisions:** ADRs in `docs/designs/` as today.
-- **Tracker:** GitHub Projects in the `pokbytes` organisation (owner), replacing Beads once set up.
+- **Tracker:** Beads for now (owner, 2026-10-27); each new repo runs `bd init`. GitHub Projects (board `pokbytes/projects/1`) stays possible later.
 
 ## 13. Decided, left to the builder, open
 
-**Decided by the owner:** sections 1, the first release (closed, waitlist and beta invites, two-way Mac sync), 4.2 rule, 5 (multi-organisation, roles, plans, seats bought first, guests need no seat, entitlements, retention), 6 methods and automatic linking, the stack in 9, i18n and glossary in 10, hosting without commitment and zero-downtime deploys in 11, GitHub Projects, Resend behind a provider interface.
+**Decided by the owner:** sections 1, the first release (closed, waitlist and beta invites, two-way Mac sync), 4.2 rule, 5 (multi-organisation, roles, plans, seats bought first, guests need no seat, entitlements, retention), 6 methods and automatic linking, the stack in 9, i18n and glossary in 10, hosting without commitment and zero-downtime deploys in 11, Beads as tracker, Resend behind a provider interface.
 
 **Claude's calls (revisit with a reason):** Better Auth, Drizzle, next-intl, Paddle, SSE for live updates, the package split, the MCP tool list, the details of the acceptance rule (4.2), GitHub read-only in the first release, domain joiners as guests, the session sync mechanics (7), PostHog and Sentry, Firebase Hosting for the domain.
 
