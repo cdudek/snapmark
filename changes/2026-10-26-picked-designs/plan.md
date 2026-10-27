@@ -332,3 +332,11 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - The scrolling control is the recording control's 600 × 64 panel in its place (`panelAt`), with ⓧ, one status line and Done. A reason ("did not scroll", "needs Accessibility") stays until the next frame is added.
   - The capture bar's Scrolling hint follows the permission ("Snapmark scrolls the area for you"); the ⌃⇧5 row in Keyboard Shortcuts reads "while recording or scrolling, Done".
   - Tests this change owns follow F88: `test/keys.test.ts` (the ⌃⇧5 handler line and row) and `test/capture.test.ts` (`@F31`/`@F66`'s handler and icon lines) read `doneScrolling`.
+- Milestone 4 fix round (findings.md 41–50): `snapmark-app/README.md`, `docs/ux/setup.md` and `docs/ux/sitemap.md` were edited, a departure from Files that change. They described manual-only Capture Scrolling.
+- Milestone 4 fix round: the stop rule follows F83 as facts.md words it, not the Approach's "two `same` in a row". Once the area has moved, the first `same` (two grabs in a row match) ends the capture; before it ever moved, two `same` still mean "did not scroll" (F84). Risk: a page that has not drawn the scroll within `SCROLL_SETTLE` (250 ms) ends early; the editor then shows what was stitched.
+- Milestone 4 fix round: owner-scroll detection (F85) compares the last two scrolls, not running totals, so it holds late in a long page.
+- Milestone 4 fix round: the menu bar icon's tooltip also reads "Cancel Countdown" while a countdown runs, as microcopy.md lists it with "Done Scrolling" and "Stop Recording".
+- Milestone 4 fix round: tests this change owns follow the fixes.
+  - `test/stitch.test.ts`: `@F83` ends on the first `same` after moving; the "one match is a slow page" case is gone, since F83 makes it the end. `@F85` gains the long-page and late-draw cases.
+  - `test/capture.test.ts`: `@F82` reads `scrollArgs` and the read-back event at negative x and y.
+  - `test/smoke.ts`: stubs `desk.askTrust`.

@@ -70,6 +70,7 @@ desk.copyText = (text) => void (copiedText = text);
 desk.screencapture = (_args, done) => done(new Error('no screencapture in the smoke test'), '');
 // Never a real scroll event on the owner's screen; Capture Scrolling is manual unless a check allows it
 desk.trusted = () => false;
+desk.askTrust = () => {}; // never macOS's Accessibility prompt
 desk.scroll = async () => {};
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');

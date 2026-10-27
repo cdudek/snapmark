@@ -1,4 +1,5 @@
 import assert from 'assert';
+import { execFileSync } from 'child_process';
 import type { MenuItemConstructorOptions as Item } from 'electron';
 import fs from 'fs';
 import path from 'path';
@@ -23,6 +24,7 @@ import {
 } from '../src/capture';
 import { namePart } from '../src/sessions';
 import type { OptionsActions } from '../src/capture';
+import { SCRIPT, scrollArgs } from '../src/scroller';
 
 const calls: string[] = [];
 const a = new Proxy({} as OptionsActions, {
@@ -336,5 +338,19 @@ assert.ok(
 // The recorder page is built; each frame is written to its own file as it comes, never held (plan, Risks)
 assert.ok(pkg.scripts.build.includes('src/recorder.html') && fs.existsSync(path.join(src, 'recorder.ts')), 'recorder page');
 assert.ok(recorder.includes('.then(() => fs.promises.writeFile(file, png))'), 'a file per frame, at once, in order, off the main thread');
+
+// @F82 on a display left of or above the main one the points are negative: they reach the script as numbers, not as
+// osascript options ("illegal option -- 1"). The event is built and read back, never posted.
+const scrollArgv = scrollArgs(-1440, -20, 300.4);
+assert.deepStrictEqual(scrollArgv.slice(4), ['--', '-1440', '-20', '300'], '@F82 `--` before the numbers');
+if (process.platform === 'darwin') {
+  const readBack = SCRIPT.replace(
+    '$.CGEventPost(0, e);',
+    'const p = $.CGEventGetLocation(e); return JSON.stringify([p.x, p.y, Number($.CGEventGetIntegerValueField(e, 96))]);',
+  );
+  assert.notStrictEqual(readBack, SCRIPT, 'the read-back replaces the post');
+  const argv = scrollArgv.map((a) => (a === SCRIPT ? readBack : a));
+  assert.deepStrictEqual(JSON.parse(execFileSync('osascript', argv, { encoding: 'utf8' })), [-1440, -20, -300], '@F82 negative x, y');
+}
 
 console.log('capture: ok');
