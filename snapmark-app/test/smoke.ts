@@ -767,6 +767,35 @@ app
     const waitFor = (cond: string) =>
       inView(`for (let i = 0; i < 50 && !(${cond}); i++) await new Promise((r) => setTimeout(r, 100)); return !!(${cond});`);
     const viewer = traced({});
+    // The calm style's in-page checks (change 2026-10-27-calm-style) for the session window, Settings and Keyboard
+    // Shortcuts: a token's colour, read as an outline colour as the bar's checks read it; what the accent fills and
+    // colours among the shown elements; whether no control has an edge at rest (a field's clear edge is none); and the
+    // colour drawn behind an element, flattened through its see-through ancestors, for contrast (N1)
+    const calmJs = `const token = (v) => { const i = document.createElement('i'); i.style.outline = '1px solid var(' + v + ')'; document.body.append(i); const c = getComputedStyle(i).outlineColor; i.remove(); return c; };
+      const shownEls = () => [...document.querySelectorAll('body *')].filter((e) => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden');
+      const accentUse = () => { const accent = token('--ds-color-accent'); const cs = (e) => getComputedStyle(e);
+        return { filled: shownEls().filter((e) => cs(e).backgroundColor === accent).map((e) => e.id || e.className),
+          inked: shownEls().filter((e) => { const t = cs(e); return [t.color, t.stroke, t.fill, t.borderTopColor, t.outlineColor].includes(accent); }).map((e) => e.id || e.tagName) }; };
+      const clearColour = (c) => c === 'transparent' || c.endsWith(', 0)');
+      const restful = () => shownEls().filter((e) => e.matches('button, select, input:not([type=range]):not([type=checkbox]):not([type=radio]), [role=tab], .md, .hex')).every((e) => { const s = getComputedStyle(e);
+        return ['Top', 'Right', 'Bottom', 'Left'].every((d) => s['border' + d + 'Style'] === 'none' || s['border' + d + 'Width'] === '0px' || clearColour(s['border' + d + 'Color'])) &&
+          (s.outlineStyle === 'none' || s.outlineWidth === '0px'); });
+      const rgba = (c) => { const v = c.match(/[\\d.]+/g).map(Number); return [v[0], v[1], v[2], v[3] ?? 1]; };
+      const flat = (el) => { const chain = []; for (let e = el; e; e = e.parentElement) chain.unshift(rgba(getComputedStyle(e).backgroundColor));
+        return chain.reduce((b, [r, g, bl, a]) => [r * a + b[0] * (1 - a), g * a + b[1] * (1 - a), bl * a + b[2] * (1 - a)], matchMedia('(prefers-color-scheme: dark)').matches ? [0, 0, 0] : [255, 255, 255]); };
+      const lum = (c) => c.slice(0, 3).map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+      const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);`;
+    type CalmLook = { filled: string[]; inked: string[]; rest: boolean; ring: boolean; chosen: boolean };
+    // `chosen`: the chosen one of `options` is the soft pill and the others plain, all in the text colour (@F24)
+    const calmWindow = async (w: BrowserWindow, options: string, chosen: string) =>
+      JSON.parse(
+        await inWin(
+          w,
+          `${calmJs} const cs = (e) => getComputedStyle(e); const opts = [...document.querySelectorAll('${options}')].filter((b) => !b.hidden);
+          return JSON.stringify({ ...accentUse(), rest: restful(), ring: !!document.querySelector(':focus-visible'), chosen: opts.length > 1 &&
+            opts.every((b) => cs(b).color === token('--ds-color-ink') && cs(b).backgroundColor === (b.matches('${chosen}') ? token('--ds-color-soft') : 'rgba(0, 0, 0, 0)')) });`,
+        ),
+      ) as CalmLook;
     // @F57 the first session window fills 90 % of the work area of the pointer's display, centred (1 pt for rounding)
     const viewWa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
     const within1 = (a: number, b: number) => Math.abs(a - b) <= 1;
@@ -777,6 +806,13 @@ app
       within1(firstOpen.width, viewWa.width * 0.9) && within1(firstOpen.height, viewWa.height * 0.9) && centred(firstOpen);
     viewer['viewer shows the screenshot inline'] = await waitFor(`document.querySelector('#doc img[src^="img/"]')?.naturalWidth > 0`);
     viewer['viewer shows the caption'] = await waitFor(`document.getElementById('doc').textContent.includes('Smoke test caption')`);
+    // @F23–@F25 as the session window opens on its Document: no control has an edge at rest and no ring shows; the chosen
+    // tab is the soft pill in the text colour; nothing is filled with the accent or coloured by it
+    const docLook = await calmWindow(view, '.tabs button', '[aria-pressed="true"]');
+    viewer['@F25 @2026-10-27-calm-style as the session window opens no control has a border or outline, and no focus ring shows'] =
+      docLook.rest && !docLook.ring;
+    viewer['@F24 @2026-10-27-calm-style the chosen tab of the session window is the soft pill in the text colour'] = docLook.chosen;
+    why.calmViewer = docLook;
     await inView(
       `const p = [...document.querySelectorAll('#doc p')].pop(); const r = document.createRange(); r.selectNodeContents(p); r.collapse(false); getSelection().removeAllRanges(); getSelection().addRange(r); p.closest('[contenteditable]').focus();`,
     );
@@ -796,11 +832,19 @@ app
     viewer['the Screenshots grid has a thumbnail per screenshot, with heading and notes'] = await waitFor(
       `[...document.querySelectorAll('#grid .thumb')].map((t) => t.querySelector('.notes').textContent).join() === '3 notes,No notes' && /^001 · \\d\\d:\\d\\d$/.test(document.querySelector('#grid .heading').textContent)`,
     );
+    const gridLook = await calmWindow(view, '.tabs button', '[aria-pressed="true"]');
     await inView(`document.querySelector('#grid .thumb .pic').click();`);
     view.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Right' });
     viewer['a thumbnail opens one at a time; → flips to the next screenshot'] = await waitFor(
       `document.getElementById('count').textContent === '2 of 2' && document.getElementById('shot').src.includes('img/002.png')`,
     );
+    // @F23 the session window fills at most one button with the accent: Edit Again, where a screenshot is shown large;
+    // none on the Document or the grid (a thumbnail's Edit Again is on the soft fill). No icon or label is the accent.
+    const shotLook = await calmWindow(view, '.tabs button', '[aria-pressed="true"]');
+    viewer['@F23 @2026-10-27-calm-style the session window fills one button with the accent, Edit Again, and colours nothing with it'] =
+      [docLook, gridLook, shotLook].every((l) => !l.inked.length) &&
+      JSON.stringify([docLook.filled, gridLook.filled, shotLook.filled]) === JSON.stringify([[], [], ['edit']]);
+    why.calmViewerFills = [docLook, gridLook, shotLook].map((l) => [l.filled, l.inked]);
     view.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
     viewer['Esc goes back to the grid'] = await waitFor(
       `!document.getElementById('grid-view').hidden && document.getElementById('shots').hidden`,
@@ -1015,15 +1059,14 @@ app
     viewer['F127 an empty field and a click away keep the name'] =
       (await inView(`return !(${fieldOpen}) && document.getElementById('title').textContent === 'smoke';`)) &&
       fs.readFileSync(path.join(root, 'smoke', 'session.md'), 'utf8').startsWith('# smoke\n');
-    // F129: the rename field's placeholder reads at 4.5:1 on the field, light and dark
+    // F129: the rename field's placeholder reads at 4.5:1 on the field, light and dark. The calm field is a see-through
+    // soft fill, so its colour is flattened onto what is behind it (calmJs flat)
     const placeholderContrast = () =>
-      inView(`document.getElementById('title').click(); const f = document.getElementById('rename'); f.value = '';
+      inView(`${calmJs} document.getElementById('title').click(); const f = document.getElementById('rename'); f.value = '';
         await new Promise((r) => setTimeout(r, 200));
-        const rgb = (c) => c.match(/[\\d.]+/g).slice(0, 3).map(Number);
-        const lum = (c) => c.map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
-        const [a, b] = [lum(rgb(getComputedStyle(f, '::placeholder').color)), lum(rgb(getComputedStyle(f).backgroundColor))];
+        const ratio = contrast(rgba(getComputedStyle(f, '::placeholder').color), flat(f));
         f.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);`);
+        return ratio;`);
     nativeTheme.themeSource = 'light';
     const lightRatio: number = await placeholderContrast();
     nativeTheme.themeSource = 'dark';

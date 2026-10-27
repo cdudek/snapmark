@@ -1282,7 +1282,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
     viewers.delete(id);
     updateDock();
   });
-  win.loadFile(path.join(__dirname, 'viewer.html'));
+  win.loadFile(path.join(__dirname, 'viewer.html'), { query: { ring: focusRing() ?? '' } }); // its focus ring (surface.ts)
   focusApp();
   return win;
 }

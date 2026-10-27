@@ -7,36 +7,9 @@
     <link rel="stylesheet" href="tokens.css" />
     <script src="surface.js"></script>
     <style>
-      /* Two colour systems, never mixed: the app's own controls in brand blue, everything else neutral; numbers that
-         belong to marks in the annotation colour. */
-      :root {
-        color-scheme: light dark;
-        --bg: #f5f6f8;
-        --panel: #fff;
-        --bar: #f7f7f9;
-        --ink: #1d1d1f;
-        --muted: #6e6e73;
-        --line: #e3e3e8;
-        --soft: rgb(0 0 0 / 0.05);
-        --accent: #2492ff; /* tints, outlines, focus rings, icons */
-        --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
-        --annot: #e5484d;
-        --error: #cf222e; /* small text on the header: --annot is 3.7:1 there */
-        --focus: #0f72db; /* focus rings: --accent is 3:1 on the light header */
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #1c1c1e;
-          --panel: #2a2a2d;
-          --bar: #262628;
-          --ink: #f5f5f7;
-          --muted: #98989d;
-          --line: #3a3a3d;
-          --soft: rgb(255 255 255 / 0.07);
-          --error: #ff7b72;
-          --focus: #2492ff;
-        }
-      }
+      /* The calm session window (spec screens.md): colours, sizes and shapes from tokens.css only (F30). The app's
+         controls take the system's colours, the soft pill when chosen; the accent fills one button, Edit Again, where a
+         screenshot is shown (F23, F24). The note numbers keep the annotation colour of the marks they match. */
       * {
         box-sizing: border-box;
       }
@@ -49,34 +22,41 @@
           14px -apple-system,
           system-ui,
           sans-serif;
-        background: var(--bg);
-        color: var(--ink);
+        background: var(--ds-color-ground);
+        color: var(--ds-color-ink);
       }
       [hidden] {
         display: none !important;
       }
+      /* The focus ring after Tab only, in the system's focus colour: surface.js sets --ds-color-focus to macOS's accent
+         where it reaches 3:1, else to the text colour (F25, N1). */
       :focus-visible {
-        outline: 2px solid var(--focus);
-        outline-offset: 2px;
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
+        outline-offset: var(--ds-ring-offset);
       }
+      /* No border or outline at rest (F25): the soft fill, a fainter one on hover; 32 pt tall, 13 px text. */
       button {
-        font: inherit;
-        font-size: 13px;
-        padding: 5px 11px;
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: var(--panel);
+        height: var(--ds-control-md);
+        padding: 0 var(--ds-space-12);
+        border: 0;
+        border-radius: var(--ds-radius);
+        background: var(--ds-button-fill-secondary);
         color: inherit;
+        font: inherit;
+        font-size: var(--ds-type-control-size);
         cursor: pointer;
       }
+      button:hover:not(:disabled) {
+        background-image: linear-gradient(var(--ds-color-soft-hover), var(--ds-color-soft-hover));
+      }
       button:disabled {
-        opacity: 0.4;
+        opacity: var(--ds-state-disabled-content);
         cursor: default;
       }
       button.primary {
-        background: var(--accent-fill);
-        border-color: var(--accent-fill);
-        color: #fff;
+        background-color: var(--ds-button-fill-primary);
+        color: var(--ds-button-text-primary);
+        font-weight: var(--ds-button-weight-primary);
       }
       /* Header: the traffic lights sit in it (titleBarStyle hiddenInset), so it drags the window */
       header {
@@ -86,8 +66,8 @@
         height: 52px;
         padding: 0 14px 0 84px;
         min-width: 0; /* a grid item: without it a long name widens the header past the window instead of shortening */
-        border-bottom: 1px solid var(--line);
-        background: var(--bar);
+        border-bottom: var(--ds-border) solid var(--ds-color-edge);
+        background: var(--ds-color-panel);
         -webkit-app-region: drag;
       }
       header button,
@@ -114,23 +94,22 @@
       }
       #title {
         min-width: 0;
-        border: 0;
         background: none;
-        padding: 3px 4px;
+        padding: 0 4px;
         font-size: 15px;
-        font-weight: 500;
+        font-weight: var(--ds-font-weight-medium);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         cursor: text;
       }
       #pencil {
-        border: 0;
+        width: var(--ds-control-md);
+        padding: 0;
         background: none;
-        padding: 3px;
-        color: var(--accent);
         opacity: 0;
         display: grid;
+        place-items: center;
       }
       .name:hover #pencil,
       #pencil:focus-visible {
@@ -145,37 +124,33 @@
         stroke-linecap: round;
         stroke-linejoin: round;
       }
+      /* The rename field: no edge, a soft fill, the ring while it has the focus */
       #rename {
         font: inherit;
         font-size: 15px;
         width: 240px;
         min-width: 0; /* a narrow window shrinks the field instead of pushing the header off screen */
-        padding: 3px 6px;
-        border: 1px solid var(--accent);
-        border-radius: 5px;
-        outline: 3px solid rgb(36 146 255 / 0.35);
-        background: var(--panel);
+        height: var(--ds-field-height);
+        padding: 0 6px;
+        border: 0;
+        border-radius: var(--ds-field-radius);
+        background: var(--ds-field-fill);
         color: inherit;
       }
       #rename::placeholder {
-        color: var(--muted); /* 5:1 on --panel, light and dark */
+        color: inherit; /* the text colour: the system's dim text misses 4.5:1 (N1, questions.md) */
         opacity: 1;
-      }
-      #rename::selection {
-        background: var(--accent-fill);
-        color: #fff;
       }
       #hint {
         position: absolute;
         top: calc(100% + 1px);
         left: 6px;
         font-size: 11px;
-        color: var(--muted);
         width: max-content;
         max-width: calc(100vw - 120px); /* wraps in a narrow window rather than running off it */
       }
       #hint.error {
-        color: var(--error);
+        color: var(--ds-color-error-text);
       }
       .name.editing #title,
       .name.editing #pencil,
@@ -184,25 +159,19 @@
         display: none;
       }
       #total {
-        color: var(--muted);
         white-space: nowrap;
         margin-right: auto;
       }
+      /* The tabs: the chosen one is the soft pill, the others plain (F24) */
       .tabs {
         display: flex;
-        padding: 2px;
-        gap: 2px;
-        border-radius: 7px;
-        background: var(--soft);
+        gap: var(--ds-space-4);
       }
       .tabs button {
-        border: 0;
         background: none;
-        padding: 4px 12px;
       }
       .tabs button[aria-pressed='true'] {
-        background: var(--accent-fill);
-        color: #fff;
+        background: var(--ds-color-soft);
       }
       main {
         overflow: auto;
@@ -222,39 +191,36 @@
       }
       #doc.md[data-empty='true']::before {
         content: attr(data-placeholder);
-        color: var(--muted);
       }
       #doc .ProseMirror {
         outline: none;
       }
       #doc img {
         max-width: 100%;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
+        border-radius: var(--ds-radius);
+        box-shadow: var(--ds-e1);
       }
       #doc h1 {
         font-size: 1.6em;
       }
       #doc h2 {
         font-size: 1.05em;
-        font-weight: 500;
+        font-weight: var(--ds-font-weight-medium);
         margin: 2em 0 0.4em;
-        color: var(--muted);
       }
       #doc ol > li::marker {
-        color: var(--annot); /* the note numbers match the numbers on the marks */
+        color: #e5484d; /* the annotation palette's coral red: the note numbers match the numbers on the marks */
       }
       #doc code {
         font:
           0.92em ui-monospace,
           monospace;
-        background: var(--soft);
+        background: var(--ds-color-soft);
         padding: 0 3px;
         border-radius: 3px;
       }
       #doc pre {
-        background: var(--soft);
+        background: var(--ds-color-soft);
         padding: 8px 10px;
         border-radius: 6px;
         white-space: pre-wrap;
@@ -270,7 +236,6 @@
       #doc span[data-type='html'][data-value^='<details>']::before {
         content: 'Text in the screenshot';
         font-size: 13px;
-        color: var(--muted);
       }
       #doc p:has(> span[data-type='html'][data-value='</details>']) {
         display: none;
@@ -278,10 +243,9 @@
       #doc blockquote {
         margin-left: 0;
         padding-left: 12px;
-        border-left: 3px solid var(--line);
-        color: var(--muted);
+        border-left: 3px solid var(--ds-color-edge);
       }
-      /* Screenshots: a grid of thumbnails */
+      /* Screenshots: a grid of thumbnails, each on the raised fill; the one under the pointer takes the soft fill */
       #grid-view {
         padding: 28px 32px 60px;
       }
@@ -296,25 +260,22 @@
       }
       .thumb {
         position: relative;
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        background: var(--panel);
+        border-radius: var(--ds-radius-large);
+        background: var(--ds-color-soft-hover);
         overflow: hidden;
       }
       .thumb:hover,
       .thumb:focus-within {
-        outline: 2px solid var(--accent);
-        outline-offset: -1px;
+        background: var(--ds-color-soft);
       }
       .thumb .pic {
         display: block;
         width: 100%;
+        height: auto;
         padding: 0;
-        border: 0;
         border-radius: 0;
-        border-bottom: 1px solid var(--line);
         aspect-ratio: 16 / 10;
-        background: var(--bg);
+        background: var(--ds-color-ground);
       }
       .thumb .pic img {
         width: 100%;
@@ -334,18 +295,22 @@
       .thumb:focus-within .more {
         opacity: 1;
       }
+      /* Over the picture: the popover's fill, so they read on any screenshot */
+      .thumb .edit,
+      .thumb .more {
+        background: var(--ds-popover-fill);
+        box-shadow: var(--ds-e1);
+      }
       .thumb .edit {
         top: 31%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: 14px;
-        padding: 6px 16px;
-        box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
       }
       .thumb .more {
         top: 8px;
         right: 8px;
-        padding: 0 8px 4px;
+        width: var(--ds-control-md);
+        padding: 0 0 4px;
         font-size: 16px;
         line-height: 1;
         font-weight: 700;
@@ -359,32 +324,26 @@
         font-size: 14px;
       }
       .thumb .notes {
-        color: var(--muted);
         font-size: 13px;
-      }
-      .empty {
-        color: var(--muted);
       }
       .menu {
         position: fixed;
-        padding: 4px;
-        border: 1px solid var(--line);
-        border-radius: 7px;
-        background: var(--panel);
-        box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
-        z-index: 10;
+        padding: var(--ds-space-4);
+        border-radius: var(--ds-radius-large);
+        background: var(--ds-popover-fill);
+        box-shadow: var(--ds-menu-shadow);
+        z-index: var(--ds-z-menu);
       }
+      /* A menu's row: the soft fill under the pointer or the keys, as a macOS menu highlights it */
       .menu button {
         display: block;
         width: 100%;
         text-align: left;
-        border: 0;
         background: none;
       }
       .menu button:hover,
       .menu button:focus-visible {
-        background: var(--accent-fill);
-        color: #fff;
+        background: var(--ds-color-soft);
         outline: none;
       }
       /* Screenshots: one at a time */
@@ -405,7 +364,7 @@
         max-height: 100%;
         object-fit: contain;
         border-radius: 6px;
-        box-shadow: 0 2px 12px rgb(0 0 0 / 0.3);
+        box-shadow: var(--ds-e2);
       }
       /* A recording: its badge and facts over its filmstrip and its GIF, side by side (screens.md, Session window) */
       #shots .stage.rec {
@@ -431,7 +390,6 @@
       .pane figcaption,
       .rec-head,
       #gif-missing {
-        color: var(--muted);
         font-size: 13px;
         margin: 0;
       }
@@ -444,10 +402,9 @@
       .badge {
         padding: 1px 7px;
         border-radius: 4px;
-        background: var(--soft);
-        color: var(--ink);
+        background: var(--ds-color-soft);
         font-size: 12px;
-        font-weight: 600;
+        font-weight: var(--ds-font-weight-semibold);
       }
       .thumb .badge {
         justify-self: start;
@@ -458,8 +415,8 @@
         align-items: center;
         justify-content: center;
         padding: 10px;
-        border-top: 1px solid var(--line);
-        background: var(--bar);
+        border-top: var(--ds-border) solid var(--ds-color-edge);
+        background: var(--ds-color-panel);
       }
       #back {
         margin-right: auto;
@@ -472,11 +429,9 @@
       #count {
         min-width: 110px;
         text-align: center;
-        color: var(--muted);
       }
       /* Discarded */
       .quiet {
-        color: var(--muted);
         margin: -10px 0 24px;
         font-size: 15px;
       }
@@ -486,57 +441,28 @@
         gap: 24px;
         align-items: start;
         padding: 18px 0;
-        border-top: 1px solid var(--line);
+        border-top: var(--ds-border) solid var(--ds-color-edge);
       }
       .gone img {
         width: 100%;
         max-height: 190px;
         object-fit: contain;
         object-position: top left;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--panel);
+        border-radius: var(--ds-radius);
+        background: var(--ds-color-soft-hover);
       }
       .gone .when {
-        color: var(--muted);
         font-size: 15px;
         margin-bottom: 6px;
       }
       .gone .what {
         font-size: 15px;
       }
-      .gone button {
-        font-size: 14px;
-        padding: 6px 22px;
-      }
     </style>
   </head>
   <body>
     <header>
-      <svg class="icon" viewBox="0 0 100 100" aria-hidden="true">
-        <defs>
-          <linearGradient id="cool" x1="0" y1="0" x2=".85" y2="1">
-            <stop stop-color="#20F4EC" />
-            <stop offset=".45" stop-color="#2492FF" />
-            <stop offset="1" stop-color="#8B3DFF" />
-          </linearGradient>
-          <linearGradient id="pink" x1="0" y1="0" x2=".8" y2="1">
-            <stop stop-color="#FA6CFF" />
-            <stop offset="1" stop-color="#EF28A7" />
-          </linearGradient>
-        </defs>
-        <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1c20" />
-        <g transform="translate(14 14) scale(.72)">
-          <path
-            d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63"
-            fill="none"
-            stroke="url(#cool)"
-            stroke-width="12"
-            stroke-linecap="round"
-          />
-          <rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#pink)" />
-        </g>
-      </svg>
+      <img class="icon" src="logo.svg" alt="" />
       <div class="name" id="name">
         <button id="title" title="Rename (↩)"></button>
         <button id="pencil" title="Rename (↩)" aria-label="Rename session">
@@ -604,7 +530,7 @@
     <template id="thumb-t">
       <div class="thumb">
         <button class="pic"><img alt="" loading="lazy" /></button>
-        <button class="edit primary" title="Open it in the editor with its marks">Edit Again</button>
+        <button class="edit" title="Open it in the editor with its marks">Edit Again</button>
         <button class="more" title="More" aria-label="More" aria-haspopup="menu">…</button>
         <div class="label"><span class="badge"></span><span class="heading"></span><span class="notes"></span></div>
       </div>
@@ -616,7 +542,7 @@
           <div class="when"></div>
           <div class="what"></div>
         </div>
-        <button class="primary">Reopen</button>
+        <button>Reopen</button>
       </div>
     </template>
     <script src="md-notes.js"></script>

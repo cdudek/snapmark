@@ -164,4 +164,18 @@ assert.ok(
 // @2026-10-27-calm-style no captions: the editor's keys are in drawn tooltips, as the bar's (owner, milestone 1 finding 4)
 assert.ok(!/class="(?:cap|group)"/.test(editorHtml) && !editorTs.includes("'cap'"), 'no key captions under the tools');
 
+// @F23 @F25 @N1 @2026-10-27-calm-style the session window: one button is the primary, Edit Again (a thumbnail's and
+// Reopen are on the soft fill); its ring comes from main; no text is in the system's dim colour
+const viewerHtml = read('src/viewer.html');
+assert.deepStrictEqual(
+  viewerHtml.match(/<button[^>]*\bclass="[^"]*\bprimary\b[^>]*>/g),
+  ['<button id="edit" class="primary" title="Open it in the editor with its marks (⌘O)">'],
+  '@F23 one primary button',
+);
+assert.ok(!/--ds-color-(?:dim|faint)\b/.test(viewerHtml), '@N1 the session window has no dim text');
+assert.ok(
+  read('src/main.ts').includes("loadFile(path.join(__dirname, 'viewer.html'), { query: { ring: focusRing() ?? '' } })"),
+  '@F25 the session window gets its ring',
+);
+
 console.log('style: ok');
