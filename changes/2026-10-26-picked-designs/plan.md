@@ -211,7 +211,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 - [x] 16. Auto-scroll, fallback, panel keys. Proof: `@F82`–`@F86`, `@F88` pass.
 - [x] 17. Settings row. Proof: `@F87` passes.
-- [ ] 18. Gate. Proof: `VERIFY PASS milestone`.
+- [x] 18. Gate. Proof: `VERIFY PASS milestone`.
 
 ## Risks
 
@@ -328,14 +328,14 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/sessions.test.ts`: `@F67` checks the temp frames are moved; a failed Edit Again leaves the entry, its GIF and its JSON as they were.
   - `test/smoke.ts`: the recording control is found by `scroll.html?fps=<n>#record`, since it now carries the frame rate.
 - Milestone 3 fix round: ⓧ with no current session in Session mode no longer files the recording as One-Shot. It makes the session the recording editor would have made.
-- 4.1: auto-scroll scrolls half the area's height a step, so frames overlap even below a sticky header; the stop rule is `stitcher().auto` in `stitch.ts`. The owner "took over" when a frame is `lost`, or the page moved more than a quarter past what was asked; a smaller extra scroll is not seen, and stitches correctly anyway.
+- 4.1: auto-scroll scrolls half the area's height a step, so frames overlap even below a sticky header; the stop rule is `stitcher().auto` in `stitch.ts`. The owner "took over" when a frame is `lost`, or the page moved more than a quarter past what was asked. A smaller extra scroll is not seen, and stitches correctly anyway.
   - The scrolling control is the recording control's 600 × 64 panel in its place (`panelAt`), with ⓧ, one status line and Done. A reason ("did not scroll", "needs Accessibility") stays until the next frame is added.
-  - The capture bar's Scrolling hint follows the permission ("Snapmark scrolls the area for you"); the ⌃⇧5 row in Keyboard Shortcuts reads "while recording or scrolling, Done".
+  - The capture bar's Scrolling hint follows the permission ("Snapmark scrolls the area for you"). The ⌃⇧5 row in Keyboard Shortcuts reads "while recording or scrolling, Done".
   - Tests this change owns follow F88: `test/keys.test.ts` (the ⌃⇧5 handler line and row) and `test/capture.test.ts` (`@F31`/`@F66`'s handler and icon lines) read `doneScrolling`.
 - Milestone 4 fix round (findings.md 41–50): `snapmark-app/README.md`, `docs/ux/setup.md` and `docs/ux/sitemap.md` were edited, a departure from Files that change. They described manual-only Capture Scrolling.
-- Milestone 4 fix round: the stop rule follows F83 as facts.md words it, not the Approach's "two `same` in a row". Once the area has moved, the first `same` (two grabs in a row match) ends the capture; before it ever moved, two `same` still mean "did not scroll" (F84). Risk: a page that has not drawn the scroll within `SCROLL_SETTLE` (250 ms) ends early; the editor then shows what was stitched.
+- Milestone 4 fix round: the stop rule follows F83 as facts.md words it, not the Approach's "two `same` in a row". Once the area has moved, the first `same` (two grabs in a row match) ends the capture. Before it ever moved, two `same` still mean "did not scroll" (F84). Risk: a page that has not drawn the scroll within `SCROLL_SETTLE` (250 ms) ends early; the editor then shows what was stitched.
 - Milestone 4 fix round: owner-scroll detection (F85) compares the last two scrolls, not running totals, so it holds late in a long page.
-- Milestone 4 fix round: the menu bar icon's tooltip also reads "Cancel Countdown" while a countdown runs, as microcopy.md lists it with "Done Scrolling" and "Stop Recording".
+- Milestone 4 fix round: the menu bar icon's tooltip also reads "Cancel Countdown" while a countdown runs. microcopy.md lists it there, with "Done Scrolling" and "Stop Recording".
 - Milestone 4 fix round: tests this change owns follow the fixes.
   - `test/stitch.test.ts`: `@F83` ends on the first `same` after moving; the "one match is a slow page" case is gone, since F83 makes it the end. `@F85` gains the long-page and late-draw cases.
   - `test/capture.test.ts`: `@F82` reads `scrollArgs` and the read-back event at negative x and y.
