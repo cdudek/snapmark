@@ -68,6 +68,9 @@ desk.notify = (body, onClick) => void notes.push({ body, onClick });
 let copiedText = '';
 desk.copyText = (text) => void (copiedText = text);
 desk.screencapture = (_args, done) => done(new Error('no screencapture in the smoke test'), '');
+// Never a real scroll event on the owner's screen; Capture Scrolling is manual unless a check allows it
+desk.trusted = () => false;
+desk.scroll = async () => {};
 const sessions = require('../src/sessions') as typeof import('../src/sessions');
 const { exportPdf } = require('../src/exporter') as typeof import('../src/exporter');
 
@@ -1282,6 +1285,111 @@ app
         return frame(frames[Math.min(i++, frames.length - 1)]);
       };
     };
+    // @F82–@F86, @F88 auto-scroll and its fallbacks, before any other scrolling capture: "needs Accessibility" is said
+    // once per launch. A fake scroller moves the synthetic page as a browser would (a 2000-row page, 3 rows a point);
+    // no scroll event is ever posted. `drive` grabs it and hands each new status line of the control to `then`.
+    const scrollCtl = () => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().endsWith('scroll.html'));
+    const ctlLine = async () => {
+      const ctl = scrollCtl();
+      return ctl && !ctl.webContents.isLoading()
+        ? String(await ctl.webContents.executeJavaScript(`document.getElementById('count').textContent`))
+        : '';
+    };
+    const keyCtl = (keyCode: string) => scrollCtl()?.webContents.sendInputEvent({ type: 'keyDown', keyCode });
+    const END = 2000 - VIEW;
+    let pageAt = 0;
+    let pageScrolls = true; // false: an area that does not scroll
+    const posted: { x: number; y: number; points: number }[] = [];
+    desk.scroll = async (x, y, points) => {
+      posted.push({ x, y, points });
+      if (pageScrolls) pageAt = Math.min(END, pageAt + points * (VIEW / scrollArea.height));
+    };
+    const drive = (then: (line: string) => unknown = () => {}, owner = 0) => {
+      [pageAt, posted.length] = [0, 0];
+      const said: string[] = [];
+      let n = 0;
+      const grab = async () => {
+        if (n++ > 400) throw new Error('the control never reached the state'); // a failed check, not a hung smoke run
+        await sleep(20);
+        if (owner && posted.length === 1) [pageAt, owner] = [pageAt + owner, 0]; // the owner scrolls too, once
+        const line = await ctlLine();
+        if (line && line !== 'Starting…' && line !== said.at(-1)) {
+          said.push(line);
+          await then(line);
+        }
+        return frame(pageAt);
+      };
+      return { grab, said };
+    };
+    const editorHeight = async (w: BrowserWindow | null) => {
+      if (!w) return 0;
+      await new Promise<void>((r) => (w.webContents.isLoading() ? w.webContents.once('did-finish-load', () => r()) : r()));
+      await loaded(w);
+      const h = Number(await inWin(w, 'return background.height;'));
+      w.destroy();
+      return h;
+    };
+    // @F86 without Accessibility: manual, saying how to allow it; the next capture of the launch no longer says it
+    const denied = drive((l) => l.startsWith('Auto-scroll') && keyCtl('Escape'));
+    const noAx = await scrollCapture(scrollArea, denied.grab);
+    const deniedAgain = drive((l) => l.startsWith('Scroll down') && keyCtl('Escape'));
+    const noAx2 = await scrollCapture(scrollArea, deniedAgain.grab);
+    viewer['@F86 without Accessibility: manual, how to allow it, once per launch'] =
+      noAx === null &&
+      noAx2 === null &&
+      denied.said[0] === 'Auto-scroll needs Accessibility. Turn it on in Snapmark Settings ▸ Capture.' &&
+      deniedAgain.said[0] === 'Scroll down, then Done · 1 frame · 600 px tall' &&
+      !deniedAgain.said.some((l) => l.startsWith('Auto-scroll')) &&
+      posted.length === 0;
+    why.F86 = [denied.said, deniedAgain.said];
+    // @F82 with Accessibility it scrolls by itself from where the area is, under 90 % of its height, at its centre;
+    // @F83 two matching grabs end it, and the editor opens on the whole page without a key
+    desk.trusted = () => true;
+    const autoRun = drive();
+    const autoHeight = await editorHeight(await scrollCapture(scrollArea, autoRun.grab));
+    const centre = { x: scrollArea.x + scrollArea.width / 2, y: scrollArea.y + scrollArea.height / 2 };
+    viewer['@F82 with Accessibility it scrolls the area down by itself'] =
+      autoRun.said.some((l) => /^Scrolling · \d+ frames · [\d,]+ px tall$/.test(l)) &&
+      posted.length >= 4 &&
+      posted.every((p) => p.x === centre.x && p.y === centre.y && p.points > 0 && p.points < 0.9 * scrollArea.height);
+    viewer['@F83 two matching grabs stop it and open the editor on the whole page'] = autoHeight === 2000;
+    why.F82 = { said: autoRun.said, posted: posted.slice(0, 3), autoHeight };
+    // @F84 an area that does not move: 2 tries, then manual with the reason
+    pageScrolls = false;
+    const stuck = drive((l) => l.startsWith('This area') && keyCtl('Escape'));
+    const notMoved = await scrollCapture(scrollArea, stuck.grab);
+    viewer['@F84 the area did not move after 2 tries: manual, with why'] =
+      notMoved === null && stuck.said.includes('This area did not scroll. Scroll it yourself, then Done.') && posted.length === 2;
+    pageScrolls = true;
+    why.F84 = { said: stuck.said, posts: posted.length };
+    // @F85 the owner scrolls during auto-scroll: manual from then on; ↩ still opens what was stitched
+    const took = drive((l) => l.startsWith('Scroll down') && keyCtl('Return'), 120);
+    const tookHeight = await editorHeight(await scrollCapture(scrollArea, took.grab));
+    viewer['@F85 the owner scrolls: manual'] =
+      took.said.some((l) => l.startsWith('Scroll down, then Done · ')) && posted.length === 1 && tookHeight > VIEW;
+    why.F85 = { said: took.said, posts: posted.length, tookHeight };
+    // @F88 ⓧ cancels; ⌃⇧5 and the menu bar icon are Done (↩ below), without the bar or the menu
+    desk.trusted = () => false;
+    let xLooks = false;
+    const xBtn = drive(async (l) => {
+      if (!l.startsWith('Scroll down')) return;
+      const x = await inWin(
+        scrollCtl()!,
+        `const b = document.getElementById('cancel'); const ok = b.getAttribute('aria-label') === 'Cancel' && !!b.querySelector('svg'); b.click(); return ok;`,
+      );
+      xLooks = x === true;
+    });
+    const xed = await scrollCapture(scrollArea, xBtn.grab);
+    const byKey = await editorHeight(
+      await scrollCapture(scrollArea, drive((l) => l.startsWith('Scroll down') && keyHandlers.options()).grab),
+    );
+    const byIcon = await editorHeight(await scrollCapture(scrollArea, drive((l) => l.startsWith('Scroll down') && iconClick()).grab));
+    viewer['@F88 the scrolling control: ⓧ cancels; ⌃⇧5 and the menu bar icon are Done'] =
+      xed === null &&
+      xLooks &&
+      byKey === VIEW &&
+      byIcon === VIEW &&
+      !BrowserWindow.getAllWindows().some((w) => w.getTitle() === 'Capture Options');
     const tall = await scrollCapture(scrollArea, fakeGrab(offsets, 'Return'));
     viewer['Capture Scrolling: ↩ opens the stitched page in the editor'] = !!tall;
     viewer['F120 Done is the dark blue'] = doneColour === 'rgb(15, 114, 219)';

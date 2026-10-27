@@ -1,4 +1,5 @@
-// Capture Scrolling: stitches frames of one screen area, grabbed while the owner scrolls, into one tall image.
+// Capture Scrolling: stitches frames of one screen area, grabbed while it scrolls (by itself or by the owner), into one
+// tall image.
 // Plain pixels in and out, no Electron, so test/stitch.test.ts checks it in plain Node.
 
 export interface Bitmap {
@@ -125,6 +126,22 @@ export function stitcher(maxHeight = MAX_HEIGHT) {
   return {
     add,
     result,
+    // Auto-scroll, after each grab that followed one of its scrolls: `step` is what add() said, `asked` the rows that
+    // scroll was for. Two `same` in a row: the page ended ('end', F83), or, before it ever moved, the area does not
+    // scroll ('stuck', F84). `lost`, or more rows than were asked for, with some slack: the owner scrolled too ('owner',
+    // F85). Else 'scroll' on.
+    auto: (() => {
+      let [same, asked, got] = [0, 0, 0];
+      return (step: Step, grew: number, ask: number): 'scroll' | 'end' | 'stuck' | 'owner' => {
+        [asked, got] = [asked + ask, got + grew];
+        if (step === 'lost' || got > asked * 1.25 + 8) return 'owner';
+        if (step !== 'same') {
+          same = 0;
+          return 'scroll';
+        }
+        return ++same < 2 ? 'scroll' : got ? 'end' : 'stuck';
+      };
+    })(),
     get height() {
       return height;
     },

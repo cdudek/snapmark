@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { Bitmap, stitcher } from '../src/stitch';
+import { Bitmap, Step, stitcher } from '../src/stitch';
 
 // A tall synthetic page: rows of "text" (random dark blocks on white) with blank gaps, never repeating.
 let seed = 7;
@@ -69,6 +69,37 @@ assert.ok(equal(capped.result(), rows(doc, 0, 1000)));
 
 // Frames of another size (the display changed) are refused, not stitched into a torn image
 assert.throws(() => plain.add(rows(doc, 0, 10)), /differ in size/);
+
+// Auto-scroll's stop rule, after each of its scrolls of 120 rows
+// @F83 two grabs in a row match after it moved: the page ended
+const ends = stitcher();
+assert.deepStrictEqual(
+  [
+    ['added', 120],
+    ['added', 90],
+    ['same', 0],
+    ['same', 0],
+  ].map(([s, n]) => ends.auto(s as Step, n as number, 120)),
+  ['scroll', 'scroll', 'scroll', 'end'],
+);
+// one match is a slow page, not the end
+const slow = stitcher();
+assert.deepStrictEqual(
+  [
+    ['added', 120],
+    ['same', 0],
+    ['added', 120],
+    ['same', 0],
+  ].map(([s, n]) => slow.auto(s as Step, n as number, 120)),
+  ['scroll', 'scroll', 'scroll', 'scroll'],
+);
+// @F84 the area did not move after 2 tries
+const stuck = stitcher();
+assert.deepStrictEqual([stuck.auto('same', 0, 120), stuck.auto('same', 0, 120)], ['scroll', 'stuck']);
+// @F85 the owner scrolled too: more rows than were asked for, or the place was lost
+const owner = stitcher();
+assert.deepStrictEqual([owner.auto('added', 120, 120), owner.auto('added', 240, 120)], ['scroll', 'owner']);
+assert.strictEqual(stitcher().auto('lost', 0, 120), 'owner');
 
 // Fast enough for a Retina frame between grabs
 const big = page(2400, 4000);

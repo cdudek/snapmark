@@ -35,9 +35,8 @@
         flex: 1;
       }
       #count {
-        display: block;
-        font: var(--ds-type-caption-size) var(--ds-font-mono);
-        color: var(--ds-color-dim);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.3;
       }
       #count.warn {
         color: var(--ds-color-warn-text);
@@ -91,28 +90,25 @@
         font-weight: var(--ds-font-weight-regular);
         opacity: 0.75;
       }
-      /* The recording control: ⓧ, the red dot and the clock, Done, the hint. Dark HUD in light and dark mode. */
+      /* The recording control: ⓧ, the red dot and the clock, Done, the hint; the scrolling control: ⓧ, its status line,
+         Done. Dark HUD in light and dark mode. */
       :root {
         color-scheme: light dark;
         --rec-dot: light-dark(#ff3b30, #ff453a);
-      }
-      body.record {
-        padding: 0 16px 0 8px;
-        border-radius: 12px;
       }
       body.record .scroll,
       body:not(.record) .rec {
         display: none;
       }
-      #rec-cancel {
+      .x {
         padding: 6px;
         background: transparent;
         display: inline-flex;
       }
-      #rec-cancel:hover {
+      .x:hover {
         background: rgb(255 255 255 / 0.15);
       }
-      #rec-cancel svg {
+      .x svg {
         width: 22px;
         height: 22px;
         fill: none;
@@ -160,9 +156,9 @@
     <button id="cancel" class="scroll" aria-label="Cancel" aria-keyshortcuts="Escape" title="Cancel (Esc)">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg>
     </button>
-    <div id="what" class="scroll">Scroll down, then Done<span id="count">Starting…</span></div>
-    <button id="done" class="scroll" aria-keyshortcuts="Enter" title="Done (↩)">Done<kbd aria-hidden="true">↩</kbd></button>
-    <button id="rec-cancel" class="rec" aria-label="Cancel recording">
+    <div id="what" class="scroll"><span id="count">Starting…</span></div>
+    <button id="done" class="scroll" aria-keyshortcuts="Enter" title="Done (↩, ⌃⇧5)">Done<kbd aria-hidden="true">↩</kbd></button>
+    <button id="rec-cancel" class="rec x" aria-label="Cancel recording">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
         <path d="M9 9l6 6M15 9l-6 6" />
