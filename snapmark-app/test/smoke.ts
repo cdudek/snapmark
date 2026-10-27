@@ -95,10 +95,26 @@ app
     const shotCopy = path.join(root, 'mock-copy.png'); // openEditor deletes its input on close
     fs.copyFileSync(shot, shotCopy);
     const why: Record<string, unknown> = {}; // what some checks saw, printed when the suite fails
+    const started = Date.now();
+    // Every check logs as it is set, so a run that hits the TIMEOUT shows where it stopped
+    const traced = (checks: Record<string, boolean>) =>
+      new Proxy(checks, {
+        set: (o, k, v) => (console.log(`smoke: ${((Date.now() - started) / 1000).toFixed(1)} ${String(k)}`), Reflect.set(o, k, v)),
+      });
+    // A wait that never ends (on Linux under xvfb some events never come) fails its check instead of the whole suite
+    const bounded = <T>(what: string, p: Promise<T>, ms = 15000): Promise<T | undefined> => {
+      let timer: NodeJS.Timeout | undefined;
+      const giveUp = new Promise<undefined>(
+        (r) => (timer = setTimeout(() => (console.log(`smoke: gave up on ${what}`), r(undefined)), ms)),
+      );
+      return Promise.race([p, giveUp]).finally(() => clearTimeout(timer));
+    };
+    const finished = (w: BrowserWindow) =>
+      bounded(`loading ${w.getTitle()}`, new Promise<void>((r) => w.webContents.once('did-finish-load', () => r())));
     setActive(sessions.create(root, 'smoke'));
     const win = openEditor(shot);
     win.webContents.on('console-message', (e) => console.log('[page]', (e as unknown as { message: string }).message));
-    await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
+    await finished(win);
     // Runs inside the editor page; its top-level bindings (canvas, Card, links, background) are in scope.
     const js = `(async () => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -126,6 +142,7 @@ app
     r['F112 Undo and Redo are icons'] = [['undo', 'Undo (⌘Z)'], ['redo', 'Redo (⇧⌘Z)']].every(([id, name]) => { const b = document.getElementById(id); return !!b.querySelector('svg') && b.textContent.trim() === '' && b.title === name && b.getAttribute('aria-label') === name; });
     r['F113 one Copy or Save button'] = !document.getElementById('copy') && !document.getElementById('save-as') && !!document.getElementById('share');
     r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs .md');
+    r['@F53 no hairline before the first reference'] = getComputedStyle(document.getElementById('refs-rule')).display === 'none';
     key('a', { metaKey: true });
     const emptyRefused = !canvas.getActiveObject(); // F12: ⌘A with no marks does nothing
 
@@ -246,7 +263,9 @@ app
     const noTool = tool() === toolBefore && canvas.getObjects().length === marksBefore;
     canvas.discardActiveObject();
     hex.value = 'zz1'; hex.dispatchEvent(new Event('input', { bubbles: true }));
-    const cleared = hexErr.hidden && !hex.hasAttribute('aria-invalid');
+    const kept = !hexErr.hidden; // the error stays until the value is valid
+    hex.value = 'abc'; hex.dispatchEvent(new Event('input', { bubbles: true }));
+    const cleared = kept && hexErr.hidden && !hex.hasAttribute('aria-invalid');
     hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     r['A15 a hex code with or without #, 3 or 6 digits, any case, trimmed; a bad one says so and changes nothing'] = shown && byBlur && byEnter && refused && noTool && cleared && pal.hidden && colorEl.value === '#ff00aa';
     // A16: one row of custom colours under the two rows of presets, newest first, no presets, no repeats; the panel
@@ -267,6 +286,30 @@ app
     r['A17 one 24 px circle for the swatch and the panel, one ring on the picked colour'] = dot(swDot) === '24px,24px,50%' && [...pal.querySelectorAll('.swatches > *')].every((b) => dot(b) === '24px,24px,50%') && ring(swDot) === ring(picked) && ring(picked).startsWith('solid,2px,2px') && getComputedStyle(other).outlineWidth === '0px';
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     sw.click(); presets[0].click(); // back to coral red; the Custom row stays for the A16 check in the next editor
+    // @F54 a pasted "#2492ff" reads "2492ff" and applies at once; a typed "#" goes, and typing applies at six digits.
+    // @F56 a bad value on Enter or blur shows the hex error, outlined in red and announced; it clears once valid. Blue is a
+    // preset, so the Custom row stays as the next editor's A16 check expects.
+    const typeIn = (el, v, inputType) => { el.value = v; el.dispatchEvent(new InputEvent('input', { inputType, bubbles: true })); };
+    const hexErrorShown = (el) => { const p = document.getElementById(el.getAttribute('aria-describedby')); return !p.hidden && p.getAttribute('role') === 'status' && p.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && getComputedStyle(el.closest('.hex')).borderTopColor === getComputedStyle(p).color; };
+    sw.click(); hex.focus(); typeIn(hex, '#2492ff', 'insertFromPaste');
+    const pastedIn = hex.value === '2492ff' && colorEl.value === '#2492ff' && !pal.hidden;
+    typeIn(hex, '#', 'insertText');
+    const hashDropped = hex.value === '';
+    typeIn(hex, 'e5484', 'insertText');
+    const hexNotYet = colorEl.value === '#2492ff' && hexErr.hidden;
+    typeIn(hex, 'e5484d', 'insertText');
+    r['@F54 a pasted #2492ff reads 2492ff and applies; a typed # goes; typing applies at six digits'] = pastedIn && hashDropped && hexNotYet && colorEl.value === '#e5484d';
+    typeHex('12345', true);
+    const onEnter = hexErrorShown(hex) && !pal.hidden;
+    typeIn(hex, '1234', 'insertText');
+    const keptWhileBad = hexErrorShown(hex);
+    typeIn(hex, '123', 'insertText');
+    const clearedOnType = keptWhileBad && hexErr.hidden && !hex.hasAttribute('aria-invalid');
+    typeHex('zz', false);
+    r['@F56 a bad hex value on Enter or blur shows the hex error; a valid one clears it'] = onEnter && clearedOnType && hexErrorShown(hex) && colorEl.value === '#e5484d';
+    hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    if (!pal.hidden) sw.click();
+    sw.click(); presets[0].click();
     // A18: one keycap style. Every key the editor shows is a <kbd> at 11 px, weight 500, in the system font, in the
     // colour of its text (a disabled button's in --muted), at 4.5:1 or more; under every icon button, after the label of every text button
     const kbds = [...document.querySelectorAll('kbd')];
@@ -282,9 +325,9 @@ app
       kbds.length === 12 && kbds.every((k) => keyStyle(k) === '11px,500,-apple-system' && getComputedStyle(k).color === getComputedStyle(k.parentElement).color) &&
       iconBtns.every(below) && iconBtns.every((b) => ink(b.parentElement.querySelector('.cap kbd'), document.querySelector('header'))) &&
       textBtns.every((b) => after(b) && ink(b.querySelector('kbd'), b)) &&
-      document.getElementById('save').textContent === 'Add to session ⌘↵' && document.getElementById('cancel').textContent === 'Discard ⌘W' &&
-      heights([...document.querySelectorAll('header button')].filter((b) => b.id !== 'session')) && heights(textBtns);
-    r['toolbar shows the session name alone while it is empty, then the count'] = document.getElementById('session').textContent === 'smoke' && shotsLabel('Ledgerly Q4 review', 12) === 'Ledgerly Q4 review · 12 screenshots' && shotsLabel('s', 1) === 's · 1 screenshot';
+      document.getElementById('save').textContent === 'Add to Session ⌘↩' && document.getElementById('cancel').textContent === 'Discard ⌘W' &&
+      heights([...document.querySelectorAll('header button')].filter((b) => b.id !== 'session' && !b.closest('#dest'))) && heights(textBtns);
+    r['toolbar shows the session name alone while it is empty'] = document.getElementById('session').textContent === 'smoke';
     const tail = bubbleTail(50, 20, { x: -200, y: -100 }, 2);
     r['card: the bubble tail leaves the top edge toward its target; none when the target is inside'] = !!tail && tail[2].y < -20 && tail[2].x < tail[0].x && tail[0].y === -18 && bubbleTail(50, 20, { x: 10, y: 5 }, 2) === null;
     r['no "Numbered" in the editor'] = !/numbered marker|Numbered/.test(document.body.innerText + GROUPS.flatMap((g) => g.tools.map((t) => t.label + (t.tip ?? ''))).join(' '));
@@ -431,13 +474,28 @@ app
       refRows.length >= 2 && refRows.every((row) => row.querySelector('.md').dataset.placeholder === 'What about ' + row.querySelector('b').textContent + '?');
     r['F14 notes stand 12 pt apart'] = refRows.length >= 3 && refGaps.every((g) => Math.abs(g - 12) <= 1);
     console.log('F13 F14 ' + JSON.stringify({ rows: refRows.length, gaps: refGaps, refsAdded }));
+    // @F52, @F53, measured like F14: 20 pt above each notes heading and 8 pt below it; with references, a 1 px hairline
+    // 20 pt under the comment and 20 pt above References, 16 pt in from each side of the column
+    const notesBody = document.querySelector('aside .body');
+    notesBody.scrollTop = 0;
+    const nbox = (id) => document.getElementById(id).getBoundingClientRect();
+    const bodyTop = notesBody.getBoundingClientRect().top, bodyLeft = notesBody.getBoundingClientRect().left, ruleBox = nbox('refs-rule');
+    const notesGaps = {
+      above: [nbox('caption-label').top - bodyTop, nbox('refs-label').top - ruleBox.bottom],
+      below: [nbox('caption').top - nbox('caption-label').bottom, nbox('refs').top - nbox('refs-label').bottom],
+    };
+    const ruleAt = { height: ruleBox.height, under: ruleBox.top - nbox('caption').bottom, left: ruleBox.left - bodyLeft, right: bodyLeft + notesBody.clientWidth - ruleBox.right };
+    r['@F52 each notes heading has 20 pt above it and 8 pt below it'] = [...notesGaps.above.map((g) => g - 20), ...notesGaps.below.map((g) => g - 8)].every((d) => Math.abs(d) <= 1);
+    r['@F53 a 1 px hairline 20 pt under the comment and above References, 16 pt in from each side'] =
+      Math.abs(ruleAt.height - 1) < 0.5 && Math.abs(ruleAt.under - 20) <= 1 && Math.abs(notesGaps.above[1] - 20) <= 1 && [ruleAt.left, ruleAt.right].every((g) => Math.abs(g - 16) <= 1);
+    console.log('F52 F53 ' + JSON.stringify({ notesGaps, ruleAt }));
     for (let i = 0; i < refsAdded; i++) key('z', { metaKey: true });
     await sleep(100);
     r['F13/F14 the added references are undone'] = document.querySelectorAll('#refs .ref').length === refsBefore;
     setMd(cap, ['Smoke test caption']); document.activeElement.blur();
     return r;
   })()`;
-    const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
+    const inPage = traced(await win.webContents.executeJavaScript(js));
     inPage['F111 title row'] &&= win.getTitle() === 'Snapmark — smoke'; // the window title stays, for the Window menu
     // F12, F13: the names a screen reader hears, from Chromium's own accessibility tree, on the editable elements
     const dbg = win.webContents.debugger;
@@ -482,7 +540,7 @@ app
     inPage['F108 the toolbar fits at 820 points'] =
       JSON.stringify(win.getMinimumSize()) === JSON.stringify([820, 520]) &&
       (await win.webContents.executeJavaScript(
-        `(() => { const h = document.querySelector('header'); return h.scrollWidth <= h.clientWidth && getComputedStyle(document.getElementById('session')).textOverflow === 'ellipsis'; })()`,
+        `(() => { const h = document.querySelector('header'); return h.scrollWidth <= h.clientWidth && getComputedStyle(document.getElementById('session-name')).textOverflow === 'ellipsis'; })()`,
       ));
     win.setSize(w0, h0);
     await new Promise((r) => setTimeout(r, 300));
@@ -641,11 +699,20 @@ app
     const [r3, g3, b3] = pixel(out, 0.36, 0.7, unit * 2 * k, -unit * 2 * k); // card padding, above its text
     // The session viewer: session.md rendered with its image, editable, and screenshots one at a time
     const view = openViewer('smoke', root);
-    await new Promise<void>((r) => view.webContents.once('did-finish-load', () => r()));
-    const inView = (js: string) => view.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    await finished(view);
+    const inView = (js: string) =>
+      bounded(`the session window: ${js.slice(0, 80)}`, view.webContents.executeJavaScript(`(async () => { ${js} })()`));
     const waitFor = (cond: string) =>
       inView(`for (let i = 0; i < 50 && !(${cond}); i++) await new Promise((r) => setTimeout(r, 100)); return !!(${cond});`);
-    const viewer: Record<string, boolean> = {};
+    const viewer = traced({});
+    // @F57 the first session window fills 90 % of the work area of the pointer's display, centred (1 pt for rounding)
+    const viewWa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+    const within1 = (a: number, b: number) => Math.abs(a - b) <= 1;
+    const centred = (b: Electron.Rectangle) =>
+      within1(b.x + b.width / 2, viewWa.x + viewWa.width / 2) && within1(b.y + b.height / 2, viewWa.y + viewWa.height / 2);
+    const firstOpen = view.getBounds();
+    viewer['@F57 the first session window fills 90 % of the work area, centred'] =
+      within1(firstOpen.width, viewWa.width * 0.9) && within1(firstOpen.height, viewWa.height * 0.9) && centred(firstOpen);
     viewer['viewer shows the screenshot inline'] = await waitFor(`document.querySelector('#doc img[src^="img/"]')?.naturalWidth > 0`);
     viewer['viewer shows the caption'] = await waitFor(`document.getElementById('doc').textContent.includes('Smoke test caption')`);
     await inView(
@@ -708,7 +775,8 @@ app
       }
       throw new Error('no new window');
     };
-    const inWin = (w: BrowserWindow, js: string) => w.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    const inWin = (w: BrowserWindow, js: string) =>
+      bounded(`${w.getTitle()}: ${js.slice(0, 80)}`, w.webContents.executeJavaScript(`(async () => { ${js} })()`));
     const loaded = (w: BrowserWindow) =>
       inWin(
         w,
@@ -721,7 +789,7 @@ app
     const removedOne = await waitFor(`document.querySelectorAll('#grid .thumb').length === 0`);
     fs.copyFileSync(shotCopy, path.join(root, 'newer.png'));
     const newer = openEditor(path.join(root, 'newer.png'), { session: 'smoke' });
-    await new Promise<void>((r) => newer.webContents.once('did-finish-load', () => r()));
+    await finished(newer);
     await loaded(newer);
     newer.close();
     for (let i = 0; i < 30 && !newer.isDestroyed(); i++) await sleep(100);
@@ -741,11 +809,11 @@ app
     // The grid's Edit Again button opens the editor too (snap-c5c)
     await inView(`document.querySelector('#grid .thumb .edit').click();`);
     const fromGrid = await nextWindow(windows);
-    await new Promise<void>((r) => fromGrid.webContents.once('did-finish-load', () => r()));
+    await finished(fromGrid);
     await loaded(fromGrid);
     viewer["snap-c5c the grid's Edit Again button opens the editor"] =
       fromGrid.webContents.getURL().endsWith('editor.html') &&
-      (await inWin(fromGrid, `return document.getElementById('save').textContent`)).startsWith('Save changes');
+      (await inWin(fromGrid, `return document.getElementById('save').textContent`)) === 'Save Changes ⌘↩'; // @F51
     fromGrid.destroy();
     await sleep(300);
     windows = BrowserWindow.getAllWindows();
@@ -753,21 +821,33 @@ app
     await inView(`document.querySelector('#grid .thumb .pic').click();`);
     keyIn('o', ['meta']);
     const again = await nextWindow(windows);
-    await new Promise<void>((r) => again.webContents.once('did-finish-load', () => r()));
+    await finished(again);
     viewer['F18 ⌘O edits again'] = again.webContents.getURL().endsWith('editor.html');
     await loaded(again);
     const restored = JSON.parse(await inWin(again, counts));
     viewer['Edit Again restores references, cards, moves, comment and notes'] =
       JSON.stringify(restored) === JSON.stringify([3, 2, 1, 'Smoke test caption', 'Button is misaligned']);
     viewer['Edit Again shows the session and its count'] =
-      (await inWin(again, `return document.getElementById('session').textContent`)) === 'smoke · 1 screenshot';
+      (await inWin(again, `return document.getElementById('session').textContent`)) === 'smoke (1)';
     viewer['Edit Again says it saves changes'] = (await inWin(again, `return document.getElementById('save').textContent`)).startsWith(
-      'Save changes',
+      'Save Changes',
     );
     // F115: Edit Again (and one-shot, below) shows the session as plain text, with no chevron and no menu
     const noSessionMenu = (w: BrowserWindow) =>
-      inWin(w, `const s = document.getElementById('session'); return s.disabled && !s.querySelector('.chevron');`);
+      inWin(
+        w,
+        `const s = document.getElementById('session'); return s.getAttribute('aria-disabled') === 'true' && !s.querySelector('.chevron');`,
+      );
     const noMenuAgain = await noSessionMenu(again);
+    // @F45 Edit Again: Session | One-Shot and the pop-up are greyed, the reason on their wrapper and read with the pop-up;
+    // ⇧⌘O changes nothing
+    for (const type of ['keyDown', 'keyUp'] as const)
+      again.webContents.sendInputEvent({ type, keyCode: 'O', modifiers: ['shift', 'meta'] });
+    await sleep(200);
+    viewer['@F45 Edit Again greys the destination, with its reason'] = await inWin(
+      again,
+      `return [...document.querySelectorAll('#dest button')].every((b) => b.disabled) && document.getElementById('dest-wrap').title === 'Edit Again saves back into smoke.' && document.getElementById('dest-wrap').contains(document.getElementById('session')) && document.getElementById('session').getAttribute('aria-disabled') === 'true' && document.getElementById(document.getElementById('session').getAttribute('aria-describedby')).textContent === 'Edit Again saves back into smoke.' && !oneShot && document.querySelector('#dest [aria-checked="true"]').textContent.trim() === 'Session';`,
+    );
     await inWin(again, `captionField.focus();`);
     for (const ch of 'Edited ') again.webContents.sendInputEvent({ type: 'char', keyCode: ch });
     await new Promise((r) => setTimeout(r, 300));
@@ -778,14 +858,14 @@ app
     // An editor left open on the session follows its count and its name
     fs.copyFileSync(shotCopy, path.join(root, 'open.png'));
     const watching = openEditor(path.join(root, 'open.png'), { session: 'smoke' });
-    await new Promise<void>((r) => watching.webContents.once('did-finish-load', () => r()));
+    await finished(watching);
     await loaded(watching);
     const label = (text: string) =>
       inWin(
         watching,
         `for (let i = 0; i < 30 && document.getElementById('session').textContent !== ${JSON.stringify(text)}; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('session').textContent === ${JSON.stringify(text)};`,
       );
-    viewer['an open editor shows the count'] = await label('smoke · 1 screenshot');
+    viewer['an open editor shows the count'] = await label('smoke (1)');
     // Discarded tab: this session's removed screenshot, and Reopen puts it back
     await inView(`document.getElementById('tab-discarded').click();`);
     viewer['Discarded tab lists the removed screenshot'] = await waitFor(
@@ -795,7 +875,7 @@ app
     viewer['Reopen puts it back in the session'] =
       (await waitFor(`document.getElementById('tab-discarded').hidden && document.querySelectorAll('#grid .thumb').length === 2`)) &&
       smokeMd().includes('Second shot');
-    viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke · 2 screenshots');
+    viewer['an open editor follows the count when a screenshot comes back'] = await label('smoke (2)');
     // F135: after ⌘⌫ in the large view, ↩ does not start a rename: the large image has the focus
     await inView(`document.querySelector('#grid .thumb .pic').click(); document.activeElement.blur();`);
     keyIn('Backspace', ['meta']);
@@ -888,16 +968,15 @@ app
       fs.existsSync(path.join(root, 'smoke renamed', 'session.md')) &&
       !fs.existsSync(path.join(root, 'smoke')) &&
       view.getTitle() === 'smoke renamed — Snapmark';
-    viewer['an open editor follows the rename'] =
-      (await label('smoke renamed · 2 screenshots')) && watching.getTitle() === 'Snapmark — smoke renamed';
+    viewer['an open editor follows the rename'] = (await label('smoke renamed (2)')) && watching.getTitle() === 'Snapmark — smoke renamed';
     // F116: a long name shortens with "…" in an open editor's label; its tooltip has the full name
     const long = 'Ledgerly Q4 review of checkout, payments, refunds and the new order page, take 2';
     await rename(long, 'Return');
     inPage['F116 a long name shortens'] =
-      (await label(`${long} · 2 screenshots`)) &&
+      (await label(`${long} (2)`)) &&
       (await inWin(
         watching,
-        `const s = document.getElementById('session'); return s.scrollWidth > s.clientWidth && s.title.startsWith(${JSON.stringify(long)});`,
+        `const s = document.getElementById('session'), n = document.getElementById('session-name'); return n.scrollWidth > n.clientWidth && s.title.startsWith(${JSON.stringify(long)});`,
       ));
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
@@ -925,23 +1004,35 @@ app
     await rename('smoke', 'Return');
     await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     watching.destroy();
+    // @F58 the owner leaves the window at 900 × 640: the next one opens at that size. setSize stands in for the drag; it
+    // does not report 'resized' itself
+    view.setSize(900, 640);
+    view.emit('resized');
     view.close();
 
     // A date-stamped session reads as a date, and a rename keeps the date in front
     const stamped = sessions.create(root, '2026-10-24 23.38');
     sessions.addShot(root, stamped, fs.readFileSync(out), { caption: 'Dated shot' });
     const dated = openViewer(stamped, root);
-    await new Promise<void>((r) => dated.webContents.once('did-finish-load', () => r()));
-    const inDated = (js: string) => dated.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    await finished(dated);
+    const inDated = (js: string) =>
+      bounded(`the dated window: ${js.slice(0, 80)}`, dated.webContents.executeJavaScript(`(async () => { ${js} })()`));
     const datedTitle = (text: string) =>
       inDated(
         `for (let i = 0; i < 50 && document.getElementById('title').textContent !== ${JSON.stringify(text)}; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('title').textContent === ${JSON.stringify(text)};`,
       );
+    const datedBounds = dated.getBounds();
+    const remembered = JSON.parse(fs.readFileSync(path.join(root, 'userData', 'state.json'), 'utf8')).viewerSize;
+    const keptSize =
+      datedBounds.width === 900 &&
+      datedBounds.height === 640 &&
+      centred(datedBounds) &&
+      JSON.stringify(remembered) === '{"width":900,"height":640}';
     viewer['F2 the session window shows the readable date'] =
       (await datedTitle('2026-10-24, 23:38')) && dated.getTitle() === '2026-10-24, 23:38 — Snapmark';
     fs.copyFileSync(shotCopy, path.join(root, 'dated.png'));
     const datedEditor = openEditor(path.join(root, 'dated.png'), { session: stamped });
-    await new Promise<void>((r) => datedEditor.webContents.once('did-finish-load', () => r()));
+    await finished(datedEditor);
     await loaded(datedEditor);
     viewer['F3 an open editor shows the readable name'] =
       (await inWin(datedEditor, `return document.getElementById('session').textContent`)).startsWith('2026-10-24, 23:38') &&
@@ -951,7 +1042,7 @@ app
     const bare = sessions.create(root, '2026-10-24 09.05');
     fs.copyFileSync(shotCopy, path.join(root, 'bare.png'));
     const bareEditor = openEditor(path.join(root, 'bare.png'), { session: bare });
-    await new Promise<void>((r) => bareEditor.webContents.once('did-finish-load', () => r()));
+    await finished(bareEditor);
     await loaded(bareEditor);
     viewer['snap-ua7 F3 an editor on an empty session shows only its readable name'] =
       (await inWin(bareEditor, `return document.getElementById('session').textContent`)) === '2026-10-24, 09:05' &&
@@ -978,12 +1069,22 @@ app
     dated.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
     viewer['snap-bmr.14.3 gap: ↩ on an emptied field goes back to the bare date'] =
       (await datedTitle('2026-10-24, 23:38')) && fs.existsSync(path.join(root, '2026-10-24 23.38', 'session.md'));
-    dated.close();
+    // @F58 a size remembered from a larger display opens no larger than this one's work area
+    dated.getSize = () => [viewWa.width + 400, viewWa.height + 400];
+    dated.emit('resized');
+    await bounded('the dated window to close', new Promise<void>((r) => (dated.once('closed', () => r()), dated.close()))); // gone from the open windows, so a new one opens
+    const capped = openViewer(stamped, root);
+    const cb = capped.getBounds();
+    viewer['@F58 the session window opens at the size the owner left it, never larger than the display'] =
+      keptSize && within1(cb.width, viewWa.width) && within1(cb.height, viewWa.height) && centred(cb);
+    capped.setSize(1100, 900); // the size the later session windows were checked at before F57
+    capped.emit('resized');
+    capped.close();
 
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks
     fs.copyFileSync(shotCopy, path.join(root, 'discard.png'));
     const gone = openEditor(path.join(root, 'discard.png'));
-    await new Promise<void>((r) => gone.webContents.once('did-finish-load', () => r()));
+    await finished(gone);
     await loaded(gone);
     await inWin(gone, `canvas.add(new Marker({ x: 50, y: 50 }, '#e5484d')); after();`);
     for (const key of ['Escape', 'Escape']) {
@@ -998,7 +1099,7 @@ app
     windows = BrowserWindow.getAllWindows();
     reopen(kept);
     const back = await nextWindow(windows);
-    await new Promise<void>((r) => back.webContents.once('did-finish-load', () => r()));
+    await finished(back);
     await loaded(back);
     viewer['Reopen brings it back with its marks'] = JSON.parse(await inWin(back, counts))[0] === 1 && !fs.existsSync(kept.dir);
     back.destroy();
@@ -1418,7 +1519,7 @@ app
       arrowsOk && tabsOk && runs.length === 2 && barEsc.isDestroyed() && !barUp().length;
     // One-Shot: a scrolling capture opens in one-shot mode, never in a session
     const oneShotScroll = await scrollCapture(scrollArea, fakeGrab([0, 400], 'Return'), { oneShot: true });
-    viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-shot';
+    viewer['F212 a one-shot scrolling capture opens in one-shot mode'] = oneShotScroll?.getTitle() === 'Snapmark — One-Shot';
     oneShotScroll?.destroy();
     setCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false }); // as the first time again
 
@@ -1601,7 +1702,7 @@ app
     await sleep(200);
     fs.copyFileSync(shotCopy, path.join(root, 'single.png'));
     const singleOff = openEditor(path.join(root, 'single.png'), { session: 'smoke' });
-    await new Promise<void>((r) => singleOff.webContents.once('did-finish-load', () => r()));
+    await finished(singleOff);
     await loaded(singleOff);
     viewer['F225 single keys off reaches the editor'] =
       !(await inWin(set, `return document.getElementById('single').checked`)) && (await inWin(singleOff, `return singleKeys === false`));
@@ -1685,13 +1786,15 @@ app
     for (let i = 0; i < 30 && !keysWin.isDestroyed(); i++) await sleep(100);
     viewer['F234 Esc closes Keyboard Shortcuts'] = keysWin.isDestroyed();
 
-    // One-shot mode: Beautify instead of References, no Add to session; ⌘C copies the marked screenshot on its
-    // backdrop at full resolution; nothing goes into a session; closing keeps it in Discarded; the settings are remembered
+    // One-shot mode: Beautify instead of References, no Add to Session; ⌘C copies the marked screenshot on its
+    // backdrop at full resolution and closes the editor (@F39), so this block is split: Save As… first, then Copy on this
+    // window, ⌘↩ and Esc on their own (plan Risks). Nothing goes into a session; Discarded keeps each; the settings are
+    // remembered. Replaces the old one-shot sequence of ⌘C, ⇧⌘S and ⌘↩ on one window.
     const { beautyLayout } = require('../src/beautify') as { beautyLayout: typeof globalThis.beautyLayout };
     const sessionsBefore = JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)]));
     fs.copyFileSync(shotCopy, path.join(root, 'one.png'));
     const one = openEditor(path.join(root, 'one.png'), { oneShot: true });
-    await new Promise<void>((r) => one.webContents.once('did-finish-load', () => r()));
+    await finished(one);
     await loaded(one);
     const panel = JSON.parse(
       await inWin(
@@ -1701,7 +1804,7 @@ app
           beautify: !document.getElementById('beautify').hidden && shown('beautify'),
           noRefs: !shown('refs') && !shown('caption'),
           noHeading: !shown('caption-label'),
-          noAdd: !document.body.innerText.includes('Add to session'),
+          noAdd: !document.body.innerText.includes('Add to Session'),
           primary: document.getElementById('save').textContent,
           values: ['padding', 'radius', 'shadow'].map((id) => document.getElementById(id).value + '=' + document.querySelector('output[for="' + id + '"]').textContent).join(),
           backdrops: document.querySelectorAll('#backdrops > *').length,
@@ -1712,14 +1815,16 @@ app
     viewer['one-shot: the Beautify panel replaces References and the comment'] = panel.beautify && panel.noRefs;
     inPage['F115 no session menu in Edit Again or one-shot'] = noMenuAgain && (await noSessionMenu(one));
     inPage['F12 the top box is headed General comment'] &&= panel.noHeading; // hidden with the box in one-shot mode
-    viewer['one-shot: no Add to session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
+    viewer['one-shot: no Add to Session; Copy Image is the main button'] = panel.noAdd && panel.primary === 'Copy Image ⌘C';
     viewer['one-shot: sliders show their values; 10 backgrounds; Auto 4:3 3:2 16:9 1:1'] =
       panel.values === '64=64,12=12,40=40' && panel.backdrops === 10 && panel.ratios === 'Auto,4:3,3:2,16:9,1:1';
     const shotUnit = Math.max(2, Math.round(Math.max(shotSize.width, Math.min(shotSize.height, 2 * shotSize.width)) / 400));
+    // A reference at the centre, which the copied image leaves out (@F50), inside a red box, which it keeps
+    const [cx, cy] = [Math.round(shotSize.width / 2), Math.round(shotSize.height / 2)];
     const preview = JSON.parse(
       await inWin(
         one,
-        `canvas.add(new Marker({ x: background.width / 2, y: background.height / 2 }, '#e5484d')); after();
+        `canvas.add(new Marker({ x: ${cx}, y: ${cy} }, '#e5484d'), new Glyph('box', { x: ${cx - 80}, y: ${cy - 80}, w: 160, h: 160 }, '#e5484d')); after();
         const set = (el, v) => { el.value = v; el.dispatchEvent(new Event('input')); };
         set(document.getElementById('padding'), '100');
         set(document.querySelector('#backdrops input[type="color"]'), '#123456');
@@ -1730,6 +1835,31 @@ app
     );
     viewer['one-shot: the preview shows the backdrop at the chosen ratio'] =
       Math.abs(preview.ratio - 16 / 9) < 0.02 && preview.bg === 'rgb(18, 52, 86)';
+    // @F55 Beautify's Background has a hex field beside Custom, with the annotation field's rules: a paste applies
+    // (@F54), a bad value on Enter shows the hex error (@F56). Typing 123456 puts the backdrop back for the checks below.
+    const backdropHex = JSON.parse(
+      await inWin(
+        one,
+        `const el = document.getElementById('backdrop-hex'), err = document.getElementById('backdrop-hex-error');
+        const typeIn = (v, inputType) => { el.value = v; el.dispatchEvent(new InputEvent('input', { inputType, bubbles: true })); };
+        const bg = () => getComputedStyle(document.getElementById('stage')).backgroundColor;
+        const custom = document.querySelector('#backdrops .custom').getBoundingClientRect(), field = el.closest('.hex').getBoundingClientRect();
+        const beside = Math.abs(custom.top + custom.bottom - field.top - field.bottom) < 2 && field.left > custom.right && el.closest('#backdrops') !== null;
+        const shows = el.value === '123456' && el.closest('.hex').textContent.trim().startsWith('#');
+        el.focus(); typeIn('#2492ff', 'insertFromPaste');
+        const pasted = el.value === '2492ff' && bg() === 'rgb(36, 146, 255)';
+        typeIn('zz', 'insertText');
+        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        const refused = !err.hidden && err.getAttribute('role') === 'status' && err.textContent === 'Use 3 or 6 hex digits, like e5484d.' && el.getAttribute('aria-invalid') === 'true' && bg() === 'rgb(36, 146, 255)';
+        typeIn('123456', 'insertText');
+        el.blur(); el.dispatchEvent(new FocusEvent('blur'));
+        return JSON.stringify({ beside, shows, pasted, refused, back: err.hidden && bg() === 'rgb(18, 52, 86)' });`,
+      ),
+    );
+    console.log('F55 ' + JSON.stringify(backdropHex));
+    viewer['@F55 Beautify Background has a hex field beside Custom'] = backdropHex.beside && backdropHex.shows && backdropHex.back;
+    viewer['@F54 pasting #2492ff into the Beautify hex field reads 2492ff and applies'] = backdropHex.pasted;
+    viewer['@F56 a bad value in the Beautify hex field shows the hex error'] = backdropHex.refused;
     // Its own stubs, so the session-mode checks below still see their copy and file
     const got = { copy: null as Buffer | null, offered: '' };
     const oneSaved = path.join(root, 'one-shot-saved.png');
@@ -1738,11 +1868,39 @@ app
       got.offered = opts.defaultPath ?? '';
       return { canceled: false, filePath: oneSaved };
     };
+    // ⇧⌘S first: Save As… leaves the editor open
+    await inWin(
+      one,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`,
+    );
+    for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
+    // @F41 the hex field has the cursor: ⌘C is its text's, so nothing is copied and the editor stays open
+    const textKept = await inWin(
+      one,
+      `document.getElementById('swatch').click();
+      const h = document.getElementById('hex');
+      h.focus();
+      h.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 500));
+      const kept = document.activeElement === h;
+      closePalette(false);
+      return kept;`,
+    );
+    viewer['@F41 ⌘C in a text field copies text and leaves the editor open'] = textKept && !got.copy && !one.isDestroyed();
+    // @F39 ⌘C, no text field focused: the image is copied and the editor closes
     await inWin(one, `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));`);
-    for (let i = 0; i < 30 && !got.copy; i++) await new Promise((r) => setTimeout(r, 100));
+    for (let i = 0; i < 30 && !one.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
     const oneCopy = got.copy;
     const oneFile = path.join(root, 'one-shot-copied.png');
     if (oneCopy) fs.writeFileSync(oneFile, oneCopy);
+    viewer['@F39 Copy Image copies the image and closes the editor'] = !!oneCopy && one.isDestroyed();
+    // @F40 Discarded keeps it 7 days, listed as "Copied One-Shot", with its settings
+    const [copiedKept] = sessions.discarded(root);
+    viewer['@F40 Discarded keeps the copied One-Shot as "Copied One-Shot"'] =
+      copiedKept?.session === 'one-shot' &&
+      !!copiedKept.copied &&
+      path.basename(copiedKept.dir).endsWith(' · one-shot · Copied One-Shot') &&
+      JSON.parse(fs.readFileSync(path.join(copiedKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
     const L = beautyLayout(shotSize.width, shotSize.height, { padding: 100, radius: 12, shadow: 40, backdrop: '#123456', ratio: '16:9' });
     const near = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]) <= 2);
     viewer['one-shot: ⌘C copies at full resolution, the canvas at the ratio'] =
@@ -1750,53 +1908,52 @@ app
     viewer['one-shot: the copied image has the backdrop in its corners'] =
       !!oneCopy && near(pixel(oneFile, 0, 0, 2, 2), [18, 52, 86]) && near(pixel(oneFile, 1, 1, -3, -3), [18, 52, 86]);
     viewer['one-shot: the screenshot and its marks sit centred on it'] =
-      !!oneCopy && red(pixel(oneFile, (L.x + shotSize.width / 2) / L.width, (L.y + shotSize.height / 2) / L.height, -shotUnit * 8 * 0.45));
-    await inWin(
-      one,
-      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));`,
-    );
-    for (let i = 0; i < 30 && !fs.existsSync(oneSaved); i++) await new Promise((r) => setTimeout(r, 100));
+      !!oneCopy && red(pixel(oneFile, (L.x + cx - 80) / L.width, (L.y + cy) / L.height));
+    viewer['@F50 the One-Shot image leaves the reference numbers out'] =
+      !!oneCopy && !red(pixel(oneFile, (L.x + cx) / L.width, (L.y + cy) / L.height, -shotUnit * 8 * 0.45));
     viewer['one-shot: Save As… writes the same image, named Snapmark <date time>'] =
       /^Snapmark \d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d\.png$/.test(got.offered) &&
       !!oneCopy &&
       fs.existsSync(oneSaved) &&
       fs.readFileSync(oneSaved).equals(oneCopy);
-    // F134: one-shot ⌘↵ copies and keeps the selected marks selected
-    got.copy = null;
-    const oneSelected = await inWin(
-      one,
-      `canvas.add(new Marker({ x: 40, y: 40 }, '#e5484d')); after();
-      select(canvas.getObjects().filter((o) => o instanceof Marker));
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', metaKey: true, bubbles: true, cancelable: true }));
-      await new Promise((r) => setTimeout(r, 500));
-      const n = canvas.getActiveObjects().length;
-      canvas.discardActiveObject();
-      return n;`,
-    );
-    for (let i = 0; i < 30 && !got.copy; i++) await sleep(100);
-    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu && oneSelected === 2 && !!got.copy;
-    viewer['one-shot: nothing is added to any session'] =
-      JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
-    for (const key of ['Escape', 'Escape']) {
-      one.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    for (let i = 0; i < 30 && !one.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
-    const [oneKept] = sessions.discarded(root);
-    viewer['one-shot: Esc, Esc closes it into Discarded with its settings'] =
-      one.isDestroyed() &&
-      oneKept?.session === 'one-shot' &&
-      JSON.parse(fs.readFileSync(path.join(oneKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
+    // The next one-shot starts from the last settings; ⌘↩ with marks selected copies and closes it too (@F39)
     fs.copyFileSync(shotCopy, path.join(root, 'two.png'));
     const two = openEditor(path.join(root, 'two.png'), { oneShot: true });
-    await new Promise<void>((r) => two.webContents.once('did-finish-load', () => r()));
+    await finished(two);
     await loaded(two);
     viewer['one-shot: the next one starts from the last settings'] =
       (await inWin(
         two,
         `return document.getElementById('padding').value === '100' && document.querySelector('#ratios [aria-pressed="true"]').textContent === '16:9' && document.querySelector('#backdrops .custom').classList.contains('picked');`,
       )) === true;
-    two.destroy();
+    got.copy = null;
+    await inWin(
+      two,
+      `canvas.add(new Marker({ x: 40, y: 40 }, '#e5484d')); after();
+      select(canvas.getObjects().filter((o) => o instanceof Marker));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', metaKey: true, bubbles: true, cancelable: true }));`,
+    );
+    for (let i = 0; i < 30 && !two.isDestroyed(); i++) await sleep(100);
+    viewer['@F39 One-Shot ⌘↩ copies and closes the editor'] = !!got.copy && two.isDestroyed();
+    inPage['F134 every copy keeps the selection'] = keptByKeys && keptByMenu; // One-Shot's copy closes the editor (@F39)
+    viewer['one-shot: nothing is added to any session'] =
+      JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)])) === sessionsBefore;
+    // Esc, Esc: closed without a copy, so it is "not saved", with its settings
+    fs.copyFileSync(shotCopy, path.join(root, 'three.png'));
+    const three = openEditor(path.join(root, 'three.png'), { oneShot: true });
+    await finished(three);
+    await loaded(three);
+    for (const key of ['Escape', 'Escape']) {
+      three.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    for (let i = 0; i < 30 && !three.isDestroyed(); i++) await new Promise((r) => setTimeout(r, 100));
+    const [oneKept] = sessions.discarded(root);
+    viewer['one-shot: Esc, Esc closes it into Discarded with its settings'] =
+      three.isDestroyed() &&
+      oneKept?.session === 'one-shot' &&
+      path.basename(oneKept.dir).endsWith(' · one-shot · not saved') &&
+      JSON.parse(fs.readFileSync(path.join(oneKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
     // Auto-redact and the text in the screenshot, from a stubbed text recognition: words 9 px a character
     const word = (start: number, end: number, x: number, y: number) => ({ start, end, x, y, w: (end - start) * 9, h: 18 });
     desk.recognize = async () => [
@@ -1814,7 +1971,7 @@ app
     const redactLine = `document.getElementById('redacted')`;
     fs.copyFileSync(shotCopy, path.join(root, 'ocr.png'));
     const scan = openEditor(path.join(root, 'ocr.png'), { session: 'smoke' });
-    await new Promise<void>((r) => scan.webContents.once('did-finish-load', () => r()));
+    await finished(scan);
     await loaded(scan);
     const auto = JSON.parse(
       await inWin(
@@ -1846,7 +2003,7 @@ app
       state: JSON.parse(fs.readFileSync(ef.json, 'utf8')),
       replace: scanned,
     });
-    await new Promise<void>((r) => reopened.webContents.once('did-finish-load', () => r()));
+    await finished(reopened);
     await loaded(reopened);
     viewer['Edit Again does not auto-redact again'] =
       (await inWin(reopened, `await new Promise((r) => setTimeout(r, 500)); return ${autoMarks} + '|' + ${redactLine}.hidden;`)) ===
@@ -1855,7 +2012,7 @@ app
     desk.recognize = async () => null;
     // The session window shows the block's tags as a quiet label and keeps the block as it is
     const textView = openViewer('smoke', root);
-    await new Promise<void>((r) => textView.webContents.once('did-finish-load', () => r()));
+    await finished(textView);
     viewer['the Document tab shows "Text in the screenshot" as a label, not raw HTML'] = await textView.webContents.executeJavaScript(
       `(async () => {
         for (let i = 0; i < 50 && !document.querySelector('#doc span[data-type="html"]'); i++) await new Promise((r) => setTimeout(r, 100));
@@ -1874,7 +2031,7 @@ app
     const openOn = async (file: string, opts: Parameters<typeof openEditor>[1] = {}) => {
       fs.copyFileSync(shotCopy, path.join(root, file));
       const w = openEditor(path.join(root, file), opts);
-      await new Promise<void>((r) => w.webContents.once('did-finish-load', () => r()));
+      await finished(w);
       await loaded(w);
       return w;
     };
@@ -1937,6 +2094,138 @@ app
       promptItem.enabled === true &&
       copiedText === promptFor(path.join(root, moved)) &&
       notes.map((n) => n.body).join() === `Prompt for ${moved} copied. Paste it into your AI agent.`;
+    // The editor's destination (@F36–@F38, @F42–@F49, @N2): Session | One-Shot and the session pop-up at the toolbar's
+    // right end. The same window switches, so its marks, notes and undo stay. desk.popup hands over the pop-up's items,
+    // as in the capture bar's block; One-Shot's Copy is the one-shot block's (@F39–@F41, @F50).
+    desk.popup = (_w, items) => void (popped = items);
+    const dest = await openOn('dest.png', { session: moved });
+    const destLook = async () =>
+      JSON.parse(
+        await inWin(
+          dest,
+          `const shown = (id) => getComputedStyle(document.getElementById(id)).display !== 'none';
+          const h = document.querySelector('header');
+          return JSON.stringify({
+            ends: [h.lastElementChild.id, ...[...h.lastElementChild.children].filter((c) => !c.classList.contains('sr')).map((c) => c.id)],
+            segs: [...document.querySelectorAll('#dest [role=radio]')].map((b) => b.textContent.trim() + ':' + b.getAttribute('aria-checked')).join(),
+            face: document.getElementById('session').textContent, greyed: document.getElementById('session').getAttribute('aria-disabled') === 'true',
+            primary: document.getElementById('save').textContent, beautify: shown('beautify'),
+            notes: shown('caption') && shown('caption-label') && shown('refs'),
+            kept: shown('notes-kept') ? document.getElementById('notes-kept').textContent : '',
+            marks: canvas.getObjects().length, undo: undoStack.length, caption: captionField.value(), note: markers().map(noteOf).join('|'),
+          });`,
+        ),
+      );
+    const s0 = await destLook();
+    viewer['@F36 the toolbar ends with Session | One-Shot, then the pop-up "<session> (<n>)"'] =
+      s0.ends.join() === 'dest-wrap,dest,session' && s0.segs === 'Session:true,One-Shot:false' && s0.face === 'moved (1)' && !s0.greyed;
+    viewer['@F51 the primary button reads Add to Session ⌘↩'] = s0.primary === 'Add to Session ⌘↩';
+    // Notes and marks to keep: a comment, a reference with a note, and a box, selected for @F48
+    const box0 = await inWin(
+      dest,
+      `document.querySelector('#caption .ProseMirror').focus(); document.execCommand('insertText', false, 'Kept comment'); document.activeElement.blur();
+      canvas.add(Object.assign(new Marker({ x: 60, y: 60 }, '#e5484d'), { note: 'Kept note' }));
+      const g = new Glyph('box', { x: 120, y: 120, w: 80, h: 60 }, '#e5484d');
+      canvas.add(g); added(g); select([g]); window.destBox = g;
+      await new Promise((r) => setTimeout(r, 400));
+      const b = document.querySelectorAll('#dest [role=radio]')[1].getBoundingClientRect();
+      return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2), left: g.left };`,
+    );
+    const s1 = await destLook();
+    // @F48 a click on One-Shot hands the keys back to the canvas: → nudges the selected box
+    dest.focus();
+    dest.webContents.sendInputEvent({ type: 'mouseDown', x: box0.x, y: box0.y, button: 'left', clickCount: 1 });
+    dest.webContents.sendInputEvent({ type: 'mouseUp', x: box0.x, y: box0.y, button: 'left', clickCount: 1 });
+    await sleep(400);
+    for (const type of ['keyDown', 'keyUp'] as const) dest.webContents.sendInputEvent({ type, keyCode: 'Right' });
+    await sleep(200);
+    const nudged = await inWin(
+      dest,
+      `return !document.activeElement.closest('#dest') && canvas.getActiveObject() === destBox && destBox.left > ${box0.left};`,
+    );
+    const s2 = await destLook();
+    viewer['@F48 a click on a segment leaves the arrows to the canvas'] = nudged && s2.segs === 'Session:false,One-Shot:true';
+    viewer['@F37 One-Shot shows Beautify and Copy Image ⌘C, with every mark'] =
+      s2.beautify && !s2.notes && s2.primary === 'Copy Image ⌘C' && s2.marks === s1.marks && dest.getTitle() === 'Snapmark — One-Shot';
+    viewer['@F49 One-Shot with notes says they stay'] = s2.kept === 'Notes stay with Session. They are not copied.';
+    const noPop = await popWith(() => keyTo(dest, 'P', ['shift', 'meta']));
+    viewer['@F45 One-Shot greys the pop-up: Not in a session, no menu'] = s2.face === 'Not in a session' && s2.greyed && !noPop.length;
+    // @F46 ⇧⌘O switches back to Session, and again; @F38 the notes come back as they were
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(300);
+    const s3 = await destLook();
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(300);
+    const s4 = await destLook();
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(300);
+    viewer['@F46 ⇧⌘O switches between Session and One-Shot'] =
+      s3.segs === 'Session:true,One-Shot:false' && s4.segs === 'Session:false,One-Shot:true' && (await destLook()).segs === s3.segs;
+    viewer['@F38 back in Session, the comment and notes are as they were'] =
+      s3.notes &&
+      !s3.beautify &&
+      s3.caption === 'Kept comment' &&
+      s3.note === s1.note &&
+      s1.note === 'Kept note' &&
+      s3.marks === s1.marks &&
+      s3.face === 'moved (1)' &&
+      s3.primary === 'Add to Session ⌘↩' &&
+      dest.getTitle() === 'Snapmark — moved';
+    // @F47 ⇧⌘P opens the pop-up: the sessions with counts, this one ticked, Older Sessions…, New Session (@F42 unit)
+    const destRows = await popWith(() => keyTo(dest, 'P', ['shift', 'meta']));
+    viewer['@F47 ⇧⌘P opens the session pop-up'] =
+      destRows.find((i) => i.checked)?.label === 'moved (1)' && menuShape(destRows).endsWith('—|Older Sessions…|New Session');
+    // @F43 a pick moves the screenshot there and makes it current at once
+    const smokeRow = destRows.find((i) => i.type === 'checkbox' && !i.checked && /^smoke( \(\d+\))?$/.test(i.label ?? ''))!;
+    // The menu's current-session line reads "smoke · 2 screenshots" once smoke holds some, as @F23 reads it
+    const menuNow = () => (menuItems()[1] as { label?: string }).label ?? '';
+    const isSmoke = (line: string) => /^smoke( · |$)/.test(line);
+    pick(destRows, smokeRow.label!);
+    for (let i = 0; i < 30 && (await destLook()).face !== smokeRow.label; i++) await sleep(100);
+    const s5 = await destLook();
+    why.F43 = { picked: smokeRow.label, face: s5.face, menuSays: menuNow(), title: dest.getTitle() };
+    viewer['@F43 a session picked in the editor takes the screenshot, and is current'] =
+      s5.face === smokeRow.label && isSmoke(menuNow()) && dest.getTitle() === 'Snapmark — smoke';
+    // @F44 the picked session's folder is gone: the old session stays, and the error stands under the pop-up
+    const goneName = sessions.create(root, 'gone');
+    fs.rmSync(path.join(root, goneName), { recursive: true, force: true });
+    moveEditor(dest, goneName);
+    const goneSays = JSON.parse(
+      await inWin(
+        dest,
+        `const m = document.getElementById('move-error');
+        for (let i = 0; i < 30 && m.hidden; i++) await new Promise((r) => setTimeout(r, 100));
+        const p = document.getElementById('session').getBoundingClientRect(), r = m.getBoundingClientRect();
+        return JSON.stringify({ text: m.hidden ? '' : m.textContent, role: m.getAttribute('role'), under: r.top >= p.bottom && Math.abs(r.right - p.right) <= 1, at: [r.top, r.right, p.bottom, p.right] });`,
+      ),
+    );
+    const goneFace = (await destLook()).face;
+    why.F44 = { ...goneSays, face: goneFace, menuSays: menuNow() };
+    viewer['@F44 a gone session keeps the old one and says so under the pop-up'] =
+      goneSays.text === "Couldn't move to gone: its folder is gone. Choose another session or New Session." &&
+      goneSays.role === 'status' &&
+      goneSays.under &&
+      goneFace === s5.face &&
+      isSmoke(menuNow());
+    // @N2 at the 820 × 520 minimum, with a long session name, the toolbar keeps one line in Session and in One-Shot
+    const longest = sessions.create(root, 'Ledgerly Q4 review of checkout, payments and refunds');
+    moveEditor(dest, longest);
+    const [dw, dh] = dest.getSize();
+    dest.setSize(820, 520);
+    await sleep(400);
+    const oneLine = `const h = document.querySelector('header'), n = document.getElementById('session-name');
+      const whole = ['dest', 'session'].every((id) => document.getElementById(id).getBoundingClientRect().right <= h.getBoundingClientRect().right);
+      return h.scrollWidth <= h.clientWidth && whole && n.textContent.startsWith('Ledgerly') === !oneShot && (oneShot || n.scrollWidth > n.clientWidth);`;
+    const narrowSession = await inWin(dest, oneLine);
+    keyTo(dest, 'O', ['shift', 'meta']);
+    await sleep(400);
+    const narrowOneShot = await inWin(dest, oneLine);
+    why.N2 = { narrowSession, narrowOneShot, classes: await inWin(dest, `return document.querySelector('header').className`) };
+    viewer['@N2 at 820 × 520 the toolbar fits on one line'] = narrowSession && narrowOneShot;
+    dest.setSize(dw, dh);
+    dest.destroy();
+    desk.popup = realPopup;
+    setActive(moved);
     // @F1–@F7, @F10: the global keys, pressed as globalShortcut would (keyHandlers), with screencapture stubbed. Here
     // the current session holds a screenshot, so ⌃⇧N starts a new one; the tall captures below make their own current.
     const keyWin = async (k: keyof typeof keyHandlers) => {
@@ -1980,7 +2269,7 @@ app
     // @F3: ⌃⇧2 runs macOS's overlay (-i), and the result opens in One-Shot
     const oneShotKey = await keyWin('oneShot');
     viewer['@F3 ⌃⇧2 runs the overlay and opens One-Shot'] =
-      shots.at(-1)![0] === '-i' && shots.at(-1)![1] === '-x' && oneShotKey.getTitle() === 'Snapmark — One-shot';
+      shots.at(-1)![0] === '-i' && shots.at(-1)![1] === '-x' && oneShotKey.getTitle() === 'Snapmark — One-Shot';
     oneShotKey.destroy();
     // @F4: ⌃⇧3 with two displays: one screencapture, no picker, a file per display, an editor per file
     const realAll = screen.getAllDisplays;
@@ -2117,7 +2406,7 @@ app
     setActive(tallSession);
     fs.writeFileSync(path.join(root, 'tall.png'), big(1280, 8000));
     const tallEd = openEditor(path.join(root, 'tall.png'), { session: tallSession });
-    await new Promise<void>((r) => tallEd.webContents.once('did-finish-load', () => r()));
+    await finished(tallEd);
     await loaded(tallEd);
     await inWin(
       tallEd,
@@ -2149,7 +2438,7 @@ app
         ?.join('\n') ?? '';
     const linksBefore = partLinks();
     const tallView = openViewer(tallSession, root);
-    await new Promise<void>((r) => tallView.webContents.once('did-finish-load', () => r()));
+    await finished(tallView);
     await tallView.webContents.executeJavaScript(`(async () => {
       for (let i = 0; i < 50 && !document.querySelector('#doc img[src^="img/001/"]'); i++) await new Promise((r) => setTimeout(r, 100));
       const p = [...document.querySelectorAll('#doc p')].pop(); const r = document.createRange(); r.selectNodeContents(p); r.collapse(false);

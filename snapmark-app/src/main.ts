@@ -47,6 +47,7 @@ let singleKeys = true; // Settings ▸ Single-Key Tools
 let color: string | null = null; // the annotation colour last picked; every new editor starts with it
 let customColors: string[] = []; // the colour panel's Custom row, newest first (withCustom in tools.ts)
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
+let viewerSize: { width: number; height: number } | null = null; // the size the owner last gave a session window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
 let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, Session | One-Shot, Timer and Show Mouse Pointer, as last used
 let tray: Tray | null = null;
@@ -92,6 +93,7 @@ function loadState() {
     used = state.used ?? {};
     area = state.area ?? null;
     editorSize = state.editorSize ?? null;
+    viewerSize = state.viewerSize ?? null;
     beautify = state.beautify ?? null;
     singleKeys = state.singleKeys ?? true;
     color = state.color ?? null;
@@ -108,7 +110,7 @@ function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
   fs.writeFileSync(
     statePath(),
-    JSON.stringify({ active, root, used, area, editorSize, beautify, singleKeys, color, customColors, capture: captureOpts }),
+    JSON.stringify({ active, root, used, area, editorSize, viewerSize, beautify, singleKeys, color, customColors, capture: captureOpts }),
   );
 }
 
@@ -592,6 +594,15 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
 // Opens the editor on a screenshot file, which it owns and deletes on close. `session` is where it saves (default:
 // the current one); `state` puts marks back; `replace` makes saving replace that entry (Edit Again); `oneShot` opens
 // it in one-shot mode, which has no session and never makes or changes one.
+// An editor or session window opens centred on the screen with the pointer: at 90 % of it the first time, then at the
+// size the owner last gave that kind of window, never larger than that screen.
+function openingBounds(remembered: { width: number; height: number } | null) {
+  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const want = remembered ?? { width: wa.width * 0.9, height: wa.height * 0.9 };
+  const [width, height] = [Math.min(want.width, wa.width), Math.min(want.height, wa.height)].map(Math.round);
+  return { x: Math.round(wa.x + (wa.width - width) / 2), y: Math.round(wa.y + (wa.height - height) / 2), width, height };
+}
+
 export function openEditor(
   image: string,
   opts: { session?: string; state?: EditState; replace?: number; oneShot?: boolean } = {},
@@ -599,19 +610,12 @@ export function openEditor(
   const { oneShot } = opts;
   const session = oneShot ? '' : (opts.session ?? active ?? sessions.create(root));
   if (!opts.replace && !oneShot) setActive(session);
-  // 90% of the screen with the pointer, or the size the owner last gave an editor, never larger than that screen.
-  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  const want = editorSize ?? { width: wa.width * 0.9, height: wa.height * 0.9 };
-  const [width, height] = [Math.min(want.width, wa.width), Math.min(want.height, wa.height)].map(Math.round);
   const win = new BrowserWindow({
-    x: Math.round(wa.x + (wa.width - width) / 2),
-    y: Math.round(wa.y + (wa.height - height) / 2),
-    width,
-    height,
+    ...openingBounds(editorSize),
     // At the minimum size the toolbar still fits on one line (F108).
     minWidth: 820,
     minHeight: 520,
-    title: `Snapmark — ${oneShot ? 'One-shot' : sessions.shortName(session)}`,
+    title: editorTitle(session),
     // The page draws its own title row, with the traffic lights in it, like the session window.
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 10 },
@@ -638,6 +642,9 @@ export function openEditor(
   return win;
 }
 
+// "Snapmark — <session>"; One-Shot has no session ('').
+const editorTitle = (session: string) => `Snapmark — ${session ? sessions.shortName(session) : 'One-Shot'}`;
+
 function editorFor(id: number) {
   const ed = editors.get(id);
   if (!ed) throw new Error(`No editor for webContents ${id}`);
@@ -647,29 +654,33 @@ function editorFor(id: number) {
 ipcMain.handle('editor:init', (e): EditorInit => {
   const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
   const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
-  const picked = color ?? undefined;
-  if (oneShot)
-    return {
-      src,
-      session,
-      count: 0,
-      state,
-      oneShot,
-      beautify: state?.beautify ?? beautify ?? undefined,
-      singleKeys,
-      color: picked,
-      customColors,
-    };
   return {
     src,
-    session: sessions.shortName(session),
-    count: sessions.count(into, session),
+    ...(oneShot
+      ? { session, count: 0, oneShot }
+      : { session: sessions.shortName(session), count: sessions.count(into, session), replacing: replace }),
     state,
-    replacing: replace,
+    // In Session too, so a switch to One-Shot needs no reload
+    beautify: state?.beautify ?? beautify ?? undefined,
     singleKeys,
-    color: picked,
+    color: color ?? undefined,
     customColors,
   };
+});
+
+// Session | One-Shot in the editor: the same window switches, so its marks and undo stay (plan 2.1). Back in Session
+// it goes to the current session, as a new editor would. Edit Again saves back into its entry and never switches.
+ipcMain.handle('editor:destination', (e, one: unknown) => {
+  const ed = editorFor(e.sender.id);
+  if (!ed.replace && typeof one === 'boolean') {
+    ed.oneShot = one;
+    ed.root = root;
+    ed.session = one ? '' : (active ?? sessions.create(root));
+    if (!one) setActive(ed.session);
+    ed.win.setTitle(editorTitle(ed.session));
+  }
+  const { root: into, session, oneShot } = ed;
+  return oneShot ? { session: '', count: 0 } : { session: sessions.shortName(session), count: sessions.count(into, session) };
 });
 
 // The page is not trusted to send a colour: only #rrggbb is kept in state.json.
@@ -689,6 +700,8 @@ ipcMain.on('editor:custom-colors', (_e, list: unknown) => {
 export function moveEditor(win: BrowserWindow, name: string) {
   const ed = editors.get(win.webContents.id);
   if (!ed || ed.oneShot || ed.replace) return; // Edit Again and one-shot have no session menu
+  // Its folder went (Finder, another Mac): stay in the old session and say so under the pop-up (F44)
+  if (!sessions.list(root).includes(name)) return void ed.win.webContents.send('editor:move-error', sessions.shortName(name));
   ed.root = root;
   ed.session = name;
   setActive(name);
@@ -736,10 +749,17 @@ ipcMain.on('editor:beautify', (e, settings: Beautify) => {
 });
 
 // Sent synchronously while the window unloads without a save, so the capture is kept before the window is gone.
-ipcMain.on('editor:stash', (e, state: EditState) => {
+// copied: Copy Image closed a One-Shot, which Discarded lists as "Copied One-Shot" (F40).
+ipcMain.on('editor:stash', (e, state: EditState, copied: unknown) => {
   const ed = editors.get(e.sender.id);
   if (ed && fs.existsSync(ed.image)) {
-    sessions.discardCapture(ed.root, ed.oneShot ? 'one-shot' : ed.session, ed.image, JSON.stringify(state));
+    sessions.discardCapture(
+      ed.root,
+      ed.oneShot ? 'one-shot' : ed.session,
+      ed.image,
+      JSON.stringify(state),
+      !!ed.oneShot && copied === true,
+    );
     for (const v of viewers.values()) if (v.root === ed.root && v.session === ed.session) reloadViewer(v); // its Discarded tab
   }
   e.returnValue = null;
@@ -802,7 +822,7 @@ ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, sta
 function tellEditors(into: string, name: string) {
   for (const ed of editors.values())
     if (ed.root === into && ed.session === name && !ed.win.isDestroyed()) {
-      ed.win.setTitle(`Snapmark — ${sessions.shortName(name)}`);
+      ed.win.setTitle(editorTitle(name));
       ed.win.webContents.send('editor:session', sessions.shortName(name), sessions.count(into, name));
     }
 }
@@ -872,8 +892,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
     return open.win;
   }
   const win = new BrowserWindow({
-    width: 1100,
-    height: 900,
+    ...openingBounds(viewerSize),
     minWidth: 720,
     minHeight: 480,
     title: `${sessions.shortName(name)} — Snapmark`,
@@ -887,6 +906,13 @@ export function openViewer(name: string, into = root): BrowserWindow {
   viewers.set(id, v);
   watch(v);
   win.once('focus', updateDock);
+  const keepSize = () => {
+    const [w, h] = win.getSize();
+    viewerSize = { width: w, height: h };
+    saveState();
+  };
+  win.on('resized', keepSize);
+  win.on('close', keepSize); // Zoom and window tiling may not send 'resized'
   win.on('closed', () => {
     v.watcher?.close();
     viewers.delete(id);

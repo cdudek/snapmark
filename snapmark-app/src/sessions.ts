@@ -295,13 +295,14 @@ export interface Discarded {
   kind: 'capture' | 'shot';
   session: string;
   n?: number;
+  copied?: boolean; // a One-Shot that Copy Image closed: "Copied One-Shot", so it is not mistaken for a discard
   at: number; // epoch ms
 }
 
 function discardDir(root: string, meta: Omit<Discarded, 'dir' | 'at'>): string {
   const at = Date.now();
   const d = new Date(at);
-  const what = meta.kind === 'capture' ? 'not saved' : `screenshot ${meta.n}`;
+  const what = meta.copied ? 'Copied One-Shot' : meta.kind === 'capture' ? 'not saved' : `screenshot ${meta.n}`;
   // Readable in Finder: "2026-09-26 13.05.12 · <session> · screenshot 2"
   const base = path.join(root, '.discarded', `${stamp(d)}.${two(d.getSeconds())} · ${meta.session} · ${what}`);
   let dir = base;
@@ -312,8 +313,8 @@ function discardDir(root: string, meta: Omit<Discarded, 'dir' | 'at'>): string {
 }
 
 // A screenshot closed without saving: keep the clean capture and its marks. Returns the folder.
-export function discardCapture(root: string, session: string, image: string, state: string): string {
-  const dir = discardDir(root, { kind: 'capture', session });
+export function discardCapture(root: string, session: string, image: string, state: string, copied = false): string {
+  const dir = discardDir(root, { kind: 'capture', session, ...(copied && { copied }) });
   fs.copyFileSync(image, path.join(dir, 'image.png'));
   fs.writeFileSync(path.join(dir, 'state.json'), state);
   return dir;

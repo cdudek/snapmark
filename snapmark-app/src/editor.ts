@@ -47,8 +47,10 @@ let group = GROUPS.findIndex((g) => g.key === '2'); // start on Box
 let unit = 2; // stroke width in image pixels, scaled to the screenshot size
 let background: import('fabric').FabricImage | null = null;
 let drag: { start: Point; obj: FObject | null } | null = null;
-let oneShot = false; // one-shot mode: Beautify instead of References, Copy Image instead of Add to session
-let beauty: Beautify = DEFAULT_BEAUTY; // one-shot mode's settings
+let oneShot = false; // One-Shot: Beautify instead of the notes, Copy Image instead of Add to Session; switches live
+let replacing = false; // Edit Again: saves back into its entry, so the destination is fixed
+let copied = false; // a One-Shot closed by Copy Image: Discarded lists it as "Copied One-Shot"
+let beauty: Beautify = DEFAULT_BEAUTY; // One-Shot's settings, loaded in Session too so a switch needs no reload
 let singleKeys = true; // Settings ▸ Single-Key Tools: off, only ⌘1–⌘7 pick tools
 
 const tool = (): Tool => GROUPS[group].tools[variant[group]].id;
@@ -443,22 +445,43 @@ function setColor(c: string, keep = true) {
   applyTool();
 }
 
-function showHexError(on: boolean) {
-  hexError.hidden = !on;
-  if (on) hexEl.setAttribute('aria-invalid', 'true');
-  else hexEl.removeAttribute('aria-invalid');
+// A hex field (HEX-1), the annotation colour's and Beautify's: a leading "#" goes at once, a paste applies any good
+// code, typing applies at six good digits, and any typing clears the error. commit() is ↩ or leaving it: a good code
+// applies, a bad one shows the error and changes nothing. reset() shows a colour's digits with no error.
+function hexField(input: HTMLInputElement, error: HTMLElement, apply: (c: string) => void) {
+  const showError = (on: boolean) => {
+    error.hidden = !on;
+    if (on) input.setAttribute('aria-invalid', 'true');
+    else input.removeAttribute('aria-invalid');
+  };
+  input.addEventListener('input', (e) => {
+    if (normalizeHex(input.value)) showError(false); // the error stays until the value is valid
+    const typed = hexInput(input.value, (e as InputEvent).inputType === 'insertFromPaste');
+    if (typed.text !== input.value) input.value = typed.text;
+    if (typed.colour) apply(typed.colour);
+  });
+  return {
+    commit(): boolean {
+      const c = normalizeHex(input.value);
+      showError(!c);
+      if (c) input.value = c.slice(1);
+      if (c) apply(c);
+      return !!c;
+    },
+    reset(digits: string) {
+      input.value = digits;
+      showError(false);
+    },
+  };
 }
+
+const colourHex = hexField(hexEl, hexError, (c) => void (c !== colorEl.value && setColor(c)));
+let hexFrom = ''; // the colour the palette opened on: a different one from the field joins the Custom row
 
 // Enter or leaving the field: a good code becomes the colour; a bad one says so and changes nothing.
 function applyHex(): boolean {
-  const c = normalizeHex(hexEl.value);
-  showHexError(!c);
-  if (!c) return false;
-  hexEl.value = c.slice(1);
-  if (c !== colorEl.value) {
-    setColor(c);
-    addCustom(c);
-  }
+  if (!colourHex.commit()) return false;
+  if (colorEl.value !== hexFrom) addCustom((hexFrom = colorEl.value));
   return true;
 }
 
@@ -466,8 +489,8 @@ function openPalette() {
   // Under the toolbar, not the swatch, so it never covers Undo's and Redo's keys.
   const top = swatchBtn.closest('header')!.getBoundingClientRect().bottom + 4;
   Object.assign(paletteEl.style, { left: `${swatchBtn.getBoundingClientRect().left}px`, top: `${top}px` });
-  hexEl.value = colorEl.value.slice(1);
-  showHexError(false);
+  colourHex.reset(colorEl.value.slice(1));
+  hexFrom = colorEl.value;
   paletteEl.hidden = false;
   swatchBtn.setAttribute('aria-expanded', 'true');
   (colourBtns().find((b) => b.dataset.color === colorEl.value) ?? presetBtns[0]).focus();
@@ -484,7 +507,6 @@ function closePalette(refocus = true) {
 swatchBtn.onclick = () => (paletteEl.hidden ? openPalette() : closePalette());
 colorEl.oninput = () => setColor(colorEl.value);
 colorEl.onchange = () => addCustom(colorEl.value); // once, when the colour panel settles, not on every drag step
-hexEl.oninput = () => showHexError(false);
 hexEl.onblur = () => void (paletteEl.hidden || applyHex());
 hexEl.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' || e.metaKey) return;
@@ -691,6 +713,7 @@ canvas.on('mouse:out', () => {
 function after() {
   markers().forEach((m, i) => (m.n = i + 1));
   renderRefs();
+  renderNotesKept();
   undoBtn.disabled = !undoStack.length;
   redoBtn.disabled = !redoStack.length;
   canvas.requestRenderAll();
@@ -1035,7 +1058,13 @@ function flatten(): string {
   canvas.discardActiveObject();
   canvas.renderAll();
   if (!oneShot) return canvas.toDataURL({ format: 'png', multiplier: 1 }).split(',')[1];
-  return beautified(canvas.toCanvasElement(1)).toDataURL('image/png').split(',')[1];
+  // The reference numbers point at notes One-Shot does not copy, so they stay out of its image (F50)
+  const refs = markers();
+  refs.forEach((m) => (m.visible = false));
+  const shot = canvas.toCanvasElement(1);
+  refs.forEach((m) => (m.visible = true));
+  canvas.requestRenderAll();
+  return beautified(shot).toDataURL('image/png').split(',')[1];
 }
 
 // The one-shot image: the marked screenshot on its backdrop, with padding, rounded corners and shadow, at the
@@ -1089,27 +1118,36 @@ async function save() {
 
 // Discard, ⌘W, Esc and the close button all end here: the screenshot and its marks go to Discarded for 7 days.
 window.addEventListener('beforeunload', () => {
-  if (!saving && background) window.snapmark.stash(stateOf());
+  if (!saving && background) window.snapmark.stash(stateOf(), copied);
 });
 
-// Every copy (⌘C, ⇧⌘C, the Copy or Save menu, one-shot ⌘↵) keeps the marks that were selected.
+// Every copy (⌘C, ⇧⌘C, the Copy or Save menu, ⌘↩) keeps the marks that were selected. In One-Shot it is the commit:
+// the image is copied, then the editor closes, and Discarded keeps it 7 days (A6).
 const copyImage = async () => {
   if (!background) return;
   const kept = canvas.getActiveObjects();
   await redacting;
-  window.snapmark.copyImage(flatten());
-  select(kept);
+  const png = flatten();
+  if (!oneShot) return void (window.snapmark.copyImage(png), select(kept));
+  await window.snapmark.copyImage(png); // copied before the window goes
+  copied = true;
+  window.close();
 };
 const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 const saveImageAs = () => void (background && redacting.then(() => window.snapmark.saveImageAs(flatten())));
 
 document.addEventListener('keydown', (e) => {
-  if (e.metaKey && e.key === 'Enter') return void (oneShot ? copyImage() : save()); // the primary button
-  // ⇧⌘C and ⇧⌘S from anywhere, also inside a note: plain ⌘C there still copies its text.
-  const k = e.metaKey && e.shiftKey && e.key.toLowerCase();
+  if (e.metaKey && e.key === 'Enter') return primary();
+  // ⇧⌘C, ⇧⌘S, ⇧⌘O and ⇧⌘P from anywhere, also inside a note: plain ⌘C there still copies its text. The physical key
+  // for O and P, as the capture bar reads them.
+  const k = e.metaKey && e.shiftKey && (e.code.startsWith('Key') ? e.code.slice(3) : e.key).toLowerCase();
   if (k === 'c' || k === 's') {
     e.preventDefault();
     return (k === 'c' ? copyImage : saveImageAs)();
+  }
+  if (k === 'o' || k === 'p') {
+    e.preventDefault();
+    return void (k === 'o' ? setDestination(!oneShot) : openSessions()); // F46, F47
   }
   // ⌘S, as in Preview: add to the session; one-shot mode has no session, so Save As…. Also while typing.
   if (e.metaKey && !e.shiftKey && e.key === 's') {
@@ -1139,6 +1177,14 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') (e.target as HTMLElement).blur();
     return;
   }
+  // Session | One-Shot reached with Tab: either arrow picks the other segment. After a click the canvas has the keys.
+  const seg = segs.indexOf(document.activeElement as HTMLButtonElement);
+  if (ARROWS[e.key] && seg >= 0) {
+    e.preventDefault();
+    segs[1 - seg].focus();
+    return void setDestination(seg === 0);
+  }
+  if (e.key === 'ArrowDown' && document.activeElement === sessionEl) return void openSessions(); // as a macOS pop-up button
   const active = canvas.getActiveObject();
   // A slider or the colour well keeps its own arrows and ⌘A.
   if (e.metaKey && e.key === 'a' && !field) {
@@ -1173,7 +1219,7 @@ canvas.on('object:added', () => quiet || markDirty());
 let captionField: import('./md-notes').MdField | null = null; // mounted once init says what it holds
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
-saveBtn.onclick = () => (oneShot ? copyImage() : void save());
+saveBtn.onclick = () => primary();
 // Native menus under their control, in window points (plain numbers: a DOMRect does not cross IPC).
 const boxOf = (el: HTMLElement): Area => {
   const r = el.getBoundingClientRect();
@@ -1202,11 +1248,12 @@ function fit() {
     const stops = backdropStops(beauty.backdrop);
     Object.assign(stageEl.style, { width: `${L.width * k}px`, height: `${L.height * k}px`, background: backdropCss(stops) });
     stageEl.classList.toggle('checker', !stops.length); // transparent
-    Object.assign(canvas.wrapperEl.style, {
-      borderRadius: `${L.radius * k}px`,
-      boxShadow: L.blur ? `0 ${L.offsetY * k}px ${L.blur * k}px ${SHADOW}` : 'none',
-    });
   }
+  // Back in Session the canvas loses Beautify's corners and shadow again
+  Object.assign(canvas.wrapperEl.style, {
+    borderRadius: L ? `${L.radius * k}px` : '',
+    boxShadow: !L ? '' : L.blur ? `0 ${L.offsetY * k}px ${L.blur * k}px ${SHADOW}` : 'none',
+  });
   canvas.calcOffset(); // Fabric caches the canvas position; without this, clicks land offset after a resize
 }
 
@@ -1240,7 +1287,20 @@ customInput.type = 'color';
 customInput.setAttribute('aria-label', 'Custom background colour');
 customInput.oninput = () => setBeauty({ backdrop: customInput.value });
 customEl.append(customInput);
-$('backdrops').replaceChildren(...backdropBtns, customEl);
+// Beside Custom…, a hex field with the annotation colour's look and rules (F55). Empty while a preset is picked, so
+// leaving it empty is no error and changes nothing.
+const customRow = document.querySelector<HTMLDivElement>('#backdrops .custom-row')!;
+const backdropHexEl = $<HTMLInputElement>('backdrop-hex');
+const backdropHex = hexField(backdropHexEl, $('backdrop-hex-error'), (c) => setBeauty({ backdrop: c }));
+const commitBackdropHex = () => void (backdropHexEl.value.trim() && backdropHex.commit());
+backdropHexEl.onblur = commitBackdropHex;
+backdropHexEl.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.metaKey) return;
+  e.preventDefault();
+  commitBackdropHex();
+});
+customRow.prepend(customEl);
+$('backdrops').replaceChildren(...backdropBtns, customRow);
 const ratioBtns = RATIOS.map((r) => {
   const b = document.createElement('button');
   b.textContent = r === 'auto' ? 'Auto' : r;
@@ -1265,6 +1325,7 @@ function renderBeauty() {
   for (const b of backdropBtns) b.setAttribute('aria-pressed', String(b.dataset.backdrop === beauty.backdrop));
   const custom = beauty.backdrop.startsWith('#');
   if (custom) customInput.value = beauty.backdrop;
+  if (document.activeElement !== backdropHexEl) backdropHex.reset(custom ? beauty.backdrop.slice(1) : '');
   customEl.classList.toggle('picked', custom);
   customEl.style.background = custom
     ? beauty.backdrop
@@ -1274,47 +1335,132 @@ function renderBeauty() {
 // Refit whenever the canvas area changes size: window resizes, and the toolbar wrapping onto a second line.
 new ResizeObserver(fit).observe(mainEl);
 
-// "Ledgerly Q4 review · 12 screenshots"; only the name while the session is empty.
-const shotsLabel = (session: string, n: number) => (n ? `${session} · ${n} screenshot${n === 1 ? '' : 's'}` : session);
+// ---------- destination: Session | One-Shot and the session pop-up, at the toolbar's right end ----------
 
-// The session label: a button that opens the session menu, with a chevron; plain text in Edit Again and one-shot.
+const headerEl = document.querySelector('header')!;
+const segs = [...document.querySelectorAll<HTMLButtonElement>('#dest [role=radio]')];
 const sessionEl = $<HTMLButtonElement>('session');
+const nameEl = $<HTMLSpanElement>('session-name');
+const countEl = $<HTMLSpanElement>('session-count');
 const chevron = sessionEl.querySelector('.chevron')!;
-let switchable = false; // session mode, not Edit Again
-function showSession(session: string, count: number) {
-  sessionEl.replaceChildren(shotsLabel(session, count), ...(switchable ? [chevron] : []));
-  sessionEl.title = switchable ? `${session} · Switch Session` : session; // the full name, also when it shortens
-  sessionEl.disabled = !switchable;
-}
-sessionEl.onclick = () => window.snapmark.sessionsMenu(boxOf(sessionEl));
+const switchable = () => !oneShot && !replacing; // the pop-up opens only in Session, never in Edit Again
 
-window.snapmark.onSession(showSession);
+// "Ledgerly Q4 review (6)"; only the name while the session is empty. One-Shot: "Not in a session", greyed (F45).
+function showSession(session: string, count: number) {
+  nameEl.textContent = oneShot ? 'Not in a session' : session;
+  countEl.textContent = !oneShot && count ? ` (${count})` : '';
+  sessionEl.replaceChildren(nameEl, countEl, ...(switchable() ? [chevron] : []));
+  // The full name, also when it shortens; in Edit Again the wrapper's reason shows instead
+  sessionEl.title = switchable() ? `${session} · Switch Session` : replacing ? '' : nameEl.textContent;
+  sessionEl.setAttribute('aria-label', `Session: ${nameEl.textContent}${countEl.textContent}`);
+  sessionEl.setAttribute('aria-disabled', String(!switchable())); // not disabled: it stays in Tab and VoiceOver (F45)
+  fitToolbar();
+}
+const openSessions = () => switchable() && window.snapmark.sessionsMenu(boxOf(sessionEl));
+sessionEl.onclick = openSessions;
+
+// The primary button names what it does here (F51); One-Shot's is Copy Image, which closes the editor (F39).
+function renderPrimary() {
+  const [label, key] = replacing ? ['Save Changes', '⌘↩'] : oneShot ? ['Copy Image', '⌘C'] : ['Add to Session', '⌘↩'];
+  saveBtn.replaceChildren(`${label} `, keycap(key));
+  saveBtn.title = oneShot ? 'Copy the image with its background, at full resolution, and close' : '';
+}
+
+// One-Shot hides the notes; when there are some, it says they stay (F49).
+function renderNotesKept() {
+  const notes = !!captionField?.value().trim() || markers().some((m) => noteOf(m).trim());
+  $('notes-kept').hidden = !(oneShot && notes);
+}
+
+// Everything that follows Session | One-Shot. The notes are only hidden in One-Shot, so they come back as they were.
+function renderDestination(session: string, count: number) {
+  document.body.classList.toggle('one-shot', oneShot);
+  $('beautify').hidden = !oneShot;
+  segs.forEach((b, i) => {
+    b.setAttribute('aria-checked', String(i === Number(oneShot)));
+    b.tabIndex = i === Number(oneShot) ? 0 : -1;
+    b.disabled = replacing;
+  });
+  const reason = replacing ? `Edit Again saves back into ${session}.` : '';
+  $('dest-wrap').title = reason;
+  $('dest-reason').textContent = reason; // the pop-up's description, for VoiceOver
+  renderPrimary();
+  renderNotesKept();
+  showSession(session, count);
+  fit();
+}
+
+// The main process moves the screenshot between Session and One-Shot; this window stays, with its marks and undo.
+// While a switch is on its way, ⇧⌘O, ⌘↩ and the primary button wait: they would act on the old destination.
+let switching = false;
+async function setDestination(one: boolean) {
+  if (replacing || switching || one === oneShot) return;
+  switching = true;
+  try {
+    const { session, count } = await window.snapmark.destination(one);
+    oneShot = one;
+    renderDestination(session, count);
+  } finally {
+    switching = false;
+  }
+  $('announce').textContent = one ? 'One-Shot. Notes are not copied.' : 'Session';
+}
+// The primary button and ⌘↩
+function primary() {
+  if (!switching) void (oneShot ? copyImage() : save());
+}
+// A click hands the keys back to the canvas, so the arrows still nudge the selected mark (F48); Space keeps the focus.
+segs.forEach((b, i) =>
+  b.addEventListener('click', (e) => {
+    if (e.detail) b.blur();
+    void setDestination(i === 1);
+  }),
+);
+
+// Too wide for one line (N2): shrink in the spec's order until it fits.
+const FIT = ['fit-name', 'fit-segments', 'fit-tools'];
+function fitToolbar() {
+  headerEl.classList.remove(...FIT);
+  for (const c of FIT) {
+    if (headerEl.scrollWidth <= headerEl.clientWidth) return;
+    headerEl.classList.add(c);
+  }
+}
+window.addEventListener('resize', fitToolbar);
+
+// The picked session's folder is gone: the pop-up keeps the old one, and says so under it for 8 s (F44).
+const moveError = $<HTMLParagraphElement>('move-error');
+let moveTimer = 0;
+window.snapmark.onMoveError((session) => {
+  const r = sessionEl.getBoundingClientRect();
+  Object.assign(moveError.style, { top: `${headerEl.getBoundingClientRect().bottom + 4}px`, right: `${innerWidth - r.right}px` });
+  moveError.textContent = `Couldn't move to ${session}: its folder is gone. Choose another session or New Session.`;
+  moveError.hidden = false;
+  clearTimeout(moveTimer);
+  moveTimer = window.setTimeout(() => (moveError.hidden = true), 8000);
+});
+
+window.snapmark.onSession((session, count) => {
+  moveError.hidden = true;
+  showSession(session, count);
+});
 window.snapmark.onSingleKeys((on) => {
   singleKeys = on;
   renderToolbar();
 });
 window.snapmark
   .init()
-  .then(async ({ src, session, count, state, replacing, oneShot: one, beautify, singleKeys: keys, color: saved, customColors }) => {
+  .then(async ({ src, session, count, state, replacing: edit, oneShot: one, beautify, singleKeys: keys, color: saved, customColors }) => {
     singleKeys = keys;
     customs = customColors;
     renderCustoms();
     if (saved) setColor(saved, false); // also draws the toolbar
     renderToolbar();
-    switchable = !replacing && !one;
-    showSession(session, count);
-    if (replacing) saveBtn.replaceChildren('Save changes ', keycap('⌘↵'));
-    if (one) {
-      oneShot = true;
-      beauty = { ...DEFAULT_BEAUTY, ...beautify };
-      document.body.classList.add('one-shot');
-      $('beautify').hidden = false;
-      sessionEl.replaceChildren('One-shot · not in a session');
-      sessionEl.title = 'One-shot · not in a session';
-      saveBtn.replaceChildren('Copy Image ', keycap('⌘C'));
-      saveBtn.title = 'Copy the image with its background, at full resolution';
-      renderBeauty();
-    }
+    replacing = !!edit;
+    oneShot = !!one;
+    beauty = { ...DEFAULT_BEAUTY, ...beautify };
+    renderBeauty();
+    renderDestination(session, count);
     captionField = await MdNotes.mount($('caption'), state?.caption ?? '', {
       placeholder: 'About the whole screenshot…',
       labelledBy: 'caption-label',

@@ -147,7 +147,11 @@ assert.deepStrictEqual(
   ],
   'F236 Snapmark windows',
 );
-assert.deepStrictEqual(keys('Editor'), ['Esc', '⌫', '← ↑ → ↓', '⌘A', '⌘1–⌘7', '⌘Z', '⇧⌘Z', '⌘S / ⌘↵', '⌘C / ⇧⌘C', '⇧⌘S', '⌘W'], 'F236');
+assert.deepStrictEqual(
+  keys('Editor'),
+  ['Esc', '⌫', '← ↑ → ↓', '⌘A', '⌘1–⌘7', '⌘Z', '⇧⌘Z', '⌘S / ⌘↩', '⌘C / ⇧⌘C', '⇧⌘S', '⇧⌘O', '⇧⌘P', '⌘W'],
+  'F236 @F46 @F47 the editor lists ⇧⌘O and ⇧⌘P',
+);
 assert.deepStrictEqual(keys('Session window'), ['← →', '↩', '⌘⌫', '⌘O', '⌘Z'], 'F236');
 for (const g of KEY_GROUPS) for (const r of g.rows) assert.strictEqual(r.length, 3, `F236 ${r[0]}: key, name, what`);
 

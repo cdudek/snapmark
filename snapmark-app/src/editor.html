@@ -25,6 +25,8 @@
         --hairline: rgb(0 0 0 / 0.12); /* the edge of a colour dot, so Graphite and pale picks keep their outline */
         --slot: rgb(0 0 0 / 0.22);
         --danger: #c42b31; /* 5.6:1 on --field */
+        --fill-selected: light-dark(#e5e5ea, #3a3a3c); /* the selected segment, as in the capture bar */
+        --accent-text: light-dark(#0a62c2, #6cb4ff); /* its text: 4.7:1 light, 5.2:1 dark (N1) */
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -201,25 +203,102 @@
         width: 20px;
         height: 20px;
       }
-      /* The session label: opens the session menu; only the name shortens, with "…". Plain text in Edit Again and
-         one-shot. The chevron sits in the right padding, so the ellipsis never hides it. */
+      /* Where this screenshot goes, at the toolbar's right end: Session | One-Shot, 12 pt, then the session pop-up. Both
+         behave as the capture bar's; the flexible gap sits before them. One wrapper, so a greyed pair has one reason. */
+      #dest-wrap {
+        display: flex;
+        flex: none;
+        gap: 4px;
+        align-items: flex-start;
+        margin-left: auto;
+      }
+      #dest {
+        display: flex;
+        margin-top: 3px;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        -webkit-app-region: no-drag;
+      }
+      /* 24 + 2 × 2 padding + 2 × 1 border: 30 high, level with the pop-up */
+      header #dest button {
+        width: 100px;
+        height: 24px;
+        border-radius: 5px;
+      }
+      header #dest [aria-checked='true'] {
+        background: var(--fill-selected);
+        color: var(--accent-text);
+      }
+      /* The session pop-up: "<session> (<n>)" and a chevron; only the name shortens, with "…", so the count stays. Greyed,
+         without the chevron, in One-Shot and Edit Again. The chevron sits in the right padding. */
       header #session {
         position: relative;
-        display: block;
-        flex: 0 1 auto;
-        min-width: 0;
+        display: flex;
+        align-items: center;
+        flex: none;
         max-width: 260px;
-        margin-left: auto;
+        height: 30px;
+        margin: 3px 0 0 8px;
         padding: 0 26px 0 10px;
-        line-height: 36px;
-        overflow: hidden;
+        border: 1px solid var(--line);
         white-space: nowrap;
-        text-overflow: ellipsis;
         color: var(--muted);
       }
-      header #session:disabled {
-        opacity: 1;
+      #session-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* Greyed by colour, not opacity, so "Not in a session" still reads; aria-disabled keeps it in Tab and VoiceOver (F45) */
+      header #session[aria-disabled='true'] {
         padding-right: 10px;
+        background: transparent;
+        cursor: default;
+      }
+      /* Too narrow for one line (N2), in the spec's order: the name to 96 pt, the segments to 72, then the tool captions
+         go and the tools and separators tighten (editor.ts fitToolbar). */
+      header.fit-name #session-name {
+        max-width: 96px;
+      }
+      header.fit-segments #dest button {
+        width: 72px;
+      }
+      header.fit-tools {
+        gap: 2px;
+        padding-inline: 12px;
+      }
+      header.fit-tools #tools {
+        gap: 2px;
+      }
+      header.fit-tools .cap {
+        display: none;
+      }
+      header.fit-tools #tools button {
+        width: 32px;
+      }
+      header.fit-tools .sep {
+        margin-inline: 4px;
+      }
+      /* The failed move, under the pop-up for 8 s */
+      #move-error {
+        position: fixed;
+        z-index: 10;
+        max-width: 320px;
+        margin: 0;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: var(--field);
+        box-shadow: var(--lift);
+        color: var(--danger);
+        font-size: 12px;
+      }
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
       }
       #session .chevron {
         position: absolute;
@@ -302,8 +381,8 @@
         border: 0;
         border-top: 1px solid var(--line);
       }
-      /* The hex field: "#" is drawn, the field holds the digits. Enter or leaving it applies them. */
-      #palette .hex {
+      /* The hex fields, the annotation colour's and Beautify's: "#" is drawn, the field holds the digits (HEX-1). */
+      .hex {
         display: flex;
         align-items: center;
         height: 28px;
@@ -314,15 +393,15 @@
         color: var(--muted);
         cursor: text;
       }
-      #palette .hex:focus-within {
+      .hex:focus-within {
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-tint);
+        outline: 2px solid var(--focus); /* --accent and its tint are under 3:1 on the panels */
       }
-      #palette .hex:has([aria-invalid='true']) {
+      .hex:has([aria-invalid='true']) {
         border-color: var(--danger);
         box-shadow: none;
       }
-      #palette .hex input {
+      .hex input {
         flex: 1;
         min-width: 0;
         margin-left: 2px;
@@ -335,7 +414,7 @@
         font-variant-numeric: tabular-nums;
         font-weight: 400;
       }
-      #hex-error {
+      .hex-error {
         margin: 6px 0 0;
         font-size: 11px;
         line-height: 14px;
@@ -399,21 +478,37 @@
       .checker {
         background: repeating-conic-gradient(#d8d8dc 0 25%, #fff 0 50%) 0 0 / 16px 16px;
       }
+      #notes-kept {
+        margin: 0;
+        color: var(--muted);
+      }
       .one-shot #caption-label,
       .one-shot #caption,
       .one-shot #refs,
+      .one-shot #refs-rule,
       .one-shot #refs-label {
         display: none !important;
       }
       /* The notes column's headings: General comment and References (guide NTE-1, WRD-3). */
+      /* 20 pt above each heading, 8 pt to its own box (F52), in the column's 12 px padding and 10 px gap. */
       #caption-label,
       #refs-label {
-        margin: 0 0 -6px; /* 4 px to its own box, under the column's 10 px gap (Law of Proximity) */
+        margin: 8px 0 -2px;
         font-size: inherit;
         font-weight: 600;
       }
       #refs-label {
-        margin-top: 10px; /* 20 px between the comment and References, more than between two notes */
+        margin-top: 10px;
+      }
+      /* The hairline between the comment and References, only with them (F53, NTE-8): 20 pt on each side, 16 pt in
+         from the column's edges. */
+      #refs-rule {
+        margin: 10px 4px 0;
+        border: 0;
+        border-top: 1px solid var(--hairline);
+      }
+      #refs-rule:has(+ #refs-label[hidden]) {
+        display: none;
       }
       /* Reference notes stand apart (guide NTE-4). */
       #refs {
@@ -454,7 +549,8 @@
         justify-content: space-between;
         row-gap: 10px;
       }
-      #backdrops > * {
+      #backdrops button,
+      #backdrops .custom {
         position: relative;
         height: 36px;
         padding: 0;
@@ -471,6 +567,24 @@
       }
       #backdrops .custom:has(input:focus-visible) {
         outline: 2px solid var(--accent);
+      }
+      /* Custom… starts its own row, with the hex field and its error beside it (screens.md, Hex fields). */
+      #backdrops .custom-row {
+        display: contents;
+      }
+      #backdrops .custom {
+        grid-column: 1;
+      }
+      #backdrops .hex,
+      #backdrops .hex-error {
+        grid-column: 2 / -1;
+        align-self: center;
+      }
+      #backdrops .hex {
+        background: var(--field); /* a field on the column, as the notes are */
+      }
+      #backdrops .hex-error {
+        margin-top: -4px; /* 6 px under the field, as in the colour popover, inside the 10 px row gap */
       }
       #backdrops .custom input {
         position: absolute;
@@ -713,10 +827,22 @@
           <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
         </svg>
       </button>
-      <button id="session" aria-haspopup="menu" disabled>
-        <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
-      </button>
+      <span id="dest-wrap">
+        <span id="dest-reason" class="sr"></span>
+        <span id="dest" role="radiogroup" aria-label="Save to">
+          <button role="radio" aria-checked="true" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">Session</button>
+          <button role="radio" aria-checked="false" tabindex="-1" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">
+            One-Shot
+          </button>
+        </span>
+        <button id="session" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P" aria-describedby="dest-reason" aria-disabled="true">
+          <span id="session-name"></span><span id="session-count"></span>
+          <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
+        </button>
+      </span>
     </header>
+    <p id="move-error" role="status" hidden></p>
+    <p id="announce" class="sr" aria-live="polite"></p>
     <div id="palette" role="dialog" aria-label="Annotation colour" hidden>
       <div id="presets" class="swatches"></div>
       <h3 id="customs-label">Custom</h3>
@@ -732,7 +858,7 @@
           aria-label="Hex colour"
           aria-describedby="hex-error"
       /></label>
-      <p id="hex-error" hidden>Use 3 or 6 hex digits.</p>
+      <p id="hex-error" class="hex-error" role="status" hidden>Use 3 or 6 hex digits, like e5484d.</p>
       <label class="custom"><input type="color" id="color" value="#e5484d" /><i class="ring"></i>Custom…</label>
     </div>
     <main>
@@ -742,15 +868,31 @@
       <div class="body">
         <h2 id="caption-label">General comment</h2>
         <div id="caption"></div>
+        <hr id="refs-rule" />
         <h2 id="refs-label" hidden>References</h2>
         <div id="refs"></div>
+        <p id="notes-kept" hidden>Notes stay with Session. They are not copied.</p>
         <section id="beautify" aria-label="Beautify" hidden>
           <label>Beautify</label>
           <label class="row">Padding<output for="padding"></output><input type="range" id="padding" min="0" max="200" /></label>
           <label class="row">Rounded corners<output for="radius"></output><input type="range" id="radius" min="0" max="50" /></label>
           <label class="row">Shadow<output for="shadow"></output><input type="range" id="shadow" min="0" max="100" /></label>
           <h3 id="backdrop-label">Background</h3>
-          <div id="backdrops" role="group" aria-labelledby="backdrop-label"></div>
+          <div id="backdrops" role="group" aria-labelledby="backdrop-label">
+            <div class="custom-row">
+              <label class="hex"
+                >#<input
+                  id="backdrop-hex"
+                  type="text"
+                  maxlength="9"
+                  spellcheck="false"
+                  autocomplete="off"
+                  aria-label="Custom background hex colour"
+                  aria-describedby="backdrop-hex-error"
+              /></label>
+              <p id="backdrop-hex-error" class="hex-error" role="status" hidden>Use 3 or 6 hex digits, like e5484d.</p>
+            </div>
+          </div>
           <h3 id="ratio-label">Ratio</h3>
           <div id="ratios" role="group" aria-labelledby="ratio-label"></div>
         </section>
@@ -758,7 +900,7 @@
       </div>
       <div class="actions">
         <button id="cancel">Discard <kbd>⌘W</kbd></button>
-        <button id="save" class="primary">Add to session <kbd>⌘↵</kbd></button>
+        <button id="save" class="primary">Add to Session <kbd>⌘↩</kbd></button>
       </div>
     </aside>
     <script src="../../node_modules/fabric/dist/index.min.js"></script>
