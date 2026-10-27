@@ -39,7 +39,7 @@ That installs plannotator and its plugin. Linear: in Claude Code run `/mcp` and 
 | 3 Facts     | Facts cite asks, screens and the E2E tag that proves them; plain-language lint.                                                                                                                                                                                                   | none                                                  |
 | 4 Tech plan | Where things go, milestones and their features, Done, one goal for all of it.                                                                                                                                                                                                     | one gate for all three, then `verify_gate.py approve` |
 | 5 Build     | One go (default): one `/goal` builds every milestone in order; per feature, tests, build, commit, and nothing else runs between features. Questions go to `questions.md` and never block; answers become asks of the next milestone. (`delivery: feature-prs`: a PR per feature.) | none                                                  |
-| 6 Milestone | Checks and E2E once on the milestone diff, validation of every fact and ask against the built app (`validation.md`), one findings list, one fix round, `verify_gate.py milestone`, one PR that releases it.                                                                       | only when a Critical or High would be deferred        |
+| 6 Milestone | Checks on the milestone diff; the full E2E suite once, ×3 only for changed and flaky specs (see Build and test); validation of every fact and ask against the built app (`validation.md`), one findings list, one fix round, `verify_gate.py milestone`, one PR that releases it. | only when a Critical or High would be deferred        |
 | 6p Project  | Only for work spanning several milestones: rebase `project/<slug>`, re-check the whole project diff, one PR to the default branch.                                                                                                                                                | engineer accepts                                      |
 | 7 Outcome   | Archive on merge; read the success measure after release.                                                                                                                                                                                                                         | engineer reads it                                     |
 
@@ -55,19 +55,19 @@ none.
 
 ## sdlc.json keys
 
-| Key                                                      | Meaning                                                                                        |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `checks.feature[]`, `checks.milestone[]`                 | what `scripts/verify_gate.py` runs, cheapest first                                             |
-| `milestones`, `hotfix`                                   | milestone branch prefix and rebase rule; the hotfix lane                                       |
-| `delivery`                                               | `one-go` (default) or `feature-prs`                                                            |
-| `goal`                                                   | turn caps: `runTurns` for the one-go goal, `featureTurns` and `milestoneTurns` for feature PRs |
-| `languages`, `responsiveTier`, `ux`                      | what the product ships, the device matrix tier, UX on or off                                   |
-| `protected`                                              | paths refused after approval                                                                   |
-| `verify`, `verifyStop`                                   | full command before PR; fast Stop hook command                                                 |
-| `planGate`                                               | `owner` or `self`; self is barred for data safety, irreversible writes, security or money      |
-| `testGlobs`, `prototypeDirs`, `feedback`                 | locked tests, prototype paths, owner-words files                                               |
-| `verifyDirty`, `lintOnEdit`, `blocked[]`                 | hook inputs                                                                                    |
-| `tiers`, `askGatesMerge`, `codeowners`, `claude`, `keep` | generated workflow policy                                                                      |
+| Key                                                      | Meaning                                                                                                                |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `checks.feature[]`, `checks.milestone[]`                 | what `scripts/verify_gate.py` runs, cheapest first                                                                     |
+| `milestones`, `hotfix`                                   | milestone branch prefix and rebase rule; the hotfix lane                                                               |
+| `delivery`                                               | `one-go` (default) or `feature-prs`                                                                                    |
+| `goal`                                                   | turn caps: `runTurns` for the one-go goal, `featureTurns` and `milestoneTurns` for feature PRs                         |
+| `languages`, `responsiveTier`, `ux`                      | what the product ships, the device matrix tier, UX on or off                                                           |
+| `protected`                                              | paths refused after approval                                                                                           |
+| `verify`, `verifyStop`                                   | full command before PR; fast Stop hook command (skipped inside a `/goal` and when nothing changed since its last pass) |
+| `planGate`                                               | `owner` or `self`; self is barred for data safety, irreversible writes, security or money                              |
+| `testGlobs`, `prototypeDirs`, `feedback`                 | locked tests, prototype paths, owner-words files                                                                       |
+| `verifyDirty`, `lintOnEdit`, `blocked[]`                 | hook inputs                                                                                                            |
+| `tiers`, `askGatesMerge`, `codeowners`, `claude`, `keep` | generated workflow policy                                                                                              |
 
 ## Where a change stands
 
@@ -76,14 +76,14 @@ the stage, all read from the change folder's files.
 
 ## Hooks
 
-| Event                            | Script              | Does                                                                                                                   |
-| -------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `SessionStart`                   | `session-check.sh`  | reports missing plannotator setup                                                                                      |
-| `PermissionRequest ExitPlanMode` | `plan-gate.sh`      | opens the plan gate when needed                                                                                        |
-| `PreToolUse Bash`                | `gate-bash.sh`      | blocks commands named in `blocked[]`                                                                                   |
-| `PreToolUse Edit\|Write`         | `chain-gate.sh`     | the chain's gates; refuses source edits outside an active `/goal` and protected paths after approval                   |
-| `PostToolUse Edit\|Write`        | `lint-on-edit.sh`   | runs matching file-scoped lint/format command                                                                          |
-| `Stop`                           | `verify-on-stop.sh` | runs `npm run format && npm run lint && npm run typecheck && npm test` when dirty, falling back to `verify` when unset |
+| Event                            | Script              | Does                                                                                                       |
+| -------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `SessionStart`                   | `session-check.sh`  | reports missing plannotator setup                                                                          |
+| `PermissionRequest ExitPlanMode` | `plan-gate.sh`      | opens the plan gate when needed                                                                            |
+| `PreToolUse Bash`                | `gate-bash.sh`      | blocks commands named in `blocked[]`                                                                       |
+| `PreToolUse Edit\|Write`         | `chain-gate.sh`     | the chain's gates; refuses source edits outside an active `/goal` and protected paths after approval       |
+| `PostToolUse Edit\|Write`        | `lint-on-edit.sh`   | runs matching file-scoped lint/format command                                                              |
+| `Stop`                           | `verify-on-stop.sh` | runs `npm run format && npm run lint && npm run typecheck` when dirty, falling back to `verify` when unset |
 
 ## Build and test
 
@@ -94,6 +94,10 @@ one line from `python3 scripts/verify_gate.py milestone <id>`: `VERIFY PASS`, `V
 
 For a bug, commit the failing test first and set `testLocked: true`. While locked, test files
 matching `testGlobs` cannot be edited unless `testEdit` records the user's OK.
+
+For milestone E2E, use the committed `e2e/flaky-specs.txt` list. The installed
+`omr-dev:e2e-test-run` reference `suite-speed-and-reliability.md` section G defines the
+selection and line format. Section F defines the lock and load policy for shared machines.
 
 Before a PR, `verify` runs once:
 

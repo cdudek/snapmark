@@ -6,6 +6,7 @@ table a Markdown report. Written by `sdlc-run adopt`; edit the kit, not this cop
 
 marks.json holds {"rows": [...]}. Source paths and shots are change-relative; decision
 paths are repo-relative. IDs use the session folder relative to asks, or ref:<image path>.
+A fixed note names its proof in `test` (a tag such as @F1) found in a testGlobs file.
 Init preserves existing rows and fields. Check inventories sources again, so missing,
 duplicate, changed and orphaned rows cannot silently pass. This checks coverage, not pixels:
 the reviewer must inspect each pair using the existing UX visual pass and ledger.
@@ -14,6 +15,7 @@ the reviewer must inspect each pair using the existing UX visual pass and ledger
 from __future__ import annotations
 
 import argparse
+import glob
 import html
 import json
 import re
@@ -33,7 +35,10 @@ FILLED = {
     "status": None,
     "differs": "",
     "accepted": "",
+    "test": "",
 }
+TEST_GLOBS = ["**/*.test.*", "**/*.spec.*", "**/test_*.py", "**/tests/**", "**/e2e/**"]
+SKIP = ("node_modules", ".git", ".worktrees")
 
 
 def sessions(change: Path) -> list[tuple[Path, str]]:
@@ -109,6 +114,21 @@ def inside_file(base: Path, value: object, boundary: Path) -> bool:
     return path.is_relative_to(boundary.resolve()) and path.is_file()
 
 
+def spec_text(repo: Path, globs: list[str]) -> str:
+    """All spec and test file text. shortcut: reads every match once, fine below ~10k files."""
+    root = str(repo)
+    names = set()
+    for pattern in globs:
+        for p in (pattern, pattern + "/*" if pattern.endswith("/**") else pattern):
+            names.update(glob.glob(p, root_dir=root, recursive=True))
+    parts = []
+    for name in sorted(names):
+        path = repo / name
+        if path.is_file() and not any(part in SKIP for part in path.relative_to(repo).parts):
+            parts.append(path.read_text(encoding="utf-8", errors="ignore"))
+    return "\n".join(parts)
+
+
 def init(change: Path, sources: list[dict]) -> int:
     path = change / "marks.json"
     rows = read_rows(path) if path.exists() else []
@@ -132,11 +152,12 @@ def init(change: Path, sources: list[dict]) -> int:
     return 0
 
 
-def check(change: Path, sources: list[dict], repo: Path, designs: Path) -> int:
+def check(change: Path, sources: list[dict], repo: Path, designs: Path, globs: list[str]) -> int:
     rows = read_rows(change / "marks.json")
     problems = []
     wanted = {row["id"]: row for row in sources}
     seen = set()
+    specs = spec_text(repo, globs) if any(row.get("status") == "fixed" for row in rows) else ""
     for row in rows:
         rid = row["id"]
 
@@ -173,6 +194,12 @@ def check(change: Path, sources: list[dict], repo: Path, designs: Path) -> int:
         if status == "ruled-out" or decision is not None:
             if not inside_file(repo, decision, designs):
                 problem("decision must be an existing file under designsDir")
+        if status == "fixed":
+            tag = row.get("test")
+            if not filled(tag) or not tag.startswith("@"):
+                problem("fixed needs a test tag (@F<n>) that proves it; none named")
+            elif not re.search(re.escape(tag.strip()) + r"(?!\w)", specs):
+                problem(f"test tag {tag} appears in no spec or test file")
         if status in ("fixed", "match") and row.get("differs") not in (None, ""):
             problem("fixed/match must have no differs")
     for rid in wanted.keys() - seen:
@@ -180,7 +207,8 @@ def check(change: Path, sources: list[dict], repo: Path, designs: Path) -> int:
     for problem in sorted(problems):
         print(problem)
     print(
-        f"MARKS {'FAIL' if problems else 'PASS'} {change.name} rows={len(rows)} problems={len(problems)}"
+        f"MARKS {'FAIL' if problems else 'PASS'} {change.name} "
+        f"rows={len(rows)} problems={len(problems)}"
     )
     return int(bool(problems))
 
@@ -192,8 +220,8 @@ def table(rows: list[dict]) -> int:
         text = re.sub(r"([\\`*_{}\[\]()#+.!|>~-])", r"\\\1", text)
         return text.replace("\n", "<br>")
 
-    print("| mark | words | decision | shot | status | still differs |")
-    print("|---|---|---|---|---|---|")
+    print("| mark | words | decision | shot | status | test | still differs |")
+    print("|---|---|---|---|---|---|---|")
     for row in rows:
         status = row.get("status") or "unset"
         if filled(row.get("accepted")):
@@ -204,6 +232,7 @@ def table(rows: list[dict]) -> int:
             row.get("decision"),
             row.get("shot"),
             status,
+            row.get("test"),
             row.get("differs"),
         ]
         print("| " + " | ".join(cell(value) for value in values) + " |")
@@ -227,7 +256,8 @@ def main(argv: list[str]) -> int:
         sources = inventory(change)
         if args.mode == "init":
             return init(change, sources)
-        return check(change, sources, repo, repo / cfg.get("designsDir", "docs/designs"))
+        designs = repo / cfg.get("designsDir", "docs/designs")
+        return check(change, sources, repo, designs, cfg.get("testGlobs", TEST_GLOBS))
     except (OSError, ValueError) as exc:
         print(f"marks: {str(exc).replace(chr(10), ' ')}")
         print(f"MARKS FAIL {args.id} problems=1")

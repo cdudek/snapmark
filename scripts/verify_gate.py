@@ -1,7 +1,7 @@
 """The verify contract of the SDLC chain: one command, one last line.
 
     python3 scripts/verify_gate.py approve <id>              # lock the criteria at approval
-    python3 scripts/verify_gate.py lint <id>                 # plain-language lint: intent, facts, plan
+    python3 scripts/verify_gate.py lint <id>                 # plain-language lint of the docs
     python3 scripts/verify_gate.py feature|milestone <id>    # run sdlc.json checks.<scope>
     # After UX review, also require each visual run:
     # ... --visual-check <omr-ux visual-check.py> --visual-run <run> [--visual-run <run> ...]
@@ -19,7 +19,14 @@ Stdout is capped. The last line is exactly one of:
     VERIFY BLOCKED reason=<code>           exit 3   -- stop and ask the engineer
 
 A check may block on its own: when its output ends `VERIFY BLOCKED reason=<code>`, that line is
-passed through. The same failure three runs in a row blocks with reason=no-progress.
+passed through. The same failure three runs in a row blocks with reason=no-progress, and any
+three failed runs of one scope block with reason=attempts (delete verify/state.json to start
+over; a PASS resets the count).
+
+A check that passed on this exact tree, command and lock is not run again: verify/cache.json
+holds the passes and the report says `ok (cached)`. A failing E2E check (command contains
+`playwright` or `test:e2e`) is re-run once with `--last-failed` to say whether its failures
+reproduce (real) or not (flaky). The check still counts as failed.
 """
 
 from __future__ import annotations
@@ -41,6 +48,7 @@ REASONS = {
     "not-approved",  # no lock.json: the plan gate has not run
     "protected-path",  # facts.md, done.json or checks changed since approval
     "no-progress",
+    "attempts",  # three failed runs of one scope, whatever the failures were
     "flaky",
     "unknown-verdict",
     "needs-baseline",
@@ -53,6 +61,7 @@ REASONS = {
 LOCKED = ("facts.md", "done.json")
 TAIL = 60  # stdout lines of a failing check
 BREAKER = 3
+ATTEMPTS = 3
 SENTENCE_WORDS = 25
 
 
@@ -84,7 +93,7 @@ def end(line: str, code: int) -> int:
 
 def approve(change: Path, cfg: dict) -> int:
     lock = {
-        "approved_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "approved_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),  # noqa: UP017 -- runs on macOS python3 3.9
         "sha": sh("git", "rev-parse", "HEAD"),
         "criteria": criteria_hash(change, cfg.get("checks", {})),
     }
@@ -128,6 +137,32 @@ def signature(name: str, output: str) -> str:
     tail = "\n".join(output.strip().splitlines()[-20:])
     tail = re.sub(r"\d+(\.\d+)?m?s\b|\b[0-9a-f]{7,40}\b", "#", tail)  # timings and shas drift
     return hashlib.sha256(f"{name}\n{tail}".encode()).hexdigest()[:16]
+
+
+def cache_key(tree: str, cmd: str, criteria: dict[str, str]) -> str:
+    return hashlib.sha256(
+        "\n".join([tree, cmd, json.dumps(criteria, sort_keys=True)]).encode()
+    ).hexdigest()
+
+
+def is_e2e(cmd: str) -> bool:
+    return "playwright" in cmd or "test:e2e" in cmd
+
+
+def classify_e2e(cmd: str, repo: Path) -> str:
+    """Re-run only the failures of an E2E check: they reproduce (real) or they do not (flaky)."""
+    last = repo / "test-results" / ".last-run.json"
+    if last.exists() and not json.loads(last.read_text(encoding="utf-8")).get("failedTests"):
+        return ""  # nothing recorded as failed: --last-failed would run the whole suite
+    again = subprocess.run(
+        f"{cmd} --last-failed",
+        shell=True,
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+    )
+    return "reproduced (real)" if again.returncode else "did not reproduce (flaky)"
 
 
 def run(
@@ -189,11 +224,13 @@ def run(
         return finish("VERIFY BLOCKED reason=env", 3)
 
     # Runtime evidence is additional to the locked checks; never weaken or re-lock them.
-    checks = list(checks)
+    # It depends on more than the tree (sessions, visual runs), so it is never cached.
+    checks = [c if isinstance(c, dict) else {"run": c} for c in checks]
     if scope == "milestone" and ((change / "marks.json").exists() or sessions(change)):
         checks.append(
             {
                 "name": "owner-marks",
+                "cache": False,
                 "run": shlex.join(
                     [
                         sys.executable,
@@ -208,6 +245,7 @@ def run(
         checks.append(
             {
                 "name": f"ux-visual-{number}",
+                "cache": False,
                 "run": shlex.join(
                     [
                         sys.executable,
@@ -220,10 +258,21 @@ def run(
             }
         )
 
+    cache_path = out_dir / "cache.json"
+    cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    tree = sh("git", "rev-parse", "HEAD^{tree}")
+
     for i, check in enumerate(checks, 1):
-        cmd = check["run"] if isinstance(check, dict) else check
-        name = (check.get("name") if isinstance(check, dict) else None) or f"check-{i}"
-        cmd = cmd.replace("{id}", change.name)
+        name = check.get("name") or f"check-{i}"
+        cmd = check["run"].replace("{id}", change.name)
+        key = cache_key(tree, cmd, now) if check.get("cache", True) and tree else ""
+        if key in cache:
+            report["checks"].append(
+                {"name": name, "run": cmd, "status": "pass", "exit": 0, "seconds": 0,
+                 "tail": "cached", "cached": True}
+            )  # fmt: skip
+            print(f"ok (cached) {name}: {cmd}")
+            continue
         started = time.monotonic()
         proc = subprocess.run(
             cmd, shell=True, cwd=repo, capture_output=True, text=True, stdin=subprocess.DEVNULL
@@ -243,20 +292,38 @@ def run(
         )
         print(f"{'ok  ' if status == 'pass' else 'FAIL'} {name}: {cmd}")
         if status == "pass":
+            if key:
+                cache[key] = name
+                cache_path.write_text(json.dumps(cache, indent=2) + "\n", encoding="utf-8")
             continue
         print(tail)
         blocked = re.search(r"VERIFY BLOCKED reason=([\w-]+)\s*\Z", output.strip())
         if blocked:
             reason = blocked.group(1) if blocked.group(1) in REASONS else "unknown-verdict"
             return finish(f"VERIFY BLOCKED reason={reason}", 3)
+        if is_e2e(cmd):
+            verdict = classify_e2e(cmd, repo)
+            if verdict:
+                print(f"--last-failed re-run: the failures {verdict}")
+                report["checks"][-1]["rerun"] = verdict
+                report["checks"][-1]["tail"] += f"\n--last-failed re-run: the failures {verdict}"
         state_path = out_dir / "state.json"
         state = json.loads(state_path.read_text()) if state_path.exists() else {}
         sig = signature(name, output)
         count = state.get("count", 0) + 1 if state.get("signature") == sig else 1
-        state_path.write_text(json.dumps({"signature": sig, "count": count}) + "\n")
+        attempts = {**state.get("attempts", {}), scope: state.get("attempts", {}).get(scope, 0) + 1}
+        state_path.write_text(
+            json.dumps({"signature": sig, "count": count, "attempts": attempts}) + "\n"
+        )
         if count >= BREAKER:
             print(f"the same failure {count} runs in a row: the loop is not making progress.")
             return finish("VERIFY BLOCKED reason=no-progress", 3)
+        if attempts[scope] >= ATTEMPTS:
+            print(
+                f"{attempts[scope]} failed {scope} runs of {change.name}: "
+                "stop and ask the engineer."
+            )
+            return finish("VERIFY BLOCKED reason=attempts", 3)
         return finish(f"VERIFY FAIL {scope} {change.name} check={name}", 1)
 
     return finish(f"VERIFY PASS {scope} {change.name} {sh('git', 'rev-parse', 'HEAD')}", 0)
