@@ -320,3 +320,11 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 - 3.5: the PDF leaves out the GIF link, since it holds the filmstrip only; the ZIP already took all of `img/`, so the GIF comes with it and `.edit/` stays out.
 - 3.5: paused, the GIF shows the recording's first frame (`.edit/NNN.png`), and each Play starts it from there: an `<img>` cannot hold a GIF mid-way. Every thumbnail in the Screenshots tab carries its badge, "Recording" or "Screenshot".
 - 3.5: `test/sessions.test.ts`: 3.4's `session.md` assertion on a saved recording now reads the F78 entry.
+- Milestone 3 fix round (findings.md 25–38): `snapmark-app/README.md`, `docs/ux/setup.md` and `docs/ux/sitemap.md` were edited, a departure from Files that change. They had no Record, Frame Rate, recording control or recording editor.
+- Milestone 3 fix round: tests this change owns follow the fixes.
+  - `test/keys.test.ts`: `@F9` and `@F10` read the ⌃⇧5 handler with `stopRecording` and `capturing` with `recording`.
+  - `test/capture.test.ts`: `@F68` reads the outline made in the guarded setup; the per-frame write check reads `fs.promises.writeFile`.
+  - `test/keyframes.test.ts`: `@F69` keeps the settled last frame as the threshold rises, and checks even gaps between the first and the last key frame only.
+  - `test/sessions.test.ts`: `@F67` checks the temp frames are moved; a failed Edit Again leaves the entry, its GIF and its JSON as they were.
+  - `test/smoke.ts`: the recording control is found by `scroll.html?fps=<n>#record`, since it now carries the frame rate.
+- Milestone 3 fix round: ⓧ with no current session in Session mode makes the session the recording editor would have made, instead of filing the recording as One-Shot.

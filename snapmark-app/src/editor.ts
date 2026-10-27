@@ -1547,14 +1547,18 @@ function renderFacts() {
   const shown = allFrames ? `${n} of ${n} frames` : `${keys} key frame${keys === 1 ? '' : 's'} of ${n}`;
   $('rec-facts').textContent = `Recording · ${rec.end.toFixed(1)} s · ${rec.fps} fps · ${shown}${rec.evenly ? ' · evenly spaced' : ''}`;
   allBtn.textContent = allFrames ? 'Show Key Frames' : 'Show All Frames';
-  allBtn.disabled = !allFrames && keys === n;
-  $('all-wrap').title = allBtn.disabled ? `All ${n} frames are key frames` : '';
+  // Greyed, not disabled: it stays in Tab and VoiceOver, and says why, as the session pop-up does (F45)
+  const why = !allFrames && keys === n ? `All ${n} frames are key frames` : '';
+  allBtn.setAttribute('aria-disabled', String(!!why));
+  if (why) allBtn.setAttribute('aria-description', why);
+  else allBtn.removeAttribute('aria-description');
+  allBtn.title = why || '⇧⌘F';
 }
 
 // One view change at a time; the filmstrip waits for it too.
 let viewing = Promise.resolve();
 function toggleFrames() {
-  if (allBtn.disabled) return;
+  if (allBtn.getAttribute('aria-disabled') === 'true') return;
   viewing = viewing.then(() => showView(!allFrames));
 }
 allBtn.onclick = toggleFrames;

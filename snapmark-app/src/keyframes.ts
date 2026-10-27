@@ -47,7 +47,8 @@ export interface KeyFrames {
 // The key frames of `count` frames, read one at a time so a 30 s recording is never in memory at once: the first, then
 // every frame that differs from the last key frame by more than a threshold of changed cells, which includes the
 // settled last frame when it is a new picture. Identical frames go by hash before any comparing. Over MAX_KEYS, the
-// threshold rises until MAX_KEYS or fewer remain; at most every cell changed, so it ends with the first frame alone.
+// threshold rises over the frames between until MAX_KEYS or fewer remain; at most every cell changed, so it ends with
+// the first and the last frame alone.
 export function keyFrames(
   count: number,
   read: (i: number) => Bitmap,
@@ -66,9 +67,12 @@ export function keyFrames(
     }
     if (now() - start > limit) return { keys: evenlySpaced(count), evenly: true, hashes };
   }
+  const end = thumbs.length - 1;
   const pick = (threshold: number) => {
     const keys = [0];
-    for (let k = 1, last = 0; k < thumbs.length; k++) if (changed(thumbs[k], thumbs[last]) > threshold) keys.push((last = k));
+    for (let k = 1, last = 0; k < end; k++) if (changed(thumbs[k], thumbs[last]) > threshold) keys.push((last = k));
+    // the settled last frame stays at any threshold, whenever it is a new picture
+    if (end > 0 && changed(thumbs[end], thumbs[keys[keys.length - 1]]) > 0) keys.push(end);
     return keys;
   };
   let threshold = 0;

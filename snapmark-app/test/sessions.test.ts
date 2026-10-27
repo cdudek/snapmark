@@ -463,6 +463,7 @@ assert.ok(linksIn(entryOf(rtMd(), 13)).every((l) => l.src.startsWith('img/013/')
   assert.ok(d.dir === dir && d.recording && d.kind === 'capture' && d.session === 'demo', '@F67 in Discarded, as a recording');
   assert.match(path.basename(dir), / · demo · recording$/, '@F67 named for Finder');
   assert.strictEqual(fs.readFileSync(path.join(dir, 'image.png'), 'utf8'), 'frame 0', '@F67 the first frame is its picture');
+  assert.ok(!fs.existsSync(tmp), "@F67 Snapmark's temp frames are moved there, not copied");
   const back = sessions.discardedRecording(d);
   assert.deepStrictEqual(
     { ...back, frames: back.frames.map((f) => fs.readFileSync(f, 'utf8')) },
@@ -648,6 +649,29 @@ void (async () => {
   const replaced = JSON.parse(fs.readFileSync(sessions.editFiles(recRoot, name, n).json, 'utf8')).recording.frames;
   assert.deepStrictEqual(replaced, ['0000.png', '0001.png', '0001.png', '0003.png', '0004.jpg', '0005.png'], '@F75 non-key frames as JPEG');
   assert.strictEqual(sessions.count(recRoot, name), 1, '@F75 Edit Again replaces the entry');
+  // Edit Again whose frames cannot be written leaves the old entry, its GIF and its frames as they were
+  const [mdBefore, gifBefore, jsonBefore] = [
+    path.join(recRoot, name, 'session.md'),
+    files.gif,
+    sessions.editFiles(recRoot, name, n).json,
+  ].map((f) => fs.readFileSync(f));
+  await assert.rejects(
+    sessions.addRecording(recRoot, name, Buffer.from('another filmstrip'), { caption: 'Other' }, [], rec, state, {
+      replace: n,
+      keep: [0],
+      jpeg: () => {
+        throw new Error('disk full');
+      },
+    }),
+    /disk full/,
+  );
+  assert.ok(
+    fs.readFileSync(path.join(recRoot, name, 'session.md')).equals(mdBefore) &&
+      fs.readFileSync(files.gif).equals(gifBefore) &&
+      fs.readFileSync(sessions.editFiles(recRoot, name, n).json).equals(jsonBefore) &&
+      !fs.existsSync(`${files.gif}.new`),
+    'a failed Edit Again changes nothing',
+  );
   // Removed from the session, its GIF and frames go to Discarded with it, and come back with it
   sessions.removeShot(recRoot, name, n);
   assert.ok(!fs.existsSync(files.gif) && !fs.existsSync(files.data), 'the GIF and frames leave with the entry');

@@ -471,28 +471,44 @@ function tempRecording(r: Recording): Recording {
 }
 
 // Done (true) or ⓧ (false) while Record records: ⌃⇧5 and the menu bar icon are Done too (F66).
-let stopRecording: ((keep: boolean) => void) | null = null;
+// Resolves once the frames are where they go.
+let stopRecording: ((keep: boolean) => Promise<unknown>) | null = null;
 
 // Records `a` at `o.fps` until Done, ⌃⇧5, the menu bar icon or `cap` (30 s, F64), into one PNG file per frame,
 // written as each comes from recorder.html. Takes no key (F65). ⓧ puts the frames in Discarded (F67); a failed grab
 // stops, keeps nothing and says so (F81). Resolves to the recording Done keeps, else null.
 export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap = REC_CAP_MS): Promise<Recording | null> {
+  // The outline and the panel are content-protected and the recorder never shows, so no Snapmark window is in a frame (F68).
+  // A setup that throws leaves nothing behind and Snapmark not busy, so every capture still works.
+  let dir = '';
+  const parts: BrowserWindow[] = [];
+  try {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
+    parts.push(countdownPanel(0, a));
+    parts.push(recordPanel(a, o.fps));
+  } catch (err) {
+    for (const w of parts) if (!w.isDestroyed()) w.destroy();
+    if (dir) fs.rmSync(dir, { recursive: true, force: true });
+    notify(`Recording failed: ${err instanceof Error ? err.message : String(err)}. Nothing was added. Click to try again.`, () =>
+      busy() ? undefined : void captureRecord({ ...captureOpts, mode: 'record' }),
+    );
+    return Promise.resolve(null);
+  }
+  const [outline, panel] = parts;
   recording = true;
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
   const [frames, times]: [string[], number[]] = [[], []];
   const [thumbs, hashes]: [Bitmap[], string[]] = [[], []];
   const { id, bounds: b } = screen.getDisplayMatching(a);
-  // The outline and the panel are content-protected and the recorder never shows, so no Snapmark window is in a frame (F68)
-  const outline = countdownPanel(0, a);
-  const panel = recordPanel(a);
   let rec: BrowserWindow | null = null;
   let started = 0; // when the first frame came
   let pending = false; // Done before the first frame: it stops on that frame, so a recording has one
   let ended = false;
+  let written: Promise<unknown> = Promise.resolve(); // the frame files, written one after another off the main thread
+  let lost = ''; // why a frame could not be written
   return new Promise((resolve) => {
     const finish = (how: 'done' | 'cancel' | { failed: string }) => {
-      if (ended) return;
-      if (how === 'done' && !frames.length) return void (pending = true);
+      if (ended) return written;
+      if (how === 'done' && !frames.length) return ((pending = true), written);
       ended = true;
       clearInterval(tick);
       ipcMain.off('recorder:frame', onFrame);
@@ -503,6 +519,9 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
       stopRecording = null;
       recording = false;
       const r: Recording = { dir, frames, times, end: Math.min(cap, Date.now() - started) / 1000, fps: o.fps, thumbs, hashes };
+      return (written = written.then(() => settle(lost ? { failed: lost } : how, r)));
+    };
+    const settle = (how: 'done' | 'cancel' | { failed: string }, r: Recording) => {
       // The key frames come from the small copies at once, so "Finding key frames…" never shows (FBK-6: past 400 ms)
       if (how === 'done') return resolve(findKeys(r));
       if (how !== 'cancel')
@@ -510,8 +529,10 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
           busy() ? undefined : void captureRecord({ ...captureOpts, mode: 'record' }),
         );
       else if (frames.length) {
-        const session = o.oneShot || !active ? 'one-shot' : active;
         try {
+          // the session the recording editor would have used, made as it would be in Session mode (openEditor)
+          const session = o.oneShot ? 'one-shot' : (active ?? sessions.create(root));
+          if (!o.oneShot) setActive(session);
           sessions.discardRecording(root, session, r);
           for (const v of viewers.values()) if (v.root === root && v.session === session) reloadViewer(v); // its Discarded tab
         } catch (err) {
@@ -527,11 +548,12 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
       if (!(thumb instanceof Uint8Array) || !thumb.length || thumb.length % 256) return; // 64 pixels wide, RGBA
       if (t >= cap) return finish('done');
       const file = path.join(dir, `${String(frames.length).padStart(4, '0')}.png`);
-      try {
-        fs.writeFileSync(file, png);
-      } catch (err) {
-        return failed(err);
-      }
+      written = written
+        .then(() => fs.promises.writeFile(file, png))
+        .catch((err: unknown) => {
+          lost ||= err instanceof Error ? err.message : String(err);
+          void failed(err);
+        });
       frames.push(file);
       times.push(t / 1000);
       thumbs.push({ width: 64, height: thumb.length / 256, data: thumb });
@@ -570,7 +592,7 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
 }
 
 // The recording control (scroll.html#record) beside the area: never focused, so the recorded app keeps every key (F65).
-function recordPanel(a: Area): BrowserWindow {
+function recordPanel(a: Area, fps: number): BrowserWindow {
   const win = new BrowserWindow({
     ...panelAt(a, screen.getDisplayMatching(a).workArea, 600, 64),
     frame: false,
@@ -591,7 +613,7 @@ function recordPanel(a: Area): BrowserWindow {
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   win.once('ready-to-show', () => win.showInactive());
-  void win.loadFile(path.join(__dirname, 'scroll.html'), { hash: 'record' });
+  void win.loadFile(path.join(__dirname, 'scroll.html'), { hash: 'record', query: { fps: String(fps) } }); // the clock's fps from the start (F63)
   return win;
 }
 
@@ -1296,7 +1318,15 @@ ipcMain.on('viewer:edit', (e, n: number) => {
   const state = JSON.parse(fs.readFileSync(f.json, 'utf8')) as EditState;
   // A recording reopens on its frames, their times and its marks (F75)
   const rec = sessions.editedRecording(v.root, v.session, n);
-  if (rec) return void openRecording(tempRecording(rec), { session: v.session, state, replace: n });
+  if (rec) {
+    let copy: Recording;
+    try {
+      copy = tempRecording(rec);
+    } catch (err) {
+      return notify(`Couldn't open recording ${n} again: ${errText(err)}`);
+    }
+    return void openRecording(copy, { session: v.session, state, replace: n });
+  }
   openEditor(tempCopy(f.png), { session: v.session, state, replace: n });
 });
 // Also says which Discarded folder it went to, so ⌘Z puts back exactly that one.
@@ -1359,8 +1389,9 @@ export function reopen(d: sessions.Discarded, into = root) {
     return;
   }
   if (d.kind === 'shot') {
+    const what = fs.existsSync(path.join(d.dir, 'image.gif')) ? 'Recording' : 'Screenshot'; // a removed recording keeps its GIF
     const n = sessions.restoreShot(into, d);
-    notify(`Screenshot ${n} is back in ${sessions.shortName(d.session)}.`);
+    notify(`${what} ${n} is back in ${sessions.shortName(d.session)}.`);
     openViewer(d.session, into);
     return;
   }
@@ -1653,6 +1684,16 @@ app.whenReady().then(() => {
   app.dock?.hide();
   loadState();
   sessions.discarded(root); // deletes what is older than 7 days
+  // Recording frames a crash or a forced quit left behind; an open editor's are deleted when it closes
+  const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  for (const f of fs.readdirSync(os.tmpdir()).filter((f) => f.startsWith('snapmark-rec-'))) {
+    const dir = path.join(os.tmpdir(), f);
+    try {
+      if (fs.statSync(dir).mtimeMs < dayAgo) fs.rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // gone already, or not ours to delete
+    }
+  }
   // "Template" in the file name makes macOS tint the icon for light and dark menu bars; @2x is picked up automatically.
   tray = new Tray(path.join(__dirname, '../../assets/trayTemplate.png'));
   tray.setToolTip('Snapmark');
@@ -1672,6 +1713,8 @@ app.on('window-all-closed', () => {}); // menu bar app: keep running
 
 // Quit (menu, ⌘Q, restart, update) must not silently throw away screenshots that are not in a session yet.
 app.on('before-quit', (e) => {
+  // A recording that runs goes to Discarded, as ⓧ does, once its last frames are written; then the quit goes on
+  if (stopRecording) return void (e.preventDefault(), stopRecording(false).finally(() => app.quit()));
   const open = [...editors.values()].filter((ed) => ed.dirty && !ed.win.isDestroyed());
   if (quitting || !open.length) return;
   e.preventDefault();

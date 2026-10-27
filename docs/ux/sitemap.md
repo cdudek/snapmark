@@ -23,7 +23,8 @@ ENTRY POINTS
 ├── Menu bar icon (corner and dot; tooltip "Snapmark"; click or right-click opens the same menu;
 │   keyboard: only macOS's ⌃F8, mentioned nowhere)
 ├── ⌃⇧4  Capture Screenshot     (works in every app; "(shortcut unavailable)" if another app owns it)
-├── ⌃⇧5  Capture Options        ──► CAPTURE BAR (brought forward if open; nothing while a capture runs)
+├── ⌃⇧5  Capture Options        ──► CAPTURE BAR (brought forward if open; nothing while a capture runs;
+│                                   while recording it is Done ──► recording editor)
 ├── ⌃⇧3  Capture Last Area
 ├── ⌃⇧N  New Session
 └── Relaunching Snapmark from Applications or Spotlight: nothing happens (F217)
@@ -74,8 +75,12 @@ EDITOR  (one per capture; title "Snapmark"; opens centred, exactly on top of any
 │         session folder gone ──► nothing; button dead (silent, F049)
 ├── ⌘W · Discard · Esc past Select · close button · ⌘R (stock Reload) · Quit anyway · Restart to Update
 │         ──► Discarded, 7 days (silent); an unchanged Edit Again is filed too (F077/F078)
-└── Mac menu bar: Snapmark (About, Settings… ⌘,, Keyboard Shortcuts ⌘/, Services, Hide, Quit) · File ▸ Close Window ⌘W · Edit ▸ Undo (not the marks) ·
-    View ▸ Reload ⌘R, Force Reload, Toggle Developer Tools, zoom, Toggle Full Screen ⌃⌘F · Window · no Help
+├── Mac menu bar: Snapmark (About, Settings… ⌘,, Keyboard Shortcuts ⌘/, Services, Hide, Quit) · File ▸ Close Window ⌘W · Edit ▸ Undo (not the marks) ·
+│   View ▸ Reload ⌘R, Force Reload, Toggle Developer Tools, zoom, Toggle Full Screen ⌃⌘F · Window · no Help
+└── Recording editor (after Record): facts line "Recording · 3.2 s · 10 fps · 4 key frames of 32" · Show All Frames ⇧⌘F
+          (greyed when every frame is a key frame) · key frames 4 a row with their times · evenly spaced (over 15 s) ·
+          Copy or Save adds Copy GIF · Save GIF As… · One-Shot: Copy Filmstrip ⌘C ·
+          Add to session ──► filmstrip PNG + GIF in the session · closed ──► Discarded with its frames
 
 SESSION WINDOW  (title "<folder name> — Snapmark"; 900 × 900; one per session, brought forward if open;
                  follows outside changes to session.md; reopens on the new name after Rename)
@@ -84,12 +89,19 @@ SESSION WINDOW  (title "<folder name> — Snapmark"; 900 × 900; one per session
 │             (the empty-session hint never shows, F132)
 └── Screenshots: one at a time · ← → · "n of N" (position) · Edit Again ──► Editor ("Save changes")
                  · Remove from Session ──► Discarded (silent)
+                 · a recording: filmstrip and GIF, Play | Pause (Space); Edit Again ──► recording editor on its frames
 
 CAPTURE BAR       bottom centre of the pointer's display, every Space, full screen too; Close · Capture Window ·
-                  Choose New Area · Capture Last Area · Capture Scrolling · Options ▾ (Save to · Timer · Show Mouse Pointer) ·
+                  Choose New Area · Capture Last Area · Capture Scrolling · Record · Options ▾ (Save to · Timer ·
+                  Show Mouse Pointer · Frame Rate 15, 10, 5, 4, 2 fps, greyed unless Record) ·
                   Capture | Capture One-Shot
                   ↩ ──► bar closes ──► the mode (Timer: seconds beside the menu bar icon, Esc cancels) ──► Editor
                   (session or one-shot) · Esc ──► nothing
+                  Record ──► Area picker on the last area (↩ keeps it, a drag replaces it) ──► countdown 3 (or the
+                  Timer) ──► RECORDING CONTROL
+RECORDING CONTROL beside the area, never focused, never in a frame; ⓧ · "0:07 of 0:30 · 10 fps" · Done
+                  Done, ⌃⇧5, the menu bar icon or 30 s ──► recording editor · ⓧ ──► Discarded (no message)
+                  a failed grab ──► notification "Recording failed: <reason>. Nothing was added. Click to try again."
 SETTINGS WINDOW   title names the tab; one window, brought forward if open; reads its data again when it comes forward
                   General: Open Snapmark at login · Sessions folder Change… ──► folder panel · Clear Sessions Older Than 60 Days… ·
                   Snapmark <version> Check for Updates… ──► notification

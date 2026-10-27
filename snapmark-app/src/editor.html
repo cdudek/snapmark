@@ -504,10 +504,11 @@
         color: var(--accent-text);
         cursor: pointer;
       }
-      .link:hover:not(:disabled) {
+      .link:hover:not(:disabled, [aria-disabled='true']) {
         text-decoration: underline;
       }
-      .link:disabled {
+      .link:disabled,
+      .link[aria-disabled='true'] {
         color: var(--muted);
         cursor: default;
       }
@@ -910,9 +911,7 @@
     <main>
       <div id="rec-bar" hidden>
         <span id="rec-facts"></span>
-        <span id="all-wrap"
-          ><button id="all-frames" class="link" aria-keyshortcuts="Shift+Meta+F" title="⇧⌘F">Show All Frames</button></span
-        >
+        <button id="all-frames" class="link" aria-keyshortcuts="Shift+Meta+F" title="⇧⌘F">Show All Frames</button>
         <ol id="frame-times" class="sr" aria-label="Frames"></ol>
       </div>
       <div id="stage"><canvas id="canvas"></canvas></div>
