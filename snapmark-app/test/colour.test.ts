@@ -67,34 +67,32 @@ assert.deepStrictEqual(hexInput('e5484z', false), { text: 'e5484z', colour: null
   assert.deepStrictEqual(withCustom(full, '#000006', presets), ['#000006', '#000001', '#000002', '#000003', '#000004']);
 }
 
-// @N1 selected text reaches 4.5:1 on its fill, light and dark: the chosen mode's and segment's --accent-text on
-// --fill-selected, and Capture's white on --accent-fill, as bar.html defines the tokens (spec screens.md, Tokens)
+// @N1 @2026-10-27-calm-style Capture's label reaches 4.5:1 on its fill, light and dark: the bar paints it with the primary
+// button tokens, which tokens.css resolves to --ds-color-on-accent on --ds-color-accent. The chosen mode is the
+// soft grey pill with ink text, so no accent text is left to check.
 {
-  const css = fs.readFileSync(path.join(__dirname, '../../src/bar.html'), 'utf8');
-  // [light, dark] of a token: `light-dark(#a, #b)`, or one colour for both
-  const token = (name: string) => {
-    const m = css.match(new RegExp(`--${name}:\\s*(?:light-dark\\((#\\w{6}),\\s*(#\\w{6})\\)|(#\\w{6}))`));
-    assert.ok(m, `--${name} in bar.html`);
-    return m[3] ? [m[3], m[3]] : [m[1], m[2]];
-  };
+  const bar = fs.readFileSync(path.join(__dirname, '../../src/bar.html'), 'utf8');
+  assert.ok(
+    /#capture \{[^}]*background: var\(--ds-button-fill-primary\);[^}]*color: var\(--ds-button-text-primary\);/.test(bar),
+    '@N1 Capture uses the primary tokens',
+  );
+  const css = fs.readFileSync(path.join(__dirname, '../../src/tokens.css'), 'utf8');
+  assert.ok(
+    css.includes('--ds-button-fill-primary: var(--ds-color-accent);') &&
+      css.includes('--ds-button-text-primary: var(--ds-color-on-accent);'),
+  );
+  // [light, dark] of a colour token: its first and second hex definitions in tokens.css (`:root`, then the dark block)
+  const all = (name: string) => [...css.matchAll(new RegExp(`--ds-color-${name}:\\s*(#[0-9a-f]{6});`, 'g'))].map((m) => m[1]);
   const lum = (hex: string) =>
     [1, 3, 5]
       .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
       .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
       .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
   const contrast = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
-  const [text, fill, blue] = [token('accent-text'), token('fill-selected'), token('accent-fill')];
-  assert.deepStrictEqual(
-    [text, fill, blue],
-    [
-      ['#0a62c2', '#6cb4ff'],
-      ['#e5e5ea', '#3a3a3c'],
-      ['#0f72db', '#0f72db'],
-    ],
-  );
+  const [blue, label] = [all('accent'), all('on-accent')];
+  assert.ok(blue.length >= 2 && label.length >= 2, '@N1 accent and on-accent in light and dark');
   for (const [i, theme] of ['light', 'dark'].entries()) {
-    assert.ok(contrast(text[i], fill[i]) >= 4.5, `@N1 ${theme}: the chosen text on its fill, ${contrast(text[i], fill[i]).toFixed(2)}:1`);
-    assert.ok(contrast('#ffffff', blue[i]) >= 4.5, `@N1 ${theme}: Capture's text, ${contrast('#ffffff', blue[i]).toFixed(2)}:1`);
+    assert.ok(contrast(label[i], blue[i]) >= 4.5, `@N1 ${theme}: Capture's text, ${contrast(label[i], blue[i]).toFixed(2)}:1`);
   }
 }
 
