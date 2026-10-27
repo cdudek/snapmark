@@ -156,3 +156,4 @@ The criteria as data are in [done.json](done.json).
 ```
 
 - Milestone 1 gate: the smoke limit rises from 150 to 240 s. Unthrottled windows reached 145 s before its last block.
+- Milestone 1 gate: the @F32 countdown read keeps its last digit when the countdown closes mid-read. Unthrottled timing exposed the race.

@@ -2408,7 +2408,8 @@ app
     let still: { digit: string; anim: string } | null = null;
     for (let i = 0; i < 30 && !cd.isDestroyed() && still?.digit !== '2'; i++) {
       await sleep(50);
-      still = await look(cd);
+      // the countdown can close between the check above and the read: keep the last digit read
+      still = cd.isDestroyed() ? still : await look(cd).catch(() => still);
     }
     const timedEditor = await loadedWindow([...windowsBeforeTimed, cd]);
     // the area is 200 × 150 at (50, 60) on the display: its centre (150, 135), the square centred on it
