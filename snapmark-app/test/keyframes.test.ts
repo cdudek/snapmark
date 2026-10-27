@@ -30,7 +30,9 @@ const filling = Array.from({ length: 180 }, (_, k) => frame(k + 1));
 const capped = run(filling);
 assert.ok(capped.keys.length <= MAX_KEYS && capped.keys.length >= 20, `@F69 ${capped.keys.length} key frames of 180`);
 assert.strictEqual(capped.keys[0], 0, '@F69 the first frame stays');
-const gaps = capped.keys.slice(1).map((k, i) => k - capped.keys[i]);
+assert.strictEqual(capped.keys[capped.keys.length - 1], 179, '@F69 the settled last frame stays as the threshold rises');
+// the gaps between the first and the last key frame; the last frame's own gap is whatever is left
+const gaps = capped.keys.slice(1, -1).map((k, i) => k - capped.keys[i]);
 assert.ok(Math.max(...gaps) - Math.min(...gaps) <= 1, `@F69 even change gives even gaps: ${gaps}`);
 assert.ok(run(filling.slice(0, MAX_KEYS)).keys.length === MAX_KEYS, '@F69 24 changed frames all stay');
 

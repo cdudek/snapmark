@@ -125,6 +125,8 @@
     const s = data.shots[index];
     img.hidden = !s;
     if (s) img.src = src(s.n);
+    img.alt = s?.recording ? `Recording ${s.n}, filmstrip` : '';
+    gif.alt = s?.recording ? `Recording ${s.n}, GIF` : '';
     $('stage').classList.toggle('rec', !!s?.recording);
     $('rec-facts').textContent = s?.recording?.facts ?? '';
     playBtn.hidden = !s?.recording?.gif;

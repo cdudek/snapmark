@@ -298,7 +298,7 @@ assert.ok(
 assert.ok(main.includes('export const iconClick = () => (stopRecording ? stopRecording(true) :'), '@F66 the icon is Done');
 assert.ok(recorder.includes("finish(ok ? 'done' : 'cancel')") && recorder.includes('sessions.discardRecording(root, session, r);'), '@F67');
 // @F68 the outline and the panel are content-protected, and the recorder page never shows
-assert.ok(recorder.includes('const outline = countdownPanel(0, a);') && recorder.includes('win.setContentProtection(true);'), '@F68');
+assert.ok(recorder.includes('parts.push(countdownPanel(0, a));') && recorder.includes('win.setContentProtection(true);'), '@F68');
 assert.ok(/rec = new BrowserWindow\(\{\s+show: false,/.test(recorder) && !/rec\.show/.test(recorder), '@F68 the recorder never shows');
 // @F81 a failed grab stops, keeps nothing and says so
 assert.ok(
@@ -307,6 +307,6 @@ assert.ok(
 );
 // The recorder page is built; each frame is written to its own file as it comes, never held (plan, Risks)
 assert.ok(pkg.scripts.build.includes('src/recorder.html') && fs.existsSync(path.join(src, 'recorder.ts')), 'recorder page');
-assert.ok(recorder.includes('fs.writeFileSync(file, png);'), 'a file per frame, at once');
+assert.ok(recorder.includes('.then(() => fs.promises.writeFile(file, png))'), 'a file per frame, at once, in order, off the main thread');
 
 console.log('capture: ok');

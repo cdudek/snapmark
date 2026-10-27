@@ -336,17 +336,22 @@ export async function addRecording(
   const words = { ...text, recording: recordingText(r, (state as { items?: unknown[] }).items ?? []) };
   try {
     await writeGif(tmp, gifFrames(r));
-    const n = replace && replaceShot(root, name, replace, png, words, parts) ? replace : addShot(root, name, png, words, parts);
+    // Edit Again writes the GIF and the frames before the entry, so a failed write leaves the old entry as it was
+    const again = !!replace && shots(root, name).includes(replace);
+    const n = again ? replace! : addShot(root, name, png, words, parts);
+    const f = recordingFiles(root, name, n);
     try {
-      const f = recordingFiles(root, name, n);
-      fs.copyFileSync(tmp, f.gif); // not a rename: the session may be on another disk
+      fs.copyFileSync(tmp, `${f.gif}.new`); // not a rename: the session may be on another disk
       const first = fs.readFileSync(r.frames[0]); // Edit Again's frames may be the ones keepFrames replaces
       const frames = keepFrames(f.data, r, new Set(keep), jpeg);
       const kept: KeptRecording = { frames, times: r.times, end: r.end, fps: r.fps, keys: r.keys ?? [0], evenly: !!r.evenly };
       saveEdit(root, name, n, first, JSON.stringify({ ...state, recording: kept }));
+      fs.renameSync(`${f.gif}.new`, f.gif);
+      if (again) replaceShot(root, name, n, png, words, parts);
     } catch (err) {
+      fs.rmSync(`${f.gif}.new`, { force: true });
       // A new entry that is not whole goes again, so the recording is not in the session
-      const gone = n !== replace && removeShot(root, name, n);
+      const gone = !again && removeShot(root, name, n);
       if (gone) fs.rmSync(gone, { recursive: true, force: true });
       throw err;
     }
@@ -484,8 +489,20 @@ export function discardCapture(root: string, session: string, image: string, sta
 // A recording editor closed without saving keeps its marks too (`state`); `copied`: Copy Filmstrip closed a One-Shot.
 export function discardRecording(root: string, session: string, r: Recording, state?: string, copied = false): string {
   const dir = discardDir(root, { kind: 'capture', session, recording: true, ...(copied && { copied }) });
-  fs.cpSync(r.dir, path.join(dir, 'frames'), { recursive: true });
   fs.copyFileSync(r.frames[0], path.join(dir, 'image.png'));
+  // Snapmark's own temp frames, which go away next, are moved: a copy of hundreds of PNG files would stall the main
+  // process, inside the editor's synchronous unload too. Another disk (EXDEV) or anyone else's folder is copied.
+  const ours = path.dirname(r.dir) === path.resolve(os.tmpdir()) && path.basename(r.dir).startsWith('snapmark-rec-');
+  const moved = () => {
+    try {
+      fs.renameSync(r.dir, path.join(dir, 'frames'));
+      return true;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'EXDEV') return false;
+      throw err;
+    }
+  };
+  if (!(ours && moved())) fs.cpSync(r.dir, path.join(dir, 'frames'), { recursive: true });
   const { times, end, fps } = r;
   fs.writeFileSync(path.join(dir, 'recording.json'), JSON.stringify({ frames: r.frames.map((f) => path.basename(f)), times, end, fps }));
   if (state) fs.writeFileSync(path.join(dir, 'state.json'), state);

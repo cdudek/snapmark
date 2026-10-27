@@ -2377,7 +2377,7 @@ app
     desk.popup = (_w, items) => void (popped = items);
     const recArea = { x: display.x + 50, y: display.y + 60, width: 200, height: 150 };
     const panelUp = () =>
-      BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.webContents.getURL().endsWith('scroll.html#record'));
+      BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && /scroll\.html\?fps=\d+#record$/.test(w.webContents.getURL()));
     const recorderUp = () =>
       BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.webContents.getURL().includes('recorder.html'));
     const loadedPanel = async () => {

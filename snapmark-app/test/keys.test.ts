@@ -46,7 +46,7 @@ for (const line of [
   "oneShot: () => void (busy() || shoot(['-i'], true)),",
   'fullScreen: () => void captureFullScreen(),',
   'capture: () => void captureArea(),',
-  'options: () => void (cancelCountdown ? cancelCountdown() : openCaptureBar()),',
+  'options: () => void (stopRecording ? stopRecording(true) : cancelCountdown ? cancelCountdown() : openCaptureBar()),',
   'newSession: () => void (capturing() || newSession()),',
 ])
   assert.ok(handlers.includes(line), `keyHandlers: ${line}`);
@@ -63,7 +63,7 @@ assert.ok(
 
 // @F10 busy: while a picker, countdown or capture runs, ⌃⇧1, ⌃⇧2, ⌃⇧3, ⌃⇧4 and ⌃⇧N do nothing. The open bar is busy for
 // the capture keys only: its session pop-up offers New Session with ⌃⇧N.
-assert.ok(main.includes('const capturing = () => picking || scrolling || shooting || counting || launching;'), '@F10');
+assert.ok(main.includes('const capturing = () => picking || scrolling || shooting || counting || launching || recording;'), '@F10');
 // @F10 and in the 200 ms between the bar closing and its capture starting: set at close, cleared just before the run
 const barCapture = main.slice(main.indexOf("ipcMain.on('bar:capture'"), main.indexOf('\n});\n', main.indexOf("ipcMain.on('bar:capture'")));
 assert.ok(
