@@ -16,6 +16,14 @@
     { "n": 3, "slug": "calm-style-3", "title": "Editor, session window, Settings and Keyboard Shortcuts" }
   ],
   "milestoneNote": "2026-10-27: owner's 1.1 dialog 'One change, 3 milestones (Recommended)' and picked-designs 3 and 4 'Ship them after milestone 1 (Recommended)'. Ticket snap-bmr.26. Project none: milestones go straight to main and release.",
+  "skips": {
+    "brief": "skip: the owner's approved direction doc (2026-10-27) is the brief; intent.md quotes it",
+    "ia": "skip: no window, route or navigation is added or moved; only styles change",
+    "interaction": "skip: no behaviour changes; focus and hover rules are in spec/screens.md",
+    "prototype": "skip: the owner approved a rendered mock of the bar in plannotator on 2026-10-27",
+    "conformance": "skip: the design system itself was updated to the owner's rules first (design-system-starter #1, #2)",
+    "validation": "skip: the owner gated direction, facts, plan and screens in plannotator on 2026-10-27"
+  },
   "ticket": "snap-bmr.26",
   "design": "none"
 }

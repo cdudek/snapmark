@@ -88,6 +88,12 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 - Tests: `test/smoke.ts`, `test/capture.test.ts`, `test/keys.test.ts`, only where they encode a replaced style.
 - Docs: `snapmark-app/README.md` and `docs/ux/setup.md`, for the new look and the token source.
 
+## Order of work
+
+1. Milestone 1: 1.1, 1.2, 1.3, 1.4, then the gate and the owner's screenshot review.
+2. Milestone 2: 2.1, 2.2, 2.3, cut from milestone 1, then the same.
+3. Milestone 3: 3.1, 3.2, 3.3, 3.4, cut from milestone 2, then the same.
+
 ## Risks
 
 - **Focus ring on open.** Chromium may treat the bar's opening focus as keyboard focus. The fallback in Approach covers it; F9 proves it.
@@ -116,15 +122,31 @@ The criteria as data are in [done.json](done.json).
 ## Goal handover
 
 ```
-/goal Deliver change 2026-10-27-calm-style in one go per changes/2026-10-27-calm-style/plan.md and facts.md: every milestone in ## Milestones, in order, each on its own branch milestone/calm-style-<n> cut from the previous one (the first from origin/main), so building never waits for a merge. Per feature: write the tests for its facts, build in the plan's folders, commit; run no checks, no lint and no tests between features, and start the next feature at once. An open question never stops the build: write it to changes/2026-10-27-calm-style/questions.md with the default you took, tell the engineer in one line, and carry on. Per milestone, once its features are committed: run `python3 scripts/verify_gate.py milestone 2026-10-27-calm-style` once, validate every fact and ask of that milestone into changes/2026-10-27-calm-style/validation.md (expected, observed, evidence, verdict), write findings.md; fix only correctness bugs and failing tests in one fix round, and put every UX finding plus the milestone's screenshots in front of the owner in plannotator and wait for their notes before changing any look; rerun the gate and paste its full output, open the PR milestone/calm-style-<n> -> main and arm auto-merge once the owner has reviewed. A later milestone opens its PR once the previous one has merged, after `git rebase --onto origin/main milestone/calm-style-<n-1>`, and keeps building meanwhile. Met when every milestone's PR is merged or open with auto-merge armed, the last gate line is `VERIFY PASS milestone 2026-10-27-calm-style <sha>` with <sha> equal to `git rev-parse HEAD`, validation.md has no `not met` row and findings.md no open blocking item. Also met, as a stop-and-ask, on `VERIFY BLOCKED`: summarize changes/2026-10-27-calm-style/verify/report.md for the engineer. Never edit protected paths (facts.md, done.json, lock.json, baselines, allowlists, sdlc.json checks). Tick plan tasks as they land; log departures under ## Revisions. Stop after 200 turns and report. Repo rules: work in the worktree .worktrees/calm-style; use /usr/bin/git. Never launch Electron windows or capture the owner's screen locally; smoke runs only inside the milestone gate (`smoke:background`) and in CI. No dependency changes. After each release, say which version shipped and how to install it. Close each subagent once its report is in.
+/goal Deliver change 2026-10-27-calm-style in one go per changes/2026-10-27-calm-style/plan.md and facts.md: every milestone in ## Milestones, in order, each on its own branch milestone/calm-style-<n> cut from the previous one (the first from origin/main), so building never waits for a merge. Per feature: write the tests for its facts, build in the plan's folders, commit; run no checks, no lint and no tests between features, and start the next feature at once. An open question never stops the build: write it to changes/2026-10-27-calm-style/questions.md with the default you took, tell the engineer in one line, and carry on. Per milestone, once its features are committed: run `python3 scripts/verify_gate.py milestone 2026-10-27-calm-style` once, validate every fact and ask of that milestone into changes/2026-10-27-calm-style/validation.md (expected, observed, evidence, verdict), write findings.md; fix only correctness bugs and failing tests in one fix round, and put every UX finding plus the milestone's screenshots in front of the owner in plannotator and wait for their notes before changing any look; rerun the gate and paste its full output, open the PR milestone/calm-style-<n> -> main and arm auto-merge once the owner has reviewed. A later milestone opens its PR once the previous one has merged, after `git rebase --onto origin/main milestone/calm-style-<n-1>`, and keeps building meanwhile. Met when every milestone's PR is merged or open with auto-merge armed, the last gate line is `VERIFY PASS milestone 2026-10-27-calm-style <sha>` with <sha> equal to `git rev-parse HEAD`, validation.md has no `not met` row and findings.md no open blocking item. Also met, as a stop-and-ask, on `VERIFY BLOCKED`: summarize changes/2026-10-27-calm-style/verify/report.md for the engineer. Never edit protected paths (facts.md, done.json, lock.json, baselines, allowlists, sdlc.json checks). Tick plan tasks as they land; log departures under ## Revisions
+
+- 1.1: these files were outside Files that change.
+  - Root `package.json` gains `npm run tokens`.
+  - `snapmark-app/package.json` copies `tokens.css` into `dist/src/`, and runs `test/style.test.ts` in `npm test`.
+  - `.prettierignore` skips the generated `tokens.css`, so its sha256 holds.
+- 1.2: new `snapmark-app/src/surface.ts`. Every window loads it in `<head>`, before the first paint, with CSP unchanged.
+  - It sets `data-surface="system"` on macOS. The shared preload can run before `<html>` exists, so it can't.
+  - `tokens.css` has no focus rule, so each window carries its own `:focus-visible` rule on `--ds-color-focus`.
+- 1.3: `src/shared.d.ts` was outside Files that change. `BarInit` loses `heads`, as the headline and hint row go.
+  - `capture.ts` loses `barHeads` and gains `destMenu`.
+  - Record (F21) joins in milestone 2, so the bar has five modes for now.
+- 1.3: checks for replaced styles were rewritten.
+  - `test/capture.test.ts`: @F17 (headline and hint) is gone; @F27 `barSize` became @F14.
+  - `test/keys.test.ts`: @F18 key order and the ⇧⌘O and ⇧⌘P captions became @F11 tooltips.
+  - `test/smoke.ts`: @F14, @F17, @F18, @F20–@F24 and @F27 became @F4–@F8 and @F11–@F14.
+  - `test/smoke.ts`: F204's Tab order now runs through the destination.
+- 1.4: headless Chromium 151 draws the ring for a script focus before any click.
+  - So the bar focuses its chosen mode with `focus({ focusVisible: false })`. The keys still work; the ring waits for Tab.
+  - The body-focus fallback is not needed.
+- Milestone 1 gate: `test/menu.test.ts` @F23 read the old bar pick's source line.
+  - It now reads the pop-up's `moveTo`, still `setActive`, and its `editorSessionMenu` call.
+- Milestone 1 gate: `test/colour.test.ts` @N1 read the old bar tokens.
+  - It now checks Capture's on-accent label on the accent fill from `tokens.css`, light and dark.
+- Milestone 1 gate: `tests/sdlc.test.ts` asks for `## Order of work`, and each spec file or a recorded skip.
+  - The plan gains Order of work. `decisions.json` records the skipped spec files and why.
+  - `intent.md` links its resources in the folder. A4's words join A3, since no fact cites A4 alone.
 ```
-
-## Revisions
-
-- 1.1: outside Files that change: root `package.json` gains `npm run tokens`; `snapmark-app/package.json` copies `tokens.css` into `dist/src/` and runs `test/style.test.ts` in `npm test`; `.prettierignore` skips the generated `tokens.css`, so its sha256 holds.
-- 1.2: new `snapmark-app/src/surface.ts`, one line every window loads in its `<head>` (before the first paint, CSP unchanged) to set `data-surface="system"` on macOS; not the shared preload, which can run before `<html>` exists. `tokens.css` holds no focus rule (it is the starter's build, never hand-edited), so each window carries its own `:focus-visible` rule on `--ds-color-focus`.
-- 1.3: `src/shared.d.ts` (outside Files that change): `BarInit` loses `heads`, as the headline and hint row go; `capture.ts` loses `barHeads` and gains `destMenu`. Record (F21) joins in milestone 2, so the bar has five modes now.
-- 1.3: replaced-style checks rewritten: `test/capture.test.ts` @F17 (headline and hint) gone, @F27 `barSize` became @F14; `test/keys.test.ts` @F18 key order and the ⇧⌘O/⇧⌘P captions became @F11 tooltips; `test/smoke.ts` @F14 (blue chosen mode), @F17 (headline), @F18 (key captions), @F20–@F24 (Session | One-Shot segment and greyed pop-up) and @F27 (wrapped hint) became @F4–@F8, @F11–@F14; F204's Tab order now runs through the destination.
-- 1.4: Chromium does draw the ring for a focus set by script before any click (seen in headless Chromium 151), so the bar focuses its chosen mode with `focus({ focusVisible: false })`: the keys keep working from the chosen mode and the ring waits for Tab. The body-focus fallback is not needed.
-- Milestone 1 gate: `test/menu.test.ts` @F23 of picked-designs read the old bar pick source line; it now reads the pop-up's `moveTo` (still `setActive`) and its `editorSessionMenu` call.
-- Milestone 1 gate: `test/colour.test.ts` @N1 of picked-designs read the old bar tokens (`--accent-text`, `--fill-selected`); it now checks Capture's on-accent label on the accent fill from `tokens.css`, light and dark.
