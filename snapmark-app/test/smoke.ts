@@ -78,6 +78,9 @@ const capture = (wc: Electron.WebContents) =>
     await new Promise((r) => setTimeout(r, 500));
     return wc.capturePage();
   });
+// smoke:background runs behind the owner's apps. A window they cover whole is occluded, and Chromium stops its frames:
+// no resize events, no real mouse drags. Every window keeps rendering, as one in front does.
+app.on('browser-window-created', (_e, w) => w.webContents.setBackgroundThrottling(false));
 
 setTimeout(() => {
   console.log('smoke: TIMEOUT');
@@ -1297,9 +1300,10 @@ app
           });`,
         ),
       );
-    // A token's colour as the page computes it, to compare with what a control has
-    const tokenColour = `const token = (v) => { const i = document.createElement('i'); i.style.color = 'var(' + v + ')'; document.body.append(i);
-      const c = getComputedStyle(i).color; i.remove(); return c; };`;
+    // A token's colour as the page computes it, to compare with what a control has. Read as an outline colour: the
+    // system focus colour (-webkit-focus-ring-color) computes to the ring's colour there, but to another as `color`.
+    const tokenColour = `const token = (v) => { const i = document.createElement('i'); i.style.outline = '1px solid var(' + v + ')'; document.body.append(i);
+      const c = getComputedStyle(i).outlineColor; i.remove(); return c; };`;
     const t0 = Date.now();
     const barWin = openCaptureBar(runner)!;
     const shownIn = await new Promise<number>((r) => barWin.once('ready-to-show', () => r(Date.now() - t0)));

@@ -149,4 +149,8 @@ The criteria as data are in [done.json](done.json).
 - Milestone 1 gate: `tests/sdlc.test.ts` asks for `## Order of work`, and each spec file or a recorded skip.
   - The plan gains Order of work. `decisions.json` records the skipped spec files and why.
   - `intent.md` links its resources in the folder. A4's words join A3, since no fact cites A4 alone.
+- Milestone 1 gate: the smoke's editor checks failed behind a full-screen app window: covered windows stop rendering.
+  - `test/smoke.ts` turns background throttling off for every window it opens. No app code changes.
+- Milestone 1 gate: @F10's check read the focus token as `color`, which computes another colour than the ring.
+  - It now reads every token as an outline colour, as the ring draws it.
 ```
