@@ -36,7 +36,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 ### Milestone 2: pop-up panels, recording and auto-scroll
 
 - [x] 2.1 Countdown, area picker and scrolling control in the calm style. F16–F19, F22.
-- [ ] 2.2 Rebase picked-designs milestones 3 and 4 onto this branch, and restyle the recorder and recording control. F20.
+- [x] 2.2 Rebase picked-designs milestones 3 and 4 onto this branch, and restyle the recorder and recording control. F20.
 - [ ] 2.3 Record joins the bar as its sixth mode. F21.
 
 ### Milestone 3: editor, session window, Settings and Keyboard Shortcuts
@@ -168,3 +168,14 @@ The criteria as data are in [done.json](done.json).
 - Milestone 1 review: `test/capture.test.ts` imports `namePart` from `sessions.ts` for the face's name.
 - After merge: the release runner's small screen made the bar narrow, so `@F5` read no names. It now lifts `narrow` while it measures.
 - After merge: smoke clicks Capture after its script answers, as on Linux the closing bar disposed the frame before the answer arrived.
+- 2.2: picked-designs 3 and 4 (12 commits) were replayed with a rebase onto milestone/calm-style-2. They bring their own files, as 2.2 asks.
+- 2.2: conflicts went to the calm style. Their `barHeads` goes with milestone 1's headline and hint row: Record's hint and F82's "Snapmark scrolls the area for you".
+  - Their checks of it go too: capture.test.ts @F17, @F59 and @F82 on `barHeads`, and the two-row bar checks in smoke.ts.
+  - The scrolling control's status line still says who scrolls.
+- 2.2: their two-row bar.html, bar.ts and bar checks keep milestone 1's calm bar. Record joins it in 2.3.
+- 2.2: `src/countdown.ts`, outside Files that change: Record's outline drops the dimming by a class, as the dimming is now a layer.
+- 2.2: `src/recorder.html` is a new window: it loads the tokens, and @F3's list gains it.
+- 2.2: @F63's check reads the recording dot as the `--ds-color-error` token, not the literal reds.
+- 2.2: the smoke's calm panel helper is `calmLook`, as their recording block has a `panelLook`.
+- 2.2: 2.1's area and countdown comments said "grey", which @F22 reads as a colour name. The words changed.
+- 2.2, rebased on milestone 1's fixes: the scrolling and recording controls ring as the bar does (finding 1). `src/scroll.ts`, outside Files that change, sets the ring `main.ts` passes in its query.

@@ -24,7 +24,17 @@ assert.strictEqual(crypto.createHash('sha256').update(tokens).digest('hex'), loc
 const windows = fs.readdirSync(path.join(app, 'src')).filter((f) => f.endsWith('.html'));
 assert.deepStrictEqual(
   windows,
-  ['area.html', 'bar.html', 'countdown.html', 'editor.html', 'scroll.html', 'settings.html', 'shortcuts.html', 'viewer.html'],
+  [
+    'area.html',
+    'bar.html',
+    'countdown.html',
+    'editor.html',
+    'recorder.html',
+    'scroll.html',
+    'settings.html',
+    'shortcuts.html',
+    'viewer.html',
+  ],
   '@F3 every window',
 );
 for (const w of windows) {
@@ -61,14 +71,35 @@ assert.ok(barTs.includes("style.setProperty('--ds-color-focus', s.ring ?? 'var(-
 assert.ok(barTs.includes('const choose = (m: CaptureMode, ring = false) =>'), '@F10 no ring by default');
 assert.strictEqual((barTs.match(/as CaptureMode, true\)/g) ?? []).length, 1, '@F10 the arrows alone ring');
 
+// @N1 @F10 @2026-10-27-calm-style the panels ring as the bar does: main passes the ring, scroll.ts sets it
+assert.ok(
+  read('src/scroll.ts').includes("style.setProperty('--ds-color-focus', query.get('ring') || 'var(--ds-color-ink)')"),
+  "@N1 @F10 the panels' ring colour",
+);
+
 // @A5 @2026-10-27-calm-style Options stays beside the destination; the spare room falls before Capture
 assert.ok(/#options \{\s+margin-right: auto;\s+\}/.test(bar) && !bar.includes('margin-left: auto'), '@A5 Capture alone at the right');
 
-// @F22 @2026-10-27-calm-style the panels' .html files have no colour literal either; their colours are --ds-* tokens
-for (const panel of ['countdown.html', 'area.html', 'scroll.html']) {
+// @F22 @2026-10-27-calm-style the panels' .html files have no colour literal either; their colours are --ds-* tokens.
+// The recorder is never shown and has no colours
+for (const panel of ['countdown.html', 'area.html', 'scroll.html', 'recorder.html']) {
   const html = read(`src/${panel}`);
   assert.deepStrictEqual(colourLiterals(html), [], `@F22 ${panel} uses no colour literal`);
-  assert.ok(/var\(--ds-color-[a-z-]+\)/.test(html), `@F22 ${panel} takes its colours from the tokens`);
+  assert.ok(panel === 'recorder.html' || /var\(--ds-color-[a-z-]+\)/.test(html), `@F22 ${panel} takes its colours from the tokens`);
 }
+
+// @F20 @2026-10-27-calm-style Record's recording control, in scroll.html, is in the calm style: Done the one accent
+// fill, ⓧ the plain icon the scrolling control's Esc is, the recording dot and the warning from the tokens
+const scroll = read('src/scroll.html');
+assert.ok(
+  /#done,\s+#rec-done \{\s+background: var\(--ds-button-fill-primary\);/.test(scroll),
+  '@F20 Done fills with the accent, in both controls',
+);
+assert.deepStrictEqual(
+  [...scroll.matchAll(/<button id="([\w-]+)" class="(?:scroll|rec) x"/g)].map((m) => m[1]),
+  ['cancel', 'rec-cancel'],
+  '@F20 both cancels are the plain icon',
+);
+assert.ok(scroll.includes('background: var(--ds-color-error);') && !scroll.includes('--rec-dot'), '@F20 the recording dot from the tokens');
 
 console.log('style: ok');

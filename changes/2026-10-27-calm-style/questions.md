@@ -57,3 +57,17 @@ Open questions met while building. Each has the default taken; the owner answers
 - **Default taken:** the primitives `--ds-primitive-color-neutral-0` (the line) and `--ds-primitive-color-neutral-950` (its shadow, and the dimming as a layer at 20 % or 30 % opacity). No colour literal, and the look is as before. A `scrim` role in the system would replace them.
 - **Milestone:** 2
 - **Answer:**
+
+## Q9 The recording dot's colour
+
+- **Question:** the recording control's dot was `#ff3b30` (light) and `#ff453a` (dark). The tokens have no `record` role; examples/snapmark.md names one as a Snapmark extra under `x`. Which token?
+- **Default taken:** `--ds-color-error`, the system's red in light and dark. Registering `x.color.record` in `design/product.json` and rebuilding the tokens would replace it.
+- **Milestone:** 2
+- **Answer:**
+
+## Q10 The recording control's "⌃⇧5 stops"
+
+- **Question:** the owner rule says no shortcut captions; keys go in tooltips. The recording control shows "⌃⇧5 stops", and picked-designs' @F63 checks it. The control never takes the focus, so its tooltips may not show. Keep it?
+- **Default taken:** kept, as dim caption text, so the one key that stops a recording stays in view. Done's tooltip also reads "Done (⌃⇧5)".
+- **Milestone:** 2
+- **Answer:**

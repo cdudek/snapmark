@@ -1127,10 +1127,10 @@ app
     const tokenColour = `const token = (v) => { const i = document.createElement('i'); i.style.outline = '1px solid var(' + v + ')'; document.body.append(i);
       const c = getComputedStyle(i).outlineColor; i.remove(); return c; };`;
     // @F16–@F19 (calm style): a panel as it looks in light and in dark. `surface` is the element the panel is drawn on
-    // and `fill` the token it is filled with: the window's material or the system's colours on macOS, the tokens'
-    // greys elsewhere. The accent fills at most one control; no control has a border or outline at rest, nor a ring.
+    // and `fill` the token it is filled with: the window's material or the system's colours on macOS, the tokens' greys
+    // elsewhere. Of the elements shown, the accent fills at most one control; no control has an edge at rest, nor a ring.
     const panelJs = (surface: string, fill: string) => `${tokenColour} const cs = (e) => getComputedStyle(e);
-      const s = cs(document.querySelector('${surface}')); const accent = token('--ds-color-accent'); const all = [...document.querySelectorAll('body *')];
+      const s = cs(document.querySelector('${surface}')); const accent = token('--ds-color-accent'); const all = [...document.querySelectorAll('body *')].filter((e) => e.getClientRects().length);
       return JSON.stringify({ material: s.backgroundColor === token('${fill}') && s.color === token('--ds-color-ink'), ink: s.color,
         filled: all.filter((e) => cs(e).backgroundColor === accent).map((e) => e.id),
         inked: all.filter((e) => { const t = cs(e); return [t.color, t.stroke, t.fill, t.borderTopColor, t.outlineColor].includes(accent); }).map((e) => e.id || e.tagName),
@@ -2841,12 +2841,14 @@ app
     const panelLook = JSON.parse(
       await inWin(
         recPanel,
-        `const t = (id) => document.getElementById(id); const vis = (e) => getComputedStyle(e).display !== 'none';
+        `${tokenColour} const t = (id) => document.getElementById(id); const vis = (e) => getComputedStyle(e).display !== 'none';
         return JSON.stringify({ cancel: t('rec-cancel').getAttribute('aria-label'), done: t('rec-done').textContent.trim(), clock: t('clock').textContent,
-          dot: getComputedStyle(t('dot')).backgroundColor, hint: t('rec-hint').textContent,
+          dot: getComputedStyle(t('dot')).backgroundColor === token('--ds-color-error'), hint: t('rec-hint').textContent,
           shown: [...document.querySelectorAll('.rec')].every(vis) && ![...document.querySelectorAll('.scroll')].some(vis) });`,
       ),
     );
+    // @F20, @F16, @F17, @F19 (calm style): the recording control in light and dark
+    const recCalm = await calmLook(recPanel, 'body', '--ds-color-panel');
     const pb = recPanel.getBounds();
     const outlineWin = countdownUp(); // while recording, the countdown page is the area's outline alone
     const recWin = recorderUp();
@@ -2883,11 +2885,15 @@ app
       panelLook.cancel === 'Cancel recording' &&
       panelLook.done === 'Done' &&
       /^0:0[1-3] of 0:30 · 15 fps$/.test(panelLook.clock) &&
-      ['rgb(255, 59, 48)', 'rgb(255, 69, 58)'].includes(panelLook.dot) &&
+      panelLook.dot === true &&
       panelLook.hint === '⌃⇧5 stops' &&
       panelLook.shown &&
       pb.y >= recArea.y + recArea.height &&
       pb.width === 600;
+    viewer[
+      '@F20 @2026-10-27-calm-style the recording control ships in the calm style: the material, Done the one accent fill, no edge or ring'
+    ] = calmPanel(recCalm, ['rec-done']) && quietPanel(recCalm);
+    why.calmRecord = recCalm;
     viewer['@F65 while recording no key is taken and the control never has the focus'] =
       recKinds.keysFree && !recKinds.focusable && !recKinds.focused;
     viewer['@F68 the control and the outline are kept out of frames; the recorder never shows'] =

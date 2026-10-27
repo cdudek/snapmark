@@ -60,19 +60,20 @@
       button:hover {
         background: var(--ds-color-soft-hover);
       }
-      /* The focus ring after Tab only, in the system's focus colour. */
+      /* The focus ring after Tab only, in the system's focus colour: scroll.ts sets --ds-color-focus to macOS's accent
+         where it reaches 3:1, else to the text colour (F10, N1). */
       button:focus-visible {
         outline: var(--ds-ring-width) solid var(--ds-color-focus);
         outline-offset: var(--ds-ring-offset);
       }
-      /* Esc is a plain icon (spec screens.md); Done is the one control filled with the accent (F17). */
-      #cancel {
+      /* Esc, or ⓧ while recording, is a plain icon (spec screens.md); Done is the one control filled with the accent (F17). */
+      .x {
         width: var(--ds-control-md);
         padding: 0;
         justify-content: center;
         color: var(--ds-color-dim);
       }
-      #cancel svg {
+      .x svg {
         width: 18px;
         height: 18px;
         fill: none;
@@ -80,7 +81,8 @@
         stroke-width: 1.5;
         stroke-linecap: round;
       }
-      #done {
+      #done,
+      #rec-done {
         background: var(--ds-button-fill-primary);
         color: var(--ds-button-text-primary);
         font-weight: var(--ds-button-weight-primary);
@@ -90,58 +92,33 @@
         font-weight: var(--ds-font-weight-regular);
         opacity: 0.75;
       }
-      /* The recording control: ⓧ, the red dot and the clock, Done, the hint; the scrolling control: ⓧ, its status line,
-         Done. Dark HUD in light and dark mode. */
-      :root {
-        color-scheme: light dark;
-        --rec-dot: light-dark(#ff3b30, #ff453a);
-      }
+      /* The recording control: ⓧ, the recording dot and the clock, Done, the hint; the scrolling control: ⓧ, its status
+         line, Done. The window's material, in light and dark (F16, F20). */
       body.record .scroll,
       body:not(.record) .rec {
         display: none;
-      }
-      .x {
-        padding: 6px;
-        background: transparent;
-        display: inline-flex;
-      }
-      .x:hover {
-        background: rgb(255 255 255 / 0.15);
-      }
-      .x svg {
-        width: 22px;
-        height: 22px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.5;
       }
       #status {
         flex: 1;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--ds-space-8);
         white-space: nowrap; /* the clock never truncates */
         font-variant-numeric: tabular-nums;
-        font-size: 15px;
       }
       #dot {
         width: 10px;
         height: 10px;
         flex: none;
-        border-radius: 50%;
-        background: var(--rec-dot);
+        border-radius: var(--ds-radius-round);
+        background: var(--ds-color-error);
       }
       #clock.warn {
-        color: #ffb224; /* near the cap */
-      }
-      #rec-done {
-        padding: 8px 20px;
-        background: #0f72db;
-        font-weight: 600;
+        color: var(--ds-color-warn-text); /* near the cap */
       }
       #rec-hint {
-        font-size: 11px;
-        color: rgb(255 255 255 / 0.7);
+        font-size: var(--ds-type-caption-size);
+        color: var(--ds-color-dim);
       }
       .sr {
         position: fixed;
@@ -153,20 +130,17 @@
     </style>
   </head>
   <body>
-    <button id="cancel" class="scroll" aria-label="Cancel" aria-keyshortcuts="Escape" title="Cancel (Esc)">
+    <button id="cancel" class="scroll x" aria-label="Cancel" aria-keyshortcuts="Escape" title="Cancel (Esc)">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg>
     </button>
     <div id="what" class="scroll"><span id="count">Starting…</span></div>
     <button id="done" class="scroll" aria-keyshortcuts="Enter" title="Done (↩, ⌃⇧5)">Done<kbd aria-hidden="true">↩</kbd></button>
     <div id="scroll-say" class="scroll sr" role="status" aria-live="polite"></div>
-    <button id="rec-cancel" class="rec x" aria-label="Cancel recording">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M9 9l6 6M15 9l-6 6" />
-      </svg>
+    <button id="rec-cancel" class="rec x" aria-label="Cancel recording" title="Cancel recording">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg>
     </button>
     <div id="status" class="rec"><span id="dot" aria-hidden="true"></span><span id="clock">0:00 of 0:30</span></div>
-    <button id="rec-done" class="rec">Done</button>
+    <button id="rec-done" class="rec" title="Done (⌃⇧5)">Done</button>
     <span id="rec-hint" class="rec">⌃⇧5 stops</span>
     <div id="rec-say" class="rec sr" role="status" aria-live="polite"></div>
     <script src="scroll.js"></script>

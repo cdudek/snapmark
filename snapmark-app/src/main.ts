@@ -606,6 +606,9 @@ function recordPanel(a: Area, fps: number): BrowserWindow {
     ...panelAt(a, screen.getDisplayMatching(a).workArea, 600, 64),
     frame: false,
     transparent: true,
+    roundedCorners: true,
+    vibrancy: 'popover', // the system material, as the capture bar's (F16)
+    visualEffectState: 'active',
     resizable: false,
     movable: false,
     minimizable: false,
@@ -622,7 +625,7 @@ function recordPanel(a: Area, fps: number): BrowserWindow {
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   win.once('ready-to-show', () => win.showInactive());
-  void win.loadFile(path.join(__dirname, 'scroll.html'), { hash: 'record', query: { fps: String(fps) } }); // the clock's fps from the start (F63)
+  void win.loadFile(path.join(__dirname, 'scroll.html'), { hash: 'record', query: { fps: String(fps), ring: focusRing() ?? '' } }); // the clock's fps from the start (F63)
   return win;
 }
 
@@ -694,6 +697,12 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
   return win;
 }
 
+// The focus ring of the bar and the panels: macOS's accent where it reaches 3:1 on their material, else null for the
+// text colour, as Chromium's -webkit-focus-ring-color is its own orange (F10, N1)
+function focusRing() {
+  return barRing(process.platform === 'darwin' ? systemPreferences.getAccentColor() : undefined, nativeTheme.shouldUseDarkColors);
+}
+
 const fromBar = (e: { sender: Electron.WebContents }) => !!bar && barOpen() && e.sender === bar.webContents;
 const barInit = (): BarInit => {
   const cur = menuState().current;
@@ -703,7 +712,7 @@ const barInit = (): BarInit => {
     // The face names the session without its date, "Ledgerly Q4 review"; a session with only its stamp keeps it (F12)
     session: cur && { label: sessions.namePart(cur.name) || cur.label, count: cur.count },
     // shortcut: read as the bar opens or its state changes; an accent or theme changed while it is open shows next time
-    ring: barRing(process.platform === 'darwin' ? systemPreferences.getAccentColor() : undefined, nativeTheme.shouldUseDarkColors),
+    ring: focusRing(),
     narrow: barNarrow,
   };
 };
@@ -813,7 +822,7 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
     ctl.show();
     focusApp(); // ↩ and Esc reach the control; scrolling still goes to the window under the pointer
   });
-  void ctl.loadFile(path.join(__dirname, 'scroll.html'));
+  void ctl.loadFile(path.join(__dirname, 'scroll.html'), { query: { ring: focusRing() ?? '' } }); // its ring, as the bar's
 
   let stop = null as 'done' | 'cancel' | null; // set by the control, ⌃⇧5 and the icon too, which narrowing cannot see
   const onDone = (e: IpcMainEvent, ok: boolean) => {

@@ -9,7 +9,10 @@
   // The recording control never has the focus and takes no key: the recorded app keeps ↩ and Esc (F65)
   const recording = location.hash === '#record';
   document.body.classList.toggle('record', recording);
-  const fps = new URLSearchParams(location.search).get('fps');
+  const query = new URLSearchParams(location.search);
+  // The ring in macOS's accent where it reaches 3:1, else the text colour, as the bar's (F10, N1)
+  document.documentElement.style.setProperty('--ds-color-focus', query.get('ring') || 'var(--ds-color-ink)');
+  const fps = query.get('fps');
   if (recording && fps) el('clock').textContent = `0:00 of 0:30 · ${fps} fps`; // until the first status (F63)
   if (!recording)
     document.addEventListener('keydown', (e) => {
