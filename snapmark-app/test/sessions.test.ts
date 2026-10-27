@@ -2,7 +2,17 @@ import assert from 'assert';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { secretBoxes } from '../src/redact';
 import * as sessions from '../src/sessions';
+
+// Entry n of a session.md, from its heading to the next.
+const entryOf = (md: string, n: number) => {
+  const from = md.indexOf(`## ${String(n).padStart(3, '0')} · `);
+  const next = md.indexOf('\n## ', from + 1);
+  return md.slice(from, next < 0 ? md.length : next);
+};
+// A recognised word, 9 px a character, as the smoke test's stub
+const word = (start: number, end: number, x: number, y: number) => ({ start, end, x, y, w: (end - start) * 9, h: 18 });
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-test-'));
 const a = sessions.create(root, 'demo');
@@ -100,24 +110,46 @@ const nm = sessions.create(root, 'md-notes');
 sessions.addShot(root, nm, Buffer.from('m'), { notes: ['# Title\n\n- item\n\n**bold**', 'plain'] });
 assert.match(fs.readFileSync(path.join(root, nm, 'session.md'), 'utf8'), /\n1\. # Title\n\n {3}- item\n\n {3}\*\*bold\*\*\n2\. plain\n/);
 
-// The text in the screenshot goes last, collapsed, as plain text; no block when there is none
+// No text read off the image: an entry is the image, the marks and the owner's words (2026-10-27-no-screen-text)
+const NS = '@2026-10-27-no-screen-text';
 const tx = sessions.create(root, 'text');
-sessions.addShot(root, tx, Buffer.from('t'), { notes: ['a'], cards: ['c'], text: '1. Orders\nEmail: [redacted]\n' });
-sessions.addShot(root, tx, Buffer.from('u'), { caption: 'No text', text: '  ' });
-const txMd = fs.readFileSync(path.join(root, tx, 'session.md'), 'utf8');
-assert.ok(
-  txMd.includes(
-    '1. a\n\n- Card: c\n\n<details><summary>Text in the screenshot</summary>\n\n```text\n1. Orders\nEmail: [redacted]\n```\n\n</details>\n\n## 002',
-  ),
-  txMd,
+sessions.addShot(root, tx, Buffer.from('t'), { caption: 'Header', notes: ['a'], cards: ['c'], moves: 1 });
+const txMd = () => fs.readFileSync(path.join(root, tx, 'session.md'), 'utf8');
+const txTime = /^## 001 · (\d\d:\d\d)$/m.exec(txMd())![1];
+const MOVED = '- Moved an element: the dashed outline is where it is now, the arrow shows where it should go.';
+assert.strictEqual(
+  txMd(),
+  `# text\n\n## 001 · ${txTime}\n\n![Screenshot 1](img/001.png)\n\nHeader\n\n1. a\n\n- Card: c\n${MOVED}\n`,
+  `@F1 ${NS} a new entry ends with its words, no "Text in the screenshot" block`,
 );
-assert.ok(!txMd.slice(txMd.indexOf('## 002')).includes('<details>'));
+// An entry saved by an older Snapmark, with its block, as it sits on disk
+const OLD_BLOCK = '<details><summary>Text in the screenshot</summary>\n\n```text\n1. Orders\nEmail: [redacted]\n```\n\n</details>\n';
+fs.appendFileSync(path.join(root, tx, 'session.md'), `\n## 002 · 09:41\n\n![Screenshot 2](img/002.png)\n\n1. old note\n\n${OLD_BLOCK}`);
+fs.writeFileSync(path.join(root, tx, 'img', '002.png'), 'u');
+const oldEntry = entryOf(txMd(), 2);
+sessions.addShot(root, tx, Buffer.from('v'), { caption: 'Later' });
+sessions.replaceShot(root, tx, 1, Buffer.from('t2'), { caption: 'Header, again' });
+assert.strictEqual(entryOf(txMd(), 2), oldEntry, `@F5 ${NS} an old entry stays byte for byte through an add and an Edit Again`);
 assert.deepStrictEqual(
-  sessions.entries(txMd).map((e) => e.notes),
-  [1, 0],
-  'a numbered line in the text is not a note',
+  sessions.entries(txMd()).map((e) => e.notes),
+  [0, 1, 0],
+  `@F5 ${NS} an old entry still parses: the numbered lines in its block are not notes`,
 );
-assert.strictEqual(sessions.textBlock('run `npm ci` or ```x```').split('\n')[2], '````text'); // a fence longer than any in the text
+assert.strictEqual(txMd().split('<details>').length, 2, `@F1 ${NS} only the old entry has a block`);
+assert.ok(sessions.replaceShot(root, tx, 2, Buffer.from('u2'), { notes: ['old note'] }));
+assert.ok(
+  !txMd().includes('<details>') && !txMd().includes('Text in the screenshot') && !txMd().includes('Orders'),
+  `@F2 ${NS} Edit Again saves an old entry without its recognised text`,
+);
+assert.ok(entryOf(txMd(), 2).endsWith('1. old note\n'), `@F2 ${NS} the edited entry keeps its notes`);
+
+// @F4 the recognised text still finds private data, and its box is what the editor pixelates
+const mail = 'Mail jane.doe@example.com';
+assert.deepStrictEqual(
+  secretBoxes([{ text: mail, x: 260, y: 100, w: 225, h: 18, words: [word(0, 4, 260, 100), word(5, 25, 305, 100)] }]),
+  [{ x: 302, y: 97, w: 186, h: 24 }],
+  `@F4 ${NS} auto-redact still pixelates an email in the screenshot`,
+);
 
 // Removing a screenshot keeps the rest of session.md and moves the image aside
 const rm = sessions.create(root, 'remove');
@@ -268,14 +300,9 @@ const tlImg = path.join(root, tl, 'img');
 const tlMd = () => fs.readFileSync(path.join(root, tl, 'session.md'), 'utf8');
 const bufs = (k: number, tag: string) => Array.from({ length: k }, (_, i) => Buffer.from(`${tag}${i + 1}`));
 const names = (k: number) => Array.from({ length: k }, (_, i) => `${String(i + 1).padStart(2, '0')}.png`);
-const entryOf = (md: string, n: number) => {
-  const from = md.indexOf(`## ${String(n).padStart(3, '0')} · `);
-  const next = md.indexOf('\n## ', from + 1);
-  return md.slice(from, next < 0 ? md.length : next);
-};
 const linksIn = (md: string) => [...md.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)].map((m) => ({ alt: m[1], src: m[2] }));
 for (let i = 1; i <= 6; i++) sessions.addShot(root, tl, Buffer.from(`fit${i}`));
-const tallText = { caption: 'Pricing table overflows.', notes: ['Cut off here', 'Should be bold'], cards: ['Bigger'], text: 'Sign in' };
+const tallText = { caption: 'Pricing table overflows.', notes: ['Cut off here', 'Should be bold'], cards: ['Bigger'] };
 assert.strictEqual(sessions.addShot(root, tl, Buffer.from('one'), tallText, bufs(11, 'p')), 7);
 const seven = entryOf(tlMd(), 7);
 
@@ -303,9 +330,9 @@ assert.deepStrictEqual(
   'F7 alt text',
 );
 
-// F8 text once: comment, notes, cards and the recognised text once each, after the last part; only notes count as notes
+// F8 text once: comment, notes and cards once each, after the last part; only notes count as notes
 const afterParts = seven.indexOf('img/007/11.png');
-for (const s of ['Pricing table overflows.', '1. Cut off here\n2. Should be bold', '- Card: Bigger', 'Text in the screenshot']) {
+for (const s of ['Pricing table overflows.', '1. Cut off here\n2. Should be bold', '- Card: Bigger']) {
   assert.strictEqual(seven.split(s).length, 2, `F8 text once: ${s}`);
   assert.ok(seven.indexOf(s) > afterParts, `F8 text once, after the last part: ${s}`);
 }

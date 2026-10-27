@@ -7,7 +7,6 @@ export interface ShotText {
   notes?: string[]; // numbered marker notes
   cards?: string[]; // text written on cards on the image
   moves?: number; // cut-and-move pieces
-  text?: string; // the text recognised in the screenshot (ocr.ts), redacted parts as [redacted]
 }
 
 const pad = (n: number) => String(n).padStart(3, '0');
@@ -105,9 +104,10 @@ function nextNumber(dir: string): number {
 export const partsLine = (total: number) =>
   `This screenshot is tall, so it comes in ${total} parts. Read them top to bottom as one image; each part repeats a strip from the bottom of the part before.`;
 
-// One session.md entry: heading, image, then the text. A tall screenshot (parts ≥ 2) has the parts line and its parts,
-// one paragraph each, in place of the one image; the text follows once, after the last part.
-function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0, text = '' }: ShotText, parts = 0): string {
+// One session.md entry: heading, image, then the owner's words. A tall screenshot (parts ≥ 2) has the parts line and its
+// parts, one paragraph each, in place of the one image; the words follow once, after the last part. No text read off
+// the image: it would copy whatever was on screen.
+function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0 }: ShotText, parts = 0): string {
   const images = parts
     ? [
         partsLine(parts),
@@ -130,17 +130,7 @@ function entry(n: number, time: string, { caption = '', notes = [], cards = [], 
       `- Moved ${moves === 1 ? 'an element' : `${moves} elements`}: the dashed outline is where it is now, the arrow shows where it should go.`,
     );
   if (extra.length) md += `\n${extra.join('\n')}\n`;
-  if (text.trim()) md += `\n${textBlock(text.trim())}\n`;
   return md;
-}
-
-export const TEXT_SUMMARY = 'Text in the screenshot';
-
-// The recognised text, last in the entry: collapsed where Markdown renders HTML (GitHub, the PDF export hides it), as
-// a plain-text block inside, so nothing in it reads as Markdown. The fence is longer than any backtick run in the text.
-export function textBlock(text: string): string {
-  const fence = '`'.repeat(Math.max(3, ...[...text.matchAll(/`+/g)].map((m) => m[0].length + 1)));
-  return `<details><summary>${TEXT_SUMMARY}</summary>\n\n${fence}text\n${text}\n${fence}\n\n</details>`;
 }
 
 // Screenshots in a session = PNGs in its img/ folder.
@@ -215,7 +205,7 @@ export function entries(md: string): { n: number; heading: string; notes: number
       md
         .slice(m.index, heads[i + 1]?.index ?? md.length)
         .split('\n<details>')[0]
-        .match(/^\d+\. /gm)?.length ?? 0, // not the text's lines
+        .match(/^\d+\. /gm)?.length ?? 0, // not the lines of an old entry's "Text in the screenshot" block
   }));
 }
 

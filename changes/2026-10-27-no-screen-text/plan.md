@@ -24,7 +24,7 @@ created: 2026-10-27
 
 ### Milestone 1: drop the text block
 
-- [ ] 1.1 Stop writing recognised text; remove the block's code and its AI note line. F1–F5.
+- [x] 1.1 Stop writing recognised text; remove the block's code and its AI note line. F1–F5.
 
 ## Approach
 
@@ -72,4 +72,9 @@ The calm-style goal stays active. This change is built under it, between that ch
 
 ## Revisions
 
-None yet.
+- `sessions.test.ts`: the block-writing and `textBlock` fence checks become F1, F2, F5; F8 no longer expects the block.
+- `ocr.test.ts`: the `ocrText` checks (reading order, `[redacted]`, cap) go with `ocrText`.
+- `exporter.test.ts`: the hidden-block check now writes an old entry by hand (F5).
+- `smoke.ts`: "session.md gets the text" becomes F1; the viewer checks append an old block by hand.
+- `smoke.ts`: "prompt explains the text in the screenshot" becomes F3, its opposite.
+- `README.md`: the text bullet, the example block and the `[redacted]` sentence go.

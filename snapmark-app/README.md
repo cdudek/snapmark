@@ -23,11 +23,10 @@ Snapmark is a macOS menu bar app for exactly that loop:
 - **Saved at the size the model uses.** Retina captures are 2× pixels. Snapmark stores every image within 1568 px on the long edge and about 1.15 megapixels, the limits above which Claude resizes anyway. Nothing is lost for the model, and uploads and sessions stay small.
 - **Numbers instead of descriptions.** Note 2 refers to marker ② on the image. The model does not have to guess which element you mean, and you do not have to describe it.
 - **One plain Markdown file per session.** No app, no account, no export step. Any agent that reads files can read it, and it diffs cleanly in git.
-- **The text on the image, as text.** Snapmark reads the text in each screenshot with macOS's own text recognition and puts it under the entry, top to bottom, in a collapsed _Text in the screenshot_ block (up to 2,000 characters). The agent can search and quote it instead of reading it off pixels.
 
 A session looks like this:
 
-````markdown
+```markdown
 # 2026-09-25 14.02
 
 ## 001 · 14:03
@@ -38,17 +37,7 @@ Checkout page on mobile width.
 
 1. Button label is cut off, should wrap
 2. Remove this promo banner entirely
-
-<details><summary>Text in the screenshot</summary>
-
-```text
-Your order  2 items
-Contact: [redacted]
-Pay now
 ```
-
-</details>
-````
 
 ## Install
 
@@ -104,7 +93,7 @@ The side panel starts with a one-line comment field. References appear there onc
 
 **Cards** are yellow speech bubbles: click to place one and start typing. To point at something, press on it and release where the card should sit; the bubble's tail turns toward it and a line follows the card wherever you move it. **Cut & move** leaves a dashed outline where the element is now and draws an arrow to where you dropped it. Cards and moves are also written into `session.md`, so an agent reads them as text.
 
-**Auto-redact.** When a screenshot opens in the editor, Snapmark reads its text and pixelates email addresses, API keys and tokens (`sk-…`, `ghp_…`, `github_pat_…`, `xoxb-…`, `AKIA…`, JWTs, other long random strings), private key headers, card numbers and IBANs, with the same Redact marks you draw yourself. The side panel says _Redacted 2 sensitive items · ⌘Z to undo_; one ⌘Z takes them all back, and a single mark can be selected and deleted. Add to Session, Copy Image and Save As… wait for it, so none of it leaves your Mac, and text under any Redact mark is written to `session.md` as `[redacted]`. Edit Again does not redact a screenshot a second time. Text recognition runs on your Mac; nothing is uploaded.
+**Auto-redact.** When a screenshot opens in the editor, Snapmark reads its text and pixelates email addresses, API keys and tokens (`sk-…`, `ghp_…`, `github_pat_…`, `xoxb-…`, `AKIA…`, JWTs, other long random strings), private key headers, card numbers and IBANs, with the same Redact marks you draw yourself. The side panel says _Redacted 2 sensitive items · ⌘Z to undo_; one ⌘Z takes them all back, and a single mark can be selected and deleted. Add to Session, Copy Image and Save As… wait for it, so none of it leaves your Mac. The text it reads is used only to find these; it is never written to `session.md`. Edit Again does not redact a screenshot a second time. Text recognition runs on your Mac; nothing is uploaded.
 
 **Copy Image** (⇧⌘C) and **Save As…** (⇧⌘S), beside Undo and Redo, take the marked-up image out without adding it to the session: to the clipboard, or to a PNG wherever you pick (the name follows the entry it would become, for example `Ledgerly Q4 review 013.png`). It is the exact image **Add to Session** saves, within the AI's size limits. Outside a note, plain ⌘C copies the image too. Inside a note, ⌘C copies the text and ⇧⌘C still copies the image. **Add to Session** stays the main action.
 
@@ -131,7 +120,7 @@ Click the menu bar icon for the menu. It is built fresh each time it opens, and 
 
 Copies confirm with a notification. A session moved or deleted in Finder is reported instead of silently doing nothing.
 
-**Export → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export → PDF** renders the session into `<session>.pdf`, for people who just want to read it, without the _Text in the screenshot_ blocks. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`. **Settings… ▸ General ▸ Change…** moves new sessions elsewhere; pick a folder inside iCloud Drive or Google Drive and your sessions sync and can be shared from there. The `SNAPMARK_ROOT` environment variable overrides the choice (used by the tests).
+**Export → ZIP** packs `session.md` and `img/` into `<session>.zip`, for agents and developers. **Export → PDF** renders the session into `<session>.pdf`, for people who just want to read it, without the _Text in the screenshot_ blocks that older entries still carry. Both land in the session folder, and Finder opens with the file selected. Sessions are stored in `~/Documents/Snapmark/`. **Settings… ▸ General ▸ Change…** moves new sessions elsewhere; pick a folder inside iCloud Drive or Google Drive and your sessions sync and can be shared from there. The `SNAPMARK_ROOT` environment variable overrides the choice (used by the tests).
 
 ## Develop
 
@@ -161,7 +150,7 @@ npm run tokens       # rebuild src/tokens.css from design-system-starter (see be
 | `src/stitch.ts`       | Stitches the scrolled frames, tested without Electron    |
 | `src/beautify.ts`     | One-shot mode's Beautify layout, tested without Electron |
 | `src/sessions.ts`     | Session folders and `session.md` writing                 |
-| `src/ocr.ts`          | Text recognition (Vision through JXA), reading order     |
+| `src/ocr.ts`          | Text recognition (Vision through JXA), for auto-redact   |
 | `src/redact.ts`       | Auto-redact's patterns, tested without Electron          |
 | `src/tokens.css`      | Colours, sizes and shapes, generated; never edit by hand |
 | `design/`             | `product.json` (Snapmark's values) and the tokens' lock  |

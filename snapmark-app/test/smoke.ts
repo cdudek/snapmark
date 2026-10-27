@@ -2132,7 +2132,7 @@ app
       oneKept?.session === 'one-shot' &&
       path.basename(oneKept.dir).endsWith(' · one-shot · not saved') &&
       JSON.parse(fs.readFileSync(path.join(oneKept.dir, 'state.json'), 'utf8')).beautify?.ratio === '16:9';
-    // Auto-redact and the text in the screenshot, from a stubbed text recognition: words 9 px a character
+    // Auto-redact, from a stubbed text recognition: words 9 px a character. The text itself never reaches session.md
     const word = (start: number, end: number, x: number, y: number) => ({ start, end, x, y, w: (end - start) * 9, h: 18 });
     desk.recognize = async () => [
       {
@@ -2161,7 +2161,7 @@ app
         return JSON.stringify({ shown, undone, redone });`,
       ),
     );
-    viewer['auto-redact pixelates the email, padded, and says so in the side panel'] =
+    viewer['@F4 @2026-10-27-no-screen-text auto-redact pixelates the email, padded, and says so in the side panel'] =
       JSON.stringify(auto.shown) === JSON.stringify(['302,97,186,24', 'Redacted 1 sensitive item · ⌘Z to undo', false]);
     viewer['⌘Z takes auto-redact back in one step, ⇧⌘Z puts it back'] =
       JSON.stringify(auto.undone) === JSON.stringify(['', true]) &&
@@ -2170,9 +2170,11 @@ app
     await inWin(scan, `document.getElementById('save').click();`);
     for (let i = 0; i < 30 && sessions.shots(root, 'smoke').length === before.length; i++) await new Promise((r) => setTimeout(r, 100));
     const scanned = sessions.shots(root, 'smoke').at(-1)!;
+    viewer['@F1 @2026-10-27-no-screen-text a saved entry has no "Text in the screenshot" block and no text read off the image'] =
+      !smokeMd().includes('<details>') && !smokeMd().includes('Text in the screenshot') && !/Revenue is up|jane\.doe/.test(smokeMd());
+    // An entry saved by an older Snapmark ends with its block: the session window must still show it as before
     const block = '<details><summary>Text in the screenshot</summary>\n\n```text\nMail [redacted]\nRevenue is up 12%\n```\n\n</details>';
-    viewer['session.md gets the text in the screenshot, in reading order, redacted'] =
-      smokeMd().includes(block) && !smokeMd().includes('jane.doe');
+    fs.appendFileSync(path.join(root, 'smoke', 'session.md'), `\n${block}\n`);
     // Edit Again: auto-redact ran already, so a deleted mark stays deleted; here the saved mark comes back alone
     const ef = sessions.editFiles(root, 'smoke', scanned);
     fs.copyFileSync(ef.png, path.join(root, 'ocr-again.png'));
@@ -2188,7 +2190,7 @@ app
       '302,97,186,24|true';
     reopened.destroy();
     desk.recognize = async () => null;
-    // The session window shows the block's tags as a quiet label and keeps the block as it is
+    // The session window shows an old block's tags as a quiet label and keeps the block as it is
     const textView = openViewer('smoke', root);
     await finished(textView);
     viewer['the Document tab shows "Text in the screenshot" as a label, not raw HTML'] = await textView.webContents.executeJavaScript(
@@ -2201,7 +2203,7 @@ app
           !!p && getComputedStyle(p).display === 'none' && !!document.querySelector('#doc pre')?.textContent.includes('Mail [redacted]');
       })()`,
     );
-    viewer['the Document tab keeps the block as it is when it saves'] = (
+    viewer['@F5 @2026-10-27-no-screen-text the Document tab keeps an old block as it is when it saves'] = (
       await textView.webContents.executeJavaScript(`MdNotes.fieldAt(document.getElementById('doc')).value()`)
     ).includes(block);
     textView.close();
@@ -2659,7 +2661,9 @@ app
         red(pixel(out, 0.5, 0.5, 0, -tip * 0.88)) && !red(pixel(out, 0.5, 0.5, tip * 0.66, tip * 0.66)),
       'session.md path is absolute':
         sessionMdPath(path.join(root, 'smoke')) === path.resolve(root, 'smoke', 'session.md') && path.isAbsolute(sessionMdPath('rel')),
-      'prompt explains the text in the screenshot': promptFor(root).includes('"Text in the screenshot" under an entry'),
+      '@F3 @2026-10-27-no-screen-text the prompt does not mention recognised text': !/Text in the screenshot|recognised|\[redacted\]/.test(
+        promptFor(root),
+      ),
       'prompt points at session.md': promptFor(path.join(root, 'smoke')).includes(`"${path.join(root, 'smoke', 'session.md')}"`),
       'markdown has card': md.includes('- Card: Make this bigger'),
       'markdown has move': md.includes('- Moved an element'),

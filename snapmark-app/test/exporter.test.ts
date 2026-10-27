@@ -10,7 +10,7 @@ import { exportZip, sessionHtml } from '../src/exporter';
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-export-'));
   const name = sessions.create(root, 'export demo');
   const dir = path.join(root, name);
-  sessions.addShot(root, name, Buffer.from('png'), { caption: 'Header', notes: ['Too tall'], text: 'Sign in' });
+  sessions.addShot(root, name, Buffer.from('png'), { caption: 'Header', notes: ['Too tall'] });
   fs.writeFileSync(path.join(dir, `${name}.pdf`), 'old export'); // must not end up in the zip
 
   const zip = await exportZip(dir);
@@ -24,7 +24,18 @@ import { exportZip, sessionHtml } from '../src/exporter';
   assert.match(html, /<h1>export demo<\/h1>/);
   assert.match(html, /<img src="img\/001\.png" alt="Screenshot 1">/);
   assert.match(html, /<li>Too tall<\/li>/);
-  assert.ok(html.includes('<details><summary>Text in the screenshot</summary>') && html.includes('details { display: none; }')); // not in the PDF
+  const NS = '@2026-10-27-no-screen-text';
+  assert.ok(!html.includes('<details>') && !html.includes('Text in the screenshot'), `@F1 ${NS} a new entry exports with no text block`);
+  // An entry saved by an older Snapmark keeps its block in the export, and the PDF still hides it
+  const old =
+    '\n## 002 · 09:41\n\n![Screenshot 2](img/002.png)\n\n<details><summary>Text in the screenshot</summary>\n\n```text\nSign in\n```\n\n</details>\n';
+  fs.appendFileSync(path.join(dir, 'session.md'), old);
+  const oldHtml = sessionHtml(dir);
+  assert.ok(
+    oldHtml.includes('<details><summary>Text in the screenshot</summary>') && oldHtml.includes('details { display: none; }'),
+    `@F5 ${NS} an old entry's block still exports hidden from the PDF`,
+  );
+  assert.ok(fs.readFileSync(path.join(dir, 'session.md'), 'utf8').endsWith(old), `@F5 ${NS} exporting leaves the old entry as it is`);
 
   // F5 PDF heading: the display name, also for a session.md that still has its folder name on top
   const named = sessions.create(root, '2026-10-24 23.38 Ledgerly Q4 review');
