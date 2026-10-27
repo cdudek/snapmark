@@ -1272,6 +1272,7 @@ app
     let doneColour = ''; // F120
     let scrollLook: Awaited<ReturnType<typeof calmLook>> | null = null; // @F16, @F17, @F19, once
     let cancelFace = ''; // @F17 Esc is a plain icon
+    let clockHidden: boolean | null = null; // @F20 the recording dot and clock stay out of the scrolling control
     // The scrolling control: scroll.html with its ring in the query; `#record` is the recording control
     const isScrollCtl = (w: BrowserWindow) => /\/scroll\.html(\?[^#]*)?$/.test(w.webContents.getURL());
     const scrollCtl = () => BrowserWindow.getAllWindows().find(isScrollCtl);
@@ -1287,6 +1288,7 @@ app
           ctlBounds = ctl.getBounds();
           doneColour = await ctl.webContents.executeJavaScript(`getComputedStyle(document.getElementById('done')).backgroundColor`);
           scrollLook ??= await calmLook(ctl, 'body', '--ds-color-panel');
+          clockHidden ??= await inWin(ctl, `return getComputedStyle(document.getElementById('status')).display === 'none'`);
           cancelFace ||= await inWin(
             ctl,
             `const c = document.getElementById('cancel'); return [c.title, c.textContent.trim(), !!c.querySelector('svg')].join('|');`,
@@ -1452,6 +1454,7 @@ app
       calmPanel(pickerLook) && calmPanel(scrollLook, ['done']);
     viewer['@F17 @2026-10-27-calm-style the scrolling control fills only Done with the accent; Esc is a plain icon'] =
       calmPanel(scrollLook, ['done']) && cancelFace === 'Cancel (Esc)||true';
+    viewer['@F20 @2026-10-27-calm-style the scrolling control shows no recording dot or clock'] = clockHidden === true;
     viewer['@F18 @2026-10-27-calm-style the area picker outlines the area in the light line with a dark shadow'] = whiteLine(pickerLine);
     viewer['@F19 @2026-10-27-calm-style at rest no control of the area picker or the scrolling control has a border, outline or ring'] =
       quietPanel(pickerLook) && quietPanel(scrollLook);

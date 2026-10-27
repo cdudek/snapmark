@@ -98,7 +98,8 @@
       body:not(.record) .rec {
         display: none;
       }
-      #status {
+      /* scoped to the recording control: an id rule alone would outrank the hide above and show the clock while scrolling */
+      body.record #status {
         flex: 1;
         display: flex;
         align-items: center;

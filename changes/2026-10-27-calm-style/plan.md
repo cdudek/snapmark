@@ -184,3 +184,5 @@ The criteria as data are in [done.json](done.json).
 - 2.3, rebased on milestone 1's fixes: Record's tooltip is the bar's drawn one, "Record" and 6, and Capture reads "Record" through `capture.ts`'s `VERBS`. The @F11, @F21 and label checks read it.
 - Milestone 2 gate: smoke windows are fully transparent and click-through, so a background run never draws over the owner's apps.
 - Milestone 2 gate: 2.2's ring query hid both controls from the smoke's URL matchers. Matchers fixed; the fake grab gets a guard.
+- Milestone 2 fix round (finding 2): `#status` is scoped to the recording control, so scrolling shows no clock.
+  - A smoke key under @F20 checks it.
