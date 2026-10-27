@@ -154,3 +154,5 @@ The criteria as data are in [done.json](done.json).
 - Milestone 1 gate: @F10's check read the focus token as `color`, which computes another colour than the ring.
   - It now reads every token as an outline colour, as the ring draws it.
 ```
+
+- Milestone 1 gate: the smoke limit rises from 150 to 240 s. Unthrottled windows reached 145 s before its last block.

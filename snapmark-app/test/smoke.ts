@@ -85,7 +85,7 @@ app.on('browser-window-created', (_e, w) => w.webContents.setBackgroundThrottlin
 setTimeout(() => {
   console.log('smoke: TIMEOUT');
   app.exit(1);
-}, 150000); // the whole suite; it grows with each milestone and runs slower on a busy machine
+}, 240000); // the whole suite; it grows with each milestone, and windows that keep rendering behind others run slower
 app
   .whenReady()
   .then(async () => {
