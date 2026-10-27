@@ -59,6 +59,7 @@ interface ViewerShot {
   heading: string; // "001 · 23:38"
   notes: number;
   editable: boolean; // its marks were kept, so Edit Again can reopen it
+  recording?: { facts: string; gif: boolean }; // a recording: "3.2 s · 10 fps · 4 key frames of 32", and is its GIF there
 }
 
 interface ViewerDiscarded {

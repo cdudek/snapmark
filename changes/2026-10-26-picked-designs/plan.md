@@ -56,7 +56,7 @@ After it, the owner records up to 30 s, marks the key frames, and the session ho
 | 3.2 | Record mode, Frame Rate, picker keep, recording control, stop and cancel   | F59–F68, F81  | `milestone/picked-designs-3` | done  |
 | 3.3 | Key frames and GIF timing (pure functions)                                 | F69, F70, F77 | `milestone/picked-designs-3` | done  |
 | 3.4 | Recording editor and frame data                                            | F71–F76       | `milestone/picked-designs-3` | done  |
-| 3.5 | Session window entry, `session.md` and export                              | F78–F80       | `milestone/picked-designs-3` | todo  |
+| 3.5 | Session window entry, `session.md` and export                              | F78–F80       | `milestone/picked-designs-3` | done  |
 
 ### Milestone 4: Capture Scrolling scrolls by itself
 
@@ -204,7 +204,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 - [x] 11. Record mode, panel, stop and cancel. Proof: `@F59`–`@F68`, `@F81` pass.
 - [x] 12. Key frames and GIF timing. Proof: `@F69`, `@F70`, `@F77` pass.
 - [x] 13. Recording editor and frame data. Proof: `@F71`–`@F76` pass.
-- [ ] 14. Session window, `session.md`, export. Proof: `@F78`–`@F80` pass.
+- [x] 14. Session window, `session.md`, export. Proof: `@F78`–`@F80` pass.
 - [ ] 15. Gate. Proof: `VERIFY PASS milestone`.
 
 ### Milestone 4
@@ -316,3 +316,7 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 - 3.4, frame data (Risks): not measured on a real 30 s recording, since nothing here may capture the owner's screen. Estimate: a 2560 × 1440 Retina frame of a web page is 1–2 MB as PNG, so 300 changing frames at 10 fps are 300–600 MB, over 100 MB. So `.edit/NNN/frames/` keeps each picture once (frames with the same bytes share one file), the key and marked frames as PNG and the rest as JPEG (quality 85). The GIF is written at the frames' own size; a large Retina GIF is the next size risk.
 - 3.4: removing a recording's entry moves its GIF and frames to Discarded with it, and putting it back restores them (`sessions.ts` removeShot, restoreShot).
 - 3.4: `test/menu.test.ts` gains the recording's Copy or Save menu (`@F76`); `test/keys.test.ts` F236 lists ⇧⌘F.
+- 3.5: a recording's references in `session.md` are paragraphs, "1 (0.4 s): <note>", as microcopy.md words them, not a numbered list. A note's further lines are indented 3, so they stay in it and never become a code block. `entries` counts them as notes. Its image is "Recording <n>", and Reopen renumbers it and its GIF link.
+- 3.5: the PDF leaves out the GIF link, since it holds the filmstrip only; the ZIP already took all of `img/`, so the GIF comes with it and `.edit/` stays out.
+- 3.5: paused, the GIF shows the recording's first frame (`.edit/NNN.png`), and each Play starts it from there: an `<img>` cannot hold a GIF mid-way. Every thumbnail in the Screenshots tab carries its badge, "Recording" or "Screenshot".
+- 3.5: `test/sessions.test.ts`: 3.4's `session.md` assertion on a saved recording now reads the F78 entry.

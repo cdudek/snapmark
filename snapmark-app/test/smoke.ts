@@ -2994,6 +2994,81 @@ app
       JSON.stringify(filmSize) === JSON.stringify(gridSize(4)) &&
       notes.at(-1)?.body === 'Filmstrip copied.';
     why.F72 = { keyView, allView, drawn, marked, stays, oneLook, greyed, filmSize };
+    // @F79 the session window on a recording entry, written by hand so it runs off macOS too (no ImageIO there): the
+    // badge, the facts, the filmstrip and the GIF, which Space plays and pauses; then with its GIF gone
+    const gifSession = sessions.create(root, 'smoke-rec-view');
+    const fake = fakeRecording();
+    const marks = [{ t: 'marker', c: '#e5484d', x: 10, y: 10, note: 'Spinner', f: 4 }];
+    const recN = sessions.addShot(root, gifSession, fs.readFileSync(fake.frames[0]), {
+      notes: ['Spinner'],
+      recording: sessions.recordingText({ ...fake, keys: [0, 4, 24, 31] }, marks),
+    });
+    const keptRec = {
+      frames: fake.frames.map((f) => path.basename(f)),
+      times: fake.times,
+      end: 3.2,
+      fps: 10,
+      keys: [0, 4, 24, 31],
+      evenly: false,
+    };
+    sessions.saveEdit(
+      root,
+      gifSession,
+      recN,
+      fs.readFileSync(fake.frames[0]),
+      JSON.stringify({ caption: '', items: marks, recording: keptRec }),
+    );
+    const gifFile = sessions.recordingFiles(root, gifSession, recN).gif;
+    fs.writeFileSync(gifFile, Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64')); // a 1 × 1 GIF
+    const gifView = openViewer(gifSession, root);
+    const gifLook = async () => {
+      await new Promise<void>((r) => gifView.webContents.once('did-finish-load', () => r()));
+      return JSON.parse(
+        await inWin(
+          gifView,
+          `for (let i = 0; i < 50 && !document.querySelector('#grid .thumb'); i++) await new Promise((r) => setTimeout(r, 100));
+          const badge = document.querySelector('#grid .thumb .badge').textContent;
+          document.getElementById('tab-shots').click(); document.querySelector('#grid .thumb .pic').click(); document.activeElement.blur();
+          const t = (id) => document.getElementById(id).textContent, src = () => document.getElementById('gif').src;
+          const space = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true }));
+          const look = { badge, facts: t('rec-facts'), caps: [...document.querySelectorAll('#stage figcaption')].map((c) => getComputedStyle(c).display !== 'none' && c.textContent),
+            strip: document.getElementById('shot').src, play: t('play'), still: src(), playHidden: document.getElementById('play').hidden, missing: !document.getElementById('gif-missing').hidden };
+          space(); look.playing = [t('play'), src()]; space(); look.paused = [t('play'), src()];
+          return JSON.stringify(look);`,
+        ),
+      ) as {
+        badge: string;
+        facts: string;
+        caps: (string | false)[];
+        strip: string;
+        play: string;
+        still: string;
+        playHidden: boolean;
+        missing: boolean;
+        playing: string[];
+        paused: string[];
+      };
+    };
+    const gifOn = await gifLook();
+    viewer['@F79 the session window shows a recording with its filmstrip and its GIF, which Space plays and pauses'] =
+      gifOn.badge === 'Recording' &&
+      gifOn.facts === '3.2 s · 10 fps · 4 key frames of 32' &&
+      gifOn.caps.join() === 'Filmstrip · for the AI,GIF · for people' &&
+      gifOn.strip.includes('img/001.png') &&
+      gifOn.play === 'Play' &&
+      gifOn.still.includes('.edit/001.png') &&
+      gifOn.playing[0] === 'Pause' &&
+      gifOn.playing[1].includes('img/001.gif') &&
+      gifOn.paused[0] === 'Play' &&
+      gifOn.paused[1].includes('.edit/001.png') &&
+      !gifOn.missing;
+    fs.rmSync(gifFile);
+    gifView.webContents.reload();
+    const gifOff = await gifLook();
+    viewer['@F79 with its GIF missing, the first frame stays and says so'] =
+      gifOff.missing && gifOff.playHidden && gifOff.playing[0] === 'Play' && gifOff.still.includes('.edit/001.png');
+    why.F79 = { gifOn, gifOff };
+    gifView.close();
     for (const d of sessions.discarded(root)) if (d.recording) fs.rmSync(d.dir, { recursive: true, force: true });
     // Milestone 3, tall captures: in their own session, so the smoke session's counts stay as they are
     const tallSession = sessions.create(root, 'smoke-tall');

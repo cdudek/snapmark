@@ -1236,7 +1236,11 @@ const reloadViewer = (v: Viewer) => v.win.webContents.send('viewer:reload', view
 function viewerData(v: { root: string; session: string; known: string }): ViewerInit {
   const dir = path.join(v.root, v.session);
   v.known = fs.readFileSync(path.join(dir, 'session.md'), 'utf8');
-  const shots = sessions.entries(v.known).map((e) => ({ ...e, editable: fs.existsSync(sessions.editFiles(v.root, v.session, e.n).json) }));
+  const shots = sessions.entries(v.known).map((e) => {
+    const facts = sessions.recordingFacts(v.root, v.session, e.n);
+    const gif = !!facts && fs.existsSync(sessions.recordingFiles(v.root, v.session, e.n).gif);
+    return { ...e, editable: fs.existsSync(sessions.editFiles(v.root, v.session, e.n).json), ...(facts && { recording: { facts, gif } }) };
+  });
   const discarded = sessions.discardedIn(v.root, v.session).map((d) => ({
     dir: d.dir,
     src: pathToFileURL(path.join(d.dir, 'image.png')).href,

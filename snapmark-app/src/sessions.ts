@@ -10,6 +10,12 @@ export interface ShotText {
   notes?: string[]; // numbered marker notes
   cards?: string[]; // text written on cards on the image
   moves?: number; // cut-and-move pieces
+  recording?: RecordingText; // a recording's entry line and each note's time (recordingText)
+}
+
+interface RecordingText {
+  line: string; // "Recording 3.2 s at 10 fps. Key frames: 0.0 s, 0.4 s, 2.4 s, 3.2 s (4 of 32)."
+  at: number[]; // each note's frame time, in seconds
 }
 
 const pad = (n: number) => String(n).padStart(3, '0');
@@ -99,7 +105,7 @@ function nextNumber(dir: string): number {
   const img = path.join(dir, 'img');
   fs.mkdirSync(img, { recursive: true });
   const existing = fs.readFileSync(path.join(dir, 'session.md'), 'utf8');
-  const used = [...[...existing.matchAll(/img\/(\d+)(?:\.png|\/)/g)].map((m) => m[1]), ...fs.readdirSync(img)];
+  const used = [...[...existing.matchAll(/img\/(\d+)(?:\.png|\.gif|\/)/g)].map((m) => m[1]), ...fs.readdirSync(img)];
   return Math.max(0, ...used.map((s) => parseInt(s, 10) || 0)) + 1;
 }
 
@@ -109,24 +115,28 @@ export const partsLine = (total: number) =>
 
 // One session.md entry: heading, image, then the owner's words. A tall screenshot (parts ≥ 2) has the parts line and its
 // parts, one paragraph each, in place of the one image; the words follow once, after the last part. No text read off
-// the image: it would copy whatever was on screen.
-function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0 }: ShotText, parts = 0): string {
+// the image: it would copy whatever was on screen. A recording (F78): its entry line, the filmstrip, its GIF link, then
+// the words, each note with its frame's time.
+function entry(n: number, time: string, { caption = '', notes = [], cards = [], moves = 0, recording }: ShotText, parts = 0): string {
   const images = parts
     ? [
         partsLine(parts),
         ...Array.from({ length: parts }, (_, i) => `![Screenshot ${n}, part ${i + 1} of ${parts}](img/${pad(n)}/${two(i + 1)}.png)`),
       ]
-    : [`![Screenshot ${n}](img/${pad(n)}.png)`];
-  let md = `## ${pad(n)} · ${time}\n\n${images.join('\n\n')}\n`;
+    : [`![${recording ? 'Recording' : 'Screenshot'} ${n}](img/${pad(n)}.png)`];
+  const blocks = recording ? [recording.line, ...images, `GIF: [${pad(n)}.gif](img/${pad(n)}.gif)`] : images;
+  let md = `## ${pad(n)} · ${time}\n\n${blocks.join('\n\n')}\n`;
   if (caption.trim()) md += `\n${caption.trim()}\n`;
   // A note is Markdown and may span lines (a heading, a list): indent its continuation lines under the
-  // number, so they stay inside that numbered item.
+  // number, so they stay inside that numbered item. A recording's "1 (0.4 s): " is no list item: each note is its own
+  // paragraph, its lines indented 3, which keeps them in it and never makes a code block.
   const refs = notes.map((t, i) => {
-    const marker = `${i + 1}. `;
+    const marker = recording ? `${i + 1} (${secs(recording.at[i] ?? 0)}): ` : `${i + 1}. `;
+    const indent = recording ? 3 : marker.length;
     const lines = (t.trim() || '_(no note)_').split('\n');
-    return marker + lines.map((l, j) => (j && l ? ' '.repeat(marker.length) + l : l)).join('\n');
+    return marker + lines.map((l, j) => (j && l ? ' '.repeat(indent) + l : l)).join('\n');
   });
-  if (refs.length) md += `\n${refs.join('\n')}\n`;
+  if (refs.length) md += `\n${refs.join(recording ? '\n\n' : '\n')}\n`;
   const extra = cards.filter((c) => c.trim()).map((c) => `- Card: ${c.trim().replace(/\s*\n\s*/g, ' / ')}`);
   if (moves)
     extra.push(
@@ -208,7 +218,7 @@ export function entries(md: string): { n: number; heading: string; notes: number
       md
         .slice(m.index, heads[i + 1]?.index ?? md.length)
         .split('\n<details>')[0]
-        .match(/^\d+\. /gm)?.length ?? 0, // not the lines of an old entry's "Text in the screenshot" block
+        .match(/^\d+(?:\. | \(\d+\.\d s\): )/gm)?.length ?? 0, // not the lines of an old entry's "Text in the screenshot" block; a recording's "1 (0.4 s): " counts
   }));
 }
 
@@ -248,6 +258,37 @@ export function recordingFiles(root: string, name: string, n: number) {
 export const gifFrames = (r: Recording) =>
   gifTiming(r.times, r.end, r.hashes ?? r.frames).map(({ frame, delay }) => ({ png: r.frames[frame], delay }));
 
+const secs = (t: number) => `${t.toFixed(1)} s`;
+
+// The frames the filmstrip shows as key frames: the ones found and every marked frame, by time (editor.ts keyed).
+const keyedFrames = (keys: number[], items: unknown[]) =>
+  [...new Set([...keys, ...items.flatMap((i) => (typeof (i as { f?: unknown }).f === 'number' ? [(i as { f: number }).f] : []))])].sort(
+    (a, b) => a - b,
+  );
+
+// session.md's words for a recording (F78, screens.md): the entry line, and each note's time from its marker's frame.
+export function recordingText(r: Pick<Recording, 'times' | 'end' | 'fps' | 'keys'>, items: unknown[]): RecordingText {
+  const keyed = keyedFrames(r.keys ?? [0], items);
+  return {
+    line: `Recording ${secs(r.end)} at ${r.fps} fps. Key frames: ${keyed.map((f) => secs(r.times[f])).join(', ')} (${keyed.length} of ${r.times.length}).`,
+    at: items.flatMap((i) => ((i as { t?: string }).t === 'marker' ? [r.times[(i as { f?: number }).f ?? 0]] : [])),
+  };
+}
+
+// The session window's facts for entry n (F79): "3.2 s · 10 fps · 4 key frames of 32", or null for a screenshot.
+export function recordingFacts(root: string, name: string, n: number): string | null {
+  let kept: { recording?: KeptRecording; items?: unknown[] };
+  try {
+    kept = JSON.parse(fs.readFileSync(editFiles(root, name, n).json, 'utf8'));
+  } catch {
+    return null; // no marks kept, or not readable: shown as a screenshot
+  }
+  const r = kept.recording;
+  if (!r) return null;
+  const k = keyedFrames(r.keys, kept.items ?? []).length;
+  return `${secs(r.end)} · ${r.fps} fps · ${k} key frame${k === 1 ? '' : 's'} of ${r.times.length}`;
+}
+
 // What a recording saved in a session keeps of itself in .edit/NNN.json.
 interface KeptRecording {
   frames: string[]; // each frame's file in .edit/NNN/frames/; the same picture shares one
@@ -277,9 +318,10 @@ export async function addRecording(
   { replace, keep, jpeg }: RecordingSave,
 ): Promise<number> {
   const tmp = path.join(os.tmpdir(), `snapmark-${process.pid}-${Date.now()}.gif`);
+  const words = { ...text, recording: recordingText(r, (state as { items?: unknown[] }).items ?? []) };
   try {
     await writeGif(tmp, gifFrames(r));
-    const n = replace && replaceShot(root, name, replace, png, text, parts) ? replace : addShot(root, name, png, text, parts);
+    const n = replace && replaceShot(root, name, replace, png, words, parts) ? replace : addShot(root, name, png, words, parts);
     try {
       const f = recordingFiles(root, name, n);
       fs.copyFileSync(tmp, f.gif); // not a rename: the session may be on another disk
@@ -482,7 +524,11 @@ export function restoreShot(root: string, d: Discarded): number {
   const text = fs
     .readFileSync(path.join(d.dir, 'entry.md'), 'utf8')
     .replace(`## ${pad(old)} · `, `## ${pad(n)} · `)
-    .replace(`![Screenshot ${old}](img/${pad(old)}.png)`, `![Screenshot ${n}](img/${pad(n)}.png)`)
+    .replace(
+      new RegExp(`!\\[(Screenshot|Recording) ${old}\\]\\(img/${pad(old)}\\.png\\)`),
+      (_, k: string) => `![${k} ${n}](img/${pad(n)}.png)`,
+    )
+    .replace(`GIF: [${pad(old)}.gif](img/${pad(old)}.gif)`, `GIF: [${pad(n)}.gif](img/${pad(n)}.gif)`)
     .replaceAll(`[Screenshot ${old}, part `, `[Screenshot ${n}, part `)
     .replaceAll(`](img/${pad(old)}/`, `](img/${pad(n)}/`);
   fs.mkdirSync(img, { recursive: true });

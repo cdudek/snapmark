@@ -9,7 +9,8 @@ import { partsLine, shortName } from './sessions';
 
 const run = promisify(execFile);
 
-// <session>/<name>.zip with session.md and img/ only, so earlier exports are never nested inside.
+// <session>/<name>.zip with session.md and img/ only, so earlier exports are never nested inside, and a recording
+// brings its filmstrip and GIF but never its raw frames in .edit/ (F80).
 export async function exportZip(dir: string): Promise<string> {
   const out = path.join(dir, `${path.basename(dir)}.zip`);
   fs.rmSync(out, { force: true });
@@ -31,11 +32,14 @@ function oneImages(md: string): string {
     );
 }
 
+// A recording's GIF link (sessions.ts entry): the PDF holds its filmstrip only, so it has nothing to link to (F80).
+const GIF_LINE = /^GIF: \[[^\]]*\]\(img\/\d+\.gif\)$/gm;
+
 export function sessionHtml(dir: string): string {
   // A leading heading is the display name, also in a session.md that still starts with its folder name.
   const title = shortName(path.basename(dir)).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const body = marked
-    .parse(oneImages(fs.readFileSync(path.join(dir, 'session.md'), 'utf8')), { async: false })
+    .parse(oneImages(fs.readFileSync(path.join(dir, 'session.md'), 'utf8')).replace(GIF_LINE, ''), { async: false })
     .replace(/^<h1>[^]*?<\/h1>/, () => `<h1>${title}</h1>`); // only a heading on the first line; a function keeps $ in a name as it is
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title><style>
   body { font: 12pt -apple-system, system-ui, sans-serif; color: #18181b; margin: 0; }

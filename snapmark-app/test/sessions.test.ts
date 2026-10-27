@@ -473,6 +473,65 @@ assert.ok(linksIn(entryOf(rtMd(), 13)).every((l) => l.src.startsWith('img/013/')
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
+// @F78 a recording's session.md entry reads as screens.md gives: the entry line with its key frames (a marked frame
+// among them), the filmstrip, the GIF link, then each reference with its frame's time. Off macOS too: no GIF is written.
+{
+  const recRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-md-test-'));
+  const name = sessions.create(recRoot, 'rec');
+  const times = Array.from({ length: 32 }, (_, i) => i / 10);
+  const items = [
+    { t: 'marker', note: 'Use a skeleton here, not a spinner.', f: 4 },
+    { t: 'box', f: 31 },
+    { t: 'marker', note: 'Two lines\nhere', f: 10 },
+  ];
+  const recording = sessions.recordingText({ times, end: 3.2, fps: 10, keys: [0, 4, 24, 31] }, items);
+  const notes = ['Use a skeleton here, not a spinner.', 'Two lines\nhere'];
+  const n = sessions.addShot(recRoot, name, Buffer.from('filmstrip'), { caption: 'Spinner', notes, recording });
+  const md = fs.readFileSync(path.join(recRoot, name, 'session.md'), 'utf8');
+  assert.strictEqual(
+    md.replace(/^## 001 · \d\d:\d\d$/m, '## 001 · 14:02'),
+    [
+      '# rec',
+      '',
+      '## 001 · 14:02',
+      '',
+      'Recording 3.2 s at 10 fps. Key frames: 0.0 s, 0.4 s, 1.0 s, 2.4 s, 3.1 s (5 of 32).',
+      '',
+      '![Recording 1](img/001.png)',
+      '',
+      'GIF: [001.gif](img/001.gif)',
+      '',
+      'Spinner',
+      '',
+      '1 (0.4 s): Use a skeleton here, not a spinner.',
+      '',
+      '2 (1.0 s): Two lines',
+      '   here',
+      '',
+    ].join('\n'),
+    '@F78 the entry as screens.md gives',
+  );
+  assert.deepStrictEqual(
+    sessions.entries(md).map((e) => e.notes),
+    [2],
+    '@F78 its references count as notes',
+  );
+  // @F79 the session window's facts: the same key frames, read from what the session keeps for Edit Again
+  assert.strictEqual(sessions.recordingFacts(recRoot, name, n), null, 'no marks kept: a screenshot');
+  const kept = { frames: [], times, end: 3.2, fps: 10, keys: [0, 4, 24, 31], evenly: false };
+  sessions.saveEdit(recRoot, name, n, Buffer.from('first'), JSON.stringify({ caption: 'Spinner', items, recording: kept }));
+  assert.strictEqual(sessions.recordingFacts(recRoot, name, n), '3.2 s · 10 fps · 5 key frames of 32', '@F79 the facts');
+  sessions.saveEdit(recRoot, name, 2, Buffer.from('clean'), '{"items":[]}');
+  assert.strictEqual(sessions.recordingFacts(recRoot, name, 2), null, '@F79 a screenshot has no facts');
+  // Removed, and put back under the next number when its own was taken: the filmstrip and GIF links follow it
+  sessions.removeShot(recRoot, name, n);
+  sessions.addShot(recRoot, name, Buffer.from('other'));
+  assert.strictEqual(sessions.restoreShot(recRoot, sessions.discardedIn(recRoot, name)[0]), 2);
+  const back = fs.readFileSync(path.join(recRoot, name, 'session.md'), 'utf8');
+  assert.ok(back.includes('![Recording 2](img/002.png)\n\nGIF: [002.gif](img/002.gif)'), '@F78 renumbered with its links');
+  fs.rmSync(recRoot, { recursive: true, force: true });
+}
+
 // @F71 @F75 Add to Session for a recording, with a fake one: 6 frames at 15 fps, frames 1 and 2 the same picture
 void (async () => {
   const recRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-test-'));
@@ -534,7 +593,11 @@ void (async () => {
   // @F71 the session gains the marked filmstrip PNG and the GIF
   assert.ok(fs.readFileSync(path.join(recRoot, name, 'img', '001.png')).equals(filmstrip), '@F71 the filmstrip is the entry image');
   assert.strictEqual(fs.readFileSync(files.gif).subarray(0, 6).toString(), 'GIF89a', '@F71 the GIF beside it');
-  assert.match(fs.readFileSync(path.join(recRoot, name, 'session.md'), 'utf8'), /!\[Screenshot 1\]\(img\/001\.png\)\n\nSpinner\n/);
+  assert.match(
+    fs.readFileSync(path.join(recRoot, name, 'session.md'), 'utf8'),
+    /Recording 0\.4 s at 15 fps\. Key frames: 0\.0 s, 0\.1 s, 0\.2 s, 0\.3 s, 0\.3 s \(5 of 6\)\.\n\n!\[Recording 1\]\(img\/001\.png\)\n\nGIF: \[001\.gif\]\(img\/001\.gif\)\n\nSpinner\n/,
+    '@F78 the entry line, the filmstrip and the GIF link',
+  );
   assert.strictEqual(sessions.count(recRoot, name), 1, '@F71 one entry; the GIF is not counted as a screenshot');
   // @F70 @F71 the GIF reads back at the real timing: the repeated frame merged, sub-0.1 s delays kept, 0.4 s in all
   const READ = String.raw`ObjC.import('ImageIO');
