@@ -95,10 +95,26 @@ app
     const shotCopy = path.join(root, 'mock-copy.png'); // openEditor deletes its input on close
     fs.copyFileSync(shot, shotCopy);
     const why: Record<string, unknown> = {}; // what some checks saw, printed when the suite fails
+    const started = Date.now();
+    // Every check logs as it is set, so a run that hits the TIMEOUT shows where it stopped
+    const traced = (checks: Record<string, boolean>) =>
+      new Proxy(checks, {
+        set: (o, k, v) => (console.log(`smoke: ${((Date.now() - started) / 1000).toFixed(1)} ${String(k)}`), Reflect.set(o, k, v)),
+      });
+    // A wait that never ends (on Linux under xvfb some events never come) fails its check instead of the whole suite
+    const bounded = <T>(what: string, p: Promise<T>, ms = 15000): Promise<T | undefined> => {
+      let timer: NodeJS.Timeout | undefined;
+      const giveUp = new Promise<undefined>(
+        (r) => (timer = setTimeout(() => (console.log(`smoke: gave up on ${what}`), r(undefined)), ms)),
+      );
+      return Promise.race([p, giveUp]).finally(() => clearTimeout(timer));
+    };
+    const finished = (w: BrowserWindow) =>
+      bounded(`loading ${w.getTitle()}`, new Promise<void>((r) => w.webContents.once('did-finish-load', () => r())));
     setActive(sessions.create(root, 'smoke'));
     const win = openEditor(shot);
     win.webContents.on('console-message', (e) => console.log('[page]', (e as unknown as { message: string }).message));
-    await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
+    await finished(win);
     // Runs inside the editor page; its top-level bindings (canvas, Card, links, background) are in scope.
     const js = `(async () => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -479,7 +495,7 @@ app
     setMd(cap, ['Smoke test caption']); document.activeElement.blur();
     return r;
   })()`;
-    const inPage: Record<string, boolean> = await win.webContents.executeJavaScript(js);
+    const inPage = traced(await win.webContents.executeJavaScript(js));
     inPage['F111 title row'] &&= win.getTitle() === 'Snapmark — smoke'; // the window title stays, for the Window menu
     // F12, F13: the names a screen reader hears, from Chromium's own accessibility tree, on the editable elements
     const dbg = win.webContents.debugger;
@@ -683,11 +699,12 @@ app
     const [r3, g3, b3] = pixel(out, 0.36, 0.7, unit * 2 * k, -unit * 2 * k); // card padding, above its text
     // The session viewer: session.md rendered with its image, editable, and screenshots one at a time
     const view = openViewer('smoke', root);
-    await new Promise<void>((r) => view.webContents.once('did-finish-load', () => r()));
-    const inView = (js: string) => view.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    await finished(view);
+    const inView = (js: string) =>
+      bounded(`the session window: ${js.slice(0, 80)}`, view.webContents.executeJavaScript(`(async () => { ${js} })()`));
     const waitFor = (cond: string) =>
       inView(`for (let i = 0; i < 50 && !(${cond}); i++) await new Promise((r) => setTimeout(r, 100)); return !!(${cond});`);
-    const viewer: Record<string, boolean> = {};
+    const viewer = traced({});
     // @F57 the first session window fills 90 % of the work area of the pointer's display, centred (1 pt for rounding)
     const viewWa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
     const within1 = (a: number, b: number) => Math.abs(a - b) <= 1;
@@ -758,7 +775,8 @@ app
       }
       throw new Error('no new window');
     };
-    const inWin = (w: BrowserWindow, js: string) => w.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    const inWin = (w: BrowserWindow, js: string) =>
+      bounded(`${w.getTitle()}: ${js.slice(0, 80)}`, w.webContents.executeJavaScript(`(async () => { ${js} })()`));
     const loaded = (w: BrowserWindow) =>
       inWin(
         w,
@@ -771,7 +789,7 @@ app
     const removedOne = await waitFor(`document.querySelectorAll('#grid .thumb').length === 0`);
     fs.copyFileSync(shotCopy, path.join(root, 'newer.png'));
     const newer = openEditor(path.join(root, 'newer.png'), { session: 'smoke' });
-    await new Promise<void>((r) => newer.webContents.once('did-finish-load', () => r()));
+    await finished(newer);
     await loaded(newer);
     newer.close();
     for (let i = 0; i < 30 && !newer.isDestroyed(); i++) await sleep(100);
@@ -791,7 +809,7 @@ app
     // The grid's Edit Again button opens the editor too (snap-c5c)
     await inView(`document.querySelector('#grid .thumb .edit').click();`);
     const fromGrid = await nextWindow(windows);
-    await new Promise<void>((r) => fromGrid.webContents.once('did-finish-load', () => r()));
+    await finished(fromGrid);
     await loaded(fromGrid);
     viewer["snap-c5c the grid's Edit Again button opens the editor"] =
       fromGrid.webContents.getURL().endsWith('editor.html') &&
@@ -803,7 +821,7 @@ app
     await inView(`document.querySelector('#grid .thumb .pic').click();`);
     keyIn('o', ['meta']);
     const again = await nextWindow(windows);
-    await new Promise<void>((r) => again.webContents.once('did-finish-load', () => r()));
+    await finished(again);
     viewer['F18 ⌘O edits again'] = again.webContents.getURL().endsWith('editor.html');
     await loaded(again);
     const restored = JSON.parse(await inWin(again, counts));
@@ -840,7 +858,7 @@ app
     // An editor left open on the session follows its count and its name
     fs.copyFileSync(shotCopy, path.join(root, 'open.png'));
     const watching = openEditor(path.join(root, 'open.png'), { session: 'smoke' });
-    await new Promise<void>((r) => watching.webContents.once('did-finish-load', () => r()));
+    await finished(watching);
     await loaded(watching);
     const label = (text: string) =>
       inWin(
@@ -996,8 +1014,9 @@ app
     const stamped = sessions.create(root, '2026-10-24 23.38');
     sessions.addShot(root, stamped, fs.readFileSync(out), { caption: 'Dated shot' });
     const dated = openViewer(stamped, root);
-    await new Promise<void>((r) => dated.webContents.once('did-finish-load', () => r()));
-    const inDated = (js: string) => dated.webContents.executeJavaScript(`(async () => { ${js} })()`);
+    await finished(dated);
+    const inDated = (js: string) =>
+      bounded(`the dated window: ${js.slice(0, 80)}`, dated.webContents.executeJavaScript(`(async () => { ${js} })()`));
     const datedTitle = (text: string) =>
       inDated(
         `for (let i = 0; i < 50 && document.getElementById('title').textContent !== ${JSON.stringify(text)}; i++) await new Promise((r) => setTimeout(r, 100)); return document.getElementById('title').textContent === ${JSON.stringify(text)};`,
@@ -1013,7 +1032,7 @@ app
       (await datedTitle('2026-10-24, 23:38')) && dated.getTitle() === '2026-10-24, 23:38 — Snapmark';
     fs.copyFileSync(shotCopy, path.join(root, 'dated.png'));
     const datedEditor = openEditor(path.join(root, 'dated.png'), { session: stamped });
-    await new Promise<void>((r) => datedEditor.webContents.once('did-finish-load', () => r()));
+    await finished(datedEditor);
     await loaded(datedEditor);
     viewer['F3 an open editor shows the readable name'] =
       (await inWin(datedEditor, `return document.getElementById('session').textContent`)).startsWith('2026-10-24, 23:38') &&
@@ -1023,7 +1042,7 @@ app
     const bare = sessions.create(root, '2026-10-24 09.05');
     fs.copyFileSync(shotCopy, path.join(root, 'bare.png'));
     const bareEditor = openEditor(path.join(root, 'bare.png'), { session: bare });
-    await new Promise<void>((r) => bareEditor.webContents.once('did-finish-load', () => r()));
+    await finished(bareEditor);
     await loaded(bareEditor);
     viewer['snap-ua7 F3 an editor on an empty session shows only its readable name'] =
       (await inWin(bareEditor, `return document.getElementById('session').textContent`)) === '2026-10-24, 09:05' &&
@@ -1053,7 +1072,7 @@ app
     // @F58 a size remembered from a larger display opens no larger than this one's work area
     dated.getSize = () => [viewWa.width + 400, viewWa.height + 400];
     dated.emit('resized');
-    await new Promise<void>((r) => (dated.once('closed', () => r()), dated.close())); // gone from the open windows, so a new one opens
+    await bounded('the dated window to close', new Promise<void>((r) => (dated.once('closed', () => r()), dated.close()))); // gone from the open windows, so a new one opens
     const capped = openViewer(stamped, root);
     const cb = capped.getBounds();
     viewer['@F58 the session window opens at the size the owner left it, never larger than the display'] =
@@ -1065,7 +1084,7 @@ app
     // Esc on Select closes an editor without saving; it is kept in Discarded, and reopens with its marks
     fs.copyFileSync(shotCopy, path.join(root, 'discard.png'));
     const gone = openEditor(path.join(root, 'discard.png'));
-    await new Promise<void>((r) => gone.webContents.once('did-finish-load', () => r()));
+    await finished(gone);
     await loaded(gone);
     await inWin(gone, `canvas.add(new Marker({ x: 50, y: 50 }, '#e5484d')); after();`);
     for (const key of ['Escape', 'Escape']) {
@@ -1080,7 +1099,7 @@ app
     windows = BrowserWindow.getAllWindows();
     reopen(kept);
     const back = await nextWindow(windows);
-    await new Promise<void>((r) => back.webContents.once('did-finish-load', () => r()));
+    await finished(back);
     await loaded(back);
     viewer['Reopen brings it back with its marks'] = JSON.parse(await inWin(back, counts))[0] === 1 && !fs.existsSync(kept.dir);
     back.destroy();
@@ -1683,7 +1702,7 @@ app
     await sleep(200);
     fs.copyFileSync(shotCopy, path.join(root, 'single.png'));
     const singleOff = openEditor(path.join(root, 'single.png'), { session: 'smoke' });
-    await new Promise<void>((r) => singleOff.webContents.once('did-finish-load', () => r()));
+    await finished(singleOff);
     await loaded(singleOff);
     viewer['F225 single keys off reaches the editor'] =
       !(await inWin(set, `return document.getElementById('single').checked`)) && (await inWin(singleOff, `return singleKeys === false`));
@@ -1775,7 +1794,7 @@ app
     const sessionsBefore = JSON.stringify(sessions.list(root).map((n) => [n, sessions.count(root, n)]));
     fs.copyFileSync(shotCopy, path.join(root, 'one.png'));
     const one = openEditor(path.join(root, 'one.png'), { oneShot: true });
-    await new Promise<void>((r) => one.webContents.once('did-finish-load', () => r()));
+    await finished(one);
     await loaded(one);
     const panel = JSON.parse(
       await inWin(
@@ -1900,7 +1919,7 @@ app
     // The next one-shot starts from the last settings; ⌘↩ with marks selected copies and closes it too (@F39)
     fs.copyFileSync(shotCopy, path.join(root, 'two.png'));
     const two = openEditor(path.join(root, 'two.png'), { oneShot: true });
-    await new Promise<void>((r) => two.webContents.once('did-finish-load', () => r()));
+    await finished(two);
     await loaded(two);
     viewer['one-shot: the next one starts from the last settings'] =
       (await inWin(
@@ -1922,7 +1941,7 @@ app
     // Esc, Esc: closed without a copy, so it is "not saved", with its settings
     fs.copyFileSync(shotCopy, path.join(root, 'three.png'));
     const three = openEditor(path.join(root, 'three.png'), { oneShot: true });
-    await new Promise<void>((r) => three.webContents.once('did-finish-load', () => r()));
+    await finished(three);
     await loaded(three);
     for (const key of ['Escape', 'Escape']) {
       three.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
@@ -1952,7 +1971,7 @@ app
     const redactLine = `document.getElementById('redacted')`;
     fs.copyFileSync(shotCopy, path.join(root, 'ocr.png'));
     const scan = openEditor(path.join(root, 'ocr.png'), { session: 'smoke' });
-    await new Promise<void>((r) => scan.webContents.once('did-finish-load', () => r()));
+    await finished(scan);
     await loaded(scan);
     const auto = JSON.parse(
       await inWin(
@@ -1984,7 +2003,7 @@ app
       state: JSON.parse(fs.readFileSync(ef.json, 'utf8')),
       replace: scanned,
     });
-    await new Promise<void>((r) => reopened.webContents.once('did-finish-load', () => r()));
+    await finished(reopened);
     await loaded(reopened);
     viewer['Edit Again does not auto-redact again'] =
       (await inWin(reopened, `await new Promise((r) => setTimeout(r, 500)); return ${autoMarks} + '|' + ${redactLine}.hidden;`)) ===
@@ -1993,7 +2012,7 @@ app
     desk.recognize = async () => null;
     // The session window shows the block's tags as a quiet label and keeps the block as it is
     const textView = openViewer('smoke', root);
-    await new Promise<void>((r) => textView.webContents.once('did-finish-load', () => r()));
+    await finished(textView);
     viewer['the Document tab shows "Text in the screenshot" as a label, not raw HTML'] = await textView.webContents.executeJavaScript(
       `(async () => {
         for (let i = 0; i < 50 && !document.querySelector('#doc span[data-type="html"]'); i++) await new Promise((r) => setTimeout(r, 100));
@@ -2012,7 +2031,7 @@ app
     const openOn = async (file: string, opts: Parameters<typeof openEditor>[1] = {}) => {
       fs.copyFileSync(shotCopy, path.join(root, file));
       const w = openEditor(path.join(root, file), opts);
-      await new Promise<void>((r) => w.webContents.once('did-finish-load', () => r()));
+      await finished(w);
       await loaded(w);
       return w;
     };
@@ -2387,7 +2406,7 @@ app
     setActive(tallSession);
     fs.writeFileSync(path.join(root, 'tall.png'), big(1280, 8000));
     const tallEd = openEditor(path.join(root, 'tall.png'), { session: tallSession });
-    await new Promise<void>((r) => tallEd.webContents.once('did-finish-load', () => r()));
+    await finished(tallEd);
     await loaded(tallEd);
     await inWin(
       tallEd,
@@ -2419,7 +2438,7 @@ app
         ?.join('\n') ?? '';
     const linksBefore = partLinks();
     const tallView = openViewer(tallSession, root);
-    await new Promise<void>((r) => tallView.webContents.once('did-finish-load', () => r()));
+    await finished(tallView);
     await tallView.webContents.executeJavaScript(`(async () => {
       for (let i = 0; i < 50 && !document.querySelector('#doc img[src^="img/001/"]'); i++) await new Promise((r) => setTimeout(r, 100));
       const p = [...document.querySelectorAll('#doc p')].pop(); const r = document.createRange(); r.selectNodeContents(p); r.collapse(false);
