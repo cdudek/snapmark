@@ -779,8 +779,16 @@ app
       }
       throw new Error('no new window');
     };
-    const inWin = (w: BrowserWindow, js: string) =>
-      bounded(`${w.getTitle()}: ${js.slice(0, 80)}`, w.webContents.executeJavaScript(`(async () => { ${js} })()`));
+    // A rejection names the window and the script, so a failed run says which call it was
+    const inWin = (w: BrowserWindow, js: string) => {
+      const what = `${w.getTitle()}: ${js.slice(0, 80)}`;
+      return bounded(
+        what,
+        w.webContents.executeJavaScript(`(async () => { ${js} })()`).catch((e: Error) => {
+          throw new Error(`${what}: ${e.message}`);
+        }),
+      );
+    };
     const loaded = (w: BrowserWindow) =>
       inWin(
         w,
@@ -1177,6 +1185,9 @@ app
         `for (let i = 0; i < 50 && !document.querySelector('[aria-checked="true"]'); i++) await new Promise((r) => setTimeout(r, 100));`,
       );
     };
+    // Capture closes the bar, so it is clicked once the script has answered: on Linux the bar can be gone before an answer
+    // sent after the click arrives ("Render frame was disposed before the request completed")
+    const clickCapture = (w: BrowserWindow) => inWin(w, `setTimeout(() => document.getElementById('capture').click());`);
 
     // Capture Scrolling: frames of a synthetic 8200-row page under a fixed header go through the live loop; ↩ in its
     // control stitches them into the editor, which fits the width and scrolls. Esc cancels without an editor.
@@ -1365,11 +1376,15 @@ app
     // @F5 each mode: its icon and name side by side on one line, no key caption under or beside it
     const modeFaces = await inWin(
       barWin,
-      `return JSON.stringify([...document.querySelectorAll('#modes [role=radio]')].map((b) => {
+      `const narrow = document.body.classList.contains('narrow'); // a small screen hides the names (F14); F5 is the full layout
+      document.body.classList.remove('narrow');
+      const faces = JSON.stringify([...document.querySelectorAll('#modes [role=radio]')].map((b) => {
         const [i, n] = [b.querySelector('svg'), b.querySelector('.name')].map((e) => e.getBoundingClientRect());
         const level = Math.abs(i.top + i.height / 2 - (n.top + n.height / 2)) <= 2 && i.right <= n.left && n.height < 24;
         return [b.innerText.trim(), level];
-      }))`,
+      }));
+      if (narrow) document.body.classList.add('narrow');
+      return faces;`,
     );
     viewer['@F5 @2026-10-27-calm-style each mode shows its icon and name on one line, no key caption'] =
       modeFaces ===
@@ -1706,7 +1721,7 @@ app
     const chooseBar = openCaptureBar()!;
     await barReady(chooseBar);
     let windowsNow = BrowserWindow.getAllWindows();
-    await inWin(chooseBar, `document.getElementById('capture').click();`);
+    await clickCapture(chooseBar);
     const chooser = await loadedWindow(windowsNow);
     windowsNow = BrowserWindow.getAllWindows();
     chooser.webContents.sendInputEvent({ type: 'mouseDown', x: 100, y: 120, button: 'left', clickCount: 1 });
@@ -2487,7 +2502,7 @@ app
     const timed = async () => {
       const b = openCaptureBar()!;
       await barReady(b);
-      await inWin(b, `document.getElementById('capture').click();`);
+      await clickCapture(b);
       for (let i = 0; i < 40 && !countdownUp(); i++) await sleep(50);
       const w = countdownUp()!;
       for (let i = 0; i < 40 && w.webContents.isLoading(); i++) await sleep(50);
