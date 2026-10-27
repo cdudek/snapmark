@@ -57,9 +57,32 @@ export function captureArgs(mode: CaptureMode, { pointer }: { pointer: boolean }
 export const shotFiles = (base: string, displays = 1) =>
   displays > 1 ? Array.from({ length: displays }, (_, i) => `${base}-${i + 1}.png`) : [`${base}.png`];
 
-// The Capture button says where the capture goes, so a One-Shot left on is never hidden (CAP-5); the bar draws its ↩
-// keycap beside it.
-export const barLabel = (o: { oneShot: boolean }) => (o.oneShot ? 'Capture One-Shot' : 'Capture');
+// The Capture button follows the mode (spec screens.md: Capture, Record, Start Scrolling) and says where the capture
+// goes, so a One-Shot left on is never hidden (CAP-5); the bar draws its ↩ keycap beside it. Milestone 2's Record
+// mode adds `record: 'Record'` here.
+const VERBS: Partial<Record<CaptureMode, string>> = { scroll: 'Start Scrolling' };
+export const barLabel = (o: { mode: CaptureMode; oneShot: boolean }) => (o.oneShot ? 'Capture One-Shot' : (VERBS[o.mode] ?? 'Capture'));
+
+// The bar's focus ring (F10, N1): macOS's accent colour (systemPreferences.getAccentColor, "rrggbbaa") where it reaches
+// 3:1 on the bar's material, else null and the bar rings in its text colour. Chromium draws -webkit-focus-ring-color
+// as its own fixed orange #e59700 unless the embedder sets one, and Electron does not. The material is measured on
+// the greys the screenshots flatten it onto.
+export function barRing(accent: string | undefined, dark: boolean): string | null {
+  if (!accent || !/^[0-9a-f]{6}/i.test(accent)) return null;
+  const ring = `#${accent.slice(0, 6).toLowerCase()}`;
+  return contrast(ring, dark ? '#1c1c1e' : '#e5e5ea') >= 3 ? ring : null;
+}
+
+// WCAG 2.2's contrast ratio of two #rrggbb colours
+export function contrast(a: string, b: string): number {
+  const lum = (hex: string) =>
+    [1, 3, 5]
+      .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+      .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
 
 export interface OptionsActions {
   setTimer(seconds: number): void;

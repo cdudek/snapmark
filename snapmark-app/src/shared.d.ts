@@ -82,8 +82,9 @@ interface CaptureOpts {
 }
 
 interface BarInit extends CaptureOpts {
-  label: string; // the Capture button: "Capture" or "Capture One-Shot"
-  session: { label: string; count: number } | null; // the destination pop-up's face; null: no session yet
+  labels: Record<CaptureMode, string>; // the Capture button per mode: "Capture", "Start Scrolling" or "Capture One-Shot"
+  session: { label: string; count: number } | null; // the destination's face: the session's name, no date; null: no session yet
+  ring: string | null; // the focus ring: macOS's accent where it reaches 3:1, else null for the text colour (F10)
   narrow: boolean; // the bar does not fit its work area: the modes show their icons only (F14)
 }
 

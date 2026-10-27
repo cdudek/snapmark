@@ -52,7 +52,8 @@
       [role='radio'][aria-checked='true'] {
         background: var(--ds-color-soft);
       }
-      /* The focus ring after Tab only, in the system's focus colour (F9, F10). */
+      /* The focus ring after Tab only, in the system's focus colour: bar.ts sets --ds-color-focus to macOS's accent where
+         it reaches 3:1, else to the text colour (F9, F10, N1). */
       button:focus-visible {
         outline: var(--ds-ring-width) solid var(--ds-color-focus);
         outline-offset: var(--ds-ring-offset);
@@ -89,20 +90,18 @@
         flex: none;
         background: var(--ds-color-edge);
       }
-      /* The destination gives way first: a long session name ends in an ellipsis. Options and Capture keep the right. */
+      /* The destination gives way first: a long session name ends in an ellipsis. "To" is in the text colour, as the
+         system's dim text misses 4.5:1 (N1). Options stays beside it; the spare room falls before Capture, alone at the right. */
       #dest {
         flex: 0 1 auto;
         min-width: 0;
-      }
-      #dest-to {
-        color: var(--ds-color-dim);
       }
       #dest-face {
         overflow: hidden;
         text-overflow: ellipsis;
       }
       #options {
-        margin-left: auto;
+        margin-right: auto;
       }
       #capture {
         margin-left: var(--ds-space-4);
@@ -116,6 +115,29 @@
         font-weight: var(--ds-font-weight-regular);
         opacity: 0.75;
       }
+      /* Each control's name and key, drawn by bar.ts beside the control and inside the bar, as native tooltips never show
+         in this panel (F11). System colours: the tooltip tokens. */
+      #tip {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: var(--ds-z-tooltip);
+        display: flex;
+        gap: var(--ds-space-8);
+        padding: var(--ds-space-4) var(--ds-space-8);
+        border-radius: var(--ds-tooltip-radius);
+        background: var(--ds-tooltip-fill);
+        color: var(--ds-color-ink);
+        box-shadow: var(--ds-e1);
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      #tip[hidden] {
+        display: none;
+      }
+      #tip kbd {
+        font: inherit;
+      }
       /* Where the bar does not fit its work area: the modes show their icons only, their names stay in the tooltips (F14). */
       body.narrow #modes .name {
         display: none;
@@ -128,7 +150,7 @@
     </style>
   </head>
   <body>
-    <button id="close" aria-label="Close" aria-keyshortcuts="Escape" title="Close (Esc)">
+    <button id="close" aria-label="Close" aria-keyshortcuts="Escape" data-tip="Close" data-key="Esc">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg>
     </button>
     <span class="sep" aria-hidden="true"></span>
@@ -140,7 +162,8 @@
         tabindex="-1"
         aria-label="New Area"
         aria-keyshortcuts="1"
-        title="New Area (1)"
+        data-tip="New Area"
+        data-key="1"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1" stroke-dasharray="2.5 2.5" /></svg
         ><span class="name">New Area</span>
@@ -152,7 +175,8 @@
         tabindex="-1"
         aria-label="Window"
         aria-keyshortcuts="2"
-        title="Window (2)"
+        data-tip="Window"
+        data-key="2"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -166,7 +190,8 @@
         tabindex="-1"
         aria-label="Full Screen"
         aria-keyshortcuts="3"
-        title="Full Screen (3)"
+        data-tip="Full Screen"
+        data-key="3"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="2.5" y="4" width="19" height="13" rx="1.5" />
@@ -180,7 +205,8 @@
         tabindex="-1"
         aria-label="Last Area"
         aria-keyshortcuts="4"
-        title="Last Area (4)"
+        data-tip="Last Area"
+        data-key="4"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="2.5" y="4" width="16" height="12" rx="1.5" />
@@ -194,7 +220,8 @@
         tabindex="-1"
         aria-label="Scrolling"
         aria-keyshortcuts="5"
-        title="Scrolling (5)"
+        data-tip="Scrolling"
+        data-key="5"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="4" y="2.5" width="16" height="12" rx="1.5" />
@@ -203,16 +230,17 @@
       </button>
     </div>
     <span class="sep" aria-hidden="true"></span>
-    <button id="dest" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P Shift+Meta+O" title="Destination (⇧⌘P)">
+    <button id="dest" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P Shift+Meta+O" data-tip="Destination" data-key="⇧⌘P">
       <span id="dest-to">To</span><span id="dest-face"></span
       ><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
     </button>
-    <button id="options" aria-haspopup="menu" aria-keyshortcuts="Alt+O" title="Options (⌥O)">
+    <button id="options" aria-haspopup="menu" aria-keyshortcuts="Alt+O" data-tip="Options" data-key="⌥O">
       Options<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
     </button>
-    <button id="capture" aria-label="Capture" aria-keyshortcuts="Enter Meta+Enter" title="Capture (↩)">
+    <button id="capture" aria-label="Capture" aria-keyshortcuts="Enter Meta+Enter" data-tip="Capture" data-key="↩">
       <span id="capture-label">Capture</span><kbd aria-hidden="true">↩</kbd>
     </button>
+    <div id="tip" aria-hidden="true" hidden><span></span><kbd></kbd></div>
     <script src="bar.js"></script>
   </body>
 </html>

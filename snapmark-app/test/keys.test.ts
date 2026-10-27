@@ -131,22 +131,24 @@ assert.deepStrictEqual(
   ['Escape', '1', '2', '3', '4', '5', 'Shift+Meta+P Shift+Meta+O', 'Alt+O', 'Enter Meta+Enter'],
   '@F18 the bar buttons carry the keys the group lists',
 );
-// @F11 @2026-10-27-calm-style and name them in their tooltips; no key captions on the bar, only Capture's ↩
+// @F11 @2026-10-27-calm-style and name them in the tooltips the bar draws (no native `title`, which never shows in this
+// panel); no key captions on the bar, only Capture's ↩
 assert.deepStrictEqual(
-  [...bar.matchAll(/<button\s[^>]*title="([^"]+)"/g)].map((m) => m[1]),
+  [...bar.matchAll(/<button\s[^>]*?data-tip="([^"]+)"\s+data-key="([^"]+)"/g)].map((m) => `${m[1]}  ${m[2]}`),
   [
-    'Close (Esc)',
-    'New Area (1)',
-    'Window (2)',
-    'Full Screen (3)',
-    'Last Area (4)',
-    'Scrolling (5)',
-    'Destination (⇧⌘P)',
-    'Options (⌥O)',
-    'Capture (↩)',
+    'Close  Esc',
+    'New Area  1',
+    'Window  2',
+    'Full Screen  3',
+    'Last Area  4',
+    'Scrolling  5',
+    'Destination  ⇧⌘P',
+    'Options  ⌥O',
+    'Capture  ↩',
   ],
   '@F11 each control has its key in its tooltip',
 );
+assert.ok(!/<button\s[^>]*title=/.test(bar) && bar.includes('<div id="tip" aria-hidden="true" hidden>'), '@F11 drawn, not native');
 assert.ok(!bar.includes('class="key"') && bar.match(/↩<\/kbd>/g)?.length === 1, '@F11 no key captions; Capture alone shows ↩');
 assert.deepStrictEqual(
   KEY_GROUPS[2].rows,

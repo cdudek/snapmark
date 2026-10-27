@@ -2,7 +2,21 @@ import assert from 'assert';
 import type { MenuItemConstructorOptions as Item } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { MODES, FIRST, captureArgs, shotFiles, timed, barSize, barLabel, barOptions, checkedCapture, destMenu } from '../src/capture';
+import {
+  MODES,
+  FIRST,
+  captureArgs,
+  shotFiles,
+  timed,
+  barSize,
+  barLabel,
+  barOptions,
+  barRing,
+  checkedCapture,
+  contrast,
+  destMenu,
+} from '../src/capture';
+import { namePart } from '../src/sessions';
 import type { OptionsActions } from '../src/capture';
 
 const calls: string[] = [];
@@ -81,6 +95,21 @@ assert.deepStrictEqual([dests(false)[0].checked, dests(true)[0].checked], [false
 assert.deepStrictEqual([dests(false)[0].accelerator, dests(false)[0].registerAccelerator], ['Shift+Command+O', false], '@F13 ⇧⌘O shown');
 click(dests(false)[0]);
 assert.deepStrictEqual(picked, [true], '@F13 One-Shot picked');
+// @F12 @2026-10-27-calm-style the face names the session without its date, "To Ledgerly Q4 review"; the rows keep it.
+// A session with only its stamp keeps the stamp
+assert.strictEqual(namePart('2026-10-27 09.12 Ledgerly Q4 review'), 'Ledgerly Q4 review', '@F12 the name part');
+assert.ok(main.includes('session: cur && { label: sessions.namePart(cur.name) || cur.label, count: cur.count },'), '@F12 the face');
+
+// @F10 @N1 @2026-10-27-calm-style the ring is macOS's accent where it reaches 3:1 on the bar's material, light or dark;
+// else null, and the bar rings in its text colour. Chromium's own -webkit-focus-ring-color is orange #e59700, 1.9:1
+assert.strictEqual(barRing('007affff', false), '#007aff', '@F10 blue, light');
+assert.strictEqual(barRing('0A84FFFF', true), '#0a84ff', '@F10 blue, dark');
+assert.strictEqual(barRing('ffc600ff', false), null, '@N1 yellow on light is under 3:1');
+assert.strictEqual(barRing('8c8c8cff', false), null, '@N1 graphite on light is under 3:1');
+assert.strictEqual(barRing(undefined, false), null, '@F10 no accent off macOS');
+assert.strictEqual(barRing('not a colour', true), null, '@F10 an unreadable accent');
+assert.ok(contrast('#e59700', '#e5e5ea') < 3 && contrast('#000000', '#e5e5ea') >= 3 && contrast('#ffffff', '#1c1c1e') >= 3, '@N1');
+assert.ok(main.includes("barRing(process.platform === 'darwin' ? systemPreferences.getAccentColor() : undefined"), '@F10 main');
 
 // F210 screencapture arguments: each mode as its menu item did; Full Screen is ⌃⇧3's, with -C for the pointer
 assert.deepStrictEqual(captureArgs('window', { pointer: false }), ['-i', '-w', '-o'], 'F210 window');
@@ -116,8 +145,15 @@ assert.strictEqual(calls.pop(), 'setPointer:true', '@F26');
 assert.deepStrictEqual(calls, [], '@F26 nothing else');
 
 // @F22 Capture One-Shot: the Capture button says where the capture goes (F212, CAP-5)
-assert.strictEqual(barLabel({ oneShot: true }), 'Capture One-Shot', '@F22');
-assert.strictEqual(barLabel({ oneShot: false }), 'Capture', '@F22');
+assert.strictEqual(barLabel({ mode: 'area', oneShot: true }), 'Capture One-Shot', '@F22');
+assert.strictEqual(barLabel({ mode: 'area', oneShot: false }), 'Capture', '@F22');
+// @2026-10-27-calm-style and follows the mode (spec screens.md): Start Scrolling; One-Shot still says One-Shot
+assert.deepStrictEqual(
+  MODES.map((m) => barLabel({ mode: m.id, oneShot: false })),
+  ['Capture', 'Capture', 'Capture', 'Capture', 'Start Scrolling'],
+  'Capture follows the mode',
+);
+assert.strictEqual(barLabel({ mode: 'scroll', oneShot: true }), 'Capture One-Shot', '@F22 One-Shot in Scrolling');
 
 // F215 pointer: -C in New Area, Last Area and Full Screen, never in Window
 assert.deepStrictEqual(captureArgs('area', { pointer: true }, area), ['-C', '-R', '10,40,1280,720'], 'F215 area');

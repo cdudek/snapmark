@@ -51,4 +51,17 @@ assert.deepStrictEqual(colourLiterals(bar), [], '@F15 bar.html uses no colour li
 assert.ok((bar.match(/var\(--ds-color-[a-z-]+\)/g) ?? []).length >= 6, '@F15 its colours come from the tokens');
 assert.ok(!/var\(--(?!ds-)/.test(bar), '@F15 no other variables');
 
+// @N1 @2026-10-27-calm-style "To" is in the bar's text colour: the system's GrayText is #808080, under 4.5:1. The ring
+// is not -webkit-focus-ring-color, which Chromium draws in its own orange: bar.ts sets it (test/capture.test.ts barRing)
+assert.ok(!/#dest-to\s*\{/.test(bar), '@N1 no colour of its own for "To"');
+const barTs = read('src/bar.ts');
+assert.ok(barTs.includes("style.setProperty('--ds-color-focus', s.ring ?? 'var(--ds-color-ink)')"), '@N1 @F10 the ring colour');
+
+// @F10 @2026-10-27-calm-style a digit or a click chooses without the ring; only an arrow asks for it
+assert.ok(barTs.includes('const choose = (m: CaptureMode, ring = false) =>'), '@F10 no ring by default');
+assert.strictEqual((barTs.match(/as CaptureMode, true\)/g) ?? []).length, 1, '@F10 the arrows alone ring');
+
+// @A5 @2026-10-27-calm-style Options stays beside the destination; the spare room falls before Capture
+assert.ok(/#options \{\s+margin-right: auto;\s+\}/.test(bar) && !bar.includes('margin-left: auto'), '@A5 Capture alone at the right');
+
 console.log('style: ok');

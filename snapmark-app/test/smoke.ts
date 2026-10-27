@@ -2,8 +2,8 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { app, BrowserWindow, globalShortcut, nativeImage, nativeTheme, screen } from 'electron';
-import { barSize } from '../src/capture';
+import { app, BrowserWindow, globalShortcut, nativeImage, nativeTheme, screen, systemPreferences } from 'electron';
+import { barRing, barSize, contrast } from '../src/capture';
 
 const MOCK = `<body style="margin:0;font:16px system-ui;background:#fff;color:#18181b">
   <header style="height:56px;background:#18181b;color:#fff;display:flex;align-items:center;padding:0 24px">Acme Dashboard</header>
@@ -1325,16 +1325,17 @@ app
     // @F11 the global Esc is the bar's only outside quiet runs, so this run never takes the owner's Esc (checked by hand,
     // validation.md; the registration is checked in test/capture.test.ts)
     viewer['@F11 the bar takes no global Esc in a quiet run'] = !globalShortcut.isRegistered('Escape');
-    // @F9 just opened: the focus is on the chosen mode, for the keys, and shows no ring
+    // @F9 just opened: the focus is on the chosen mode, for the keys, and shows no ring, nor its tooltip
     const openRing = JSON.parse(
       await inWin(
         barWin,
         `const a = document.activeElement; const s = getComputedStyle(a);
-        return JSON.stringify({ on: a.dataset.mode, visible: a.matches(':focus-visible'), outline: s.outlineStyle === 'none' || s.outlineWidth === '0px' });`,
+        return JSON.stringify({ on: a.dataset.mode, visible: a.matches(':focus-visible'), outline: s.outlineStyle === 'none' || s.outlineWidth === '0px',
+          tip: document.getElementById('tip').hidden });`,
       ),
     );
     viewer['@F9 @2026-10-27-calm-style no focus ring shows when the bar opens'] =
-      openRing.on === 'area' && !openRing.visible && openRing.outline;
+      openRing.on === 'area' && !openRing.visible && openRing.outline && openRing.tip;
     why.calmF9 = openRing;
     // @F8 just opened, at rest: no control has a border or an outline
     const atRest = await inWin(
@@ -1380,25 +1381,59 @@ app
           ['Scrolling', true],
         ]) && !(await inWin(barWin, `return !!document.querySelector('.key')`));
     why.calmF5 = modeFaces;
-    // @F11 each control's key is in its tooltip; Capture alone shows a key, ↩
+    // @F11 each control's key is in its tooltip, which the bar draws (no native `title`); Capture alone shows a key, ↩
     const tips = await inWin(
       barWin,
-      `return JSON.stringify([...document.querySelectorAll('button')].map((b) => [b.title, b.innerText.replace(/\\s+/g, ' ').trim().includes('↩')]))`,
+      `return JSON.stringify([...document.querySelectorAll('button')].map((b) => [b.dataset.tip + '  ' + b.dataset.key, b.hasAttribute('title'), b.innerText.replace(/\\s+/g, ' ').trim().includes('↩')]))`,
     );
     viewer['@F11 @2026-10-27-calm-style each control has its key in its tooltip; only Capture shows ↩'] =
       tips ===
       JSON.stringify([
-        ['Close (Esc)', false],
-        ['New Area (1)', false],
-        ['Window (2)', false],
-        ['Full Screen (3)', false],
-        ['Last Area (4)', false],
-        ['Scrolling (5)', false],
-        ['Destination (⇧⌘P)', false],
-        ['Options (⌥O)', false],
-        ['Capture (↩)', true],
+        ['Close  Esc', false, false],
+        ['New Area  1', false, false],
+        ['Window  2', false, false],
+        ['Full Screen  3', false, false],
+        ['Last Area  4', false, false],
+        ['Scrolling  5', false, false],
+        ['Destination  ⇧⌘P', false, false],
+        ['Options  ⌥O', false, false],
+        ['Capture  ↩', false, true],
       ]);
     why.calmF11 = tips;
+    // @F11 the drawn tooltip: what it reads, whether it shows, and that it sits wholly inside the bar window
+    const tipNow = async (w: BrowserWindow) =>
+      JSON.parse(
+        await inWin(
+          w,
+          `const t = document.getElementById('tip'); const r = t.getBoundingClientRect();
+          return JSON.stringify({ shown: !t.hidden, text: [...t.children].map((c) => c.textContent).join('|'),
+            inside: r.width > 0 && r.left >= 0 && r.right <= innerWidth + 0.5 && r.top >= 0 && r.bottom <= innerHeight + 0.5 });`,
+        ),
+      ) as { shown: boolean; text: string; inside: boolean };
+    // The pointer on a control: no tooltip at once, then its name and key after the delay; it leaves, the tooltip goes
+    const hoverTip = async (w: BrowserWindow, selector: string) => {
+      const c = JSON.parse(
+        await inWin(
+          w,
+          `const r = document.querySelector('${selector}').getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.top + r.height / 2]);`,
+        ),
+      ) as [number, number];
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: Math.round(c[0]), y: Math.round(c[1]) });
+      await sleep(300);
+      const early = await tipNow(w);
+      await sleep(1000);
+      const late = await tipNow(w);
+      w.webContents.sendInputEvent({ type: 'mouseLeave', x: 0, y: 0 });
+      await sleep(80);
+      return { early, late, after: await tipNow(w) };
+    };
+    const hoverFull = await hoverTip(barWin, '[data-mode="full"]');
+    const hoverCapture = await hoverTip(barWin, '#capture'); // at the far right: the tooltip turns to its left
+    viewer['@F11 @2026-10-27-calm-style resting the pointer on a control draws its name and key inside the bar, after a delay'] =
+      [hoverFull, hoverCapture].every((h) => !h.early.shown && h.late.shown && h.late.inside && !h.after.shown) &&
+      hoverFull.late.text === 'Full Screen|3' &&
+      hoverCapture.late.text === 'Capture|↩';
+    why.calmF11hover = { hoverFull, hoverCapture };
     // @F10 after Tab: the focused control shows a 2 pt ring in the system focus colour, 2 pt outside it; Shift-Tab back
     keyTo(barWin, 'Tab');
     await sleep(80);
@@ -1410,12 +1445,39 @@ app
           system: s.outlineColor === token('--ds-color-focus') && s.outlineColor !== token('--ds-color-accent') });`,
       ),
     );
+    // The ring's colour: macOS's accent where it reaches 3:1 on the bar, else the text colour; never Chromium's orange
+    const [ringNow, inkNow, toNow] = JSON.parse(
+      await inWin(
+        barWin,
+        `${tokenColour} return JSON.stringify([getComputedStyle(document.activeElement).outlineColor, token('--ds-color-ink'), getComputedStyle(document.getElementById('dest-to')).color]);`,
+      ),
+    ) as string[];
+    const tabTip = await tipNow(barWin);
     keyTo(barWin, 'Tab', ['shift']);
     await sleep(80);
     viewer['@F10 @2026-10-27-calm-style after Tab the focus ring shows: 2 pt, the system focus colour, 2 pt outside'] =
       JSON.stringify(tabRing) === JSON.stringify({ on: 'dest', visible: true, style: 'solid', width: '2px', offset: '2px', system: true });
     why.calmF10 = tabRing;
-    // @F19 no drawn label: resting the pointer on a button opens no window
+    const hex = (rgb: string) =>
+      '#' +
+      (rgb.match(/\d+/g) ?? [])
+        .slice(0, 3)
+        .map((v) => Number(v).toString(16).padStart(2, '0'))
+        .join('');
+    const dark = nativeTheme.shouldUseDarkColors;
+    const accentRing = barRing(process.platform === 'darwin' ? systemPreferences.getAccentColor() : undefined, dark);
+    const behind = dark ? '#1c1c1e' : '#e5e5ea'; // the material, as the screenshots flatten it (capture.ts barRing)
+    viewer["@F10 @2026-10-27-calm-style the ring is macOS's accent where it reaches 3:1, else the text colour"] =
+      hex(ringNow) === (accentRing ?? hex(inkNow)) && hex(ringNow) !== '#e59700';
+    // @N1 on the bar's material, light or dark as this Mac is: the ring 3:1, "To" 4.5:1, as the normal text
+    viewer['@N1 @2026-10-27-calm-style the focus ring reaches 3:1 and "To" 4.5:1 on the bar'] =
+      contrast(hex(ringNow), behind) >= 3 && contrast(hex(toNow), behind) >= 4.5 && toNow === inkNow;
+    why.calmN1 = { ringNow, inkNow, toNow, accentRing, dark, ring: contrast(hex(ringNow), behind), to: contrast(hex(toNow), behind) };
+    // @F11 a keyboard focus shows the tooltip at once, beside the control and inside the bar
+    viewer['@F11 @2026-10-27-calm-style after Tab the focused control shows its tooltip at once'] =
+      tabTip.shown && tabTip.inside && tabTip.text === 'Destination|⇧⌘P';
+    why.calmF11tab = tabTip;
+    // @F19 no label window: resting the pointer on a button opens no window; the tooltip is drawn in the bar (@F11)
     const beforeRest = BrowserWindow.getAllWindows().length;
     await inWin(barWin, `document.querySelector('[data-mode="window"]').dispatchEvent(new MouseEvent('mouseenter'));`);
     await sleep(500);
@@ -1438,14 +1500,26 @@ app
     const perMode: string[] = [];
     const accents: string[] = [];
     let modesLook = true;
+    const digitRings: string[] = [];
+    const labels: string[] = [];
     for (const k of ['1', '2', '3', '4', '5']) {
       keyTo(barWin, k);
       await sleep(80);
       const l = await barLook(barWin);
       perMode.push([l.mode, l.focus].join());
+      labels.push(l.label);
       modesLook &&= await inWin(barWin, chosenLook);
       accents.push(await inWin(barWin, accentOnlyCapture));
+      digitRings.push(
+        await inWin(barWin, `return [document.activeElement.matches(':focus-visible'), !document.getElementById('tip').hidden].join()`),
+      );
     }
+    // @F10 a digit chooses without the ring or a tooltip, also on the mode Shift-Tab just ringed
+    viewer['@F10 @2026-10-27-calm-style 1–5 choose a mode without the focus ring'] = digitRings.every((r) => r === 'false,false');
+    why.calmDigits = digitRings;
+    // Capture's label follows the mode (spec screens.md): Start Scrolling for Scrolling; Record joins in milestone 2
+    viewer["@2026-10-27-calm-style Capture's label follows the mode"] = labels.join() === 'Capture,Capture,Capture,Capture,Start Scrolling';
+    why.calmLabels = labels;
     viewer['@F7 @2026-10-27-calm-style the chosen mode is the soft pill in the normal text colour'] = modesLook;
     viewer['@F6 @2026-10-27-calm-style only Capture is filled with the accent; nothing else is the accent'] = accents.every(
       (a) => a === JSON.stringify({ filled: ['capture'], inked: [] }),
@@ -1459,8 +1533,10 @@ app
     const sessionRows = await popWith(() => keyTo(barWin, 'P', ['shift', 'meta']));
     const currentRow = sessionRows.find((i) => i.checked);
     const sessionName = (row?: Item) => (row?.label ?? '').replace(/ \(\d+\)$/, '');
+    // The face names the session without the date its row keeps: "To Ledgerly Q4 review"
+    const faceName = (row?: Item) => sessionName(row).replace(/^\d{4}-\d{2}-\d{2} · /, '');
     viewer['@F12 @2026-10-27-calm-style the destination reads "To <session>" and lists One-Shot first'] =
-      opened.dest === `To ${sessionName(currentRow)}` &&
+      opened.dest === `To ${faceName(currentRow)}` &&
       menuShape(sessionRows).startsWith('One-Shot|—|') &&
       sessionRows[0].checked === false &&
       menuShape(sessionRows).endsWith('—|Older Sessions…|New Session');
@@ -1478,19 +1554,32 @@ app
     pick(await popWith(() => inWin(barWin, `document.getElementById('dest').click();`)), 'One-Shot');
     await sleep(200);
     const oneShotLook = await barLook(barWin);
+    // @A5 in One-Shot, the shortest face: Options stays beside the destination, and Capture alone sits at the right
+    const oneShotRow = JSON.parse(
+      await inWin(
+        barWin,
+        `const r = (id) => document.getElementById(id).getBoundingClientRect(); const gap = parseFloat(getComputedStyle(document.body).columnGap);
+        const pad = parseFloat(getComputedStyle(document.body).paddingRight);
+        return JSON.stringify({ beside: r('options').left - r('dest').right <= gap + 0.5, right: Math.abs(innerWidth - pad - r('capture').right) <= 0.5,
+          spare: r('capture').left - r('options').right > 4 * gap });`,
+      ),
+    );
+    viewer['@A5 @2026-10-27-calm-style in One-Shot Options stays beside the destination; only Capture sits at the right'] =
+      oneShotRow.beside && oneShotRow.right && oneShotRow.spare;
+    why.calmA5 = oneShotRow;
     const inOneShot = await popWith(() => keyTo(barWin, 'P', ['shift', 'meta']));
     pick(inOneShot, currentRow!.label!);
     await sleep(200);
     const backLook = await barLook(barWin);
     viewer['@F13 @2026-10-27-calm-style picking in the destination pop-up: a session, or One-Shot'] =
-      afterPick.dest === `To ${sessionName(otherRow)}` &&
+      afterPick.dest === `To ${faceName(otherRow)}` &&
       menuSays.startsWith(sessionName(otherRow)) &&
       oneShotLook.dest === 'One-Shot' &&
       oneShotLook.label === 'Capture One-Shot' &&
       inOneShot[0].checked === true &&
       !inOneShot.some((i) => i.label !== 'One-Shot' && i.checked) &&
-      backLook.dest === `To ${sessionName(currentRow)}` &&
-      backLook.label === 'Capture';
+      backLook.dest === `To ${faceName(currentRow)}` &&
+      backLook.label === 'Start Scrolling';
     why.calmF13 = { afterPick, menuSays, oneShotLook, inOneShot: menuShape(inOneShot), backLook };
     // @F13 ⇧⌘O switches between One-Shot and the last session, both ways
     const dests: string[] = [];
@@ -1501,7 +1590,7 @@ app
       dests.push(`${l.dest}|${l.label}`);
     }
     viewer['@F13 @2026-10-27-calm-style ⇧⌘O switches One-Shot and the last session'] =
-      JSON.stringify(dests) === JSON.stringify(['One-Shot|Capture One-Shot', `To ${sessionName(currentRow)}|Capture`]);
+      JSON.stringify(dests) === JSON.stringify(['One-Shot|Capture One-Shot', `To ${faceName(currentRow)}|Start Scrolling`]);
     why.calmF13dests = dests;
     // @F26 ⌥O opens Options: Timer and Show Mouse Pointer, no Save to; greyed for Scrolling, which is chosen now
     const viaKey = await popWith(() => keyTo(barWin, 'O', ['alt']));
@@ -1509,6 +1598,20 @@ app
     viewer['@F26 Options holds Timer and Show Mouse Pointer, without Save to'] =
       menuShape(viaKey) === 'Timer|None|3 Seconds|5 Seconds|10 Seconds|—|Show Mouse Pointer' &&
       greyedNow.join() === 'None,3 Seconds,5 Seconds,10 Seconds,Show Mouse Pointer';
+    // @F10 a click chooses a mode without the ring
+    const areaAt = JSON.parse(
+      await inWin(
+        barWin,
+        `const r = document.querySelector('[data-mode="area"]').getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.top + r.height / 2]);`,
+      ),
+    ) as [number, number];
+    for (const type of ['mouseDown', 'mouseUp'] as const)
+      barWin.webContents.sendInputEvent({ type, x: Math.round(areaAt[0]), y: Math.round(areaAt[1]), button: 'left', clickCount: 1 });
+    barWin.webContents.sendInputEvent({ type: 'mouseLeave', x: 0, y: 0 });
+    await sleep(80);
+    const clickRing = await inWin(barWin, `const a = document.activeElement; return [a.dataset.mode, a.matches(':focus-visible')].join()`);
+    viewer['@F10 @2026-10-27-calm-style a click chooses a mode without the focus ring'] = clickRing === 'area,false';
+    why.calmClick = clickRing;
     await inWin(barWin, `document.querySelector('[data-mode="area"]').click();`);
     const firstOptions = ticked(await optionsOf(barWin));
     const barAgain = openCaptureBar(runner);
@@ -1517,20 +1620,25 @@ app
     // F204: ← → (and ↓ ↑, as a radio group) move between the modes, wrapping; Tab goes from the chosen mode to the
     // destination, Options and Capture, and back to Close
     const moves: string[] = [];
+    const ringed = `return document.activeElement.matches(':focus-visible')`;
+    let keyRings = true; // @F10 arrows and Tab show the ring
     for (const k of ['Right', 'Left', 'Left', 'Right', 'Down', 'Up']) {
       keyTo(barWin, k);
       await sleep(80);
       moves.push((await barLook(barWin)).mode);
+      keyRings &&= await inWin(barWin, ringed);
     }
     const tabs: string[] = [];
     for (const m of [[], [], [], ['shift'], ['shift'], ['shift'], ['shift']] as Electron.KeyboardInputEvent['modifiers'][]) {
       keyTo(barWin, 'Tab', m);
       await sleep(80);
       tabs.push((await barLook(barWin)).focus);
+      keyRings &&= await inWin(barWin, ringed);
     }
     const arrowsOk = moves.join() === 'window,area,scroll,area,window,area';
     const tabsOk = tabs.join() === 'dest,options,capture,options,dest,area,close';
     why.F204 = { moves, tabs };
+    viewer['@F10 @2026-10-27-calm-style arrows and Tab keep the focus ring'] = keyRings;
     // @F16 ↩ captures with the chosen mode and options; the bar is gone first (F205). Last Area, One-Shot, 5 Seconds
     // and the pointer, chosen as the owner clicks them
     keyTo(barWin, '4');

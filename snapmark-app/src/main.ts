@@ -1,6 +1,8 @@
 import {
   app,
   BrowserWindow,
+  nativeTheme,
+  systemPreferences,
   Tray,
   Menu,
   clipboard,
@@ -24,7 +26,7 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, appMenu, loginState, editorSessionMenu, copyMenu, quitMessage, MenuActions, MenuState, SessionInfo } from './menu';
 import { SHORTCUTS, KEY_GROUPS } from './keys';
-import { FIRST, barLabel, barOptions, barSize, captureArgs, checkedCapture, destMenu, rect, shotFiles } from './capture';
+import { FIRST, MODES, barLabel, barOptions, barRing, barSize, captureArgs, checkedCapture, destMenu, rect, shotFiles } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
@@ -463,8 +465,11 @@ const barInit = (): BarInit => {
   const cur = menuState().current;
   return {
     ...captureOpts,
-    label: barLabel(captureOpts),
-    session: cur && { label: cur.label, count: cur.count },
+    labels: Object.fromEntries(MODES.map((m) => [m.id, barLabel({ ...captureOpts, mode: m.id })])) as BarInit['labels'],
+    // The face names the session without its date, "Ledgerly Q4 review"; a session with only its stamp keeps it (F12)
+    session: cur && { label: sessions.namePart(cur.name) || cur.label, count: cur.count },
+    // shortcut: read as the bar opens or its state changes; an accent or theme changed while it is open shows next time
+    ring: barRing(process.platform === 'darwin' ? systemPreferences.getAccentColor() : undefined, nativeTheme.shouldUseDarkColors),
     narrow: barNarrow,
   };
 };
