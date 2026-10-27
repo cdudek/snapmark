@@ -40,4 +40,15 @@ assert.ok(
   '@F3 data-surface="system" on macOS only',
 );
 
+// @F15 @2026-10-27-calm-style bar.html has no colour literal: no hex, no colour function, no named or system colour.
+// Its colours are --ds-* tokens (and currentColor, which inherits one)
+const colourLiterals = (html: string) =>
+  html.match(
+    /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|light-dark|color-mix)\(|(?<![-\w])(?:white|black|transparent|red|green|blue|gr[ae]y|canvas|canvastext|graytext|accentcolor|highlight)(?![-\w])/gi,
+  ) ?? [];
+const bar = read('src/bar.html');
+assert.deepStrictEqual(colourLiterals(bar), [], '@F15 bar.html uses no colour literal');
+assert.ok((bar.match(/var\(--ds-color-[a-z-]+\)/g) ?? []).length >= 6, '@F15 its colours come from the tokens');
+assert.ok(!/var\(--(?!ds-)/.test(bar), '@F15 no other variables');
+
 console.log('style: ok');

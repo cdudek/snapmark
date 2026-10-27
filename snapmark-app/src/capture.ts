@@ -12,24 +12,13 @@ export const MODES: { id: CaptureMode; name: string }[] = [
   { id: 'scroll', name: 'Scrolling' },
 ];
 
-// The bar's headline and hint for each mode (spec screens.md, Headline and hint per mode).
-// shortcut: Capture Scrolling always gives the manual hint, true until auto-scroll lands in milestone 4, which picks
-// the hint by the Accessibility permission.
-export const barHeads = (area: Area | null): Record<CaptureMode, [headline: string, hint: string]> => ({
-  area: ['Capture New Area', 'Drag to choose the area'],
-  window: ['Capture Window', 'Click a window after Capture'],
-  full: ['Capture Full Screen', 'Every display, one screenshot each'],
-  last: ['Capture Last Area', area ? `${area.width} × ${area.height}` : 'No area yet: drag one after Capture'],
-  scroll: ['Capture Scrolling', 'Scroll the area yourself, then Done'],
-});
-
-// The bar's width on a display's work area: 960 pt, or narrower under 1000 pt, where the hint wraps under the headline
-// and the destination shrinks, so no control hides (F27). At about 150 % (`zoom`, the page's zoom factor; the View
-// menu's ⌘+ steps through 1.44 and 1.58) it is narrow too, and wider by the zoom as far as the work area allows.
-export const barSize = (workWidth: number, zoom = 1) => ({
-  width: Math.min(Math.round(960 * zoom), workWidth - 48),
-  narrow: workWidth < 1000 || zoom >= 1.4,
-});
+// The one-row bar's width on a display's work area: 1000 pt at 100 %, wider by the page's zoom (`zoom`; the View menu's
+// ⌘+ steps through 1.2, 1.44, …) as far as the work area allows. Where it does not fit, the bar is narrow: the modes
+// show their icons only (names in their tooltips), so no control clips (F14).
+export const barSize = (workWidth: number, zoom = 1) => {
+  const want = Math.round(1000 * zoom);
+  return { width: Math.min(want, workWidth - 48), narrow: want > workWidth - 48 };
+};
 
 // The first time the bar opens (F207).
 export const FIRST: CaptureOpts = { mode: 'area', oneShot: false, timer: 0, pointer: false };
@@ -84,7 +73,7 @@ const TIMERS: [number, string][] = [
   [10, '10 Seconds'],
 ];
 
-// The Options button's native menu: how to capture. Where the capture goes is the bar's Session | One-Shot, so Save to
+// The Options button's native menu: how to capture. Where the capture goes is the bar's destination pop-up, so Save to
 // is gone (F26). An option the mode cannot use is greyed, never hidden, and keeps its name (CAP-6).
 export function barOptions(st: CaptureOpts, a: OptionsActions): Item[] {
   const on = timed(st.mode);
@@ -102,3 +91,18 @@ export function barOptions(st: CaptureOpts, a: OptionsActions): Item[] {
     },
   ];
 }
+
+// The destination pop-up: One-Shot first, checked while chosen, then the session rows the editor's pop-up has
+// (menu.ts editorSessionMenu) (F12). ⇧⌘O is shown, not registered: the bar page takes it.
+export const destMenu = (oneShot: boolean, sessions: Item[], setOneShot: (on: boolean) => void): Item[] => [
+  {
+    label: 'One-Shot',
+    type: 'checkbox',
+    checked: oneShot,
+    accelerator: 'Shift+Command+O',
+    registerAccelerator: false,
+    click: () => setOneShot(true),
+  },
+  { type: 'separator' },
+  ...sessions,
+];

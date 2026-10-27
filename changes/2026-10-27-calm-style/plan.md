@@ -30,7 +30,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 
 - [x] 1.1 Tokens: `scripts/sync-tokens.mjs`, `design/product.json`, `design/tokens.lock.json`, `src/tokens.css`. F1, F2.
 - [x] 1.2 Every window loads `tokens.css` and sets `data-surface="system"`. F3.
-- [ ] 1.3 The one-row bar: layout, chosen pill, one blue button, tooltips, the destination pop-up. F4–F15.
+- [x] 1.3 The one-row bar: layout, chosen pill, one blue button, tooltips, the destination pop-up. F4–F15.
 - [ ] 1.4 Focus: no ring on open, the system ring after Tab, in the bar. F9, F10.
 
 ### Milestone 2: pop-up panels, recording and auto-scroll
@@ -123,3 +123,5 @@ The criteria as data are in [done.json](done.json).
 
 - 1.1: outside Files that change: root `package.json` gains `npm run tokens`; `snapmark-app/package.json` copies `tokens.css` into `dist/src/` and runs `test/style.test.ts` in `npm test`; `.prettierignore` skips the generated `tokens.css`, so its sha256 holds.
 - 1.2: new `snapmark-app/src/surface.ts`, one line every window loads in its `<head>` (before the first paint, CSP unchanged) to set `data-surface="system"` on macOS; not the shared preload, which can run before `<html>` exists. `tokens.css` holds no focus rule (it is the starter's build, never hand-edited), so each window carries its own `:focus-visible` rule on `--ds-color-focus`.
+- 1.3: `src/shared.d.ts` (outside Files that change): `BarInit` loses `heads`, as the headline and hint row go; `capture.ts` loses `barHeads` and gains `destMenu`. Record (F21) joins in milestone 2, so the bar has five modes now.
+- 1.3: replaced-style checks rewritten: `test/capture.test.ts` @F17 (headline and hint) gone, @F27 `barSize` became @F14; `test/keys.test.ts` @F18 key order and the ⇧⌘O/⇧⌘P captions became @F11 tooltips; `test/smoke.ts` @F14 (blue chosen mode), @F17 (headline), @F18 (key captions), @F20–@F24 (Session | One-Shot segment and greyed pop-up) and @F27 (wrapped hint) became @F4–@F8, @F11–@F14; F204's Tab order now runs through the destination.

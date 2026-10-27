@@ -3,6 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { app, BrowserWindow, globalShortcut, nativeImage, nativeTheme, screen } from 'electron';
+import { barSize } from '../src/capture';
 
 const MOCK = `<body style="margin:0;font:16px system-ui;background:#fff;color:#18181b">
   <header style="height:56px;background:#18181b;color:#fff;display:flex;align-items:center;padding:0 24px">Acme Dashboard</header>
@@ -1281,7 +1282,7 @@ app
         .map((i) => i.label)
         .join();
     const menuShape = (items: Item[]) => items.map((i) => (i.type === 'separator' ? '—' : i.label)).join('|');
-    // What the bar shows: the chosen mode, the focus, the headline row and the Capture button
+    // What the bar shows: the chosen mode, the focus, the destination and the Capture button
     const barLook = async (w: BrowserWindow) =>
       JSON.parse(
         await inWin(
@@ -1291,13 +1292,14 @@ app
           return JSON.stringify({
             mode: document.querySelector('#modes [aria-checked="true"]').dataset.mode,
             focus: a.id || a.dataset.mode || a.textContent.trim(),
-            headline: t('headline'), hint: t('hint'), label: t('capture-label'), keycap: document.querySelector('#capture kbd').textContent,
-            dest: [...document.querySelectorAll('#dest [role=radio]')].map((b) => b.textContent.trim() + ':' + b.getAttribute('aria-checked')),
-            face: t('session-face'), greyed: document.getElementById('session').getAttribute('aria-disabled'),
-            tooltip: document.getElementById('session').title,
+            label: t('capture-label'), keycap: document.querySelector('#capture kbd').textContent,
+            dest: (document.getElementById('dest-to').hidden ? '' : 'To ') + t('dest-face'),
           });`,
         ),
       );
+    // A token's colour as the page computes it, to compare with what a control has
+    const tokenColour = `const token = (v) => { const i = document.createElement('i'); i.style.color = 'var(' + v + ')'; document.body.append(i);
+      const c = getComputedStyle(i).color; i.remove(); return c; };`;
     const t0 = Date.now();
     const barWin = openCaptureBar(runner)!;
     const shownIn = await new Promise<number>((r) => barWin.once('ready-to-show', () => r(Date.now() - t0)));
@@ -1319,7 +1321,23 @@ app
     // @F11 the global Esc is the bar's only outside quiet runs, so this run never takes the owner's Esc (checked by hand,
     // validation.md; the registration is checked in test/capture.test.ts)
     viewer['@F11 the bar takes no global Esc in a quiet run'] = !globalShortcut.isRegistered('Escape');
-    // @F13 one blue filled button: Capture with its ↩ keycap, white text
+    // @F8 just opened, at rest: no control has a border or an outline
+    const atRest = await inWin(
+      barWin,
+      `return [...document.querySelectorAll('button')].every((b) => { const s = getComputedStyle(b);
+        return ['Top', 'Right', 'Bottom', 'Left'].every((e) => s['border' + e + 'Style'] === 'none' || s['border' + e + 'Width'] === '0px') &&
+          (s.outlineStyle === 'none' || s.outlineWidth === '0px'); });`,
+    );
+    viewer['@F8 @2026-10-27-calm-style at rest no bar control has a border or an outline'] = atRest;
+    // @F4 one row, at most 56 pt tall at 100 %
+    const rows = await inWin(
+      barWin,
+      `return new Set([...document.querySelectorAll('button')].map((b) => Math.round(b.getBoundingClientRect().top))).size`,
+    );
+    viewer['@F4 @2026-10-27-calm-style the capture bar is one row, at most 56 pt tall'] =
+      rows === 1 && bb.height <= 56 && barWin.webContents.getZoomFactor() === 1;
+    why.F4 = { rows, height: bb.height };
+    // @F13 (v0.24.0) one blue filled button: Capture with its ↩ keycap, white text
     const fills = JSON.parse(
       await inWin(
         barWin,
@@ -1328,28 +1346,44 @@ app
     );
     viewer['@F13 one blue filled button, Capture ↩'] =
       JSON.stringify(fills) === JSON.stringify([['capture', 'rgb(255, 255, 255)']]) && opened.label === 'Capture' && opened.keycap === '↩';
-    // @F18 every control shows its name and its key, and announces the key
-    const controls = await inWin(
+    // @F5 each mode: its icon and name side by side on one line, no key caption under or beside it
+    const modeFaces = await inWin(
       barWin,
-      `return JSON.stringify([...document.querySelectorAll('#controls button')].map((b) => [b.id || b.dataset.mode, b.innerText.replace(/\\s+/g, ' ').trim(), b.getAttribute('aria-keyshortcuts')]))`,
+      `return JSON.stringify([...document.querySelectorAll('#modes [role=radio]')].map((b) => {
+        const [i, n] = [b.querySelector('svg'), b.querySelector('.name')].map((e) => e.getBoundingClientRect());
+        const level = Math.abs(i.top + i.height / 2 - (n.top + n.height / 2)) <= 2 && i.right <= n.left && n.height < 24;
+        return [b.innerText.trim(), level];
+      }))`,
     );
-    const headKeys = await inWin(
-      barWin,
-      `return JSON.stringify([...document.querySelectorAll('#head button')].map((b) => b.getAttribute('aria-keyshortcuts')))`,
-    );
-    viewer['@F18 each bar control shows its name and key'] =
-      controls ===
+    viewer['@F5 @2026-10-27-calm-style each mode shows its icon and name on one line, no key caption'] =
+      modeFaces ===
         JSON.stringify([
-          ['close', 'Esc', 'Escape'],
-          ['area', 'New Area 1', '1'],
-          ['window', 'Window 2', '2'],
-          ['full', 'Full Screen 3', '3'],
-          ['last', 'Last Area 4', '4'],
-          ['scroll', 'Scrolling 5', '5'],
-          ['options', 'Options ⌥O', 'Alt+O'],
-          ['capture', 'Capture ↩', 'Enter Meta+Enter'],
-        ]) && headKeys === JSON.stringify(['Shift+Meta+O', 'Shift+Meta+O', 'Shift+Meta+P']);
-    why.F18 = { controls, headKeys };
+          ['New Area', true],
+          ['Window', true],
+          ['Full Screen', true],
+          ['Last Area', true],
+          ['Scrolling', true],
+        ]) && !(await inWin(barWin, `return !!document.querySelector('.key')`));
+    why.F5 = modeFaces;
+    // @F11 each control's key is in its tooltip; Capture alone shows a key, ↩
+    const tips = await inWin(
+      barWin,
+      `return JSON.stringify([...document.querySelectorAll('button')].map((b) => [b.title, b.innerText.replace(/\\s+/g, ' ').trim().includes('↩')]))`,
+    );
+    viewer['@F11 @2026-10-27-calm-style each control has its key in its tooltip; only Capture shows ↩'] =
+      tips ===
+      JSON.stringify([
+        ['Close (Esc)', false],
+        ['New Area (1)', false],
+        ['Window (2)', false],
+        ['Full Screen (3)', false],
+        ['Last Area (4)', false],
+        ['Scrolling (5)', false],
+        ['Destination (⇧⌘P)', false],
+        ['Options (⌥O)', false],
+        ['Capture (↩)', true],
+      ]);
+    why.F11 = tips;
     // @F19 no drawn label: resting the pointer on a button opens no window
     const beforeRest = BrowserWindow.getAllWindows().length;
     await inWin(barWin, `document.querySelector('[data-mode="window"]').dispatchEvent(new MouseEvent('mouseenter'));`);
@@ -1357,86 +1391,87 @@ app
     viewer['@F19 no hover label'] =
       BrowserWindow.getAllWindows().length === beforeRest &&
       !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('tip.html'));
-    // @F14, @F15, @F17: 1–5 choose New Area, Window, Full Screen, Last Area, Scrolling, never capture; each shows its
-    // headline and hint, and the chosen one a grey fill, a blue icon and accent text
-    const chosenLook = `const b = document.querySelector('#modes [aria-checked="true"]'); const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-      const cs = (e) => getComputedStyle(e);
-      return cs(b).backgroundColor === (dark ? 'rgb(58, 58, 60)' : 'rgb(229, 229, 234)') && cs(b.querySelector('svg')).color === 'rgb(36, 146, 255)' &&
-        cs(b.querySelector('.name')).color === (dark ? 'rgb(108, 180, 255)' : 'rgb(10, 98, 194)') &&
+    // @F14 (v0.24.0), @F15 (v0.24.0): 1–5 choose New Area, Window, Full Screen, Last Area, Scrolling, never capture.
+    // @F7: the chosen one is the soft pill in the normal text colour. @F6: only Capture is filled with the accent; no
+    // icon, label, border or outline is the accent, whichever mode is chosen
+    const chosenLook = `${tokenColour}
+      const b = document.querySelector('#modes [aria-checked="true"]'); const cs = (e) => getComputedStyle(e);
+      return cs(b).backgroundColor === token('--ds-color-soft') && cs(b).color === token('--ds-color-ink') && cs(b.querySelector('svg')).color === token('--ds-color-ink') &&
         [...document.querySelectorAll('#modes [aria-checked="false"]')].every((o) => cs(o).backgroundColor === 'rgba(0, 0, 0, 0)');`;
+    const accentOnlyCapture = `${tokenColour}
+      const accent = token('--ds-color-accent'); const cs = (e) => getComputedStyle(e);
+      const filled = [...document.querySelectorAll('body *')].filter((e) => cs(e).backgroundColor === accent).map((e) => e.id);
+      const inked = [...document.querySelectorAll('body *')].filter((e) => { const s = cs(e);
+        return [s.color, s.stroke, s.fill, s.borderTopColor, s.outlineColor].includes(accent); });
+      return JSON.stringify({ filled, inked: inked.map((e) => e.id || e.tagName) });`;
     const perMode: string[] = [];
+    const accents: string[] = [];
     let modesLook = true;
     for (const k of ['1', '2', '3', '4', '5']) {
       keyTo(barWin, k);
       await sleep(80);
       const l = await barLook(barWin);
-      perMode.push([l.mode, l.focus, l.headline, l.hint].join('|'));
+      perMode.push([l.mode, l.focus].join());
       modesLook &&= await inWin(barWin, chosenLook);
+      accents.push(await inWin(barWin, accentOnlyCapture));
     }
-    viewer['@F14 the chosen mode: grey fill, blue icon, accent text'] = modesLook;
-    viewer['@F15 1–5 choose a mode and never capture'] =
-      perMode.map((p) => p.split('|').slice(0, 2).join()).join(' ') === 'area,area window,window full,full last,last scroll,scroll' &&
-      runs.length === 0 &&
-      !barWin.isDestroyed();
-    viewer['@F17 each mode shows its headline and hint'] =
-      JSON.stringify(perMode.map((p) => p.split('|').slice(2))) ===
-      JSON.stringify([
-        ['Capture New Area', 'Drag to choose the area'],
-        ['Capture Window', 'Click a window after Capture'],
-        ['Capture Full Screen', 'Every display, one screenshot each'],
-        ['Capture Last Area', 'No area yet: drag one after Capture'],
-        ['Capture Scrolling', 'Scroll the area yourself, then Done'],
-      ]);
-    why.F15 = perMode;
-    // @F20 the headline row: Session | One-Shot, Session chosen, and the pop-up naming the current session
-    const sessionRows = await popWith(() => keyTo(barWin, 'P', ['shift', 'meta'])); // @F25
-    const currentRow = sessionRows.find((i) => i.checked);
-    const headRow = await inWin(
-      barWin,
-      `const [h, c] = ['head', 'controls'].map((id) => document.getElementById(id).getBoundingClientRect());
-      return h.bottom <= c.top && document.getElementById('dest').parentElement.id === 'head' && document.getElementById('session').parentElement.id === 'head';`,
+    viewer['@F7 @2026-10-27-calm-style the chosen mode is the soft pill in the normal text colour'] = modesLook;
+    viewer['@F6 @2026-10-27-calm-style only Capture is filled with the accent; nothing else is the accent'] = accents.every(
+      (a) => a === JSON.stringify({ filled: ['capture'], inked: [] }),
     );
-    viewer['@F20 the headline row holds Session | One-Shot and the session pop-up'] =
-      headRow &&
-      opened.dest.join() === 'Session:true,One-Shot:false' &&
-      !!currentRow &&
-      opened.face === currentRow.label &&
-      opened.tooltip.startsWith('Current session: ') &&
-      opened.greyed === 'false';
-    viewer['@F25 ⇧⌘P opens the session pop-up'] =
-      sessionRows.filter((i) => i.type === 'checkbox').length >= 2 && menuShape(sessionRows).endsWith('—|Older Sessions…|New Session');
-    // @F23 a pick in the pop-up makes that session current, and the pop-up says so; then the first one again
-    const otherRow = sessionRows.find((i) => i.type === 'checkbox' && !i.checked)!;
+    why.F6 = accents;
+    viewer['@F15 1–5 choose a mode and never capture'] =
+      perMode.join(' ') === 'area,area window,window full,full last,last scroll,scroll' && runs.length === 0 && !barWin.isDestroyed();
+    why.F15 = perMode;
+    // @F12 the destination pop-up (⇧⌘P, @F13) reads "To <session>" and lists One-Shot first, then the sessions, with the
+    // current one checked
+    const sessionRows = await popWith(() => keyTo(barWin, 'P', ['shift', 'meta']));
+    const currentRow = sessionRows.find((i) => i.checked);
+    const sessionName = (row?: Item) => (row?.label ?? '').replace(/ \(\d+\)$/, '');
+    viewer['@F12 @2026-10-27-calm-style the destination reads "To <session>" and lists One-Shot first'] =
+      opened.dest === `To ${sessionName(currentRow)}` &&
+      menuShape(sessionRows).startsWith('One-Shot|—|') &&
+      sessionRows[0].checked === false &&
+      menuShape(sessionRows).endsWith('—|Older Sessions…|New Session');
+    why.F12 = { dest: opened.dest, rows: menuShape(sessionRows) };
+    // @F13 a session picked in the pop-up becomes current, and the pop-up says so; then the first one again
+    const otherRow = sessionRows.find((i) => i.type === 'checkbox' && i.label !== 'One-Shot' && !i.checked)!;
     pick(sessionRows, otherRow.label!);
     await sleep(200);
     const afterPick = await barLook(barWin);
     const menuSays = (menuItems()[1] as { label?: string }).label ?? '';
-    viewer['@F23 a session picked in the bar becomes current'] =
-      afterPick.face === otherRow.label && menuSays.startsWith(otherRow.label!.replace(/ \(\d+\)$/, ''));
-    why.F23 = { picked: otherRow.label, face: afterPick.face, menuSays };
     pick(sessionRows, currentRow!.label!);
     await sleep(200);
-    // @F21, @F22 One-Shot: the pop-up greys and reads "Not in a session" and does not open; Capture says One-Shot
-    await inWin(barWin, `document.querySelectorAll('#dest [role=radio]')[1].click();`);
+    // @F13 One-Shot picked in the pop-up: the destination reads One-Shot, Capture says One-Shot, and the pop-up still
+    // opens, One-Shot checked; a session picked there goes back to it
+    pick(await popWith(() => inWin(barWin, `document.getElementById('dest').click();`)), 'One-Shot');
     await sleep(200);
     const oneShotLook = await barLook(barWin);
-    const noPopup = await popWith(() => keyTo(barWin, 'P', ['shift', 'meta']));
-    viewer['@F21 One-Shot greys the pop-up: Not in a session'] =
-      oneShotLook.face === 'Not in a session' && oneShotLook.greyed === 'true' && !noPopup.length;
-    viewer['@F22 One-Shot: Capture One-Shot ↩'] =
-      oneShotLook.label === 'Capture One-Shot' && oneShotLook.keycap === '↩' && oneShotLook.dest.join() === 'Session:false,One-Shot:true';
-    // @F24 ⇧⌘O switches between Session and One-Shot, both ways
+    const inOneShot = await popWith(() => keyTo(barWin, 'P', ['shift', 'meta']));
+    pick(inOneShot, currentRow!.label!);
+    await sleep(200);
+    const backLook = await barLook(barWin);
+    viewer['@F13 @2026-10-27-calm-style picking in the destination pop-up: a session, or One-Shot'] =
+      afterPick.dest === `To ${sessionName(otherRow)}` &&
+      menuSays.startsWith(sessionName(otherRow)) &&
+      oneShotLook.dest === 'One-Shot' &&
+      oneShotLook.label === 'Capture One-Shot' &&
+      inOneShot[0].checked === true &&
+      !inOneShot.some((i) => i.label !== 'One-Shot' && i.checked) &&
+      backLook.dest === `To ${sessionName(currentRow)}` &&
+      backLook.label === 'Capture';
+    why.F13 = { afterPick, menuSays, oneShotLook, inOneShot: menuShape(inOneShot), backLook };
+    // @F13 ⇧⌘O switches between One-Shot and the last session, both ways
     const dests: string[] = [];
     for (let i = 0; i < 2; i++) {
       keyTo(barWin, 'O', ['shift', 'meta']);
       await sleep(200);
       const l = await barLook(barWin);
-      dests.push(`${l.dest.join()}|${l.label}`);
+      dests.push(`${l.dest}|${l.label}`);
     }
-    viewer['@F24 ⇧⌘O switches Session and One-Shot'] =
-      JSON.stringify(dests) === JSON.stringify(['Session:true,One-Shot:false|Capture', 'Session:false,One-Shot:true|Capture One-Shot']);
-    keyTo(barWin, 'O', ['shift', 'meta']); // back to Session
-    await sleep(200);
+    viewer['@F13 @2026-10-27-calm-style ⇧⌘O switches One-Shot and the last session'] =
+      JSON.stringify(dests) === JSON.stringify(['One-Shot|Capture One-Shot', `To ${sessionName(currentRow)}|Capture`]);
+    why.F13dests = dests;
     // @F26 ⌥O opens Options: Timer and Show Mouse Pointer, no Save to; greyed for Scrolling, which is chosen now
     const viaKey = await popWith(() => keyTo(barWin, 'O', ['alt']));
     const greyedNow = viaKey.filter((i) => i.enabled === false).map((i) => i.label);
@@ -1448,8 +1483,8 @@ app
     const barAgain = openCaptureBar(runner);
     viewer['F206 one bar at a time'] = barAgain === barWin && barUp().length === 1;
     viewer['F208 the bar is on top on every Space'] = barWin.isAlwaysOnTop() && barWin.isVisibleOnAllWorkspaces();
-    // F204: ← → (and ↓ ↑, as a radio group) move between the modes, wrapping; Tab goes from the chosen mode to Options
-    // and Capture, and back through Close to the pop-up and the destination
+    // F204: ← → (and ↓ ↑, as a radio group) move between the modes, wrapping; Tab goes from the chosen mode to the
+    // destination, Options and Capture, and back to Close
     const moves: string[] = [];
     for (const k of ['Right', 'Left', 'Left', 'Right', 'Down', 'Up']) {
       keyTo(barWin, k);
@@ -1457,18 +1492,18 @@ app
       moves.push((await barLook(barWin)).mode);
     }
     const tabs: string[] = [];
-    for (const m of [[], [], ['shift'], ['shift'], ['shift'], ['shift'], ['shift']] as Electron.KeyboardInputEvent['modifiers'][]) {
+    for (const m of [[], [], [], ['shift'], ['shift'], ['shift'], ['shift']] as Electron.KeyboardInputEvent['modifiers'][]) {
       keyTo(barWin, 'Tab', m);
       await sleep(80);
       tabs.push((await barLook(barWin)).focus);
     }
     const arrowsOk = moves.join() === 'window,area,scroll,area,window,area';
-    const tabsOk = tabs.join() === 'options,capture,options,area,close,session,Session';
+    const tabsOk = tabs.join() === 'dest,options,capture,options,dest,area,close';
     why.F204 = { moves, tabs };
     // @F16 ↩ captures with the chosen mode and options; the bar is gone first (F205). Last Area, One-Shot, 5 Seconds
     // and the pointer, chosen as the owner clicks them
     keyTo(barWin, '4');
-    await inWin(barWin, `document.querySelectorAll('#dest [role=radio]')[1].click();`);
+    pick(await popWith(() => inWin(barWin, `document.getElementById('dest').click();`)), 'One-Shot');
     const chosen = await optionsOf(barWin);
     pick(chosen, '5 Seconds');
     pick(chosen, 'Show Mouse Pointer');
@@ -1490,22 +1525,26 @@ app
       barAfter.label === 'Capture One-Shot' &&
       reOptions === '5 Seconds,Show Mouse Pointer' &&
       saved === lastOpts;
-    // @F27 under 1000 pt of work area: the hint wraps under the headline, the bar grows, and every control stays whole
-    barReopened.setBounds({ ...barReopened.getBounds(), width: 760 });
-    await inWin(barReopened, `document.body.classList.add('narrow');`);
+    // @F14 on a 900 pt work area at 130 %: the bar is as wide as fits, the modes show their icons only, and every
+    // control sits inside the window, One-Shot's longer Capture included
+    const fit = barSize(900, 1.3);
+    barReopened.webContents.setZoomFactor(1.3);
+    barReopened.setBounds({ ...barReopened.getBounds(), width: fit.width });
+    await inWin(barReopened, `document.body.classList.toggle('narrow', ${fit.narrow});`);
     await sleep(500);
     const narrow = JSON.parse(
       await inWin(
         barReopened,
-        `const [h, t] = ['headline', 'hint'].map((id) => document.getElementById(id).getBoundingClientRect());
-        const whole = [...document.querySelectorAll('button')].every((b) => { const r = b.getBoundingClientRect();
-          return r.width > 0 && r.left >= 0 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5 && getComputedStyle(b).visibility === 'visible'; });
-        return JSON.stringify({ wrapped: t.top >= h.bottom - 1, whole, fits: document.documentElement.scrollHeight <= innerHeight + 1, width: innerWidth });`,
+        `const whole = [...document.querySelectorAll('button')].every((b) => { const r = b.getBoundingClientRect();
+          return r.width > 0 && r.left >= 0 && r.right <= innerWidth + 0.5 && r.top >= 0 && r.bottom <= innerHeight + 0.5 && getComputedStyle(b).visibility === 'visible'; });
+        const root = document.documentElement;
+        return JSON.stringify({ whole, fits: root.scrollWidth <= innerWidth + 1 && root.scrollHeight <= innerHeight + 1, width: innerWidth });`,
       ),
     );
-    viewer['@F27 a narrow bar wraps the hint and hides no control'] =
-      narrow.wrapped && narrow.whole && narrow.fits && narrow.width === 760 && barReopened.getBounds().height > bb.height;
-    why.F27 = narrow;
+    viewer['@F14 @2026-10-27-calm-style on a 900 pt work area at 130 % every bar control sits inside the window'] =
+      fit.narrow && narrow.whole && narrow.fits && barReopened.getBounds().width === fit.width;
+    why.F14 = { fit, ...narrow };
+    barReopened.webContents.setZoomFactor(1);
     keyTo(barReopened, 'Return', ['meta']);
     for (let i = 0; i < 30 && runs.length < 2; i++) await sleep(100);
     viewer['@F16 ↩ and ⌘↩ capture with the chosen mode'] =
@@ -1648,7 +1687,7 @@ app
     viewer['F222 a development build greys login and updates'] =
       general.greyed && JSON.stringify(general.notes) === JSON.stringify(['Only in the installed app.', 'Only in the installed app.']);
     // Capture: the bar's options. One-Shot, 10 Seconds and the pointer chosen here reach the bar; chosen back in the bar's
-    // Session | One-Shot and Options menu, Settings shows them when it comes forward (its focus listener, F227)
+    // destination pop-up and Options menu, Settings shows them when it comes forward (its focus listener, F227)
     await inWin(set, `document.getElementById('tab-capture').click(); document.getElementById('oneshot').click();`);
     await sleep(200);
     await inWin(set, `const t = document.getElementById('timer'); t.value = '10'; t.dispatchEvent(new Event('change'));`);
@@ -1659,7 +1698,7 @@ app
     await barReady(oneShotBar);
     const oneShotLabel = await inWin(oneShotBar, `return document.getElementById('capture-label').textContent`);
     const fromSettings = await optionsOf(oneShotBar);
-    await inWin(oneShotBar, `document.querySelectorAll('#dest [role=radio]')[0].click();`);
+    keyTo(oneShotBar, 'O', ['shift', 'meta']); // the last session again
     pick(fromSettings, 'None');
     pick(fromSettings, 'Show Mouse Pointer', false);
     await sleep(200);

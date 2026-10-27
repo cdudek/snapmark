@@ -24,7 +24,7 @@ import * as sessions from './sessions';
 import { exportPdf, exportZip } from './exporter';
 import { menuTemplate, appMenu, loginState, editorSessionMenu, copyMenu, quitMessage, MenuActions, MenuState, SessionInfo } from './menu';
 import { SHORTCUTS, KEY_GROUPS } from './keys';
-import { FIRST, barHeads, barLabel, barOptions, barSize, captureArgs, checkedCapture, rect, shotFiles } from './capture';
+import { FIRST, barLabel, barOptions, barSize, captureArgs, checkedCapture, destMenu, rect, shotFiles } from './capture';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
@@ -49,7 +49,7 @@ let customColors: string[] = []; // the colour panel's Custom row, newest first 
 let editorSize: { width: number; height: number } | null = null; // the size the owner last gave an editor window
 let viewerSize: { width: number; height: number } | null = null; // the size the owner last gave a session window
 let beautify: Beautify | null = null; // one-shot mode's settings as last used: the one preset
-let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, Session | One-Shot, Timer and Show Mouse Pointer, as last used
+let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, One-Shot, Timer and Show Mouse Pointer, as last used
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
@@ -415,7 +415,7 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
     height: h,
   });
   const win = new BrowserWindow({
-    ...at(width, 132), // until the page reports its height
+    ...at(width, 48), // one row; the page reports its height
     title: 'Capture Options',
     frame: false,
     transparent: true,
@@ -433,9 +433,9 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
     webPreferences: { preload: path.join(__dirname, 'preload.js'), enablePreferredSizeMode: true },
   });
   bar = win;
-  // As tall as its content, so a hint that wraps grows the bar instead of hiding a control (F27).
+  // As tall as its content: one row, 48 pt at 100 % (F4).
   win.webContents.on('preferred-size-changed', (_e, { height }) => win.setBounds(at(win.getBounds().width, height)));
-  // The page's zoom is known once it loads: at about 150 % the bar is narrow and wider (F27).
+  // The page's zoom is known once it loads: the bar is wider by it, and narrow where that does not fit (F14).
   // shortcut: a zoom changed while the bar is open shows the next time it opens; follow it live if the bar ever stays up.
   win.webContents.once('did-finish-load', () => {
     const fit = barSize(wa.width, win.webContents.getZoomFactor());
@@ -464,7 +464,6 @@ const barInit = (): BarInit => {
   return {
     ...captureOpts,
     label: barLabel(captureOpts),
-    heads: barHeads(area),
     session: cur && { label: cur.label, count: cur.count },
     narrow: barNarrow,
   };
@@ -473,7 +472,7 @@ function tellBar() {
   if (bar && barOpen()) bar.webContents.send('bar:state', barInit());
 }
 
-// The bar's Options menu, its Session | One-Shot and the Settings window's Capture tab change the same options; an
+// The bar's Options menu, its destination pop-up and the Settings window's Capture tab change the same options; an
 // open bar shows them.
 export function setCapture(change: Partial<Record<keyof CaptureOpts, unknown>>) {
   captureOpts = checkedCapture({ ...captureOpts, ...change }, captureOpts); // a bad value from a renderer is dropped
@@ -505,14 +504,30 @@ ipcMain.on('bar:options', (e, mode: CaptureMode, at: Area) => {
   const items = barOptions(captureOpts, { setTimer: (timer) => setCapture({ timer }), setPointer: (pointer) => setCapture({ pointer }) });
   popUnder(bar!, items, at);
 });
-// Session | One-Shot replaces Options ▸ Save to (F20, F24).
+// ⇧⌘O: One-Shot or the last session (F13).
 ipcMain.on('bar:one-shot', (e, oneShot: boolean) => fromBar(e) && setCapture({ oneShot }));
-// The session pop-up, shared with the editor: a pick makes that session current, as the menu bar's makeCurrent (F23).
-// One-Shot captures go to no session, so it does not open then (F21).
+// The destination pop-up (⇧⌘P): One-Shot, then the session pop-up shared with the editor. A session picked, found or
+// made becomes current, as the menu bar's makeCurrent, and the captures go to it again (F12, F13).
 ipcMain.on('bar:sessions', (e, at: Area) => {
-  if (!fromBar(e) || captureOpts.oneShot) return;
-  const pick = { moveTo: setActive, older: () => void otherSession(), newSession };
-  popUnder(bar!, editorSessionMenu(menuState(), active ?? '', pick), at);
+  if (!fromBar(e)) return;
+  const toSession = () => setCapture({ oneShot: false });
+  const pick = {
+    moveTo: (name: string) => {
+      toSession();
+      setActive(name);
+    },
+    older: () => void otherSession().then((found) => found && toSession()),
+    newSession: () => {
+      toSession();
+      newSession();
+    },
+  };
+  const sessionRows = editorSessionMenu(menuState(), captureOpts.oneShot ? '' : (active ?? ''), pick);
+  popUnder(
+    bar!,
+    destMenu(captureOpts.oneShot, sessionRows, (oneShot) => setCapture({ oneShot })),
+    at,
+  );
 });
 
 // One frame of the area, as `screencapture -R` gives it: Retina displays give 2x pixels.
