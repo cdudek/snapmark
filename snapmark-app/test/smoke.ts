@@ -1365,11 +1365,15 @@ app
     // @F5 each mode: its icon and name side by side on one line, no key caption under or beside it
     const modeFaces = await inWin(
       barWin,
-      `return JSON.stringify([...document.querySelectorAll('#modes [role=radio]')].map((b) => {
+      `const narrow = document.body.classList.contains('narrow'); // a small screen hides the names (F14); F5 is the full layout
+      document.body.classList.remove('narrow');
+      const faces = JSON.stringify([...document.querySelectorAll('#modes [role=radio]')].map((b) => {
         const [i, n] = [b.querySelector('svg'), b.querySelector('.name')].map((e) => e.getBoundingClientRect());
         const level = Math.abs(i.top + i.height / 2 - (n.top + n.height / 2)) <= 2 && i.right <= n.left && n.height < 24;
         return [b.innerText.trim(), level];
-      }))`,
+      }));
+      if (narrow) document.body.classList.add('narrow');
+      return faces;`,
     );
     viewer['@F5 @2026-10-27-calm-style each mode shows its icon and name on one line, no key caption'] =
       modeFaces ===
