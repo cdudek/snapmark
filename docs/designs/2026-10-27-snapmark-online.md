@@ -30,10 +30,12 @@ Strategy, pricing and the decision log live in `pokbytes/snapmark-context` (`str
 4. Every change has a trail: who asked, what was decided, which version, which PR, who approved.
 5. Freelancers and agencies work across several organisations with one login.
 
-**First release (owner): a closed release for the owner's own teams**, by waitlist and beta invitation only; there are no free self-serve accounts at first.
+**Release 1 (owner, revised later on 2026-10-27): runs locally.** Everything runs on the developer's machine except Cloud Storage for captures, which is real from the start and set up with Terraform. Deployment is planned in release 2. Because release 1 is local, the closed beta for the owner's teams (waitlist and invitations only, no free self-serve accounts) starts with release 2.
 
-- **In:** a public landing page with waitlist, the operator area (section 8.0), sign-in, organisations, workspaces, invitations, extension capture, feedback, versions, reviews, decisions, MCP, the Mac app's localhost bridge and **two-way session sync** (owner), GitHub read-only, i18n, tokens, Cloud Run deploys.
-- **Out until a later release:** Paddle billing (seats are granted by hand in the beta), company-domain claims, retention jobs, audit and decision export, the data processing agreement, a public Chrome Web Store listing (unlisted instead), the dev plugin.
+- **In release 1:** the public landing page with waitlist, the operator area (section 8.0), email magic-link sign-in, organisations, workspaces, invitations, extension capture (loaded unpacked; no Chrome Web Store account needed), feedback, versions, reviews, decisions, MCP, the Mac app's localhost bridge and **two-way session sync** (owner), i18n, tokens, the Cloud Storage bucket via Terraform.
+- **Email in release 1 (owner):** a console mail provider that prints every email (magic links included) to the terminal. Resend comes when the owner provides templates and a key; both are providers behind the same mail interface.
+- **Release 2 (owner):** deployment (Cloud Run, Cloud SQL and the rest via Terraform), Google and GitHub sign-in, the GitHub integration (deployments, PRs), Slack, Resend, redaction in the extension, the Chrome Web Store listing (unlisted), the closed beta.
+- **Out until later:** Paddle billing (seats are granted by hand in the beta), company-domain claims, retention jobs, audit and decision export, the data processing agreement, the dev plugin.
 
 **Non-goals for the first release**
 
@@ -129,7 +131,7 @@ Feedback given on production v1.4 → fixed in PR #212 → accepted on its previ
 
 ## 6. Sign-in
 
-- **Methods (owner):** email magic link, GitHub, Google (including Google Workspace).
+- **Methods (owner):** email magic link, GitHub, Google (including Google Workspace). Release 1 ships the magic link only (printed to the terminal); GitHub and Google come in release 2.
 - **Linking (owner):** automatic when the provider confirms the email is verified and it matches an existing user; otherwise by hand under Settings › Sign-in methods. The last method cannot be removed.
 - **Library (Claude's call):** Better Auth on our Postgres: magic link, GitHub, Google, account linking, organisations with invitations, and acting as the OAuth server for MCP. The builder verifies these features against its current docs before committing to it; the fallback is Auth.js plus our own organisation tables.
 - **Devices:** the extension, the Mac app and MCP clients sign in through the browser (OAuth with PKCE) and get their own revocable token per device. MCP follows the MCP authorisation spec.
@@ -222,7 +224,7 @@ snapmark-web/
 ├── src/server/
 │   ├── db/                # Drizzle schema, migrations, queries
 │   ├── auth/              # Better Auth, the one permission policy module
-│   ├── mail/              # base.ts, factory.ts, providers/resend.ts; React Email templates
+│   ├── mail/              # base.ts, factory.ts, providers/console.ts and resend.ts; React Email templates
 │   ├── storage/           # base.ts, factory.ts, providers/gcs.ts
 │   └── billing/           # base.ts, factory.ts, providers/paddle.ts
 ├── messages/en.json       # UI text, keys follow the glossary
@@ -235,7 +237,7 @@ snapmark-web/
 - A change to `contracts` that breaks clients is a new API version (`/api/v2`), never an edit in place. The server supports the current and the previous version, because the extension and the Mac app update later than the server.
 - Each repo has its own CI, rulesets, semantic-release and `CLAUDE.md`, all importing `snapmark-context`.
 - `src/domain` imports nothing that does I/O; `src/server/*` never imports from `src/app`.
-- Swappable services use the provider pattern: an interface (`base.ts`), a factory that picks the provider from settings (`factory.ts`), one file per provider. Resend is the first mail provider (owner).
+- Swappable services use the provider pattern: an interface (`base.ts`), a factory that picks the provider from settings (`factory.ts`), one file per provider. Mail providers: `console` (release 1, prints to the terminal) and `resend` (once the owner provides templates and a key) (owner).
 - Every permission check goes through the auth policy module; no route decides on its own.
 - **Cost of separate repos, accepted:** a change to a shared format is a kit release plus a bump PR per app, and versions can drift; Dependabot and the two-version API rule keep that in check.
 
@@ -342,7 +344,9 @@ Feedback text, written by members and by guests, ends up in coding agents. It is
 
 ## 13. Hosting and deploys
 
-- **Where (owner):** Cloud Run with one warm instance (1 vCPU, 1 GB) and Cloud SQL Postgres Micro, europe-west3, project `snapmark-ai`. About $25 to $30 a month at list price before VAT, without any commitment discount (owner: no commitment for now; Cloud SQL Micro has none anyway).
+- **Release 1 is local (owner):** Postgres in Docker Compose, the web app with `next dev`, background jobs inline through the Cloud Tasks shim, email to the terminal, the extension loaded unpacked, the Mac app from source. Only the captures bucket is real: Cloud Storage in `snapmark-ai`, created with Terraform, with a separate dev bucket. Secrets in a git-ignored `.env.local`, with `.env.example` committed.
+- **Infrastructure as code (owner):** Terraform for everything in Google Cloud, starting with the bucket in release 1 and adding the rest in release 2. State in a Cloud Storage backend bucket.
+- **From release 2, where (owner):** Cloud Run with one warm instance (1 vCPU, 1 GB) and Cloud SQL Postgres Micro, europe-west3, project `snapmark-ai`. About $25 to $30 a month at list price before VAT, without any commitment discount (owner: no commitment for now; Cloud SQL Micro has none anyway).
 - **Zero-downtime deploys (owner):**
   1. GitHub Actions builds the container and authenticates to Google Cloud through Workload Identity Federation (no keys).
   2. Database migrations follow expand and contract: a release only adds (columns, tables); removals ship in a later release once no running version uses them. Old and new app versions can always run against the same schema.
