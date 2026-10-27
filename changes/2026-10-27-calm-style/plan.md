@@ -37,7 +37,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 
 - [x] 2.1 Countdown, area picker and scrolling control in the calm style. F16–F19, F22.
 - [x] 2.2 Rebase picked-designs milestones 3 and 4 onto this branch, and restyle the recorder and recording control. F20.
-- [ ] 2.3 Record joins the bar as its sixth mode. F21.
+- [x] 2.3 Record joins the bar as its sixth mode. F21.
 
 ### Milestone 3: editor, session window, Settings and Keyboard Shortcuts
 
@@ -179,3 +179,6 @@ The criteria as data are in [done.json](done.json).
 - 2.2: the smoke's calm panel helper is `calmLook`, as their recording block has a `panelLook`.
 - 2.2: 2.1's area and countdown comments said "grey", which @F22 reads as a colour name. The words changed.
 - 2.2, rebased on milestone 1's fixes: the scrolling and recording controls ring as the bar does (finding 1). `src/scroll.ts`, outside Files that change, sets the ring `main.ts` passes in its query.
+- 2.3: the bar is 1080 pt at 100 % with six modes, as the mock. capture.test.ts @F14's widths change with it.
+- 2.3: picked-designs' @F59 and @F60 smoke checks read the chosen mode and the ticked frame rate, not the headline and hint.
+- 2.3, rebased on milestone 1's fixes: Record's tooltip is the bar's drawn one, "Record" and 6, and Capture reads "Record" through `capture.ts`'s `VERBS`. The @F11, @F21 and label checks read it.

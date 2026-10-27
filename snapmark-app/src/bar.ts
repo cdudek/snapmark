@@ -1,5 +1,5 @@
 // Renderer script for bar.html (classic script, like scroll.ts): the capture bar ⌃⇧5 opens. One row: Close, the modes,
-// where the capture goes, Options and Capture. A click, an arrow or 1–5 chooses a mode; ↩ or ⌘↩ captures, as Capture
+// where the capture goes, Options and Capture. A click, an arrow or 1–6 chooses a mode; ↩ or ⌘↩ captures, as Capture
 // is the default button; Esc closes; ⇧⌘O switches One-Shot and the last session, ⇧⌘P opens the destination pop-up, ⌥O
 // the Options menu. Each control's key is in its tooltip, which the bar draws; only Capture shows its key, ↩ (F11).
 // Wrapped in a function so its names stay out of the other pages' scope.
@@ -98,7 +98,7 @@
     const is = (letter: string) => e.code === `Key${letter}` || e.key.toUpperCase() === letter;
     const cmd = e.metaKey || e.ctrlKey;
     const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number | undefined>)[e.key]; // as a radio group
-    const n = !cmd && !e.altKey && e.key.length === 1 ? '12345'.indexOf(e.key) : -1;
+    const n = !cmd && !e.altKey && e.key.length === 1 ? '123456'.indexOf(e.key) : -1;
     const inModes = modes.indexOf(document.activeElement as HTMLButtonElement);
     if (e.key === 'Escape') window.snapmark.barClose();
     else if (e.key === 'Enter')

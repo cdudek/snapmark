@@ -80,6 +80,13 @@ assert.ok(
 // @A5 @2026-10-27-calm-style Options stays beside the destination; the spare room falls before Capture
 assert.ok(/#options \{\s+margin-right: auto;\s+\}/.test(bar) && !bar.includes('margin-left: auto'), '@A5 Capture alone at the right');
 
+// @F21 @2026-10-27-calm-style Record joins the one row as the sixth mode, its key in its drawn tooltip like the others
+assert.deepStrictEqual(
+  [...bar.matchAll(/data-mode="(\w+)"[^>]*?data-tip="([^"]+)"\s+data-key="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]} ${m[3]}`).slice(-2),
+  ['scroll Scrolling 5', 'record Record 6'],
+  '@F21 Record is the sixth mode',
+);
+
 // @F22 @2026-10-27-calm-style the panels' .html files have no colour literal either; their colours are --ds-* tokens.
 // The recorder is never shown and has no colours
 for (const panel of ['countdown.html', 'area.html', 'scroll.html', 'recorder.html']) {

@@ -39,11 +39,11 @@ export function panelAt(a: Area, wa: Area, width: number, height: number, gap = 
   return at(centred, a.y + a.height - gap - height);
 }
 
-// The one-row bar's width on a display's work area: 1000 pt at 100 %, wider by the page's zoom (`zoom`; the View menu's
+// The one-row bar's width on a display's work area: 1080 pt at 100 % with six modes, as the mock, wider by the page's zoom (`zoom`; the View menu's
 // ⌘+ steps through 1.2, 1.44, …) as far as the work area allows. Where it does not fit, the bar is narrow: the modes
 // show their icons only (names in their tooltips), so no control clips (F14).
 export const barSize = (workWidth: number, zoom = 1) => {
-  const want = Math.round(1000 * zoom);
+  const want = Math.round(1080 * zoom);
   return { width: Math.min(want, workWidth - 48), narrow: want > workWidth - 48 };
 };
 
@@ -88,9 +88,8 @@ export const shotFiles = (base: string, displays = 1) =>
   displays > 1 ? Array.from({ length: displays }, (_, i) => `${base}-${i + 1}.png`) : [`${base}.png`];
 
 // The Capture button follows the mode (spec screens.md: Capture, Record, Start Scrolling) and says where the capture
-// goes, so a One-Shot left on is never hidden (CAP-5); the bar draws its ↩ keycap beside it. Milestone 2's Record
-// mode adds `record: 'Record'` here.
-const VERBS: Partial<Record<CaptureMode, string>> = { scroll: 'Start Scrolling' };
+// goes, so a One-Shot left on is never hidden (CAP-5); the bar draws its ↩ keycap beside it.
+const VERBS: Partial<Record<CaptureMode, string>> = { scroll: 'Start Scrolling', record: 'Record' };
 export const barLabel = (o: { mode: CaptureMode; oneShot: boolean }) => (o.oneShot ? 'Capture One-Shot' : (VERBS[o.mode] ?? 'Capture'));
 
 // The bar's focus ring (F10, N1): macOS's accent colour (systemPreferences.getAccentColor, "rrggbbaa") where it reaches

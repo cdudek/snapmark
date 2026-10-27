@@ -78,11 +78,13 @@ assert.deepStrictEqual(
   '@F15 @F18 bar.html: each mode with its name and digit',
 );
 
-// @F14 @2026-10-27-calm-style the one-row bar: 1000 pt at 100 %, wider by the zoom as far as the work area allows;
-// narrow (the modes show their icons only) where that does not fit, so on a 900 pt work area at 130 % nothing clips
-assert.deepStrictEqual(barSize(1440), { width: 1000, narrow: false }, '@F14');
-assert.deepStrictEqual(barSize(1440, 1.3), { width: 1300, narrow: false }, '@F14 130 % on a wide display');
-assert.deepStrictEqual(barSize(1048), { width: 1000, narrow: false }, '@F14 just fits');
+// @F14 @F21 @2026-10-27-calm-style the one-row bar with its six modes: 1080 pt at 100 %, wider by the zoom as far as
+// the work area allows; narrow (the modes show their icons only) where that does not fit, so on a 900 pt work area at
+// 130 % nothing clips
+assert.deepStrictEqual(barSize(1440), { width: 1080, narrow: false }, '@F14');
+assert.deepStrictEqual(barSize(1512, 1.3), { width: 1404, narrow: false }, '@F14 130 % on a wide display');
+assert.deepStrictEqual(barSize(1440, 1.3), { width: 1392, narrow: true }, '@F14 130 % where it does not fit');
+assert.deepStrictEqual(barSize(1128), { width: 1080, narrow: false }, '@F14 just fits');
 assert.deepStrictEqual(barSize(1000), { width: 952, narrow: true }, '@F14');
 assert.deepStrictEqual(barSize(900, 1.3), { width: 852, narrow: true }, '@F14 900 pt at 130 %');
 
@@ -184,13 +186,14 @@ assert.deepStrictEqual(calls, [], '@F26 nothing else');
 // @F22 Capture One-Shot: the Capture button says where the capture goes (F212, CAP-5)
 assert.strictEqual(barLabel({ mode: 'area', oneShot: true }), 'Capture One-Shot', '@F22');
 assert.strictEqual(barLabel({ mode: 'area', oneShot: false }), 'Capture', '@F22');
-// @2026-10-27-calm-style and follows the mode (spec screens.md): Start Scrolling; One-Shot still says One-Shot
+// @2026-10-27-calm-style and follows the mode (spec screens.md): Start Scrolling, Record; One-Shot still says One-Shot
 assert.deepStrictEqual(
   MODES.map((m) => barLabel({ mode: m.id, oneShot: false })),
-  ['Capture', 'Capture', 'Capture', 'Capture', 'Start Scrolling'],
+  ['Capture', 'Capture', 'Capture', 'Capture', 'Start Scrolling', 'Record'],
   'Capture follows the mode',
 );
 assert.strictEqual(barLabel({ mode: 'scroll', oneShot: true }), 'Capture One-Shot', '@F22 One-Shot in Scrolling');
+assert.strictEqual(barLabel({ mode: 'record', oneShot: true }), 'Capture One-Shot', '@F22 One-Shot in Record');
 
 // F215 pointer: -C in New Area, Last Area and Full Screen, never in Window
 assert.deepStrictEqual(captureArgs('area', { pointer: true }, area), ['-C', '-R', '10,40,1280,720'], 'F215 area');

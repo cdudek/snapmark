@@ -1571,6 +1571,7 @@ app
           ['Full Screen', true],
           ['Last Area', true],
           ['Scrolling', true],
+          ['Record', true],
         ]) && !(await inWin(barWin, `return !!document.querySelector('.key')`));
     why.calmF5 = modeFaces;
     // @F11 each control's key is in its tooltip, which the bar draws (no native `title`); Capture alone shows a key, ↩
@@ -1587,6 +1588,7 @@ app
         ['Full Screen  3', false, false],
         ['Last Area  4', false, false],
         ['Scrolling  5', false, false],
+        ['Record  6', false, false],
         ['Destination  ⇧⌘P', false, false],
         ['Options  ⌥O', false, false],
         ['Capture  ↩', false, true],
@@ -1676,7 +1678,8 @@ app
     viewer['@F19 no hover label'] =
       BrowserWindow.getAllWindows().length === beforeRest &&
       !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('tip.html'));
-    // @F14 (v0.24.0), @F15 (v0.24.0): 1–5 choose New Area, Window, Full Screen, Last Area, Scrolling, never capture.
+    // @F14 (v0.24.0), @F15 (v0.24.0), @F59: 1–6 choose New Area, Window, Full Screen, Last Area, Scrolling, Record,
+    // never capture. @F21: with Record, the bar is still one row, at most 56 pt tall.
     // @F7: the chosen one is the soft pill in the normal text colour. @F6: only Capture is filled with the accent; no
     // icon, label, border or outline is the accent, whichever mode is chosen
     const chosenLook = `${tokenColour}
@@ -1707,18 +1710,34 @@ app
       );
     }
     // @F10 a digit chooses without the ring or a tooltip, also on the mode Shift-Tab just ringed
-    viewer['@F10 @2026-10-27-calm-style 1–5 choose a mode without the focus ring'] = digitRings.every((r) => r === 'false,false');
+    viewer['@F10 @2026-10-27-calm-style 1–6 choose a mode without the focus ring'] = digitRings.every((r) => r === 'false,false');
     why.calmDigits = digitRings;
-    // Capture's label follows the mode (spec screens.md): Start Scrolling for Scrolling; Record joins in milestone 2
-    viewer["@2026-10-27-calm-style Capture's label follows the mode"] = labels.join() === 'Capture,Capture,Capture,Capture,Start Scrolling';
+    // Capture's label follows the mode (spec screens.md): Start Scrolling for Scrolling, Record for Record
+    viewer["@2026-10-27-calm-style Capture's label follows the mode"] =
+      labels.join() === 'Capture,Capture,Capture,Capture,Start Scrolling,Record';
     why.calmLabels = labels;
+    const recordRow = JSON.parse(
+      await inWin(
+        barWin,
+        `const tops = [...document.querySelectorAll('button')].map((b) => Math.round(b.getBoundingClientRect().top));
+        const r = document.querySelector('[data-mode="record"]');
+        return JSON.stringify({ rows: new Set(tops).size, chosen: r.getAttribute('aria-checked'), sixth: [...document.querySelectorAll('#modes [role=radio]')].indexOf(r) });`,
+      ),
+    );
+    viewer['@F21 @2026-10-27-calm-style Record is the sixth mode, and the bar stays one row, at most 56 pt tall'] =
+      JSON.stringify(recordRow) === JSON.stringify({ rows: 1, chosen: 'true', sixth: 5 }) && barWin.getBounds().height <= 56;
+    why.calmF21 = { ...recordRow, bounds: barWin.getBounds() };
+    keyTo(barWin, '5'); // Scrolling chosen again, as @F26 below expects
+    await sleep(80);
     viewer['@F7 @2026-10-27-calm-style the chosen mode is the soft pill in the normal text colour'] = modesLook;
     viewer['@F6 @2026-10-27-calm-style only Capture is filled with the accent; nothing else is the accent'] = accents.every(
       (a) => a === JSON.stringify({ filled: ['capture'], inked: [] }),
     );
     why.calmF6 = accents;
-    viewer['@F15 1–5 choose a mode and never capture'] =
-      perMode.join(' ') === 'area,area window,window full,full last,last scroll,scroll' && runs.length === 0 && !barWin.isDestroyed();
+    viewer['@F15 @F59 1–6 choose a mode and never capture'] =
+      perMode.join(' ') === 'area,area window,window full,full last,last scroll,scroll record,record' &&
+      runs.length === 0 &&
+      !barWin.isDestroyed();
     why.F15 = perMode;
     // @F12 the destination pop-up (⇧⌘P, @F13) reads "To <session>" and lists One-Shot first, then the sessions, with the
     // current one checked
@@ -1827,7 +1846,7 @@ app
       tabs.push((await barLook(barWin)).focus);
       keyRings &&= await inWin(barWin, ringed);
     }
-    const arrowsOk = moves.join() === 'window,area,scroll,area,window,area';
+    const arrowsOk = moves.join() === 'window,area,record,area,window,area';
     const tabsOk = tabs.join() === 'dest,options,capture,options,dest,area,close';
     why.F204 = { moves, tabs };
     viewer['@F10 @2026-10-27-calm-style arrows and Tab keep the focus ring'] = keyRings;
@@ -2806,16 +2825,15 @@ app
     const recRates = rates(await optionsOf(recBar));
     pick(recRates, '15 fps');
     await sleep(200);
-    const at15 = await barLook(recBar);
-    viewer['@F59 6 chooses Record, with its headline and hint'] =
-      recLook.mode === 'record' && recLook.headline === 'Record' && recLook.hint === '200 × 150 · up to 30 seconds · 10 fps';
+    const at15 = ticked(rates(await optionsOf(recBar)));
+    viewer['@F59 6 chooses Record'] = recLook.mode === 'record' && recLook.focus === 'record';
     viewer['@F60 Frame Rate: 15, 10, 5, 4 and 2 fps, 10 by default, greyed unless Record'] =
       greyRates.map((i) => i.label).join() === '15 fps,10 fps,5 fps,4 fps,2 fps' &&
       greyRates.every((i) => i.enabled === false) &&
       recRates.every((i) => i.enabled !== false) &&
       ticked(recRates) === '10 fps' &&
-      at15.hint === '200 × 150 · up to 30 seconds · 15 fps';
-    why.F59 = { recLook, at15: at15.hint, ticked: ticked(recRates) };
+      at15 === '15 fps';
+    why.F59 = { recLook, at15, ticked: ticked(recRates) };
     // @F61: Capture opens the picker on the last area, with handles; ↩ keeps it
     let beforeRec = BrowserWindow.getAllWindows();
     keyTo(recBar, 'Return');

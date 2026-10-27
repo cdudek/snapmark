@@ -123,12 +123,12 @@ assert.deepStrictEqual(
   ],
   '@F18 F236 Capture bar',
 );
-// @F18 the bar's controls carry the keys the group lists, in bar order: Esc, 1–5, the destination (⇧⌘P, ⇧⌘O),
+// @F18 the bar's controls carry the keys the group lists, in bar order: Esc, 1–6 (@F59), the destination (⇧⌘P, ⇧⌘O),
 // Options and Capture
 const bar = read('src/bar.html');
 assert.deepStrictEqual(
   [...bar.matchAll(/aria-keyshortcuts="([^"]+)"/g)].map((m) => m[1]),
-  ['Escape', '1', '2', '3', '4', '5', 'Shift+Meta+P Shift+Meta+O', 'Alt+O', 'Enter Meta+Enter'],
+  ['Escape', '1', '2', '3', '4', '5', '6', 'Shift+Meta+P Shift+Meta+O', 'Alt+O', 'Enter Meta+Enter'],
   '@F18 the bar buttons carry the keys the group lists',
 );
 // @F11 @2026-10-27-calm-style and name them in the tooltips the bar draws (no native `title`, which never shows in this
@@ -142,6 +142,7 @@ assert.deepStrictEqual(
     'Full Screen  3',
     'Last Area  4',
     'Scrolling  5',
+    'Record  6',
     'Destination  ⇧⌘P',
     'Options  ⌥O',
     'Capture  ↩',
