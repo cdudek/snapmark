@@ -123,6 +123,9 @@ The criteria as data are in [done.json](done.json).
 
 ```
 /goal Deliver change 2026-10-27-calm-style in one go per changes/2026-10-27-calm-style/plan.md and facts.md: every milestone in ## Milestones, in order, each on its own branch milestone/calm-style-<n> cut from the previous one (the first from origin/main), so building never waits for a merge. Per feature: write the tests for its facts, build in the plan's folders, commit; run no checks, no lint and no tests between features, and start the next feature at once. An open question never stops the build: write it to changes/2026-10-27-calm-style/questions.md with the default you took, tell the engineer in one line, and carry on. Per milestone, once its features are committed: run `python3 scripts/verify_gate.py milestone 2026-10-27-calm-style` once, validate every fact and ask of that milestone into changes/2026-10-27-calm-style/validation.md (expected, observed, evidence, verdict), write findings.md; fix only correctness bugs and failing tests in one fix round, and put every UX finding plus the milestone's screenshots in front of the owner in plannotator and wait for their notes before changing any look; rerun the gate and paste its full output, open the PR milestone/calm-style-<n> -> main and arm auto-merge once the owner has reviewed. A later milestone opens its PR once the previous one has merged, after `git rebase --onto origin/main milestone/calm-style-<n-1>`, and keeps building meanwhile. Met when every milestone's PR is merged or open with auto-merge armed, the last gate line is `VERIFY PASS milestone 2026-10-27-calm-style <sha>` with <sha> equal to `git rev-parse HEAD`, validation.md has no `not met` row and findings.md no open blocking item. Also met, as a stop-and-ask, on `VERIFY BLOCKED`: summarize changes/2026-10-27-calm-style/verify/report.md for the engineer. Never edit protected paths (facts.md, done.json, lock.json, baselines, allowlists, sdlc.json checks). Tick plan tasks as they land; log departures under ## Revisions
+```
+
+## Revisions
 
 - 1.1: these files were outside Files that change.
   - Root `package.json` gains `npm run tokens`.
@@ -153,7 +156,13 @@ The criteria as data are in [done.json](done.json).
   - `test/smoke.ts` turns background throttling off for every window it opens. No app code changes.
 - Milestone 1 gate: @F10's check read the focus token as `color`, which computes another colour than the ring.
   - It now reads every token as an outline colour, as the ring draws it.
-```
-
 - Milestone 1 gate: the smoke limit rises from 150 to 240 s. Unthrottled windows reached 145 s before its last block.
 - Milestone 1 gate: the @F32 countdown read keeps its last digit when the countdown closes mid-read. Unthrottled timing exposed the race.
+- Milestone 1 review: the revisions move out of the Goal handover's code block, under their own heading.
+- Milestone 1 review, finding 1: Chromium draws `-webkit-focus-ring-color` as its fixed orange `#e59700`. Electron sets no system colour for it.
+  - `main.ts` passes `systemPreferences.getAccentColor()` through `capture.ts` `barRing`. Under 3:1, the ring takes the text colour.
+  - `BarInit` gains `ring`, and `label` becomes `labels`, one per mode, as Capture's label follows the mode.
+- Milestone 1 review, finding 4: the bar draws its tooltips in its own page, beside the control. No `title` attributes remain.
+  - `test/keys.test.ts` and `test/smoke.ts` @F11 read `data-tip` and `data-key` instead of `title`.
+- Milestone 1 review: smoke @F12 and @F13 expect the face without its date, and "Start Scrolling" while Scrolling is chosen.
+- Milestone 1 review: `test/capture.test.ts` imports `namePart` from `sessions.ts` for the face's name.
