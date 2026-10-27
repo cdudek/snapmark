@@ -15,7 +15,6 @@ import {
   screen,
   shell,
   Notification,
-  systemPreferences,
 } from 'electron';
 import type { IpcMainEvent } from 'electron';
 import { execFile } from 'child_process';
