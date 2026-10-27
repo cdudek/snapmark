@@ -205,7 +205,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 - [x] 12. Key frames and GIF timing. Proof: `@F69`, `@F70`, `@F77` pass.
 - [x] 13. Recording editor and frame data. Proof: `@F71`–`@F76` pass.
 - [x] 14. Session window, `session.md`, export. Proof: `@F78`–`@F80` pass.
-- [ ] 15. Gate. Proof: `VERIFY PASS milestone`.
+- [x] 15. Gate. Proof: `VERIFY PASS milestone`.
 
 ### Milestone 4
 
@@ -294,30 +294,30 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/smoke.ts`: the pop-up is greyed by `aria-disabled`, inside `#dest-wrap`, with its reason as `aria-describedby` (`@F36`, `@F45`, F115).
   - `test/smoke.ts`: the move and hex errors are `role="status"` (`@F44`, `@F56`).
   - `test/smoke.ts`: A15 and `@F56` keep the hex error while the value is bad, and clear it once valid, as interaction.md says.
-- 3.1: the GIF half is proven. JXA bridges plain objects to ImageIO's CF dictionaries with no extra work, and `test/spike-gif.ts` reads back 3 frames, delays 0.1, 0.5 and 1 s, and LoopCount 0. No dependency is needed.
+- 3.1: the GIF half is proven. JXA bridges plain objects to ImageIO's CF dictionaries with no extra work. `test/spike-gif.ts` reads back 3 frames, delays 0.1, 0.5 and 1 s, and LoopCount 0. No dependency is needed.
   - ImageIO labels the file `GIF87a` though it writes the 89a delay and loop blocks. `gif.ts` rewrites the label to `GIF89a`.
   - The 15 fps `desktopCapturer` half is not proven locally, since no Electron runs here. The milestone 3 smoke proves it at the gate.
 - 3.3 was built before 3.2 (step 12 before step 11): key frames and GIF timing are pure functions that need nothing from Record mode.
   - `keyFrames` compares each frame with the last key frame, as a 64-cell-wide grid of grey means. The threshold counts changed cells and starts at 0. The settled last frame is a key frame when it is a new picture. A fade can leave a key frame mid-fade until the cap raises the threshold.
   - `gifTiming` rounds the clock to hundredths, not each delay, so the GIF's total is the recording's length.
-- 3.2: Record records through the hidden `recorder.html`, one PNG file per frame as it comes. Done, ⌃⇧5, the menu bar icon and the 30 s cap hand the frames to `recordings.open` in `main.ts`, a stub that 3.4 fills with the recording editor. A cancelled recording reopened from Discarded goes there too.
+- 3.2: Record records through the hidden `recorder.html`, one PNG file per frame as it comes. Done, ⌃⇧5, the menu bar icon and the 30 s cap hand the frames to `recordings.open` in `main.ts`. That is a stub, which 3.4 fills with the recording editor. A cancelled recording reopened from Discarded goes there too.
   - ⓧ is the only cancel while recording, as Q9 and the ADR say: Esc stays the recorded app's (questions.md).
   - "Finding key frames…", Done greyed while processing and "Recording stopped" come with 3.4, which finds the key frames.
   - The countdown page also draws Record's outline, without the dimming, while it records, and says "Recording starts in 3 seconds".
   - Capture Scrolling keeps its panel as it is; 4.1 gives it the shared ⓧ and Done.
-- 3.2: the 15 fps half of 3.1 is proven in smoke ("3.1 spike: frames at 15 fps…"): the real recorder page grabs a test pattern, never the screen.
+- 3.2: the 15 fps half of 3.1 is proven in smoke, by "3.1 spike: frames at 15 fps…". The real recorder page grabs a test pattern, never the screen.
 - 3.2: tests that encoded the five-mode bar changed with it, as F59 and F60 add a mode and a menu group.
   - `test/capture.test.ts`: `@F15`, `@F17`, `@F26`, F216 and M2-3 hold six modes, Frame Rate and `fps`; the `@F31` source check names the new ⌃⇧5 line.
   - `test/keys.test.ts`: `@F9`, F236 and `@F18` list 1–6, Frame Rate and ⌃⇧5's "while recording, Done".
   - `test/smoke.ts`: `@F15`, `@F17`, `@F18`, `@F26`, F204, F207 and F223 read the sixth mode and the ticked 10 fps; the suite's timeout is 180 s.
-- 3.4: the recorder page also sends each frame 64 pixels wide, as `keyframes.ts` compares frames, so the key frames are found the moment Done is pressed. "Finding key frames…" and Done greyed are not drawn: FBK-6 shows them only past 400 ms, which never comes (questions.md). A recording reopened from Discarded reads its files again.
+- 3.4: the recorder page also sends each frame 64 pixels wide, as `keyframes.ts` compares frames. So the key frames are found the moment Done is pressed. "Finding key frames…" and Done greyed are not drawn: FBK-6 shows them only past 400 ms, which never comes (questions.md). A recording reopened from Discarded reads its files again.
 - 3.4: the recording editor is today's editor with a grid of frames as its canvas background. Each mark keeps its frame and is clipped to it; Show All Frames and the saved filmstrip move the marks with their frames. Undo runs each step in the grid it was made in. State keeps the marks in their frame's own pixels, with the frame's index.
-- 3.4: frames reach the editor page as file bytes through `editor:frame` and are decoded there with `createImageBitmap`, so the page needs no `file:` images in its CSP.
-- 3.4, frame data (Risks): not measured on a real 30 s recording, since nothing here may capture the owner's screen. Estimate: a 2560 × 1440 Retina frame of a web page is 1–2 MB as PNG, so 300 changing frames at 10 fps are 300–600 MB, over 100 MB. So `.edit/NNN/frames/` keeps each picture once (frames with the same bytes share one file), the key and marked frames as PNG and the rest as JPEG (quality 85). The GIF is written at the frames' own size; a large Retina GIF is the next size risk.
+- 3.4: frames reach the editor page as file bytes through `editor:frame` and are decoded there with `createImageBitmap`. So the page needs no `file:` images in its CSP.
+- 3.4, frame data (Risks): not measured on a real 30 s recording, since nothing here may capture the owner's screen. Estimate: a 2560 × 1440 Retina frame of a web page is 1–2 MB as PNG. So 300 changing frames at 10 fps are 300–600 MB, over 100 MB. So `.edit/NNN/frames/` keeps each picture once: frames with the same bytes share one file. It keeps the key and marked frames as PNG and the rest as JPEG (quality 85). The GIF is written at the frames' own size; a large Retina GIF is the next size risk.
 - 3.4: removing a recording's entry moves its GIF and frames to Discarded with it, and putting it back restores them (`sessions.ts` removeShot, restoreShot).
 - 3.4: `test/menu.test.ts` gains the recording's Copy or Save menu (`@F76`); `test/keys.test.ts` F236 lists ⇧⌘F.
 - 3.5: a recording's references in `session.md` are paragraphs, "1 (0.4 s): <note>", as microcopy.md words them, not a numbered list. A note's further lines are indented 3, so they stay in it and never become a code block. `entries` counts them as notes. Its image is "Recording <n>", and Reopen renumbers it and its GIF link.
-- 3.5: the PDF leaves out the GIF link, since it holds the filmstrip only; the ZIP already took all of `img/`, so the GIF comes with it and `.edit/` stays out.
+- 3.5: the PDF leaves out the GIF link, since it holds the filmstrip only. The ZIP already took all of `img/`, so the GIF comes with it and `.edit/` stays out.
 - 3.5: paused, the GIF shows the recording's first frame (`.edit/NNN.png`), and each Play starts it from there: an `<img>` cannot hold a GIF mid-way. Every thumbnail in the Screenshots tab carries its badge, "Recording" or "Screenshot".
 - 3.5: `test/sessions.test.ts`: 3.4's `session.md` assertion on a saved recording now reads the F78 entry.
 - Milestone 3 fix round (findings.md 25–38): `snapmark-app/README.md`, `docs/ux/setup.md` and `docs/ux/sitemap.md` were edited, a departure from Files that change. They had no Record, Frame Rate, recording control or recording editor.
@@ -327,4 +327,4 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/keyframes.test.ts`: `@F69` keeps the settled last frame as the threshold rises, and checks even gaps between the first and the last key frame only.
   - `test/sessions.test.ts`: `@F67` checks the temp frames are moved; a failed Edit Again leaves the entry, its GIF and its JSON as they were.
   - `test/smoke.ts`: the recording control is found by `scroll.html?fps=<n>#record`, since it now carries the frame rate.
-- Milestone 3 fix round: ⓧ with no current session in Session mode makes the session the recording editor would have made, instead of filing the recording as One-Shot.
+- Milestone 3 fix round: ⓧ with no current session in Session mode no longer files the recording as One-Shot. It makes the session the recording editor would have made.
