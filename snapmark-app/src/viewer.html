@@ -61,10 +61,10 @@
       /* Header: the traffic lights sit in it (titleBarStyle hiddenInset), so it drags the window */
       header {
         display: flex;
-        gap: 10px;
+        gap: var(--ds-space-8);
         align-items: center;
         height: 52px;
-        padding: 0 14px 0 84px;
+        padding: 0 14px 0 80px; /* clear of the traffic lights; at 720 pt the tabs and buttons keep their room (F29) */
         min-width: 0; /* a grid item: without it a long name widens the header past the window instead of shortening */
         border-bottom: var(--ds-border) solid var(--ds-color-edge);
         background: var(--ds-color-panel);
@@ -104,7 +104,7 @@
         cursor: text;
       }
       #pencil {
-        width: var(--ds-control-md);
+        width: 24px;
         padding: 0;
         background: none;
         opacity: 0;
@@ -159,6 +159,7 @@
         display: none;
       }
       #total {
+        font-size: var(--ds-type-control-size);
         white-space: nowrap;
         margin-right: auto;
       }

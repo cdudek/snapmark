@@ -75,6 +75,8 @@ let beautify: Beautify | null = null; // one-shot mode's settings as last used: 
 let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, One-Shot, Timer and Show Mouse Pointer, as last used
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
+const ZOOM_MAX = 1.3; // page zoom stops here (setZoom, F29)
+let zoom = 1; // every window's page zoom (setZoom)
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
 const registered = new Set<string>(); // global shortcuts macOS let us have
 // keyed by webContents.id; dirty = marks or text not saved yet
@@ -602,7 +604,7 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
 // The recording control (scroll.html#record) beside the area: never focused, so the recorded app keeps every key (F65).
 function recordPanel(a: Area, fps: number): BrowserWindow {
   const win = new BrowserWindow({
-    ...panelAt(a, screen.getDisplayMatching(a).workArea, 600, 64),
+    ...panelAt(a, screen.getDisplayMatching(a).workArea, Math.round(600 * zoom), Math.round(64 * zoom)),
     frame: false,
     transparent: true,
     roundedCorners: true,
@@ -803,7 +805,7 @@ let saidAccessibility = false; // "Auto-scroll needs Accessibility" is said once
 const SCROLL_SETTLE = 250; // ms after a scroll before the grab, for the page to draw it
 export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: boolean } = {}): Promise<BrowserWindow | null> {
   const ctl = new BrowserWindow({
-    ...panelAt(a, screen.getDisplayMatching(a).workArea, 600, 64), // the recording control's panel and place
+    ...panelAt(a, screen.getDisplayMatching(a).workArea, Math.round(600 * zoom), Math.round(64 * zoom)), // the recording control's panel and place
     frame: false,
     transparent: true,
     roundedCorners: true,
@@ -1265,6 +1267,7 @@ export function openViewer(name: string, into = root): BrowserWindow {
     trafficLightPosition: { x: 18, y: 19 },
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
+  zoomFit(win, [720, 480]);
   const id = win.webContents.id;
   const v: Viewer = { root: into, session: name, win, known: '' };
   viewers.set(id, v);
@@ -1618,9 +1621,35 @@ export function showShortcuts(): BrowserWindow {
     title: 'Keyboard Shortcuts',
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   }));
+  zoomFit(win, [560, 400]);
   void win.loadFile(path.join(__dirname, 'shortcuts.html'));
   focusApp();
   return win;
+}
+
+// Page zoom, View ▸ Actual Size, Zoom In and Zoom Out: Chromium's steps, half a level (1.2 ^ 0.5) apart, stopping at
+// 130 % (F29). Every page is a file and Chromium zooms per origin, so one zoom serves every window. The editor fits by
+// its More menu, Settings by its own size, the bar and the panels by theirs; the other windows grow (zoomFit).
+function setZoom(by: -1 | 0 | 1) {
+  const half = (2 * Math.log(zoom)) / Math.log(1.2); // the zoom level, in half levels
+  const next = by > 0 ? Math.floor(half + 1e-6) + 1 : Math.ceil(half - 1e-6) - 1;
+  zoom = by ? Math.min(ZOOM_MAX, 1.2 ** (next / 2)) : 1;
+  for (const w of BrowserWindow.getAllWindows()) {
+    w.webContents.setZoomFactor(zoom);
+    zoomFit(w);
+  }
+}
+
+// A window's least size in the page's points, wider and taller by the zoom, so the page always fits it (F29): the
+// session window's 720 × 480 is 936 × 624 at 130 %. One that is smaller grows.
+const leastSize = new WeakMap<BrowserWindow, [number, number]>();
+function zoomFit(win: BrowserWindow, least = leastSize.get(win)) {
+  if (!least || win.isDestroyed()) return;
+  leastSize.set(win, least);
+  const [w, h] = least.map((v) => Math.ceil(v * zoom));
+  win.setMinimumSize(w, h);
+  const [cw, ch] = win.getSize();
+  if (cw < w || ch < h) win.setSize(Math.max(cw, w), Math.max(ch, h));
 }
 
 ipcMain.handle('shortcuts:init', (): ShortcutsInit => ({ groups: KEY_GROUPS, singleKeys }));
@@ -1732,6 +1761,7 @@ const actions: MenuActions = {
   otherSession: () => void otherSession(),
   settings: () => void openSettings(),
   keyboardShortcuts: showShortcuts,
+  zoom: setZoom,
   installUpdate: () => autoUpdater.quitAndInstall(),
   quit: () => app.quit(),
 };

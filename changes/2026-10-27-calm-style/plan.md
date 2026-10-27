@@ -44,7 +44,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 - [x] 3.1 Editor: pill tools, one blue button, edgeless fields, the More menu. F23–F26, F31.
 - [x] 3.2 Session window. F23–F25.
 - [x] 3.3 Settings and Keyboard Shortcuts: pill tabs, a window that grows, accent switches. F27, F28.
-- [ ] 3.4 Zoom stops at 130 %, and every window fits. No colour literals left. F29, F30, N1.
+- [x] 3.4 Zoom stops at 130 %, and every window fits. No colour literals left. F29, F30, N1.
 
 ## Approach
 
@@ -201,3 +201,6 @@ The criteria as data are in [done.json](done.json).
 - 3.3: `src/preload.ts` and `src/shared.d.ts`, outside Files that change: `settingsFit`, so Settings tells main the page's size and main sizes the window to it at its zoom (F27).
 - 3.3: Settings' Timer pop-up loses the system bezel (an edge at rest) for the soft fill, with its chevron drawn beside it.
 - 3.3: Keyboard Shortcuts keeps its keycaps' edge (F231 asks for a cap); it has no controls, so it gets no ring query, and keys.test's F229 line stays.
+- 3.4: `src/menu.ts`, outside Files that change: View keeps its stock items, but Actual Size, Zoom In and Zoom Out call main's `setZoom`, as the stock roles cannot stop at 130 %.
+  - `test/menu.test.ts` F219 no longer reads View as the stock role; a new @F29 block checks View's items, keys and calls.
+- 3.4: the session window's header is tighter (gaps 8, the pencil 24 pt wide, the count at 13 px), so its tabs and buttons keep their room at 720 pt and at 130 % (F29).

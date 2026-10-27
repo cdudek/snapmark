@@ -194,4 +194,38 @@ assert.ok(read('src/main.ts').includes('win.setContentSize(Math.ceil(width * zoo
 for (const w of ['settings.html', 'shortcuts.html'])
   assert.ok(!/--ds-color-(?:dim|faint)\b/.test(read(`src/${w}`)), `@N1 ${w} has no dim text`);
 
+// @F30 @2026-10-27-calm-style no .html in src/ has a colour literal but the annotation palette: in its CSS (comments
+// aside) and its colour attributes, every literal is one of the annotation colours (the palette, Remove's red and
+// Highlight's yellow, as @F31 pins them). Everything else is a --ds-* token.
+const annotation = new Set(['#e5484d', '#facc15', ...palette.slice(1).map(([, c]) => c.slice(1, -1))]);
+for (const w of windows) {
+  const html = read(`src/${w}`);
+  const css = [...html.matchAll(/<style>([\s\S]*?)<\/style>|\sstyle="([^"]*)"/g)]
+    .map((m) => m[1] ?? m[2])
+    .join('\n')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  const attrs = [...html.matchAll(/\s(?:fill|stroke|stop-color|color|value)="([^"]*)"/g)].map((m) => m[1]).join('\n');
+  assert.deepStrictEqual(
+    colourLiterals(`${css}\n${attrs}`).filter((c) => !annotation.has(c.toLowerCase())),
+    [],
+    `@F30 ${w} has no colour literal but the annotation palette`,
+  );
+}
+
+// @F29 @2026-10-27-calm-style page zoom stops at 130 %: View's zoom is Snapmark's (test/menu.test.ts), and every window
+// fits it. The session window and Keyboard Shortcuts grow to their least size at that zoom; the scrolling and recording
+// controls are bigger by it; the bar is (capture.ts barSize), Settings sizes itself, the editor has More.
+const mainTs = read('src/main.ts');
+assert.ok(
+  mainTs.includes('const ZOOM_MAX = 1.3;') && mainTs.includes('zoom = by ? Math.min(ZOOM_MAX, 1.2 ** (next / 2)) : 1;'),
+  '@F29 the cap',
+);
+assert.ok(mainTs.includes('zoomFit(win, [720, 480]);') && mainTs.includes('zoomFit(win, [560, 400]);'), '@F29 the windows grow');
+assert.strictEqual(
+  (mainTs.match(/panelAt\(a, screen\.getDisplayMatching\(a\)\.workArea, Math\.round\(600 \* zoom\), Math\.round\(64 \* zoom\)\)/g) ?? [])
+    .length,
+  2,
+  '@F29 the panels',
+);
+
 console.log('style: ok');

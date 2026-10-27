@@ -113,3 +113,10 @@ Open questions met while building. Each has the default taken; the owner answers
 - **Default taken:** a radio that is on takes the accent with a white dot, as a check does (macOS draws them alike). The pop-up is a soft-filled button with its chevron, no bezel. The Settings window is 560 pt wide at 100 %, as before, and as tall as the tab shown.
 - **Milestone:** 3
 - **Answer:**
+
+## Q17 How a window fits 130 %
+
+- **Question:** F29 asks every window to fit at 130 % with nothing outside it. At its least size a window has 23 % less room at 130 %. Does the layout give way, or does the window grow?
+- **Default taken:** the editor gives way by its More menu (F26), Settings and the bar size themselves, and the session window and Keyboard Shortcuts grow: their least size is 720 × 480 and 560 × 400 points of page, so 936 × 624 and 728 × 520 at 130 %. The scrolling and recording controls are bigger by the zoom. The zoom steps stay Chromium's (110 %, 120 %), and the last one stops at 130 %.
+- **Milestone:** 3
+- **Answer:**

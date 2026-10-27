@@ -2,7 +2,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { app, BrowserWindow, globalShortcut, nativeImage, nativeTheme, screen, systemPreferences } from 'electron';
+import { app, BrowserWindow, globalShortcut, Menu, nativeImage, nativeTheme, screen, systemPreferences } from 'electron';
 import { barRing, barSize, contrast } from '../src/capture';
 
 const MOCK = `<body style="margin:0;font:16px system-ui;background:#fff;color:#18181b">
@@ -600,6 +600,11 @@ app
     const moreAt100 = await reach();
     win.webContents.setZoomFactor(1.3);
     const moreAt130 = await reach();
+    // @F29 the editor at its least size fits 130 %: nothing outside the window, no scroll beside the notes'
+    const editorAt130 = await win.webContents.executeJavaScript(`(() => { const d = document.documentElement;
+      const shown = [...document.querySelectorAll('header button, .actions button, aside, main')].filter((e) => e.getClientRects().length);
+      return d.scrollWidth <= innerWidth && d.scrollHeight <= innerHeight && shown.every((e) => { const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5; }); })()`);
+    inPage['@F29 @2026-10-27-calm-style the editor fits 130 % at its least size'] = editorAt130 === true && moreAt130.fits;
     win.webContents.setZoomFactor(1);
     inPage['@F26 @2026-10-27-calm-style at the minimum size the tools that do not fit are in More; none is clipped'] =
       moreAt130.more && [moreAt100, moreAt130].every((s) => s.fits && s.keys === 'c1234567' && s.picked && s.chosen && s.closed);
@@ -796,6 +801,26 @@ app
             opts.every((b) => cs(b).color === token('--ds-color-ink') && cs(b).backgroundColor === (b.matches('${chosen}') ? token('--ds-color-soft') : 'rgba(0, 0, 0, 0)')) });`,
         ),
       ) as CalmLook;
+    // @N1 a window's text on its surface, and its focus ring there, as [text, ring] contrast in light and in dark: the
+    // surface flattened through the see-through system colours (calmJs flat)
+    const calmContrast = async (w: BrowserWindow) => {
+      const seen: number[][] = [];
+      for (const theme of ['light', 'dark'] as const) {
+        nativeTheme.themeSource = theme;
+        await sleep(150);
+        seen.push(
+          JSON.parse(
+            await inWin(
+              w,
+              `${calmJs} const b = document.body; return JSON.stringify([contrast(rgba(getComputedStyle(b).color), flat(b)), contrast(rgba(token('--ds-color-focus')), flat(b))]);`,
+            ),
+          ) as number[],
+        );
+      }
+      nativeTheme.themeSource = 'system';
+      return seen;
+    };
+    const readable = (seen: number[][]) => seen.length === 2 && seen.every(([text, ring]) => text >= 4.5 && ring >= 3);
     // @F57 the first session window fills 90 % of the work area of the pointer's display, centred (1 pt for rounding)
     const viewWa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
     const within1 = (a: number, b: number) => Math.abs(a - b) <= 1;
@@ -813,6 +838,10 @@ app
       docLook.rest && !docLook.ring;
     viewer['@F24 @2026-10-27-calm-style the chosen tab of the session window is the soft pill in the text colour'] = docLook.chosen;
     why.calmViewer = docLook;
+    const viewerContrast = await calmContrast(view);
+    viewer['@N1 @2026-10-27-calm-style the session window: text 4.5:1 and the focus ring 3:1 on its surface, light and dark'] =
+      readable(viewerContrast);
+    why.calmN1viewer = viewerContrast;
     await inView(
       `const p = [...document.querySelectorAll('#doc p')].pop(); const r = document.createRange(); r.selectNodeContents(p); r.collapse(false); getSelection().removeAllRanges(); getSelection().addRange(r); p.closest('[contenteditable]').focus();`,
     );
@@ -953,6 +982,10 @@ app
         `const s = document.getElementById('session'); return s.getAttribute('aria-disabled') === 'true' && !s.querySelector('.chevron');`,
       );
     const noMenuAgain = await noSessionMenu(again);
+    const editorContrast = await calmContrast(again);
+    viewer['@N1 @2026-10-27-calm-style the editor: text 4.5:1 and the focus ring 3:1 on its surface, light and dark'] =
+      readable(editorContrast);
+    why.calmN1editor = editorContrast;
     // @F45 Edit Again: Session | One-Shot and the pop-up are greyed, the reason on their wrapper and read with the pop-up;
     // ⇧⌘O changes nothing
     for (const type of ['keyDown', 'keyUp'] as const)
@@ -1114,6 +1147,30 @@ app
     view.setSize(900, 900);
     await sleep(200);
     viewer['F123 a long name never wraps the buttons'] = fitsAt1100 && (await onlyNameShortens(true));
+    // @F29 page zoom stops at 130 %: View ▸ Zoom In, five times, goes 110 %, 120 %, then stops at 130 %. The session
+    // window at its least size grows to fit the zoom, with nothing outside it; Actual Size goes back to 100 %, and the
+    // least size to 720 × 480
+    const zoomVia = (label: string) =>
+      (Menu.getApplicationMenu()?.items.find((i) => i.label === 'View')?.submenu?.items ?? []).find((i) => i.label === label)?.click();
+    view.setSize(720, 480);
+    await sleep(200);
+    const zoomSteps: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      zoomVia('Zoom In');
+      await sleep(150);
+      zoomSteps.push(Math.round(view.webContents.getZoomFactor() * 1000) / 1000);
+    }
+    await sleep(300);
+    const grownView = view.getSize();
+    const viewAt130 = await inView(`const d = document.documentElement, h = document.querySelector('header');
+      return d.scrollWidth <= innerWidth && h.scrollWidth <= h.clientWidth && document.getElementById('external').getBoundingClientRect().right <= innerWidth;`);
+    zoomVia('Actual Size');
+    await sleep(300);
+    viewer['@F29 @2026-10-27-calm-style page zoom stops at 130 %; Actual Size goes back to 100 %'] =
+      zoomSteps.join() === '1.095,1.2,1.3,1.3,1.3' && view.webContents.getZoomFactor() === 1;
+    viewer['@F29 @2026-10-27-calm-style the session window grows to fit 130 % at its least size, nothing outside it'] =
+      grownView[0] >= 936 && grownView[1] >= 624 && viewAt130 === true && JSON.stringify(view.getMinimumSize()) === '[720,480]';
+    why.calmF29 = { zoomSteps, grownView, viewAt130 };
     await rename('smoke', 'Return');
     await waitFor(`document.getElementById('title').textContent === 'smoke'`);
     watching.destroy();
@@ -2110,6 +2167,10 @@ app
     viewer['@F23 @2026-10-27-calm-style Settings fills no button with the accent, and colours nothing with it'] =
       !settingsOpen.filled.length && !settingsOpen.inked.length;
     why.calmSettings = settingsOpen;
+    const settingsContrast = await calmContrast(firstSettings);
+    viewer['@N1 @2026-10-27-calm-style Settings: text 4.5:1 and the focus ring 3:1 on its surface, light and dark'] =
+      readable(settingsContrast);
+    why.calmN1settings = settingsContrast;
     viewer['F219 one Settings window'] &&=
       BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().includes('/settings.html')).length === 1;
     const tabNames = await inWin(
@@ -2308,6 +2369,10 @@ app
     ) as CalmLook;
     viewer['@F23 @F25 @2026-10-27-calm-style Keyboard Shortcuts uses no accent; no edge and no focus ring as it opens'] =
       !keysLook.filled.length && !keysLook.inked.length && keysLook.rest && !keysLook.ring;
+    const keysContrast = await calmContrast(keysWin);
+    viewer['@N1 @2026-10-27-calm-style Keyboard Shortcuts: text 4.5:1 and the focus ring 3:1 on its surface, light and dark'] =
+      readable(keysContrast);
+    why.calmN1keys = keysContrast;
     keysWin.setSize(980, 680);
     await sleep(200);
     const sheet = JSON.parse(
@@ -2338,6 +2403,21 @@ app
       sheet.rows === keyNames.length + toolNames.length &&
       JSON.stringify(sheet.names) === JSON.stringify(keyNames) &&
       JSON.stringify(sheet.tools) === JSON.stringify(toolNames);
+    // @F29 Keyboard Shortcuts at its least size grows to fit 130 %, with nothing outside it (it scrolls down, never across)
+    keysWin.setSize(560, 400);
+    await sleep(200);
+    for (let i = 0; i < 3; i++) zoomVia('Zoom In');
+    await sleep(400);
+    const grownKeys = keysWin.getSize();
+    const keysAt130 = await inWin(
+      keysWin,
+      `return document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth;`,
+    );
+    zoomVia('Actual Size');
+    await sleep(300);
+    viewer['@F29 @2026-10-27-calm-style Keyboard Shortcuts grows to fit 130 % at its least size, nothing outside it'] =
+      grownKeys[0] >= 728 && grownKeys[1] >= 520 && keysAt130 === true && keysWin.webContents.getZoomFactor() === 1;
+    why.calmF29keys = { grownKeys, keysAt130 };
     nativeTheme.themeSource = 'dark';
     await sleep(300);
     const darkLum: number = await inWin(

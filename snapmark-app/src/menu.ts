@@ -38,6 +38,7 @@ export interface MenuActions {
   otherSession(): void;
   settings(): void; // Settings… (⌘,): the Settings window
   keyboardShortcuts(): void; // ⌘/ in the app menu, and Settings ▸ Shortcuts ▸ Show All Shortcuts
+  zoom(by: -1 | 0 | 1): void; // View ▸ Zoom Out, Actual Size and Zoom In: every window, up to 130 % (F29)
   installUpdate(): void;
   quit(): void;
 }
@@ -169,8 +170,9 @@ export function menuTemplate(st: MenuState, a: MenuActions): Item[] {
 }
 
 // Snapmark's own app menu, the smallest one that gives ⌘, and ⌘/ while an editor or session window is in front.
-// File, Edit, View and Window stay Electron's stock roles, so ⌘C, ⌘V, ⌘W and the rest keep working.
-export function appMenu(a: Pick<MenuActions, 'settings' | 'keyboardShortcuts'>): Item[] {
+// File, Edit and Window stay Electron's stock roles, so ⌘C, ⌘V, ⌘W and the rest keep working. View is the stock
+// one but for its zoom, which is Snapmark's, so it stops at 130 % (F29).
+export function appMenu(a: Pick<MenuActions, 'settings' | 'keyboardShortcuts' | 'zoom'>): Item[] {
   return [
     {
       label: 'Snapmark',
@@ -191,7 +193,20 @@ export function appMenu(a: Pick<MenuActions, 'settings' | 'keyboardShortcuts'>):
     },
     { role: 'fileMenu' },
     { role: 'editMenu' },
-    { role: 'viewMenu' },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { label: 'Actual Size', accelerator: 'CommandOrControl+0', click: () => a.zoom(0) },
+        { label: 'Zoom In', accelerator: 'CommandOrControl+Plus', click: () => a.zoom(1) },
+        { label: 'Zoom Out', accelerator: 'CommandOrControl+-', click: () => a.zoom(-1) },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
     { role: 'windowMenu' },
   ];
 }

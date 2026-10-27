@@ -201,10 +201,27 @@ assert.strictEqual(appSettings.accelerator, 'Command+,', 'F219');
 appSettings.click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'settings', 'F219');
 assert.deepStrictEqual(
-  app.slice(1).map((i) => i.role),
-  ['fileMenu', 'editMenu', 'viewMenu', 'windowMenu'],
-  'F219 File, Edit, View and Window stay stock, so ⌘C, ⌘V and ⌘W keep working',
+  app.slice(1).map((i) => i.role ?? i.label),
+  ['fileMenu', 'editMenu', 'View', 'windowMenu'],
+  'F219 File, Edit and Window stay stock, so ⌘C, ⌘V and ⌘W keep working',
 );
+// @F29 @2026-10-27-calm-style View keeps the stock items, but its zoom is Snapmark's, so it stops at 130 % (main.ts setZoom)
+const view = sub(app[3]);
+assert.deepStrictEqual(
+  view.map((i) => i.role ?? i.label ?? i.type),
+  ['reload', 'forceReload', 'toggleDevTools', 'separator', 'Actual Size', 'Zoom In', 'Zoom Out', 'separator', 'togglefullscreen'],
+  '@F29 the View menu',
+);
+for (const [label, key, by] of [
+  ['Actual Size', 'CommandOrControl+0', 0],
+  ['Zoom In', 'CommandOrControl+Plus', 1],
+  ['Zoom Out', 'CommandOrControl+-', -1],
+] as const) {
+  const item = find(view, label);
+  assert.strictEqual(item.accelerator, key, `@F29 ${label}'s key, as the stock item's`);
+  item.click!({} as never, undefined, {} as never);
+  assert.strictEqual(calls.pop(), `zoom:${by}`, `@F29 ${label}`);
+}
 assert.deepStrictEqual(
   snapmark.filter((i) => i.role).map((i) => i.role),
   ['about', 'services', 'hide', 'hideOthers', 'unhide', 'quit'],
