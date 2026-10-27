@@ -9,7 +9,7 @@ supersedes: none
 
 # Snapmark online: team feedback on real UI, read by AI
 
-**Short version.** One product, one shared unit (the session), three ways in: the Mac app captures anything on screen, a Chrome extension captures DOM elements with their code context, and a web app is where the team talks, requests changes and verifies them. An AI agent reads and updates the same sessions through a remote MCP server. Feedback anchors to a **screenshot** (what the reviewer saw, never changes) plus **code hints** (selector, component, file:line, repo, branch) that help the agent find the code. Storage is cheap: about $0.05 to $0.40 per active user per month. Postgres beats a document store for this data. Specifications come later; this note only lays the idea out.
+**Short version.** One product, one shared unit (the session), three ways in: the Mac app captures anything on screen, a Chrome extension captures DOM elements with their code context, and a web app is where the team talks, requests changes and verifies them. An AI agent reads and updates the same sessions through a remote MCP server. Feedback anchors to a **screenshot** (what the reviewer saw, never changes) plus **code hints** (selector, component, file:line, repo, branch) that help the agent find the code. Storage is cheap: about $0.05 to $0.40 per active user per month. Postgres beats a document store for this data. The owner's decisions are in section 9. Specifications come later.
 
 ## 1. What the owner wants
 
@@ -136,12 +136,20 @@ The Google Cloud equivalent of DynamoDB is **Firestore** (a document store with 
 
 **Suggested stack:** Postgres (Cloud SQL in europe-west3, or Neon or Supabase to start at $0) for data, Cloud Storage for images in the existing `snapmark-ai` project, Cloud Run for the API and the MCP server, and Supabase Realtime or plain WebSockets for live comments.
 
-## 9. Things to settle before specifying
+## 9. Decisions (owner, 2026-10-27)
 
-1. Mac app pricing: free as the way in, or the $12.99 one-off from the roadmap?
-2. Which comes first: the Chrome extension or the Mac app's "Share"?
-3. Who verifies: anyone in the workspace, or only the person who requested the change?
-4. Guests: can a client comment without a paid seat?
-5. Privacy: screenshots can contain customer data and secrets. Auto-redact (roadmap M4) before upload, EU hosting, private bucket with signed URLs, a delete that really deletes.
-6. Retention per plan.
-7. Name and domain for the online service.
+Taken in dialog from the options above; each line names what was chosen over what.
+
+1. **Mac app: free.** Mac app and extension are free for local use; money comes from online seats. Over $12.99 one-off, free plus a paid Pro unlock, and $10 lifetime. Roadmap M6 ($12.99 one-off) needs rewriting.
+2. **Seat price: $4 per seat per month billed yearly ($48), $5 monthly, billed per workspace.** Free tier: one workspace, up to 3 members, 30 days of history. Over $7 per seat, $2 per seat and a flat workspace price.
+3. **First build: Chrome extension, web app and MCP server, with the Mac app as the localhost bridge from day one** (owner: "we need the mac app too, for the server and localhost"). Over Mac app Share first and web-only.
+4. **Database: Postgres**, with annotation shapes and anchors in `jsonb`. Over Firestore and Supabase.
+5. **Hosting: Neon (Frankfurt) now, Cloud SQL later** with `pg_dump` when it pays. Over Cloud SQL from day one and Supabase.
+6. **Verify: any human member, never the agent.** The requester is notified. Over requester-only and a reviewer role.
+7. **Guests: free.** Guests view, comment and draw; paid seats capture, verify, invite and use MCP. Needs a guest cap or abuse rule. Over every-member-pays and read-only links.
+8. **Retention:** free tier deleted after 30 days (with warning and export); paid sessions move to Nearline after 90 idle days and are **deleted 365 days after their last activity**. Over keep-forever and delete-when-verified.
+9. **Redaction: required before launch.** Emails, keys and tokens are detected and pixelated on the device before upload, with undo per item. Reuses roadmap M4; the extension needs its own detector. Over a manual tool first and no redaction.
+10. **Extension without the Mac app: works, fewer hints.** Capture and comment work on any OS; repo and branch come from the dev package or stay empty. Over Mac-app-required and a separate cross-platform helper.
+11. **Name: Snapmark everywhere** (app, extension, Snapmark Team). Domain still to check. Over a pok bytes umbrella and deciding later.
+
+**Still open:** Linear and GitHub integrations (scope and timing), auth provider, how live comments reach the browser, the guest cap.
