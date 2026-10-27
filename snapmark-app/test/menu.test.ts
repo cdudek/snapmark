@@ -275,6 +275,19 @@ share[0].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'copyImage', 'F113');
 share[1].click!({} as never, undefined, {} as never);
 assert.strictEqual(calls.pop(), 'saveAs', 'F113');
+// @F76 a recording's Copy or Save menu: Copy Filmstrip, Copy GIF, Save As…, Save GIF As… (screens.md)
+const gifCalls: string[] = [];
+const recShare = copyMenu(ed, { copyGif: () => void gifCalls.push('copyGif'), saveGifAs: () => void gifCalls.push('saveGifAs') });
+assert.deepStrictEqual(
+  recShare.map((i) => i.label),
+  ['Copy Filmstrip', 'Copy GIF', 'Save As…', 'Save GIF As…'],
+  '@F76',
+);
+recShare[0].click!({} as never, undefined, {} as never);
+assert.strictEqual(calls.pop(), 'copyImage', '@F76 Copy Filmstrip copies the marked image');
+recShare[1].click!({} as never, undefined, {} as never);
+recShare[3].click!({} as never, undefined, {} as never);
+assert.deepStrictEqual(gifCalls, ['copyGif', 'saveGifAs'], '@F76');
 
 // F114, @F23 the session pop-up, shared by the editor and the capture bar: at most 10 sessions with their counts, the
 // given one ticked, then a separator, Older Sessions… and New Session

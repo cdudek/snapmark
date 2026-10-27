@@ -482,6 +482,50 @@
         margin: 0;
         color: var(--muted);
       }
+      /* The recording editor: the facts line and Show All Frames above the grid of frames (screens.md). */
+      body.recording main {
+        align-content: start;
+        row-gap: 12px;
+      }
+      #rec-bar:not([hidden]) {
+        justify-self: stretch;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: var(--muted);
+      }
+      .link {
+        padding: 0;
+        border: 0;
+        background: none;
+        font: inherit;
+        color: var(--accent-text);
+        cursor: pointer;
+      }
+      .link:hover:not(:disabled) {
+        text-decoration: underline;
+      }
+      .link:disabled {
+        color: var(--muted);
+        cursor: default;
+      }
+      .ref-time {
+        display: block;
+        margin-bottom: 2px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      #beautify-off {
+        margin: 0;
+        color: var(--muted);
+      }
+      #beautify.off {
+        opacity: 0.45;
+      }
+      #save-error {
+        margin: 0;
+        color: var(--danger);
+      }
       .one-shot #caption-label,
       .one-shot #caption,
       .one-shot #refs,
@@ -862,6 +906,13 @@
       <label class="custom"><input type="color" id="color" value="#e5484d" /><i class="ring"></i>Custom…</label>
     </div>
     <main>
+      <div id="rec-bar" hidden>
+        <span id="rec-facts"></span>
+        <span id="all-wrap"
+          ><button id="all-frames" class="link" aria-keyshortcuts="Shift+Meta+F" title="⇧⌘F">Show All Frames</button></span
+        >
+        <ol id="frame-times" class="sr" aria-label="Frames"></ol>
+      </div>
       <div id="stage"><canvas id="canvas"></canvas></div>
     </main>
     <aside>
@@ -872,6 +923,7 @@
         <h2 id="refs-label" hidden>References</h2>
         <div id="refs"></div>
         <p id="notes-kept" hidden>Notes stay with Session. They are not copied.</p>
+        <p id="beautify-off" hidden>Beautify works on screenshots only.</p>
         <section id="beautify" aria-label="Beautify" hidden>
           <label>Beautify</label>
           <label class="row">Padding<output for="padding"></output><input type="range" id="padding" min="0" max="200" /></label>
@@ -897,6 +949,7 @@
           <div id="ratios" role="group" aria-labelledby="ratio-label"></div>
         </section>
         <p id="redacted" hidden></p>
+        <p id="save-error" role="status" hidden></p>
       </div>
       <div class="actions">
         <button id="cancel">Discard <kbd>⌘W</kbd></button>

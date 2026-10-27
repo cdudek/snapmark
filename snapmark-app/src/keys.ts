@@ -65,6 +65,7 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
       ['⇧⌘S', 'Save As…', 'the marked-up image as a PNG wherever you pick, without adding it to the session'],
       ['⇧⌘O', 'Session or One-Shot', 'where this screenshot goes; marks and notes stay'],
       ['⇧⌘P', 'Switch Session', 'move this screenshot to another session'],
+      ['⇧⌘F', 'Show All Frames', 'in a recording, every frame or only the key frames'],
       ['⌘W', 'Discard', 'the screenshot; Reopen Last Discarded in the menu brings it back'],
     ],
   },

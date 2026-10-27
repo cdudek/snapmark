@@ -55,7 +55,7 @@ After it, the owner records up to 30 s, marks the key frames, and the session ho
 | 3.1 | Spike: frames from `desktopCapturer` at 15 fps, a GIF from ImageIO via JXA | none (proof)  | `milestone/picked-designs-3` | done  |
 | 3.2 | Record mode, Frame Rate, picker keep, recording control, stop and cancel   | F59–F68, F81  | `milestone/picked-designs-3` | done  |
 | 3.3 | Key frames and GIF timing (pure functions)                                 | F69, F70, F77 | `milestone/picked-designs-3` | done  |
-| 3.4 | Recording editor and frame data                                            | F71–F76       | `milestone/picked-designs-3` | todo  |
+| 3.4 | Recording editor and frame data                                            | F71–F76       | `milestone/picked-designs-3` | done  |
 | 3.5 | Session window entry, `session.md` and export                              | F78–F80       | `milestone/picked-designs-3` | todo  |
 
 ### Milestone 4: Capture Scrolling scrolls by itself
@@ -203,7 +203,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 - [x] 10. Spike: 15 fps frames from a test page, and a 3-frame GIF with set delays. Proof: `test/spike-gif.ts` reads back three frames and their delays.
 - [x] 11. Record mode, panel, stop and cancel. Proof: `@F59`–`@F68`, `@F81` pass.
 - [x] 12. Key frames and GIF timing. Proof: `@F69`, `@F70`, `@F77` pass.
-- [ ] 13. Recording editor and frame data. Proof: `@F71`–`@F76` pass.
+- [x] 13. Recording editor and frame data. Proof: `@F71`–`@F76` pass.
 - [ ] 14. Session window, `session.md`, export. Proof: `@F78`–`@F80` pass.
 - [ ] 15. Gate. Proof: `VERIFY PASS milestone`.
 
@@ -310,3 +310,9 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/capture.test.ts`: `@F15`, `@F17`, `@F26`, F216 and M2-3 hold six modes, Frame Rate and `fps`; the `@F31` source check names the new ⌃⇧5 line.
   - `test/keys.test.ts`: `@F9`, F236 and `@F18` list 1–6, Frame Rate and ⌃⇧5's "while recording, Done".
   - `test/smoke.ts`: `@F15`, `@F17`, `@F18`, `@F26`, F204, F207 and F223 read the sixth mode and the ticked 10 fps; the suite's timeout is 180 s.
+- 3.4: the recorder page also sends each frame 64 pixels wide, as `keyframes.ts` compares frames, so the key frames are found the moment Done is pressed. "Finding key frames…" and Done greyed are not drawn: FBK-6 shows them only past 400 ms, which never comes (questions.md). A recording reopened from Discarded reads its files again.
+- 3.4: the recording editor is today's editor with a grid of frames as its canvas background. Each mark keeps its frame and is clipped to it; Show All Frames and the saved filmstrip move the marks with their frames. Undo runs each step in the grid it was made in. State keeps the marks in their frame's own pixels, with the frame's index.
+- 3.4: frames reach the editor page as file bytes through `editor:frame` and are decoded there with `createImageBitmap`, so the page needs no `file:` images in its CSP.
+- 3.4, frame data (Risks): not measured on a real 30 s recording, since nothing here may capture the owner's screen. Estimate: a 2560 × 1440 Retina frame of a web page is 1–2 MB as PNG, so 300 changing frames at 10 fps are 300–600 MB, over 100 MB. So `.edit/NNN/frames/` keeps each picture once (frames with the same bytes share one file), the key and marked frames as PNG and the rest as JPEG (quality 85). The GIF is written at the frames' own size; a large Retina GIF is the next size risk.
+- 3.4: removing a recording's entry moves its GIF and frames to Discarded with it, and putting it back restores them (`sessions.ts` removeShot, restoreShot).
+- 3.4: `test/menu.test.ts` gains the recording's Copy or Save menu (`@F76`); `test/keys.test.ts` F236 lists ⇧⌘F.
