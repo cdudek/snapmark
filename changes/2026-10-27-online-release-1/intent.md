@@ -49,6 +49,7 @@ Every request that this change answers, in the owner's own words (chat, 2026-10-
 | A27 | 2026-10-27 | owner, dialog | "Left sidebar" · "this way, by page navigation and so one would be a subnavigation later down the road"                                                                                                                                                                                                  | app navigation           | none      |
 | A28 | 2026-10-27 | owner, dialog | "Strict" (prompt injection from feedback text in the MCP)                                                                                                                                                                                                                                                | MCP                      | none      |
 | A29 | 2026-10-27 | owner, plannotator | "I want you to use use laws of ux, interaction guidelines, adhere to our design guidelines, use ui max plugins, sitemap properly planned, etc." | all | none |
+| A30 | 2026-10-27 | owner, chat | "important copy and marketing language always hopes and dreams level never, feature level communication" | landing, emails, onboarding | none |
 
 The owner's other decisions of 2026-10-27 are in `snapmark-context` (strategy note, section 9) and in the design. Release 1 builds only what "Proposed outcome" lists.
 
