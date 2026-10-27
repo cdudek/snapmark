@@ -29,7 +29,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 ### Milestone 1: tokens and the one-row capture bar
 
 - [x] 1.1 Tokens: `scripts/sync-tokens.mjs`, `design/product.json`, `design/tokens.lock.json`, `src/tokens.css`. F1, F2.
-- [ ] 1.2 Every window loads `tokens.css` and sets `data-surface="system"`. F3.
+- [x] 1.2 Every window loads `tokens.css` and sets `data-surface="system"`. F3.
 - [ ] 1.3 The one-row bar: layout, chosen pill, one blue button, tooltips, the destination pop-up. F4–F15.
 - [ ] 1.4 Focus: no ring on open, the system ring after Tab, in the bar. F9, F10.
 
@@ -122,3 +122,4 @@ The criteria as data are in [done.json](done.json).
 ## Revisions
 
 - 1.1: outside Files that change: root `package.json` gains `npm run tokens`; `snapmark-app/package.json` copies `tokens.css` into `dist/src/` and runs `test/style.test.ts` in `npm test`; `.prettierignore` skips the generated `tokens.css`, so its sha256 holds.
+- 1.2: new `snapmark-app/src/surface.ts`, one line every window loads in its `<head>` (before the first paint, CSP unchanged) to set `data-surface="system"` on macOS; not the shared preload, which can run before `<html>` exists. `tokens.css` holds no focus rule (it is the starter's build, never hand-edited), so each window carries its own `:focus-visible` rule on `--ds-color-focus`.

@@ -19,4 +19,25 @@ assert.ok(tokens.includes(':root[data-surface="system"] {'), '@F1 the system sur
 // @F2 @2026-10-27-calm-style a tokens.css edited by hand, or built from another commit, fails against the lock
 assert.strictEqual(crypto.createHash('sha256').update(tokens).digest('hex'), lock.sha256, '@F2 tokens.css matches tokens.lock.json');
 
+// @F3 @2026-10-27-calm-style every window loads tokens.css, then surface.js, in its <head> before its own styles;
+// surface.js sets data-surface="system" on the root on macOS only
+const windows = fs.readdirSync(path.join(app, 'src')).filter((f) => f.endsWith('.html'));
+assert.deepStrictEqual(
+  windows,
+  ['area.html', 'bar.html', 'countdown.html', 'editor.html', 'scroll.html', 'settings.html', 'shortcuts.html', 'viewer.html'],
+  '@F3 every window',
+);
+for (const w of windows) {
+  const head = read(`src/${w}`).split('</head>')[0];
+  const [link, script, style] = ['<link rel="stylesheet" href="tokens.css" />', '<script src="surface.js"></script>', '<style>'].map((s) =>
+    head.indexOf(s),
+  );
+  assert.ok(link > 0 && script > link && (style < 0 || style > script), `@F3 ${w} loads tokens.css and surface.js first`);
+  assert.ok(head.includes("default-src 'self';"), `@F3 ${w} keeps its CSP`);
+}
+assert.ok(
+  read('src/surface.ts').includes("if (/Mac/.test(navigator.platform)) document.documentElement.dataset.surface = 'system';"),
+  '@F3 data-surface="system" on macOS only',
+);
+
 console.log('style: ok');
