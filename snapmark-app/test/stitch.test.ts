@@ -78,20 +78,8 @@ assert.deepStrictEqual(
     ['added', 120],
     ['added', 90],
     ['same', 0],
-    ['same', 0],
   ].map(([s, n]) => ends.auto(s as Step, n as number, 120)),
-  ['scroll', 'scroll', 'scroll', 'end'],
-);
-// one match is a slow page, not the end
-const slow = stitcher();
-assert.deepStrictEqual(
-  [
-    ['added', 120],
-    ['same', 0],
-    ['added', 120],
-    ['same', 0],
-  ].map(([s, n]) => slow.auto(s as Step, n as number, 120)),
-  ['scroll', 'scroll', 'scroll', 'scroll'],
+  ['scroll', 'scroll', 'end'],
 );
 // @F84 the area did not move after 2 tries
 const stuck = stitcher();
@@ -100,6 +88,21 @@ assert.deepStrictEqual([stuck.auto('same', 0, 120), stuck.auto('same', 0, 120)],
 const owner = stitcher();
 assert.deepStrictEqual([owner.auto('added', 120, 120), owner.auto('added', 240, 120)], ['scroll', 'owner']);
 assert.strictEqual(stitcher().auto('lost', 0, 120), 'owner');
+// @F85 as surely after a long run: only the last two scrolls count, so 40 exact ones do not hide 80 extra rows
+const late = stitcher();
+const run40 = Array.from({ length: 40 }, () => late.auto('added', 120, 120));
+assert.ok(run40.every((r) => r === 'scroll'));
+assert.strictEqual(late.auto('added', 200, 120), 'owner', '@F85 late in a long page');
+// a scroll the page draws late (short, then long) is not the owner
+const lagging = stitcher();
+assert.deepStrictEqual(
+  [
+    ['added', 60],
+    ['added', 180],
+    ['added', 120],
+  ].map(([s, n]) => lagging.auto(s as Step, n as number, 120)),
+  ['scroll', 'scroll', 'scroll'],
+);
 
 // Fast enough for a Retina frame between grabs
 const big = page(2400, 4000);

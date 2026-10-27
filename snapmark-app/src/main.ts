@@ -297,6 +297,7 @@ async function countdown(seconds: number, at?: Area | null, rec = false): Promis
   let cancelled = false;
   counting = true;
   cancelCountdown = () => void (cancelled = true);
+  tray?.setToolTip('Cancel Countdown'); // the icon's tooltip names what a click does while busy (microcopy.md)
   if (!quiet) globalShortcut.register('Escape', cancelCountdown);
   const win = countdownPanel(seconds, at, rec);
   // destroy(), synchronous unlike close(): the overlay and the digit are gone before the wait below (F30)
@@ -317,6 +318,7 @@ async function countdown(seconds: number, at?: Area | null, rec = false): Promis
     end();
     if (!quiet) globalShortcut.unregister('Escape');
     cancelCountdown = null;
+    tray?.setToolTip('Snapmark');
     counting = false;
   }
 }
@@ -515,6 +517,7 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
       ipcMain.off('scroll:done', onPanel);
       for (const w of [rec, panel, outline]) if (w && !w.isDestroyed()) w.destroy();
       tray?.setTitle('');
+      tray?.setToolTip('Snapmark');
       stopRecording = null;
       recording = false;
       const r: Recording = { dir, frames, times, end: Math.min(cap, Date.now() - started) / 1000, fps: o.fps, thumbs, hashes };
@@ -568,6 +571,7 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
     ipcMain.on('recorder:failed', onFailed);
     ipcMain.on('scroll:done', onPanel);
     stopRecording = (keep) => finish(keep ? 'done' : 'cancel');
+    tray?.setToolTip('Stop Recording');
     // The clock on the panel and beside the menu bar icon; at the cap it stops as Done does. No first frame in 10 s
     // is a failed grab, so a recorder that never starts cannot keep Snapmark busy.
     const opened = Date.now();
@@ -792,6 +796,7 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
   };
   ipcMain.on('scroll:done', onDone);
   doneScrolling = () => void (stop ??= 'done'); // ⌃⇧5 and the menu bar icon (F88)
+  tray?.setToolTip('Done Scrolling');
   ctl.on('closed', () => (stop ??= 'cancel'));
   const st = stitcher();
   let mode: ScrollStatus['mode'] = desk.trusted() ? 'auto' : saidAccessibility ? 'manual' : 'denied';
@@ -822,7 +827,7 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
       }
       if (ended) stop ??= 'done'; // the page ended: the editor opens by itself (F83)
       if (last || ended) break;
-      if (mode === 'auto') {
+      if (mode === 'auto' && !stop) {
         asked = Math.round((points * f.height) / a.height);
         // a scroll macOS refuses (Accessibility taken back) is an area that does not scroll: the owner takes over
         await desk.scroll(a.x + a.width / 2, a.y + a.height / 2, points).catch(() => (mode = 'stuck'));
@@ -834,6 +839,7 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
     notify(`Capture Scrolling stopped: ${e instanceof Error ? e.message : String(e)}`);
   } finally {
     doneScrolling = null;
+    tray?.setToolTip('Snapmark');
     ipcMain.off('scroll:done', onDone);
     if (!ctl.isDestroyed()) ctl.close();
   }
@@ -1163,6 +1169,8 @@ export const desk = {
   dock: (on: boolean) => quiet || (on ? void app.dock?.show() : app.dock?.hide()),
   // Capture Scrolling scrolls by itself only with Accessibility allowed (F82, F86); `scroll` posts the scroll event.
   trusted: () => process.platform === 'darwin' && systemPreferences.isTrustedAccessibilityClient(false),
+  // Asking once adds Snapmark to the Accessibility list, off, where the owner can turn it on; macOS may show its prompt.
+  askTrust: (): void => void (process.platform === 'darwin' && systemPreferences.isTrustedAccessibilityClient(true)),
   scroll: scrollAt,
   // Record's picture of a display: its desktopCapturer source, which recorder.html plays. The smoke test's is 'test'.
   screenSource: async (display: number): Promise<string> => {
@@ -1650,9 +1658,10 @@ ipcMain.handle('settings:run', async (e, what: SettingsRun): Promise<SettingsIni
   else if (what === 'clearOld') await clearOldSessions();
   else if (what === 'checkUpdates') await checkForUpdatesNow();
   else if (what === 'loginItems') await shell.openExternal('x-apple.systempreferences:com.apple.LoginItems-Settings.extension');
-  else if (what === 'accessibility')
+  else if (what === 'accessibility') {
+    desk.askTrust();
     await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
-  else if (what === 'shortcuts') showShortcuts();
+  } else if (what === 'shortcuts') showShortcuts();
   return settingsInit();
 });
 

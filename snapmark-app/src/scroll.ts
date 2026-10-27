@@ -13,7 +13,7 @@
   if (recording && fps) el('clock').textContent = `0:00 of 0:30 · ${fps} fps`; // until the first status (F63)
   if (!recording)
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') done(true);
+      if (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement)) done(true); // a focused button's ↩ is its own
       if (e.key === 'Escape') done(false);
     });
   let said = 0;
@@ -23,6 +23,7 @@
     const tens = Math.floor(seconds / 10) * 10;
     if (tens > said) el('rec-say').textContent = `Recording, ${(said = tens)} seconds of 30`;
   });
+  let [state, told] = ['', 0]; // the status line is announced on each new state and every 5 frames
   window.snapmark.onScrollStatus(({ frames, height, step, mode }) => {
     const lost = step === 'lost';
     const tally = `${frames} frame${frames === 1 ? '' : 's'} · ${height.toLocaleString('en-US')} px tall`;
@@ -35,5 +36,10 @@
           stuck: 'This area did not scroll. Scroll it yourself, then Done.',
           denied: 'Auto-scroll needs Accessibility. Turn it on in Snapmark Settings ▸ Capture.',
         }[mode];
+    const now = lost ? 'lost' : mode;
+    if (now !== state || frames >= told + 5) {
+      [state, told] = [now, frames];
+      el('scroll-say').textContent = count.textContent;
+    }
   });
 })();

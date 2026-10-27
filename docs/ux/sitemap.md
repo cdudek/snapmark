@@ -99,13 +99,22 @@ CAPTURE BAR       bottom centre of the pointer's display, every Space, full scre
                   (session or one-shot) · Esc ──► nothing
                   Record ──► Area picker on the last area (↩ keeps it, a drag replaces it) ──► countdown 3 (or the
                   Timer) ──► RECORDING CONTROL
+                  Capture Scrolling ──► Area picker ──► SCROLLING CONTROL
 RECORDING CONTROL beside the area, never focused, never in a frame; ⓧ · "0:07 of 0:30 · 10 fps" · Done
                   Done, ⌃⇧5, the menu bar icon or 30 s ──► recording editor · ⓧ ──► Discarded (no message)
                   a failed grab ──► notification "Recording failed: <reason>. Nothing was added. Click to try again."
+SCROLLING CONTROL beside the area, never in a frame; ⓧ · status line · Done ↩; the menu bar icon's tooltip "Done Scrolling"
+                  auto (Accessibility allowed): "Scrolling · 12 frames · 4,200 px tall", the page ends ──► Editor
+                  manual: "Scroll down, then Done · …" · fell back: "This area did not scroll. Scroll it yourself, then Done."
+                  · no permission (once per launch): "Auto-scroll needs Accessibility. Turn it on in Snapmark Settings ▸ Capture."
+                  · lost: "Lost the place: scroll back up a little"
+                  Done, ↩, ⌃⇧5 or the menu bar icon ──► Editor · ⓧ or Esc ──► nothing kept
 SETTINGS WINDOW   title names the tab; one window, brought forward if open; reads its data again when it comes forward
                   General: Open Snapmark at login · Sessions folder Change… ──► folder panel · Clear Sessions Older Than 60 Days… ·
                   Snapmark <version> Check for Updates… ──► notification
-                  Capture: Save to · Timer · Show mouse pointer (the capture bar's options)
+                  Capture: Save to · Timer · Show mouse pointer (the capture bar's options) · Capture Scrolling: "Capture
+                  Scrolling scrolls by itself." or "… needs Accessibility to scroll by itself." with Open Accessibility
+                  Settings… ──► System Settings ▸ Privacy & Security ▸ Accessibility (Snapmark added to the list)
                   Shortcuts: Pick tools with single keys · the four global keys · Show All Shortcuts ──► KEYBOARD SHORTCUTS WINDOW
 AREA PICKER       see-through, display under the pointer, every Space; hint "Drag over the area to capture.
                   ⌃⇧3 captures it again each time. Esc cancels."

@@ -127,19 +127,20 @@ export function stitcher(maxHeight = MAX_HEIGHT) {
     add,
     result,
     // Auto-scroll, after each grab that followed one of its scrolls: `step` is what add() said, `asked` the rows that
-    // scroll was for. Two `same` in a row: the page ended ('end', F83), or, before it ever moved, the area does not
-    // scroll ('stuck', F84). `lost`, or more rows than were asked for, with some slack: the owner scrolled too ('owner',
-    // F85). Else 'scroll' on.
+    // scroll was for. A `same` once it has moved: the page ended ('end', F83); two `same` before it ever moved: the area
+    // does not scroll ('stuck', F84). `lost`, or more rows than asked for over the last two scrolls, with some slack:
+    // the owner scrolled too ('owner', F85); two, not one, so a scroll the page draws late is not the owner. Else 'scroll'.
     auto: (() => {
-      let [same, asked, got] = [0, 0, 0];
+      let [same, moved, lastAsk, lastGrew] = [0, false, 0, 0];
       return (step: Step, grew: number, ask: number): 'scroll' | 'end' | 'stuck' | 'owner' => {
-        [asked, got] = [asked + ask, got + grew];
-        if (step === 'lost' || got > asked * 1.25 + 8) return 'owner';
+        const owner = step === 'lost' || grew + lastGrew > (ask + lastAsk) * 1.25 + 8;
+        [lastAsk, lastGrew] = [ask, grew];
+        if (owner) return 'owner';
         if (step !== 'same') {
-          same = 0;
+          moved = true;
           return 'scroll';
         }
-        return ++same < 2 ? 'scroll' : got ? 'end' : 'stuck';
+        return moved ? 'end' : ++same < 2 ? 'scroll' : 'stuck';
       };
     })(),
     get height() {
