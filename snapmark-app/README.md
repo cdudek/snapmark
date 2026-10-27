@@ -147,6 +147,7 @@ npm test             # session and Markdown logic
 npm run smoke        # drives the real editor window: draws every tool, saves, checks pixels and Markdown
 npm run smoke:background  # the same, failing if Snapmark ever takes the front from your other apps (macOS)
 npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
+npm run tokens       # rebuild src/tokens.css from design-system-starter (see below)
 ```
 
 | Path                  | What                                                     |
@@ -162,8 +163,12 @@ npm run dist         # build DMG + ZIP into release/ (ad-hoc signed)
 | `src/sessions.ts`     | Session folders and `session.md` writing                 |
 | `src/ocr.ts`          | Text recognition (Vision through JXA), reading order     |
 | `src/redact.ts`       | Auto-redact's patterns, tested without Electron          |
+| `src/tokens.css`      | Colours, sizes and shapes, generated; never edit by hand |
+| `design/`             | `product.json` (Snapmark's values) and the tokens' lock  |
 | `assets/`             | App icon, menu bar template icon                         |
 | `build/`              | Packaging resources (icon, entitlements)                 |
+
+Every window reads its colours, sizes and shapes from `src/tokens.css`: [design-system-starter](https://github.com/cdudek/design-system-starter) at the commit in `design/tokens.lock.json`, with Snapmark's accent from `design/product.json`. To take a newer system, bump `COMMIT` in `scripts/sync-tokens.mjs` and run `npm run tokens` from the repo root; `test/style.test.ts` fails when `tokens.css` and the lock disagree.
 
 CI (`.github/workflows/ci.yml`) runs format check, lint, typecheck, unit test and the smoke test on every pull request.
 

@@ -20,7 +20,7 @@ Every `ux:` skill reads this file first. Keep it short and true.
 
 ## The rules it must follow
 
-- **Design system:** none. The editor's colours are CSS tokens in `snapmark-app/src/editor.html` (`--accent: #2492ff`); app and menu bar icons in `snapmark-app/assets/`.
+- **Design system:** [design-system-starter](https://github.com/cdudek/design-system-starter), pinned in `snapmark-app/design/tokens.lock.json` and built into `snapmark-app/src/tokens.css` by `npm run tokens`; Snapmark's rules are its `examples/snapmark.md`. App and menu bar icons in `snapmark-app/assets/`.
 - **Glossary:** none yet — `docs/ux/glossary-proposal.md`.
 - **Voice and writing rules:** none in the repo.
 - **Hard rules** that override UX preferences (from the owner's words):
