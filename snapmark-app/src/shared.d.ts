@@ -135,9 +135,10 @@ interface SettingsInit {
   singleKeys: boolean;
   keys: { cap: string; name: string; taken: boolean }[]; // the four global keys; taken: another app has it
   capture: CaptureOpts; // the capture bar's options
+  scrolls: boolean; // Accessibility allowed: Capture Scrolling scrolls by itself (F87)
 }
 type SettingsKey = 'login' | 'singleKeys' | 'oneShot' | 'timer' | 'pointer';
-type SettingsRun = 'chooseRoot' | 'clearOld' | 'checkUpdates' | 'loginItems' | 'shortcuts';
+type SettingsRun = 'chooseRoot' | 'clearOld' | 'checkUpdates' | 'loginItems' | 'accessibility' | 'shortcuts';
 
 // The Keyboard Shortcuts window (shortcuts.html): keys.ts KEY_GROUPS; the tools come from tools.js on the page.
 interface ShortcutsInit {

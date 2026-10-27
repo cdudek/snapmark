@@ -92,6 +92,10 @@
       select {
         font: inherit;
       }
+      #accessibility {
+        display: block;
+        margin-top: 8px;
+      }
       #root {
         margin-right: 8px;
       }
@@ -199,6 +203,11 @@
       <div>
         <input type="checkbox" id="pointer" /> <label for="pointer">Show mouse pointer</label>
         <p class="note">Areas only.</p>
+      </div>
+      <span class="k">Capture Scrolling:</span>
+      <div>
+        <span id="scrolls"></span>
+        <button id="accessibility">Open Accessibility Settings…</button>
       </div>
     </section>
 
