@@ -53,7 +53,7 @@ After it, the owner records up to 30 s, marks the key frames, and the session ho
 | #   | Feature                                                                    | Facts         | Branch                       | State |
 | --- | -------------------------------------------------------------------------- | ------------- | ---------------------------- | ----- |
 | 3.1 | Spike: frames from `desktopCapturer` at 15 fps, a GIF from ImageIO via JXA | none (proof)  | `milestone/picked-designs-3` | done  |
-| 3.2 | Record mode, Frame Rate, picker keep, recording control, stop and cancel   | F59–F68, F81  | `milestone/picked-designs-3` | todo  |
+| 3.2 | Record mode, Frame Rate, picker keep, recording control, stop and cancel   | F59–F68, F81  | `milestone/picked-designs-3` | done  |
 | 3.3 | Key frames and GIF timing (pure functions)                                 | F69, F70, F77 | `milestone/picked-designs-3` | done  |
 | 3.4 | Recording editor and frame data                                            | F71–F76       | `milestone/picked-designs-3` | todo  |
 | 3.5 | Session window entry, `session.md` and export                              | F78–F80       | `milestone/picked-designs-3` | todo  |
@@ -201,7 +201,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 ### Milestone 3
 
 - [x] 10. Spike: 15 fps frames from a test page, and a 3-frame GIF with set delays. Proof: `test/spike-gif.ts` reads back three frames and their delays.
-- [ ] 11. Record mode, panel, stop and cancel. Proof: `@F59`–`@F68`, `@F81` pass.
+- [x] 11. Record mode, panel, stop and cancel. Proof: `@F59`–`@F68`, `@F81` pass.
 - [x] 12. Key frames and GIF timing. Proof: `@F69`, `@F70`, `@F77` pass.
 - [ ] 13. Recording editor and frame data. Proof: `@F71`–`@F76` pass.
 - [ ] 14. Session window, `session.md`, export. Proof: `@F78`–`@F80` pass.
@@ -300,3 +300,13 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 - 3.3 was built before 3.2 (step 12 before step 11): key frames and GIF timing are pure functions that need nothing from Record mode.
   - `keyFrames` compares each frame with the last key frame, as a 64-cell-wide grid of grey means. The threshold counts changed cells and starts at 0. The settled last frame is a key frame when it is a new picture. A fade can leave a key frame mid-fade until the cap raises the threshold.
   - `gifTiming` rounds the clock to hundredths, not each delay, so the GIF's total is the recording's length.
+- 3.2: Record records through the hidden `recorder.html`, one PNG file per frame as it comes. Done, ⌃⇧5, the menu bar icon and the 30 s cap hand the frames to `recordings.open` in `main.ts`, a stub that 3.4 fills with the recording editor. A cancelled recording reopened from Discarded goes there too.
+  - ⓧ is the only cancel while recording, as Q9 and the ADR say: Esc stays the recorded app's (questions.md).
+  - "Finding key frames…", Done greyed while processing and "Recording stopped" come with 3.4, which finds the key frames.
+  - The countdown page also draws Record's outline, without the dimming, while it records, and says "Recording starts in 3 seconds".
+  - Capture Scrolling keeps its panel as it is; 4.1 gives it the shared ⓧ and Done.
+- 3.2: the 15 fps half of 3.1 is proven in smoke ("3.1 spike: frames at 15 fps…"): the real recorder page grabs a test pattern, never the screen.
+- 3.2: tests that encoded the five-mode bar changed with it, as F59 and F60 add a mode and a menu group.
+  - `test/capture.test.ts`: `@F15`, `@F17`, `@F26`, F216 and M2-3 hold six modes, Frame Rate and `fps`; the `@F31` source check names the new ⌃⇧5 line.
+  - `test/keys.test.ts`: `@F9`, F236 and `@F18` list 1–6, Frame Rate and ⌃⇧5's "while recording, Done".
+  - `test/smoke.ts`: `@F15`, `@F17`, `@F18`, `@F26`, F204, F207 and F223 read the sixth mode and the ticked 10 fps; the suite's timeout is 180 s.

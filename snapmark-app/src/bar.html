@@ -224,6 +224,11 @@
       body.narrow #session {
         max-width: 200px;
       }
+      /* Six modes: narrower mode buttons keep Capture whole at 760 pt (F27) */
+      body.narrow #modes [role='radio'] {
+        min-width: 56px;
+        padding: 0 2px;
+      }
     </style>
   </head>
   <body>
@@ -283,6 +288,13 @@
             <path d="M12 15v6.5M9 18.5l3 3 3-3" />
           </svg>
           <span class="name">Scrolling</span><span class="key">5</span>
+        </button>
+        <button role="radio" data-mode="record" aria-checked="false" tabindex="-1" aria-label="Record" aria-keyshortcuts="6">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="4" fill="currentColor" />
+          </svg>
+          <span class="name">Record</span><span class="key">6</span>
         </button>
       </div>
       <span class="sep" aria-hidden="true"></span>

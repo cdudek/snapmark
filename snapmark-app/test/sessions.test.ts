@@ -420,4 +420,28 @@ fs.mkdirSync(path.join(rtImg, '012'));
 assert.strictEqual(sessions.restoreShot(root, sessions.discardedIn(root, rt)[0]), 13, 'F19 a leftover img/012/ counts as taken');
 assert.ok(linksIn(entryOf(rtMd(), 13)).every((l) => l.src.startsWith('img/013/')) && fs.readdirSync(path.join(rtImg, '013')).length === 11);
 
+// @F67 a recording cancelled with ⓧ goes to Discarded: its frames, their times and the first frame as its picture; the
+// recording comes back from there with its frames where they are
+{
+  const recRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-test-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
+  const frames = ['0000.png', '0001.png'].map((f, i) => {
+    fs.writeFileSync(path.join(tmp, f), `frame ${i}`);
+    return path.join(tmp, f);
+  });
+  const dir = sessions.discardRecording(recRoot, 'demo', { dir: tmp, frames, times: [0, 0.1], end: 0.2, fps: 10 });
+  const [d] = sessions.discarded(recRoot);
+  assert.ok(d.dir === dir && d.recording && d.kind === 'capture' && d.session === 'demo', '@F67 in Discarded, as a recording');
+  assert.match(path.basename(dir), / · demo · recording$/, '@F67 named for Finder');
+  assert.strictEqual(fs.readFileSync(path.join(dir, 'image.png'), 'utf8'), 'frame 0', '@F67 the first frame is its picture');
+  const back = sessions.discardedRecording(d);
+  assert.deepStrictEqual(
+    { ...back, frames: back.frames.map((f) => fs.readFileSync(f, 'utf8')) },
+    { dir: path.join(dir, 'frames'), frames: ['frame 0', 'frame 1'], times: [0, 0.1], end: 0.2, fps: 10 },
+    '@F67 the frames and their times are kept',
+  );
+  fs.rmSync(recRoot, { recursive: true, force: true });
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
 console.log('sessions: ok');

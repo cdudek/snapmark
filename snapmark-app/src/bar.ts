@@ -1,5 +1,5 @@
 // Renderer script for bar.html (classic script, like scroll.ts): the capture bar ⌃⇧5 opens. Two rows: the chosen mode's
-// headline and hint with where the capture goes, then the controls. A click, an arrow or 1–5 chooses a mode; ↩ or ⌘↩
+// headline and hint with where the capture goes, then the controls. A click, an arrow or 1–6 chooses a mode; ↩ or ⌘↩
 // captures, as Capture is the default button; Esc closes; ⇧⌘O switches Session and One-Shot, ⇧⌘P opens the session
 // pop-up, ⌥O the Options menu. Names and keys are on the bar itself: native tooltips never show in this panel (WIN-2).
 // Wrapped in a function so its names stay out of the other pages' scope.
@@ -72,7 +72,7 @@
     const is = (letter: string) => e.code === `Key${letter}` || e.key.toUpperCase() === letter;
     const cmd = e.metaKey || e.ctrlKey;
     const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number | undefined>)[e.key]; // as a radio group
-    const n = !cmd && !e.altKey && e.key.length === 1 ? '12345'.indexOf(e.key) : -1;
+    const n = !cmd && !e.altKey && e.key.length === 1 ? '123456'.indexOf(e.key) : -1;
     const [inModes, inSegs] = [modes, segs].map((g) => g.indexOf(document.activeElement as HTMLButtonElement));
     if (e.key === 'Escape') window.snapmark.barClose();
     else if (e.key === 'Enter')

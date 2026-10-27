@@ -85,7 +85,7 @@ assert.deepStrictEqual(
 );
 const keys = (title: string) => KEY_GROUPS.find((g) => g.title === title)!.rows.map(([k]) => k);
 // @F9 the Keyboard Shortcuts window's Anywhere rows: screens.md's global keys, in its order and words; each ⌃⇧ row is a
-// key in SHORTCUTS, and every key has its row. ⌃⇧5's "while recording or scrolling, Done" waits for milestones 3 and 4.
+// key in SHORTCUTS, and every key has its row. ⌃⇧5 is Done while recording (@F66); "or scrolling" waits for milestone 4.
 assert.deepStrictEqual(
   KEY_GROUPS[0].rows,
   [
@@ -93,7 +93,7 @@ assert.deepStrictEqual(
     ['⌃⇧1', 'Capture New Area', 'drag an area, capture it, and keep it for ⌃⇧4'],
     ['⌃⇧3', 'Capture Full Screen', 'every display at once, one screenshot each'],
     ['⌃⇧2', 'Capture One-Shot', 'drag an area; not added to a session'],
-    ['⌃⇧5', 'Capture Options', 'the capture bar'],
+    ['⌃⇧5', 'Capture Options', 'the capture bar; while recording, Done'],
     ['⌃⇧N', 'New Session', 'also forgets the area'],
     ['↩ / Esc', 'Done / Cancel', 'while Capture Scrolling runs'],
   ],
@@ -113,22 +113,22 @@ assert.ok(main.includes("keys: KEY_GROUPS[0].rows\n    .filter(([k]) => k.starts
 assert.deepStrictEqual(
   KEY_GROUPS[1].rows,
   [
-    ['1–5', 'Pick a mode', 'new area, window, full screen, last area, scrolling'],
+    ['1–6', 'Pick a mode', 'new area, window, full screen, last area, scrolling, record'],
     ['← →', 'Move between modes', 'Tab moves on to Options, Capture and Session or One-Shot'],
     ['↩ / ⌘↩', 'Capture', ''],
     ['⇧⌘O', 'Session or One-Shot', 'where the capture goes'],
     ['⇧⌘P', 'Switch Session', 'pick the current session'],
-    ['⌥O', 'Options', 'Timer and Show Mouse Pointer'],
+    ['⌥O', 'Options', 'Frame Rate, Timer and Show Mouse Pointer'],
     ['Esc', 'Close', 'also from another app while the bar is open'],
   ],
   '@F18 F236 Capture bar',
 );
-// @F18 the bar's controls carry the keys the group lists, in bar order: the destination row, then Esc, 1–5, Options and
+// @F18 the bar's controls carry the keys the group lists, in bar order: the destination row, then Esc, 1–6 (@F59), Options and
 // Capture
 const bar = read('src/bar.html');
 assert.deepStrictEqual(
   [...bar.matchAll(/aria-keyshortcuts="([^"]+)"/g)].map((m) => m[1]),
-  ['Shift+Meta+O', 'Shift+Meta+O', 'Shift+Meta+P', 'Escape', '1', '2', '3', '4', '5', 'Alt+O', 'Enter Meta+Enter'],
+  ['Shift+Meta+O', 'Shift+Meta+O', 'Shift+Meta+P', 'Escape', '1', '2', '3', '4', '5', '6', 'Alt+O', 'Enter Meta+Enter'],
   '@F18 the bar buttons carry the keys the group lists',
 );
 // @F18 and show them: native tooltips never show in this panel, so ⇧⌘O and ⇧⌘P are captions on the bar too

@@ -1,5 +1,6 @@
 // Renderer script for countdown.html (classic script, like scroll.ts): the Timer's overlay over the area's display.
 // The query gives the first digit and the area in window points (none for Full Screen); main sends each next digit.
+// With no digit it is Record's outline while it records; `rec` is Record's countdown.
 (() => {
   const q = new URLSearchParams(location.search);
   // The page zoom: the window and the area are in points, the page in zoomed CSS pixels. About 150 % gets the larger
@@ -31,10 +32,16 @@
     digit.classList.remove('tick');
     void digit.offsetWidth; // restarts the animation for the new digit
     digit.classList.add('tick');
-    say.textContent = first ? `Capture in ${s} seconds. Esc cancels.` : String(s);
+    say.textContent = first ? `${q.has('rec') ? 'Recording starts' : 'Capture'} in ${s} seconds. Esc cancels.` : String(s);
   };
-  show(Number(q.get('s')), true);
-  place();
-  addEventListener('resize', place);
+  // No digit: the outline alone, without the dimming, while Record records the area
+  if (!Number(q.get('s'))) {
+    square.hidden = true;
+    outline.style.boxShadow = 'none';
+  } else {
+    show(Number(q.get('s')), true);
+    place();
+    addEventListener('resize', place);
+  }
   window.snapmark.onCountdown((s) => show(s));
 })();

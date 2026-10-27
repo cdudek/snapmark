@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
     <title>Capture Scrolling</title>
+    <!-- Shared by Capture Scrolling and Record (scroll.html#record, the recording control) -->
     <style>
       html,
       body {
@@ -55,12 +56,85 @@
         outline: 2px solid #fff;
         outline-offset: 1px;
       }
+      /* The recording control: ⓧ, the red dot and the clock, Done, the hint. Dark HUD in light and dark mode. */
+      :root {
+        color-scheme: light dark;
+        --rec-dot: light-dark(#ff3b30, #ff453a);
+      }
+      body.record {
+        padding: 0 16px 0 8px;
+        border-radius: 12px;
+      }
+      body.record .scroll,
+      body:not(.record) .rec {
+        display: none;
+      }
+      #rec-cancel {
+        padding: 6px;
+        background: transparent;
+        display: inline-flex;
+      }
+      #rec-cancel:hover {
+        background: rgb(255 255 255 / 0.15);
+      }
+      #rec-cancel svg {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+      }
+      #status {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap; /* the clock never truncates */
+        font-variant-numeric: tabular-nums;
+        font-size: 15px;
+      }
+      #dot {
+        width: 10px;
+        height: 10px;
+        flex: none;
+        border-radius: 50%;
+        background: var(--rec-dot);
+      }
+      #clock.warn {
+        color: #ffb224; /* near the cap */
+      }
+      #rec-done {
+        padding: 8px 20px;
+        background: #0f72db;
+        font-weight: 600;
+      }
+      #rec-hint {
+        font-size: 11px;
+        color: rgb(255 255 255 / 0.7);
+      }
+      .sr {
+        position: fixed;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+      }
     </style>
   </head>
   <body>
-    <div id="what">Scroll down, then Done<span id="count">Starting…</span></div>
-    <button id="cancel" title="Esc">Cancel</button>
-    <button id="done" title="↩">Done ↩</button>
+    <div id="what" class="scroll">Scroll down, then Done<span id="count">Starting…</span></div>
+    <button id="cancel" class="scroll" title="Esc">Cancel</button>
+    <button id="done" class="scroll" title="↩">Done ↩</button>
+    <button id="rec-cancel" class="rec" aria-label="Cancel recording">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9 9l6 6M15 9l-6 6" />
+      </svg>
+    </button>
+    <div id="status" class="rec"><span id="dot" aria-hidden="true"></span><span id="clock">0:00 of 0:30</span></div>
+    <button id="rec-done" class="rec">Done</button>
+    <span id="rec-hint" class="rec">⌃⇧5 stops</span>
+    <div id="rec-say" class="rec sr" role="status" aria-live="polite"></div>
     <script src="scroll.js"></script>
   </body>
 </html>

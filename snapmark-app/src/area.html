@@ -30,6 +30,23 @@
         box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.3);
         background: rgb(255 255 255 / 0.01);
       }
+      /* Record's last area, kept until a drag replaces it: outlined with handles, the rest dimmed as while dragging */
+      #box.kept {
+        outline: 2px solid #2492ff;
+      }
+      #box .h {
+        display: none;
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        margin: -5px;
+        border: 1px solid #2492ff;
+        border-radius: 50%;
+        background: #fff;
+      }
+      #box.kept .h {
+        display: block;
+      }
       #hint,
       #size {
         position: fixed;
@@ -64,7 +81,10 @@
   </head>
   <body>
     <div id="hint">Drag over the area to capture. ⌃⇧4 captures it again. Esc cancels.</div>
-    <div id="box" hidden></div>
+    <div id="box" hidden>
+      <i class="h" style="left: 0; top: 0"></i><i class="h" style="right: 0; top: 0"></i><i class="h" style="left: 0; bottom: 0"></i
+      ><i class="h" style="right: 0; bottom: 0"></i>
+    </div>
     <div id="size" hidden></div>
     <div id="say" aria-live="polite"></div>
     <script src="area.js"></script>

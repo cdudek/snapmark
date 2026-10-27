@@ -73,12 +73,29 @@ interface ScrollStatus {
 }
 
 // The capture bar (bar.html, ⌃⇧5): what it captures, where it goes and how. Kept in state.json under `capture`.
-type CaptureMode = 'area' | 'window' | 'full' | 'last' | 'scroll';
+type CaptureMode = 'area' | 'window' | 'full' | 'last' | 'scroll' | 'record';
 interface CaptureOpts {
   mode: CaptureMode;
   oneShot: boolean; // the bar's Session | One-Shot
   timer: number; // seconds after the area is known: 0, 3, 5 or 10
-  pointer: boolean; // Show Mouse Pointer (not for Window or Scrolling)
+  pointer: boolean; // Show Mouse Pointer (not for Window, Scrolling or Record)
+  fps: number; // Record's Frame Rate: 15, 10, 5, 4 or 2
+}
+
+// What Record hands over when it stops and keeps the frames (Done, ⌃⇧5, the menu bar icon, 30 s): one PNG file per
+// frame in `dir`, in order, each written as it was grabbed.
+interface Recording {
+  dir: string;
+  frames: string[]; // PNG files
+  times: number[]; // each frame's time in seconds from the first
+  end: number; // seconds from the first frame to the stop
+  fps: number;
+}
+
+// The recording control (scroll.html#record), every 100 ms.
+interface RecordStatus {
+  clock: string; // "0:07 of 0:30 · 10 fps"
+  seconds: number; // recorded so far
 }
 
 interface BarInit extends CaptureOpts {
@@ -122,8 +139,11 @@ interface Window {
     barSessions(at: Area): void; // the session pop-up under `at` (window points); nothing while One-Shot is chosen
     onBarState(cb: (s: BarInit) => void): void; // an option or the current session changed
     areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
-    scrollDone(ok: boolean): void; // Capture Scrolling: Done (true) or Cancel (false)
+    scrollDone(ok: boolean): void; // the scrolling or recording control: Done (true) or Cancel (false)
     onScrollStatus(cb: (status: ScrollStatus) => void): void;
+    onRecordStatus(cb: (status: RecordStatus) => void): void;
+    recorderFrame(t: number, png: Uint8Array): void; // recorder.html: the next frame, t ms after the first
+    recorderFailed(reason: string): void; // recorder.html: the screen could not be grabbed
     onCountdown(cb: (seconds: number) => void): void; // countdown.html: the next digit, each second
     init(): Promise<EditorInit>;
     save(data: EditorSave): Promise<number>;

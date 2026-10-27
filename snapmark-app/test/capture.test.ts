@@ -2,7 +2,23 @@ import assert from 'assert';
 import type { MenuItemConstructorOptions as Item } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { MODES, FIRST, captureArgs, shotFiles, timed, barHeads, barSize, barLabel, barOptions, checkedCapture } from '../src/capture';
+import {
+  MODES,
+  FIRST,
+  FPS,
+  REC_CAP_MS,
+  captureArgs,
+  shotFiles,
+  timed,
+  barHeads,
+  barSize,
+  barLabel,
+  barOptions,
+  checkedCapture,
+  clock,
+  panelAt,
+  recordStatus,
+} from '../src/capture';
 import type { OptionsActions } from '../src/capture';
 
 const calls: string[] = [];
@@ -35,18 +51,20 @@ assert.ok(
   '@F4 no arguments, a file per display',
 );
 
-// @F15 bar order: 1 New Area, 2 Window, 3 Full Screen, 4 Last Area, 5 Scrolling, left to right after Close; bar.html
-// draws them in this order with these digits (replaces F202)
+// @F15 bar order: 1 New Area, 2 Window, 3 Full Screen, 4 Last Area, 5 Scrolling, left to right after Close, and @F59
+// 6 Record; bar.html draws them in this order with these digits (replaces F202)
 assert.deepStrictEqual(
   MODES.map((m) => m.id),
-  ['area', 'window', 'full', 'last', 'scroll'],
-  '@F15',
+  ['area', 'window', 'full', 'last', 'scroll', 'record'],
+  '@F15 @F59',
 );
 assert.deepStrictEqual(
   MODES.map((m) => m.name),
-  ['New Area', 'Window', 'Full Screen', 'Last Area', 'Scrolling'],
-  '@F15',
+  ['New Area', 'Window', 'Full Screen', 'Last Area', 'Scrolling', 'Record'],
+  '@F15 @F59',
 );
+const barTs = fs.readFileSync(path.join(__dirname, '../../src/bar.ts'), 'utf8');
+assert.ok(barTs.includes("'123456'.indexOf(e.key)"), '@F59 the 6 key chooses Record');
 const barHtml = fs.readFileSync(path.join(__dirname, '../../src/bar.html'), 'utf8');
 assert.deepStrictEqual(
   [...barHtml.matchAll(/data-mode="(\w+)"[^>]*aria-label="([^"]+)"\s+aria-keyshortcuts="(\d)"/g)].map((m) => m.slice(1).join()),
@@ -54,19 +72,22 @@ assert.deepStrictEqual(
   '@F15 @F18 bar.html: each mode with its name and digit',
 );
 
-// @F17 the headline and hint per mode (spec screens.md); Last Area names the area's size, or that a drag comes first
+// @F17 the headline and hint per mode (spec screens.md); Last Area names the area's size, or that a drag comes first.
+// @F59 Record's hint: the area, the cap and the frame rate
 assert.deepStrictEqual(
-  barHeads(area),
+  barHeads(area, 10),
   {
     area: ['Capture New Area', 'Drag to choose the area'],
     window: ['Capture Window', 'Click a window after Capture'],
     full: ['Capture Full Screen', 'Every display, one screenshot each'],
     last: ['Capture Last Area', '1280 × 720'],
     scroll: ['Capture Scrolling', 'Scroll the area yourself, then Done'],
+    record: ['Record', '1280 × 720 · up to 30 seconds · 10 fps'],
   },
-  '@F17',
+  '@F17 @F59',
 );
-assert.deepStrictEqual(barHeads(null).last, ['Capture Last Area', 'No area yet: drag one after Capture'], '@F17 no area yet');
+assert.deepStrictEqual(barHeads(null, 10).last, ['Capture Last Area', 'No area yet: drag one after Capture'], '@F17 no area yet');
+assert.deepStrictEqual(barHeads(null, 15).record, ['Record', 'Drag an area · up to 30 seconds · 15 fps'], '@F59 no area yet');
 
 // @F27 under 1000 pt of work area the bar is narrow (the hint wraps, nothing hides); otherwise 960 pt
 assert.deepStrictEqual(barSize(1440), { width: 960, narrow: false }, '@F27');
@@ -87,17 +108,45 @@ assert.deepStrictEqual(captureArgs('full', { pointer: true }), ['-C'], 'F210 ful
 assert.throws(() => captureArgs('last', { pointer: false }, null), 'F210 an area mode needs the area');
 
 // @F26 Options menu: Timer and Show Mouse Pointer, the current choices checked; no Save to (the bar's Session | One-Shot
-// replaces it) and no New Session (the session pop-up has it)
+// replaces it) and no New Session (the session pop-up has it). @F60 Frame Rate comes first: 15, 10, 5, 4, 2 fps
 const shape = (items: Item[]) => items.map((i) => (i.type === 'separator' ? '—' : `${i.type ?? 'normal'} ${i.label}`));
 assert.deepStrictEqual(
   shape(opts()),
-  ['header Timer', 'radio None', 'radio 3 Seconds', 'radio 5 Seconds', 'radio 10 Seconds', '—', 'checkbox Show Mouse Pointer'],
-  '@F26',
+  [
+    'header Frame Rate',
+    'radio 15 fps',
+    'radio 10 fps',
+    'radio 5 fps',
+    'radio 4 fps',
+    'radio 2 fps',
+    '—',
+    'header Timer',
+    'radio None',
+    'radio 3 Seconds',
+    'radio 5 Seconds',
+    'radio 10 Seconds',
+    '—',
+    'checkbox Show Mouse Pointer',
+  ],
+  '@F26 @F60',
 );
 const checked = (items: Item[]) => items.filter((i) => i.checked).map((i) => i.label);
-assert.deepStrictEqual(checked(opts()), ['None'], '@F26 first time');
-assert.deepStrictEqual(checked(opts({ oneShot: true, timer: 5, pointer: true })), ['5 Seconds', 'Show Mouse Pointer'], '@F26');
-assert.deepStrictEqual(checked(opts({ timer: 3 })), ['3 Seconds'], '@F26');
+assert.deepStrictEqual(checked(opts()), ['10 fps', 'None'], '@F26 @F60 first time: 10 fps');
+assert.deepStrictEqual(checked(opts({ oneShot: true, timer: 5, pointer: true })), ['10 fps', '5 Seconds', 'Show Mouse Pointer'], '@F26');
+assert.deepStrictEqual(checked(opts({ timer: 3, fps: 15 })), ['15 fps', '3 Seconds'], '@F26 @F60');
+// @F60 Frame Rate is greyed unless Record is chosen, and keeps its names
+const rates = (items: Item[]) => items.filter((i) => / fps$/.test(i.label ?? ''));
+assert.deepStrictEqual(FPS, [15, 10, 5, 4, 2], '@F60');
+assert.strictEqual(FIRST.fps, 10, '@F60 10 by default');
+for (const m of MODES)
+  assert.ok(
+    rates(opts({ mode: m.id })).every((i) => i.enabled === (m.id === 'record')),
+    `@F60 ${m.id}`,
+  );
+for (const f of FPS) {
+  click(find(opts({ mode: 'record' }), `${f} fps`));
+  assert.strictEqual(calls.pop(), `setFps:${f}`, `@F60 ${f} fps`);
+}
 for (const [label, call] of [
   ['None', 'setTimer:0'],
   ['3 Seconds', 'setTimer:3'],
@@ -123,7 +172,7 @@ assert.ok(!captureArgs('window', { pointer: true }).includes('-C'), 'F215 window
 // F216 CAP-6: Timer and Show Mouse Pointer greyed, never hidden, in Window and Scrolling; they keep their names
 assert.deepStrictEqual(
   MODES.map((m) => timed(m.id)),
-  [true, false, true, true, false],
+  [true, false, true, true, false, true],
   'F216',
 );
 for (const [mode, name] of [
@@ -142,17 +191,27 @@ for (const mode of ['area', 'full', 'last'] as const) {
     assert.strictEqual(find(items, l).enabled, true, `F216 ${mode} ${l}`);
   assert.strictEqual(find(items, 'Show Mouse Pointer').sublabel, undefined, `F216 ${mode}`);
 }
+// Record takes the Timer (a countdown longer than 3); macOS's screen capture draws the pointer, so the option is not Record's
+const recItems = opts({ mode: 'record' });
+for (const l of ['None', '3 Seconds', '5 Seconds', '10 Seconds']) assert.strictEqual(find(recItems, l).enabled, true, `Record ${l}`);
+assert.strictEqual(find(recItems, 'Show Mouse Pointer').enabled, false, 'Record: no pointer option');
+assert.strictEqual(find(recItems, 'Show Mouse Pointer').sublabel, 'Not for Record', 'Record: no pointer option');
 
 // M2-3 checked options: what a renderer or state.json sends is kept only if valid (timer 0, 3, 5 or 10; booleans; a known
 // mode)
-const was: CaptureOpts = { mode: 'last', oneShot: true, timer: 5, pointer: true };
+const was: CaptureOpts = { mode: 'last', oneShot: true, timer: 5, pointer: true, fps: 5 };
 assert.deepStrictEqual(checkedCapture(undefined), FIRST, 'M2-3 no state');
 assert.deepStrictEqual(
-  checkedCapture({ mode: 'full', oneShot: false, timer: 3, pointer: false }, was),
-  { mode: 'full', oneShot: false, timer: 3, pointer: false },
+  checkedCapture({ mode: 'record', oneShot: false, timer: 3, pointer: false, fps: 15 }, was),
+  { mode: 'record', oneShot: false, timer: 3, pointer: false, fps: 15 },
   'M2-3 valid',
 );
-assert.deepStrictEqual(checkedCapture({ mode: 'everything', oneShot: 1, timer: 3600, pointer: 'yes' }, was), was, 'M2-3 invalid');
+assert.deepStrictEqual(checkedCapture({ mode: 'everything', oneShot: 1, timer: 3600, pointer: 'yes', fps: 60 }, was), was, 'M2-3 invalid');
+assert.deepStrictEqual(
+  checkedCapture({ mode: 'area', oneShot: false, timer: 0, pointer: false }),
+  FIRST,
+  'M2-3 a state from before Record: 10 fps',
+);
 assert.deepStrictEqual(checkedCapture({ timer: -5 }), FIRST, 'M2-3 negative timer');
 assert.deepStrictEqual(checkedCapture({ timer: '5' }), FIRST, 'M2-3 timer string');
 
@@ -180,7 +239,10 @@ assert.ok(pkg.scripts.build.includes('src/countdown.html') && fs.existsSync(path
 const counter = main.slice(main.indexOf('async function countdown('), main.indexOf('\n}\n', main.indexOf('function countdownPanel(')));
 assert.ok(counter.includes("if (!quiet) globalShortcut.register('Escape', cancelCountdown);"), '@F31 Esc registered');
 assert.ok(counter.includes("if (!quiet) globalShortcut.unregister('Escape');"), '@F31 Esc given back');
-assert.ok(main.includes('options: () => void (cancelCountdown ? cancelCountdown() : openCaptureBar())'), '@F31 ⌃⇧5 cancels');
+assert.ok(
+  main.includes('options: () => void (stopRecording ? stopRecording(true) : cancelCountdown ? cancelCountdown() : openCaptureBar())'),
+  '@F31 ⌃⇧5 cancels; @F66 while recording it is Done',
+);
 assert.ok(main.includes("tray.on('click', iconClick);"), '@F31 the icon cancels');
 assert.ok(
   [
@@ -192,5 +254,59 @@ assert.ok(
   '@F29 click-through, never focused, content-protected',
 );
 assert.ok(/end\(\);\s+if \(!cancelled\) await new Promise\(\(r\) => setTimeout\(r, 200\)\);/.test(counter), '@F30 destroyed, then 200 ms');
+
+// @F62 Record counts 3, 2, 1, or the Timer's when longer, as "Recording starts in 3 seconds", then records at the
+// chosen frame rate; @F61 after the picker on the last area, whose ↩ keeps it
+const recorder = main.slice(main.indexOf('async function captureRecord('), main.indexOf('\n}\n', main.indexOf('function recordPanel(')));
+assert.ok(recorder.includes('if (!(await countdown(Math.max(3, o.timer), area, true))) return;'), '@F62 a countdown of 3 first');
+assert.ok(recorder.includes('const r = await recordArea(area, o);'), '@F62 then the recording, at o.fps');
+assert.ok(recorder.includes("pickArea(area && !keep ? 'gone' : 'record', keep)"), '@F61 the picker shows the last area');
+const countdownTs = fs.readFileSync(path.join(src, 'countdown.ts'), 'utf8');
+assert.ok(countdownTs.includes("`${q.has('rec') ? 'Recording starts' : 'Capture'} in ${s} seconds. Esc cancels.`"), '@F62 its words');
+const areaTs = fs.readFileSync(path.join(src, 'area.ts'), 'utf8');
+assert.ok(
+  areaTs.includes("'↩ records this area. Drag to choose another. Esc cancels.'") &&
+    areaTs.includes("'Drag over the area to record. Esc cancels.'") &&
+    areaTs.includes("if (e.key === 'Enter' && kept && box.classList.contains('kept')) window.snapmark.areaDone(kept);"),
+  '@F61 ↩ keeps the area; a drag replaces it',
+);
+// @F63 the clock: "0:07 of 0:30 · 10 fps", and "0:07" beside the menu bar icon
+assert.strictEqual(recordStatus(7400, 10), '0:07 of 0:30 · 10 fps', '@F63');
+assert.strictEqual(recordStatus(0, 15), '0:00 of 0:30 · 15 fps', '@F63');
+assert.strictEqual(clock(65_000), '1:05', '@F63');
+// @F63 the panel sits outside the area: 16 pt below, centred; else above; else at the display's bottom edge beside the
+// area; else inside its bottom edge
+const wa = { x: 0, y: 25, width: 1440, height: 875 };
+const at = (a: Area) => panelAt(a, wa, 600, 64);
+assert.deepStrictEqual(at({ x: 400, y: 100, width: 400, height: 300 }), { x: 300, y: 416, width: 600, height: 64 }, '@F63 below');
+assert.deepStrictEqual(at({ x: 400, y: 500, width: 400, height: 380 }), { x: 300, y: 420, width: 600, height: 64 }, '@F63 above');
+assert.deepStrictEqual(at({ x: 0, y: 25, width: 700, height: 875 }), { x: 716, y: 820, width: 600, height: 64 }, '@F63 beside');
+assert.deepStrictEqual(at({ x: 0, y: 25, width: 1440, height: 875 }), { x: 420, y: 820, width: 600, height: 64 }, '@F63 inside');
+assert.deepStrictEqual(at({ x: 1300, y: 100, width: 100, height: 100 }), { x: 840, y: 216, width: 600, height: 64 }, '@F63 on screen');
+// @F64 a recording lasts 30 s at most, then stops as Done does
+assert.strictEqual(REC_CAP_MS, 30_000, '@F64');
+assert.ok(recorder.includes("if (ms >= cap) return finish('done');") && recorder.includes("if (t >= cap) return finish('done');"), '@F64');
+// @F65 no key is taken while recording: the recording code registers no shortcut, and its panel never takes focus
+assert.ok(!recorder.includes('globalShortcut'), '@F65 no global key');
+assert.ok(recorder.includes('focusable: false') && recorder.includes('win.showInactive()'), '@F65 the panel never takes focus');
+const scrollTs = fs.readFileSync(path.join(src, 'scroll.ts'), 'utf8');
+assert.ok(
+  scrollTs.includes('if (!recording)') && scrollTs.includes("location.hash === '#record'"),
+  '@F65 the recording control handles no key',
+);
+// @F66 Done, ⌃⇧5 and the menu bar icon stop and keep; @F67 ⓧ puts the frames in Discarded
+assert.ok(main.includes('export const iconClick = () => (stopRecording ? stopRecording(true) :'), '@F66 the icon is Done');
+assert.ok(recorder.includes("finish(ok ? 'done' : 'cancel')") && recorder.includes('sessions.discardRecording(root, session, r);'), '@F67');
+// @F68 the outline and the panel are content-protected, and the recorder page never shows
+assert.ok(recorder.includes('const outline = countdownPanel(0, a);') && recorder.includes('win.setContentProtection(true);'), '@F68');
+assert.ok(/rec = new BrowserWindow\(\{\s+show: false,/.test(recorder) && !/rec\.show/.test(recorder), '@F68 the recorder never shows');
+// @F81 a failed grab stops, keeps nothing and says so
+assert.ok(
+  recorder.includes("notify(`Recording failed: ${how.failed.replace(/\\.$/, '')}. Nothing was added. Click to try again.`"),
+  '@F81 the words',
+);
+// The recorder page is built; each frame is written to its own file as it comes, never held (plan, Risks)
+assert.ok(pkg.scripts.build.includes('src/recorder.html') && fs.existsSync(path.join(src, 'recorder.ts')), 'recorder page');
+assert.ok(recorder.includes('fs.writeFileSync(file, png);'), 'a file per frame, at once');
 
 console.log('capture: ok');

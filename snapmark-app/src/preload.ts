@@ -41,6 +41,9 @@ const api: Window['snapmark'] = {
   barSessions: (at) => ipcRenderer.send('bar:sessions', at),
   onBarState: (cb) => void ipcRenderer.on('bar:state', (_e, s: BarInit) => cb(s)),
   onScrollStatus: (cb) => void ipcRenderer.on('scroll:status', (_e, status: ScrollStatus) => cb(status)),
+  onRecordStatus: (cb) => void ipcRenderer.on('record:status', (_e, status: RecordStatus) => cb(status)),
+  recorderFrame: (t, png) => ipcRenderer.send('recorder:frame', t, png),
+  recorderFailed: (reason) => ipcRenderer.send('recorder:failed', reason),
   onCountdown: (cb) => void ipcRenderer.on('countdown:digit', (_e, s: number) => cb(s)),
 };
 
