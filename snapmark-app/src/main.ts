@@ -30,7 +30,7 @@ import { FIRST, MODES, barLabel, barOptions, barRing, barSize, captureArgs, chec
 import type { MenuItemConstructorOptions } from 'electron';
 import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
-import { Box, ocrText, OcrLine, recognize } from './ocr';
+import { Box, OcrLine, recognize } from './ocr';
 import { secretBoxes } from './redact';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -58,7 +58,7 @@ let quitting = false; // set by "Quit anyway" so the quit guard lets go
 const registered = new Set<string>(); // global shortcuts macOS let us have
 // keyed by webContents.id; dirty = marks or text not saved yet
 // state = marks to put back; replace = Edit Again's entry number; oneShot = no session ('' in session)
-// text = what text recognition finds in the image
+// text = what text recognition finds in the image, for auto-redact only
 interface EditorWin {
   image: string;
   text: Promise<OcrLine[] | null>;
@@ -813,14 +813,11 @@ ipcMain.handle('editor:secrets', async (e): Promise<Box[] | null> => {
 });
 
 ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, state }: EditorSave): Promise<number> => {
-  const { root: into, session, image, replace, oneShot, text: read } = editorFor(e.sender.id);
+  const { root: into, session, image, replace, oneShot } = editorFor(e.sender.id);
   if (oneShot) throw new Error('A one-shot screenshot is never added to a session');
   for (const v of viewers.values()) if (v.root === into && v.session === session) await flushViewer(v);
   const out = fitForAI(Buffer.from(png, 'base64'));
-  // What is under a Redact mark, the owner's or auto-redact's, never reaches session.md either.
-  const hidden = state.items.flatMap((i) => ((i as { t?: string }).t === 'redact' ? [(i as { r: Box }).r] : []));
-  const lines = await read;
-  const text = { caption, notes, cards, moves, text: lines ? ocrText(lines, hidden) : '' };
+  const text = { caption, notes, cards, moves };
   // Cut from the flattened image, so Redact marks and auto-redact reach every part (F9).
   const parts = cutParts(out);
   // Edit Again on an entry removed in the meantime adds it back as a new one.
@@ -1121,7 +1118,6 @@ export function promptFor(dir: string): string {
   return [
     `Work through the visual feedback in "${sessionMdPath(dir)}".`,
     'Each entry is an annotated screenshot. The numbered list below it holds the notes for the references (numbered diamonds) on the image.',
-    `"${sessions.TEXT_SUMMARY}" under an entry is the text recognised on the image, top to bottom; [redacted] is private data pixelated on it.`,
     'What the marks mean:',
     ...TOOLS.flatMap((g) => g.tools)
       .filter((t) => t.means)
