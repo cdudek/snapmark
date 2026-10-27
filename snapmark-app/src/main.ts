@@ -500,7 +500,7 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
   const [thumbs, hashes]: [Bitmap[], string[]] = [[], []];
   const { id, bounds: b } = screen.getDisplayMatching(a);
   let rec: BrowserWindow | null = null;
-  let started = 0; // when the first frame came
+  let started = 0; // when the recorder started, by this clock; 0 until the first frame
   let pending = false; // Done before the first frame: it stops on that frame, so a recording has one
   let ended = false;
   let written: Promise<unknown> = Promise.resolve(); // the frame files, written one after another off the main thread
@@ -558,7 +558,9 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
       times.push(t / 1000);
       thumbs.push({ width: 64, height: thumb.length / 256, data: thumb });
       hashes.push(crypto.createHash('sha1').update(png).digest('hex'));
-      started ||= Date.now() - t;
+      // The frame that came quickest after its time sets the start: a slow first frame (a cold PNG encoder) would put
+      // it late, and a recording stopped at the cap would end short of it (F64)
+      started = Math.min(started || Infinity, Date.now() - t);
       if (pending) finish('done');
     };
     const onFailed = (e: IpcMainEvent, reason: unknown) => e.sender === rec?.webContents && finish({ failed: String(reason) });
