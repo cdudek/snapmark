@@ -1,0 +1,279 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Each tag sits beside @2026-10-27-calm-style in its check's title. A desktop app: widths are window sizes in points, zoom is 100 and 130 percent.",
+  "facts": [
+    {
+      "id": "F1",
+      "tag": "@F1",
+      "milestone": 1,
+      "asks": ["A1", "A7"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F2",
+      "tag": "@F2",
+      "milestone": 1,
+      "asks": ["A1", "A7"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F3",
+      "tag": "@F3",
+      "milestone": 1,
+      "asks": ["A2"],
+      "screen": "every window",
+      "states": ["default"]
+    },
+    {
+      "id": "F4",
+      "tag": "@F4",
+      "milestone": 1,
+      "asks": ["A1", "A5"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F5",
+      "tag": "@F5",
+      "milestone": 1,
+      "asks": ["A1", "A5"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F6",
+      "tag": "@F6",
+      "milestone": 1,
+      "asks": ["A2", "A3"],
+      "screen": "capture bar",
+      "states": ["every mode"]
+    },
+    {
+      "id": "F7",
+      "tag": "@F7",
+      "milestone": 1,
+      "asks": ["A2", "A3"],
+      "screen": "capture bar",
+      "states": ["every mode"]
+    },
+    {
+      "id": "F8",
+      "tag": "@F8",
+      "milestone": 1,
+      "asks": ["A2"],
+      "screen": "capture bar",
+      "states": ["just opened"]
+    },
+    {
+      "id": "F9",
+      "tag": "@F9",
+      "milestone": 1,
+      "asks": ["A2"],
+      "screen": "capture bar",
+      "states": ["just opened"]
+    },
+    {
+      "id": "F10",
+      "tag": "@F10",
+      "milestone": 1,
+      "asks": ["A2"],
+      "screen": "capture bar",
+      "states": ["after Tab"]
+    },
+    {
+      "id": "F11",
+      "tag": "@F11",
+      "milestone": 1,
+      "asks": ["A3", "A5"],
+      "screen": "capture bar",
+      "states": ["hover"]
+    },
+    {
+      "id": "F12",
+      "tag": "@F12",
+      "milestone": 1,
+      "asks": ["A5"],
+      "screen": "capture bar",
+      "states": ["Session and One-Shot"]
+    },
+    {
+      "id": "F13",
+      "tag": "@F13",
+      "milestone": 1,
+      "asks": ["A5"],
+      "screen": "capture bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F14",
+      "tag": "@F14",
+      "milestone": 1,
+      "asks": ["A1"],
+      "screen": "capture bar",
+      "states": ["narrow"]
+    },
+    {
+      "id": "F15",
+      "tag": "@F15",
+      "milestone": 1,
+      "asks": ["A7"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F16",
+      "tag": "@F16",
+      "milestone": 2,
+      "asks": ["A2"],
+      "screen": "each panel",
+      "states": ["light and dark"]
+    },
+    {
+      "id": "F17",
+      "tag": "@F17",
+      "milestone": 2,
+      "asks": ["A2", "A3"],
+      "screen": "scrolling and recording control",
+      "states": ["default"]
+    },
+    {
+      "id": "F18",
+      "tag": "@F18",
+      "milestone": 2,
+      "asks": ["A2"],
+      "screen": "area picker",
+      "states": ["countdown"]
+    },
+    {
+      "id": "F19",
+      "tag": "@F19",
+      "milestone": 2,
+      "asks": ["A2"],
+      "screen": "each panel",
+      "states": ["just opened"]
+    },
+    {
+      "id": "F20",
+      "tag": "@F20",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "Record",
+      "states": ["Capture Scrolling"]
+    },
+    {
+      "id": "F21",
+      "tag": "@F21",
+      "milestone": 2,
+      "asks": ["A6"],
+      "screen": "capture bar",
+      "states": ["Record"]
+    },
+    {
+      "id": "F22",
+      "tag": "@F22",
+      "milestone": 2,
+      "asks": ["A7"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F23",
+      "tag": "@F23",
+      "milestone": 3,
+      "asks": ["A2", "A3"],
+      "screen": "each window",
+      "states": ["default"]
+    },
+    {
+      "id": "F24",
+      "tag": "@F24",
+      "milestone": 3,
+      "asks": ["A2"],
+      "screen": "editor toolbar",
+      "states": ["Settings tabs", "session list"]
+    },
+    {
+      "id": "F25",
+      "tag": "@F25",
+      "milestone": 3,
+      "asks": ["A2"],
+      "screen": "each window",
+      "states": ["just opened"]
+    },
+    {
+      "id": "F26",
+      "tag": "@F26",
+      "milestone": 3,
+      "asks": ["A1"],
+      "screen": "editor",
+      "states": ["minimum size"]
+    },
+    {
+      "id": "F27",
+      "tag": "@F27",
+      "milestone": 3,
+      "asks": ["A1", "A3"],
+      "screen": "Settings",
+      "states": ["every tab"]
+    },
+    {
+      "id": "F28",
+      "tag": "@F28",
+      "milestone": 3,
+      "asks": ["A2"],
+      "screen": "Settings",
+      "states": ["editor"]
+    },
+    {
+      "id": "F29",
+      "tag": "@F29",
+      "milestone": 3,
+      "asks": ["A1"],
+      "screen": "every window",
+      "states": ["130 %"]
+    },
+    {
+      "id": "F30",
+      "tag": "@F30",
+      "milestone": 3,
+      "asks": ["A7"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F31",
+      "tag": "@F31",
+      "milestone": 3,
+      "asks": ["A1"],
+      "screen": "editor",
+      "states": ["marks"]
+    },
+    {
+      "id": "N1",
+      "tag": "@N1",
+      "milestone": null,
+      "asks": ["A2"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N2",
+      "tag": "@N2",
+      "milestone": null,
+      "asks": ["A1"],
+      "screen": "none",
+      "states": ["default"]
+    }
+  ],
+  "pages": [],
+  "widths": {
+    "feature": [],
+    "milestone": [820, 1180, 1440],
+    "zoom": [100, 130]
+  },
+  "asks": ["A1", "A2", "A3", "A4", "A5", "A6", "A7"],
+  "turns": {
+    "run": 200
+  }
+}

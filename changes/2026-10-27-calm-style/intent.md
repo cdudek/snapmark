@@ -18,24 +18,24 @@ created: 2026-10-27
 
 Every request that this change answers, in the asker's own words. Never paraphrased.
 
-| #   | Date       | Source        | Words | Screen | Resources |
-| --- | ---------- | ------------- | ----- | ------ | --------- |
-| A1  | 2026-10-27 | owner, chat   | "the design at the moment looks like shit. buttons with 2 rows e.g. Capture and second row the icon. the blue buttons in the ctrl + shift + 5 panel, which is also way to big in height and everything... can you migrate the design and everything to this system. https://github.com/cdudek/design-system-starter" | all | none |
-| A2  | 2026-10-27 | owner, chat   | "no the whole panel when perssing the ^5 shortcut should just stay in fucking system color not my colors. same for the app. just buttons etc. just buttons etc. should have my color I liked the original panel more without blue outline why does everything has a blue outline and stuff" | all | none |
-| A3  | 2026-10-27 | owner, chat   | "can we fucking revise the style. hero ui looks quite nice out of the box. the app should be calm. minimal design footprint. but obviously clear in and unmisunderstandably in its ui intentions" | all | none |
-| A4  | 2026-10-27 | owner, chat   | "latest design I saw in planatator is overdesigned" | Capture bar | none |
-| A5  | 2026-10-27 | owner, plannotator | Approved the direction: one-row bar, system surfaces, one blue button, no outlines, shortcuts in tooltips. | all | direction doc, mock of the bar |
-| A6  | 2026-10-27 | owner, dialog | "One change, 3 milestones (Recommended)"; "Ship them after milestone 1 (Recommended)" | all | none |
-| A7  | 2026-10-27 | owner, chat   | "can you update the design system here?" "I mean the repo that i shared" | none | design-system-starter |
+| #   | Date       | Source             | Words                                                                                                                                                                                                                                                                                                                | Screen      | Resources                      |
+| --- | ---------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------ |
+| A1  | 2026-10-27 | owner, chat        | "the design at the moment looks like shit. buttons with 2 rows e.g. Capture and second row the icon. the blue buttons in the ctrl + shift + 5 panel, which is also way to big in height and everything... can you migrate the design and everything to this system. https://github.com/cdudek/design-system-starter" | all         | none                           |
+| A2  | 2026-10-27 | owner, chat        | "no the whole panel when perssing the ^5 shortcut should just stay in fucking system color not my colors. same for the app. just buttons etc. just buttons etc. should have my color I liked the original panel more without blue outline why does everything has a blue outline and stuff"                          | all         | none                           |
+| A3  | 2026-10-27 | owner, chat        | "can we fucking revise the style. hero ui looks quite nice out of the box. the app should be calm. minimal design footprint. but obviously clear in and unmisunderstandably in its ui intentions"                                                                                                                    | all         | none                           |
+| A4  | 2026-10-27 | owner, chat        | "latest design I saw in planatator is overdesigned"                                                                                                                                                                                                                                                                  | Capture bar | none                           |
+| A5  | 2026-10-27 | owner, plannotator | Approved the direction: one-row bar, system surfaces, one blue button, no outlines, shortcuts in tooltips.                                                                                                                                                                                                           | all         | direction doc, mock of the bar |
+| A6  | 2026-10-27 | owner, dialog      | "One change, 3 milestones (Recommended)"; "Ship them after milestone 1 (Recommended)"                                                                                                                                                                                                                                | all         | none                           |
+| A7  | 2026-10-27 | owner, chat        | "can you update the design system here?" "I mean the repo that i shared"                                                                                                                                                                                                                                             | none        | design-system-starter          |
 
 ## Job stories
 
-| #   | When …                         | I want to …                                              | So I can …                              | Evidence     |
-| --- | ------------------------------ | -------------------------------------------------------- | --------------------------------------- | ------------ |
-| J1  | I press ⌃⇧5                    | see a small one-row bar in macOS colours                 | pick a mode without a wall of blue      | observed, A1, A2 |
-| J2  | any Snapmark window opens      | see exactly one blue button: the thing that happens next | know what to press without reading      | observed, A2, A3 |
-| J3  | I use the app every day        | have it look calm and native, like the rest of my Mac    | stop noticing the tool and do the work  | reported, A3, A4 |
-| J4  | I move with Tab                | see where focus is, and only then                        | use the keyboard without rings on open  | observed, A2 |
+| #   | When …                    | I want to …                                              | So I can …                             | Evidence         |
+| --- | ------------------------- | -------------------------------------------------------- | -------------------------------------- | ---------------- |
+| J1  | I press ⌃⇧5               | see a small one-row bar in macOS colours                 | pick a mode without a wall of blue     | observed, A1, A2 |
+| J2  | any Snapmark window opens | see exactly one blue button: the thing that happens next | know what to press without reading     | observed, A2, A3 |
+| J3  | I use the app every day   | have it look calm and native, like the rest of my Mac    | stop noticing the tool and do the work | reported, A3, A4 |
+| J4  | I move with Tab           | see where focus is, and only then                        | use the keyboard without rings on open | observed, A2     |
 
 ## Success measure
 
@@ -58,11 +58,11 @@ Every request that this change answers, in the asker's own words. Never paraphra
 
 ## Affected users and systems
 
-| Kind    | Name                  | How                                                       |
-| ------- | --------------------- | --------------------------------------------------------- |
-| users   | the owner             | every window looks different; no behaviour changes        |
-| service | `snapmark-app/src/`   | every `.html` window's styles; the bar's layout and size   |
-| repo    | design-system-starter | its tokens and docs carry the calm rules first            |
+| Kind    | Name                  | How                                                      |
+| ------- | --------------------- | -------------------------------------------------------- |
+| users   | the owner             | every window looks different; no behaviour changes       |
+| service | `snapmark-app/src/`   | every `.html` window's styles; the bar's layout and size |
+| repo    | design-system-starter | its tokens and docs carry the calm rules first           |
 
 ## Constraints
 
