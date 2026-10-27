@@ -1,0 +1,19 @@
+{
+  "size": "S",
+  "kind": "feature",
+  "delivery": "one-go",
+  "milestone": { "kind": "milestone-of-one", "slug": "no-screen-text" },
+  "milestones": [{ "n": 1, "slug": "no-screen-text-1", "title": "Drop the 'Text in the screenshot' block" }],
+  "milestoneNote": "2026-10-27: owner's dialog 'Drop the block (Recommended)' and 'Own small change, now (Recommended)'. Ticket snap-bmr.27. Project none.",
+  "skips": {
+    "brief": "skip: size S, a removal; intent.md holds the ask",
+    "ia": "skip: no window or navigation changes",
+    "interaction": "skip: no interaction changes",
+    "screens": "skip: no screen changes; only session.md's text",
+    "prototype": "skip: nothing to draw",
+    "conformance": "skip: no UI",
+    "validation": "skip: the owner gates intent, facts and plan"
+  },
+  "ticket": "snap-bmr.27",
+  "design": "none"
+}

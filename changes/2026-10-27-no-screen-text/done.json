@@ -1,0 +1,14 @@
+{
+  "_comment": "The approved criteria as data. Locked by verify_gate.py approve; checks read it. Each tag sits beside @2026-10-27-no-screen-text in its check's title.",
+  "facts": [
+    { "id": "F1", "tag": "@F1", "milestone": 1, "asks": ["A1", "A2"], "screen": "session.md", "states": ["new entry"] },
+    { "id": "F2", "tag": "@F2", "milestone": 1, "asks": ["A1", "A2"], "screen": "session.md", "states": ["edited entry"] },
+    { "id": "F3", "tag": "@F3", "milestone": 1, "asks": ["A1"], "screen": "session.md", "states": ["header"] },
+    { "id": "F4", "tag": "@F4", "milestone": 1, "asks": ["A2"], "screen": "editor", "states": ["redaction"] },
+    { "id": "F5", "tag": "@F5", "milestone": 1, "asks": ["A2"], "screen": "session.md", "states": ["old entry"] }
+  ],
+  "pages": [],
+  "widths": { "feature": [], "milestone": [], "zoom": [100] },
+  "asks": ["A1", "A2"],
+  "turns": { "run": 100 }
+}
