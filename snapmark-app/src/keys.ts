@@ -22,7 +22,7 @@ export const KEY_GROUPS: { title: string; rows: KeyRow[] }[] = [
       ['⌃⇧1', 'Capture New Area', 'drag an area, capture it, and keep it for ⌃⇧4'],
       ['⌃⇧3', 'Capture Full Screen', 'every display at once, one screenshot each'],
       ['⌃⇧2', 'Capture One-Shot', 'drag an area; not added to a session'],
-      ['⌃⇧5', 'Capture Options', 'the capture bar; while recording, Done'],
+      ['⌃⇧5', 'Capture Options', 'the capture bar; while recording or scrolling, Done'],
       ['⌃⇧N', 'New Session', 'also forgets the area'],
       ['↩ / Esc', 'Done / Cancel', 'while Capture Scrolling runs'],
     ],

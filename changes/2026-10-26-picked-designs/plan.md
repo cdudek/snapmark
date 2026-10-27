@@ -64,7 +64,7 @@ After it, a long page scrolls itself into one screenshot, and the owner scrolls 
 
 | #   | Feature                                                             | Facts        | Branch                       | State |
 | --- | ------------------------------------------------------------------- | ------------ | ---------------------------- | ----- |
-| 4.1 | Auto-scroll with manual fallback; scrolling control ⓧ and Done keys | F82–F86, F88 | `milestone/picked-designs-4` | todo  |
+| 4.1 | Auto-scroll with manual fallback; scrolling control ⓧ and Done keys | F82–F86, F88 | `milestone/picked-designs-4` | done  |
 | 4.2 | Settings ▸ Capture: the Accessibility row                           | F87          | `milestone/picked-designs-4` | todo  |
 
 ## Approach
@@ -209,7 +209,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 
 ### Milestone 4
 
-- [ ] 16. Auto-scroll, fallback, panel keys. Proof: `@F82`–`@F86`, `@F88` pass.
+- [x] 16. Auto-scroll, fallback, panel keys. Proof: `@F82`–`@F86`, `@F88` pass.
 - [ ] 17. Settings row. Proof: `@F87` passes.
 - [ ] 18. Gate. Proof: `VERIFY PASS milestone`.
 
@@ -328,3 +328,7 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
   - `test/sessions.test.ts`: `@F67` checks the temp frames are moved; a failed Edit Again leaves the entry, its GIF and its JSON as they were.
   - `test/smoke.ts`: the recording control is found by `scroll.html?fps=<n>#record`, since it now carries the frame rate.
 - Milestone 3 fix round: ⓧ with no current session in Session mode no longer files the recording as One-Shot. It makes the session the recording editor would have made.
+- 4.1: auto-scroll scrolls half the area's height a step, so frames overlap even below a sticky header; the stop rule is `stitcher().auto` in `stitch.ts`. The owner "took over" when a frame is `lost`, or the page moved more than a quarter past what was asked; a smaller extra scroll is not seen, and stitches correctly anyway.
+  - The scrolling control is the recording control's 600 × 64 panel in its place (`panelAt`), with ⓧ, one status line and Done. A reason ("did not scroll", "needs Accessibility") stays until the next frame is added.
+  - The capture bar's Scrolling hint follows the permission ("Snapmark scrolls the area for you"); the ⌃⇧5 row in Keyboard Shortcuts reads "while recording or scrolling, Done".
+  - Tests this change owns follow F88: `test/keys.test.ts` (the ⌃⇧5 handler line and row) and `test/capture.test.ts` (`@F31`/`@F66`'s handler and icon lines) read `doneScrolling`.

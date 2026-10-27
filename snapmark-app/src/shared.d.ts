@@ -83,6 +83,9 @@ interface ScrollStatus {
   frames: number;
   height: number; // pixels
   step: import('./stitch').Step;
+  // Snapmark scrolls ('auto'), or the owner does: from the start or after taking over ('manual'), because the area did
+  // not scroll ('stuck'), or without Accessibility, said once per launch ('denied'). A reason shows until the next frame.
+  mode: 'auto' | 'manual' | 'stuck' | 'denied';
 }
 
 // The capture bar (bar.html, ⌃⇧5): what it captures, where it goes and how. Kept in state.json under `capture`.

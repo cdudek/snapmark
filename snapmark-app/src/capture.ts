@@ -18,14 +18,13 @@ export const FPS = [15, 10, 5, 4, 2];
 export const REC_CAP_MS = 30_000;
 
 // The bar's headline and hint for each mode (spec screens.md, Headline and hint per mode).
-// shortcut: Capture Scrolling always gives the manual hint, true until auto-scroll lands in milestone 4, which picks
-// the hint by the Accessibility permission.
-export const barHeads = (area: Area | null, fps: number): Record<CaptureMode, [headline: string, hint: string]> => ({
+// Capture Scrolling's hint says who scrolls: `auto` when Accessibility is allowed (F82).
+export const barHeads = (area: Area | null, fps: number, auto = false): Record<CaptureMode, [headline: string, hint: string]> => ({
   area: ['Capture New Area', 'Drag to choose the area'],
   window: ['Capture Window', 'Click a window after Capture'],
   full: ['Capture Full Screen', 'Every display, one screenshot each'],
   last: ['Capture Last Area', area ? `${area.width} × ${area.height}` : 'No area yet: drag one after Capture'],
-  scroll: ['Capture Scrolling', 'Scroll the area yourself, then Done'],
+  scroll: ['Capture Scrolling', auto ? 'Snapmark scrolls the area for you' : 'Scroll the area yourself, then Done'],
   record: ['Record', `${area ? `${area.width} × ${area.height}` : 'Drag an area'} · up to 30 seconds · ${fps} fps`],
 });
 

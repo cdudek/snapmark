@@ -13,6 +13,7 @@ import {
   screen,
   shell,
   Notification,
+  systemPreferences,
 } from 'electron';
 import type { IpcMainEvent } from 'electron';
 import { execFile } from 'child_process';
@@ -48,6 +49,7 @@ import { Box, ocrText, OcrLine, recognize } from './ocr';
 import { secretBoxes } from './redact';
 import { keyFrames } from './keyframes';
 import { writeGif } from './gif';
+import { scrollAt } from './scroller';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
@@ -281,8 +283,9 @@ export const keyHandlers: Record<keyof typeof SHORTCUTS, () => void> = {
   oneShot: () => void (busy() || shoot(['-i'], true)), // -i: macOS's overlay; Space picks a window
   fullScreen: () => void captureFullScreen(),
   capture: () => void captureArea(),
-  // while recording it is Done (F66); during a countdown it cancels (F31)
-  options: () => void (stopRecording ? stopRecording(true) : cancelCountdown ? cancelCountdown() : openCaptureBar()),
+  // while recording or scrolling it is Done (F66, F88); during a countdown it cancels (F31)
+  options: () =>
+    void (stopRecording ? stopRecording(true) : doneScrolling ? doneScrolling() : cancelCountdown ? cancelCountdown() : openCaptureBar()),
   newSession: () => void (capturing() || newSession()),
 };
 
@@ -689,7 +692,7 @@ const barInit = (): BarInit => {
   return {
     ...captureOpts,
     label: barLabel(captureOpts),
-    heads: barHeads(area, captureOpts.fps),
+    heads: barHeads(area, captureOpts.fps, desk.trusted()),
     session: cur && { label: cur.label, count: cur.count },
     narrow: barNarrow,
   };
@@ -757,19 +760,16 @@ function grabArea(a: Area): Promise<Bitmap> {
   );
 }
 
-// Grabs `a` until Done (↩) or Cancel (Esc) in a small control beside it, then opens the stitched image in the editor.
+// Grabs `a` until Done (↩, ⌃⇧5, the menu bar icon) or Cancel (Esc, ⓧ) in a small control beside it, then opens the
+// stitched image in the editor. With Accessibility it scrolls the area by itself (`desk.scroll`), from where it is,
+// until the page ends; else, or once the area does not scroll or the owner scrolls too, the owner scrolls (F82–F86).
 // `grab` is swappable so the smoke test feeds synthetic frames through the same loop. Resolves to the editor, if any.
+let doneScrolling: (() => void) | null = null;
+let saidAccessibility = false; // "Auto-scroll needs Accessibility" is said once per launch (F86)
+const SCROLL_SETTLE = 250; // ms after a scroll before the grab, for the page to draw it
 export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: boolean } = {}): Promise<BrowserWindow | null> {
-  const [W, H, GAP] = [380, 48, 8];
-  const { workArea: wa } = screen.getDisplayMatching({ x: a.x, y: a.y, width: a.width, height: a.height });
-  // Below the area, else above it, else inside its bottom edge (an area as tall as the screen).
-  const below = a.y + a.height + GAP;
-  const y = below + H <= wa.y + wa.height ? below : a.y - GAP - H >= wa.y ? a.y - GAP - H : a.y + a.height - H - GAP;
   const ctl = new BrowserWindow({
-    x: Math.round(Math.max(wa.x, Math.min(a.x, wa.x + wa.width - W))),
-    y: Math.round(y),
-    width: W,
-    height: H,
+    ...panelAt(a, screen.getDisplayMatching(a).workArea, 600, 64), // the recording control's panel and place
     frame: false,
     transparent: true,
     resizable: false,
@@ -786,30 +786,54 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
   });
   void ctl.loadFile(path.join(__dirname, 'scroll.html'));
 
-  let stop: 'done' | 'cancel' | null = null;
+  let stop = null as 'done' | 'cancel' | null; // set by the control, ⌃⇧5 and the icon too, which narrowing cannot see
   const onDone = (e: IpcMainEvent, ok: boolean) => {
     if (e.sender === ctl.webContents) stop ??= ok ? 'done' : 'cancel';
   };
   ipcMain.on('scroll:done', onDone);
+  doneScrolling = () => void (stop ??= 'done'); // ⌃⇧5 and the menu bar icon (F88)
   ctl.on('closed', () => (stop ??= 'cancel'));
   const st = stitcher();
+  let mode: ScrollStatus['mode'] = desk.trusted() ? 'auto' : saidAccessibility ? 'manual' : 'denied';
+  if (mode === 'denied') saidAccessibility = true;
+  // Half the area's height a scroll (under 90 %, so frames overlap even below a sticky header), posted at its centre so
+  // it lands in the window under the area. `asked`: that scroll in the frame's rows (2x on Retina); 0 before the first.
+  const points = Math.round(a.height / 2);
+  let asked = 0;
   try {
     while (stop !== 'cancel') {
       const last = stop === 'done'; // one more frame after Done: the owner may have scrolled just before pressing it
-      const step = st.add(await grab(a));
-      if (!ctl.isDestroyed()) ctl.webContents.send('scroll:status', { frames: st.frames, height: st.height, step } satisfies ScrollStatus);
+      const before = st.height;
+      const f = await grab(a);
+      const step = st.add(f);
+      let ended = false;
+      if (mode === 'auto' && asked) {
+        const next = st.auto(step, st.height - before, asked);
+        ended = next === 'end';
+        if (next === 'stuck') mode = 'stuck';
+        if (next === 'owner') mode = 'manual';
+      } else if ((mode === 'stuck' || mode === 'denied') && step === 'added' && st.frames > 1) mode = 'manual'; // reason read
+      if (!ctl.isDestroyed())
+        ctl.webContents.send('scroll:status', { frames: st.frames, height: st.height, step, mode } satisfies ScrollStatus);
       if (step === 'full') {
         notify(`Stopped at ${MAX_HEIGHT.toLocaleString('en-US')} px, the tallest a screenshot gets.`);
         stop = 'done';
         break;
       }
-      if (last) break;
-      await new Promise((r) => setTimeout(r, 50)); // leaves the CPU some air between grabs
+      if (ended) stop ??= 'done'; // the page ended: the editor opens by itself (F83)
+      if (last || ended) break;
+      if (mode === 'auto') {
+        asked = Math.round((points * f.height) / a.height);
+        // a scroll macOS refuses (Accessibility taken back) is an area that does not scroll: the owner takes over
+        await desk.scroll(a.x + a.width / 2, a.y + a.height / 2, points).catch(() => (mode = 'stuck'));
+        await new Promise((r) => setTimeout(r, SCROLL_SETTLE));
+      } else await new Promise((r) => setTimeout(r, 50)); // leaves the CPU some air between grabs
     }
   } catch (e) {
     stop = 'cancel';
     notify(`Capture Scrolling stopped: ${e instanceof Error ? e.message : String(e)}`);
   } finally {
+    doneScrolling = null;
     ipcMain.off('scroll:done', onDone);
     if (!ctl.isDestroyed()) ctl.close();
   }
@@ -1137,6 +1161,9 @@ export const desk = {
   screencapture: (args: string[], done: (err: Error | null, stderr: string) => void): void =>
     void execFile('screencapture', args, (err, _out, stderr) => done(err, String(stderr ?? ''))),
   dock: (on: boolean) => quiet || (on ? void app.dock?.show() : app.dock?.hide()),
+  // Capture Scrolling scrolls by itself only with Accessibility allowed (F82, F86); `scroll` posts the scroll event.
+  trusted: () => process.platform === 'darwin' && systemPreferences.isTrustedAccessibilityClient(false),
+  scroll: scrollAt,
   // Record's picture of a display: its desktopCapturer source, which recorder.html plays. The smoke test's is 'test'.
   screenSource: async (display: number): Promise<string> => {
     const all = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
@@ -1464,8 +1491,9 @@ function menuState(): MenuState {
 export const menuItems = () => menuTemplate(menuState(), actions);
 const popMenu = () => tray?.popUpContextMenu(Menu.buildFromTemplate(menuItems()));
 // A click on the menu bar icon: the menu, or during a countdown, cancel (F31). Exported for the smoke test, which has no icon.
-// While recording a click is Done, and shows no menu (F66).
-export const iconClick = () => (stopRecording ? stopRecording(true) : cancelCountdown ? cancelCountdown() : popMenu());
+// While recording or scrolling a click is Done, and shows no menu (F66, F88).
+export const iconClick = () =>
+  stopRecording ? stopRecording(true) : doneScrolling ? doneScrolling() : cancelCountdown ? cancelCountdown() : popMenu();
 
 // A session moved or deleted outside Snapmark: say so instead of doing nothing.
 function exists(name: string, file = ''): boolean {

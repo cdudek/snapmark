@@ -23,11 +23,17 @@
     const tens = Math.floor(seconds / 10) * 10;
     if (tens > said) el('rec-say').textContent = `Recording, ${(said = tens)} seconds of 30`;
   });
-  window.snapmark.onScrollStatus(({ frames, height, step }) => {
+  window.snapmark.onScrollStatus(({ frames, height, step, mode }) => {
     const lost = step === 'lost';
+    const tally = `${frames} frame${frames === 1 ? '' : 's'} · ${height.toLocaleString('en-US')} px tall`;
     count.classList.toggle('warn', lost);
     count.textContent = lost
       ? 'Lost the place: scroll back up a little'
-      : `${frames} frame${frames === 1 ? '' : 's'} · ${height.toLocaleString('en-US')} px tall`;
+      : {
+          auto: `Scrolling · ${tally}`,
+          manual: `Scroll down, then Done · ${tally}`,
+          stuck: 'This area did not scroll. Scroll it yourself, then Done.',
+          denied: 'Auto-scroll needs Accessibility. Turn it on in Snapmark Settings ▸ Capture.',
+        }[mode];
   });
 })();

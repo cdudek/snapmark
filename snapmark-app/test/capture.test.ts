@@ -88,6 +88,7 @@ assert.deepStrictEqual(
 );
 assert.deepStrictEqual(barHeads(null, 10).last, ['Capture Last Area', 'No area yet: drag one after Capture'], '@F17 no area yet');
 assert.deepStrictEqual(barHeads(null, 15).record, ['Record', 'Drag an area · up to 30 seconds · 15 fps'], '@F59 no area yet');
+assert.deepStrictEqual(barHeads(null, 10, true).scroll, ['Capture Scrolling', 'Snapmark scrolls the area for you'], '@F82 auto');
 
 // @F27 under 1000 pt of work area the bar is narrow (the hint wraps, nothing hides); otherwise 960 pt
 assert.deepStrictEqual(barSize(1440), { width: 960, narrow: false }, '@F27');
@@ -240,8 +241,10 @@ const counter = main.slice(main.indexOf('async function countdown('), main.index
 assert.ok(counter.includes("if (!quiet) globalShortcut.register('Escape', cancelCountdown);"), '@F31 Esc registered');
 assert.ok(counter.includes("if (!quiet) globalShortcut.unregister('Escape');"), '@F31 Esc given back');
 assert.ok(
-  main.includes('options: () => void (stopRecording ? stopRecording(true) : cancelCountdown ? cancelCountdown() : openCaptureBar())'),
-  '@F31 ⌃⇧5 cancels; @F66 while recording it is Done',
+  main.includes(
+    'void (stopRecording ? stopRecording(true) : doneScrolling ? doneScrolling() : cancelCountdown ? cancelCountdown() : openCaptureBar())',
+  ),
+  '@F31 ⌃⇧5 cancels; @F66 @F88 while recording or scrolling it is Done',
 );
 assert.ok(main.includes("tray.on('click', iconClick);"), '@F31 the icon cancels');
 assert.ok(
@@ -295,7 +298,7 @@ assert.ok(
   '@F65 the recording control handles no key',
 );
 // @F66 Done, ⌃⇧5 and the menu bar icon stop and keep; @F67 ⓧ puts the frames in Discarded
-assert.ok(main.includes('export const iconClick = () => (stopRecording ? stopRecording(true) :'), '@F66 the icon is Done');
+assert.ok(main.includes('export const iconClick = () =>\n  stopRecording ? stopRecording(true) :'), '@F66 the icon is Done');
 assert.ok(recorder.includes("finish(ok ? 'done' : 'cancel')") && recorder.includes('sessions.discardRecording(root, session, r);'), '@F67');
 // @F68 the outline and the panel are content-protected, and the recorder page never shows
 assert.ok(recorder.includes('parts.push(countdownPanel(0, a));') && recorder.includes('win.setContentProtection(true);'), '@F68');
