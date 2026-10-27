@@ -85,8 +85,14 @@ const capture = (wc: Electron.WebContents) =>
     return wc.capturePage();
   });
 // smoke:background runs behind the owner's apps. A window they cover whole is occluded, and Chromium stops its frames:
-// no resize events, no real mouse drags. Every window keeps rendering, as one in front does.
-app.on('browser-window-created', (_e, w) => w.webContents.setBackgroundThrottling(false));
+// no resize events, no real mouse drags. Every window keeps rendering, as one in front does. And none shows on the
+// owner's screen or takes their clicks: the window server draws it fully transparent, while capturePage still reads
+// its frames and the checks drive it with sendInputEvent.
+app.on('browser-window-created', (_e, w) => {
+  w.webContents.setBackgroundThrottling(false);
+  w.setOpacity(0);
+  w.setIgnoreMouseEvents(true);
+});
 
 setTimeout(() => {
   console.log('smoke: TIMEOUT');
