@@ -1,0 +1,56 @@
+{
+  "size": "L",
+  "kind": "feature",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "new",
+    "slug": "online-release-1"
+  },
+  "project": {
+    "kind": "new",
+    "slug": "online-release-1"
+  },
+  "milestones": [
+    {
+      "n": 1,
+      "slug": "online-release-1-1",
+      "repo": "snapmark-kit, snapmark-web, snapmark-chrome",
+      "title": "Foundations: repos, CI, tokens and HeroUI wrappers, i18n, glossary, database and seed data, magic-link sign-in with console mail, captures bucket via Terraform",
+      "after": []
+    },
+    {
+      "n": 2,
+      "slug": "online-release-1-2",
+      "repo": "snapmark-web",
+      "title": "Web app: organisations, workspaces, invitations, feedback, versions, reviews, decisions, inbox",
+      "after": [1]
+    },
+    {
+      "n": 3,
+      "slug": "online-release-1-3",
+      "repo": "snapmark-chrome, snapmark-kit",
+      "title": "Extension: capture, drawing, anchor and code location (React/Next, Vue/Nuxt)",
+      "after": [1]
+    },
+    {
+      "n": 4,
+      "slug": "online-release-1-4",
+      "repo": "snapmark-web",
+      "title": "MCP server with strict prompt-injection handling",
+      "after": [1]
+    },
+    { "n": 5, "slug": "online-release-1-5", "repo": "snapmark-desktop", "title": "Mac localhost bridge for the extension", "after": [1] },
+    {
+      "n": 6,
+      "slug": "online-release-1-6",
+      "repo": "snapmark-web",
+      "title": "Public landing page with waitlist, operator area",
+      "after": [1]
+    },
+    { "n": 7, "slug": "online-release-1-7", "repo": "snapmark-desktop, snapmark-web", "title": "Two-way Mac session sync", "after": [2] }
+  ],
+  "milestoneNote": "2026-10-27: owner's 1.1 dialog: new Beads epic, L feature, change lives in snapmark-desktop with milestones per repo, 'planning should be done initially and certain things then be done in parallel. e.g. mcp, mac localhost bridge, landing/waitlist, webapp'. Milestones 2 to 6 build in parallel after 1; 7 needs 2's API. Project online-release-1: milestones merge into project/online-release-1 here and into each repo's main elsewhere.",
+  "codeLocation": "2026-10-27 owner dialog: no dev plugin in release 1; read framework dev data (React/Next fibers and _debugStack with source maps; Vue/Nuxt component __file) plus an optional data-snapmark-module attribute; 'next, react, vue, nuxt'.",
+  "ticket": "snap-70l",
+  "design": "docs/designs/2026-10-27-snapmark-online.md"
+}

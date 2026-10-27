@@ -419,3 +419,7 @@ Versions are pinned through lockfiles; Dependabot proposes updates; GitHub Actio
 1. **Name and domain** (owner is brainstorming), before the first deploy: moving to a new address later invalidates extension tokens, sign-in callbacks and MCP links. Until then, "Snapmark" is the working name.
 2. **Linear:** not planned yet; the owner wants it bidirectional and more involved than creating tickets, to discuss as its own topic.
 3. The order of work inside the first release (agreed in the plan).
+
+## Milestones
+
+- `changes/2026-10-27-online-release-1/` · project `online-release-1` · release 1 (local) · planning

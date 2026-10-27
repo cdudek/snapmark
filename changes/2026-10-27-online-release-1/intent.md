@@ -1,0 +1,111 @@
+---
+linear: none
+type: intent
+change: 2026-10-27-online-release-1
+design: docs/designs/2026-10-27-snapmark-online.md
+author: Calvin Dudek
+status: draft
+reviewed_by: null
+approved_at: null
+created: 2026-10-27
+---
+
+# Intent: Snapmark online, release 1 (local)
+
+> A team gives exact feedback on running UI, decides together, and hands it to a coding agent through MCP; release 1 runs on the owner's machine for dogfooding.
+
+## Asks
+
+Every request that this change answers, in the owner's own words (chat, 2026-10-27, unless the source says dialog).
+
+| #   | Date       | Source        | Words                                                                                                                                                                                                                                                                                                    | Screen                   | Resources |
+| --- | ---------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- |
+| A1  | 2026-10-27 | owner, chat   | "What I would like to do is to have an app where a team can work together to comment, similar to how we do this at the moment by pressing 1 and adding annotations, but on different DOM elements."                                                                                                      | feedback view            | none      |
+| A2  | 2026-10-27 | owner, chat   | "In a nutshell it's an online service where you, as a team, can work together and provide feedback on the actual design and you can provide this feedback to the AI via MCP."                                                                                                                            | MCP                      | none      |
+| A3  | 2026-10-27 | owner, chat   | "You would provide feedback, you would have comments, you would request changes, and then the AI would mark it as, \"Hey I implemented these changes.\" Then someone, whether it's a developer or another human, would go through these changes afterward and confirm these changes were properly done." | feedback view, MCP       | none      |
+| A4  | 2026-10-27 | owner, chat   | "I still would want people to draw there, to comment."                                                                                                                                                                                                                                                   | extension, feedback view | none      |
+| A5  | 2026-10-27 | owner, chat   | "I suppose when on localhost it needs to also recognise which folder this is and potentially which branch or work tree or whatever."                                                                                                                                                                     | extension, Mac bridge    | none      |
+| A6  | 2026-10-27 | owner, chat   | "It should be a Chrome extension for sure."                                                                                                                                                                                                                                                              | extension                | none      |
+| A7  | 2026-10-27 | owner, chat   | "login wise, I want email magiclink, github and google workspace / google. I want to be able to link accounts across different sign in methods."                                                                                                                                                         | sign-in                  | none      |
+| A8  | 2026-10-27 | owner, chat   | "we will use resend as first email client, but implement it as factory or strategy pattern."                                                                                                                                                                                                             | none                     | none      |
+| A9  | 2026-10-27 | owner, chat   | "we use heroui, Initially I want minimal styling from the base except colors, border radius, and general theming, we should still define it where necessary."                                                                                                                                            | all                      | none      |
+| A10 | 2026-10-27 | owner, chat   | "i dont want inline or adhoc design but clear resuable tokens, a glossary, next i18n implemented from the get go with language english as default and only inital language."                                                                                                                             | all                      | none      |
+| A11 | 2026-10-27 | owner, chat   | "I want a simple and effective ui, calm, productive."                                                                                                                                                                                                                                                    | all                      | none      |
+| A12 | 2026-10-27 | owner, chat   | "it should also be able to ask questions and support decisions in the discussion of the feedback. this needs to go beyond just discussing it in a comment bubble treat but voting and discussing for alternative solutions e.g. mockups?"                                                                | feedback view            | none      |
+| A13 | 2026-10-27 | owner, chat   | "it should capture context e.g. main-content-area and point to a specific module or functionality that needs redesign or adjustments within that context.."                                                                                                                                              | extension, feedback view | none      |
+| A14 | 2026-10-27 | owner, chat   | "Vote and comment on versions. the agent doesnt live in the app but it's joins as copilot of the engineer or who ever drives the feedback."                                                                                                                                                              | feedback view, MCP       | none      |
+| A15 | 2026-10-27 | owner, chat   | "we should at least capture this, so when a developer get asked to address feedback, the AI knows which version this was and where to find it."                                                                                                                                                          | extension, MCP           | none      |
+| A16 | 2026-10-27 | owner, chat   | "we also need to include staging environments, production environment e.g. omr.com => prod, omr.ninja => staging"                                                                                                                                                                                        | settings                 | none      |
+| A17 | 2026-10-27 | owner, chat   | "we also need an operator area btw. so we have public for marketing, landing pages and blog, app, admin"                                                                                                                                                                                                 | landing, operator        | none      |
+| A18 | 2026-10-27 | owner, dialog | "assume on phones there will be mainly answering to comments or stuff." · "and approve stuff" · "critical stuff"                                                                                                                                                                                         | feedback view (phone)    | none      |
+| A19 | 2026-10-27 | owner, chat   | "cloud setup, use local development first, only on release 2 we are going to think about deployment. until then, all locally but gcs. we will use terraform yes."                                                                                                                                        | none                     | none      |
+| A20 | 2026-10-27 | owner, chat   | "resend => for now send to terminal. I will provide templates later and key for resend later."                                                                                                                                                                                                           | sign-in                  | none      |
+| A21 | 2026-10-27 | owner, chat   | "Chrome web store dev acccount, you can still develop it locally first without an account."                                                                                                                                                                                                              | extension                | none      |
+| A22 | 2026-10-27 | owner, chat   | "Make sure the chrome extension thing locates components and files, etc." · dialog: "next, react, vue, nuxt"                                                                                                                                                                                             | extension                | none      |
+| A23 | 2026-10-27 | owner, dialog | "planning should be done initially and certain things then be done in parallel. e.g. mcp, mac localhost bridge, landing/waitlist, webapp."                                                                                                                                                               | none                     | none      |
+| A24 | 2026-10-27 | owner, dialog | "I want you to use tools like impeccable and frontend-designer. to make the experience look great. as well as the ux-pattern skill and heroui components and patterns with wrappers."                                                                                                                    | all                      | none      |
+| A25 | 2026-10-27 | owner, chat   | "ideally in parallel also using codex sol 6.1 and sonnet 5.5 models."                                                                                                                                                                                                                                    | none                     | none      |
+| A26 | 2026-10-27 | owner, dialog | "Two-way sync" (what the Mac app does online in the first release)                                                                                                                                                                                                                                       | Mac app                  | none      |
+| A27 | 2026-10-27 | owner, dialog | "Left sidebar" · "this way, by page navigation and so one would be a subnavigation later down the road"                                                                                                                                                                                                  | app navigation           | none      |
+| A28 | 2026-10-27 | owner, dialog | "Strict" (prompt injection from feedback text in the MCP)                                                                                                                                                                                                                                                | MCP                      | none      |
+
+The owner's other decisions of 2026-10-27 are in `snapmark-context` (strategy note, section 9) and in the design. Release 1 builds only what "Proposed outcome" lists.
+
+## Job stories
+
+| #   | When …                                                | I want to …                                                            | So I can …                                   | Evidence                 |
+| --- | ----------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------- | ------------------------ |
+| J1  | I click through a running build and something is off  | point at the exact element, draw on it and say what I expect           | the engineer and the agent do not guess      | reported — A1, A4        |
+| J2  | there are several ways to fix it                      | compare versions side by side, comment and vote, and approve one       | we decide once and the decision is on record | reported — A12, A14      |
+| J3  | I start working with my coding agent                  | let it fetch the open, decided feedback for this repo and branch       | I never copy feedback by hand                | reported — A2, A5        |
+| J4  | my agent has implemented a request                    | have it reported with the commit and an after-screenshot               | a reviewer approves without asking me        | reported — A3            |
+| J5  | the agent works on feedback                           | know the component, file, region, module and running version behind it | it finds the right code at once              | reported — A13, A15, A22 |
+| J6  | I am away from my desk and something needs me         | answer and approve from my phone                                       | work does not stall                          | reported — A18           |
+| J7  | I capture on my Mac outside the browser               | keep my local session and the online one the same                      | I work offline and still share               | reported — A26           |
+| J8  | someone wants early access                            | join a waitlist, and an operator invites them                          | the beta grows on purpose                    | reported — A17           |
+| J9  | a guest writes feedback that tries to steer the agent | have the agent treat it as data, never as instructions                 | nobody can take over an engineer's agent     | assumed — A28            |
+
+## Success measure
+
+Release 1 runs locally, so the measure is read from the local database while the owner dogfoods.
+
+- **Measure:** feedback items that finish the full loop: captured, decided, implemented through MCP, accepted.
+- **Read in:** the owner's local database, `select count(*) from feedback where status = 'accepted' and implemented_via_mcp`.
+- **Target:** 20 within two weeks after milestone 7 merges. Median review rounds per item: at most 1.5.
+
+## Problem
+
+- **What is wrong or missing:** feedback on agent-built UI lives in chat screenshots. The agent never sees its context, and decisions leave no trace.
+- **Who feels it:** product managers, designers, product engineers, founders (`snapmark-context` `audience/audiences.md`).
+- **Evidence:** the owner's own workflow today (Snapmark sessions read from disk by one agent, no team, no decisions); competitors' MCP features (`snapmark-context` `market/2026-10-25-pricing-research.md`).
+
+## Proposed outcome
+
+- A person signs in with an email link, belongs to organisations and workspaces, and invites others.
+- In Chrome they pick an element, draw, and give feedback that knows its page, region, module, component, file, repo, branch and version.
+- The team comments, asks, posts versions, votes, approves or requests changes; the trail is kept.
+- A coding agent lists, reads, asks, and reports implementations through MCP, and treats people's text as data.
+- The Mac app tells the extension which repo a localhost page comes from, and keeps its sessions in sync with the workspace both ways.
+- A landing page collects a waitlist; an operator invites people from it.
+- Everything runs on the owner's machine; only captures live in Cloud Storage.
+
+## Affected users and systems
+
+| Kind    | Name                                               | How                                                                    |
+| ------- | -------------------------------------------------- | ---------------------------------------------------------------------- |
+| users   | the owner and the people the owner invites locally | new web app, extension, Mac sync                                       |
+| service | `snapmark-kit` (new)                               | shared contracts, annotations, tokens, UI wrappers, framework adapters |
+| service | `snapmark-web` (new)                               | public, app, operator, API, MCP                                        |
+| service | `snapmark-chrome` (new)                            | capture and code location                                              |
+| service | `snapmark-desktop`                                 | localhost bridge (native messaging), two-way session sync              |
+| data    | local Postgres, Cloud Storage bucket (Terraform)   | new                                                                    |
+
+## Constraints
+
+- **Must not change:** the Mac app's local workflow without an account; its bundle id `com.cdudek.snapmark`; its manual release process.
+- **Deadline:** none.
+- **Rules that apply:** the design (`docs/designs/2026-10-27-snapmark-online.md`), OMR shared principles (simplicity, provider pattern, no secrets in repos), tokens and i18n lint, module boundaries, `europe-west3`.
+
+## Open questions
+
+1. Name and domain (owner is choosing; "Snapmark" and `localhost` until then).
