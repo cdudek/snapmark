@@ -4,9 +4,9 @@ type: intent
 change: 2026-10-27-online-release-1
 design: docs/designs/2026-10-27-snapmark-online.md
 author: Calvin Dudek
-status: draft
-reviewed_by: null
-approved_at: null
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-27
 created: 2026-10-27
 ---
 
@@ -48,6 +48,7 @@ Every request that this change answers, in the owner's own words (chat, 2026-10-
 | A26 | 2026-10-27 | owner, dialog | "Two-way sync" (what the Mac app does online in the first release)                                                                                                                                                                                                                                       | Mac app                  | none      |
 | A27 | 2026-10-27 | owner, dialog | "Left sidebar" · "this way, by page navigation and so one would be a subnavigation later down the road"                                                                                                                                                                                                  | app navigation           | none      |
 | A28 | 2026-10-27 | owner, dialog | "Strict" (prompt injection from feedback text in the MCP)                                                                                                                                                                                                                                                | MCP                      | none      |
+| A29 | 2026-10-27 | owner, plannotator | "I want you to use use laws of ux, interaction guidelines, adhere to our design guidelines, use ui max plugins, sitemap properly planned, etc." | all | none |
 
 The owner's other decisions of 2026-10-27 are in `snapmark-context` (strategy note, section 9) and in the design. Release 1 builds only what "Proposed outcome" lists.
 
@@ -105,6 +106,9 @@ Release 1 runs locally, so the measure is read from the local database while the
 - **Must not change:** the Mac app's local workflow without an account; its bundle id `com.cdudek.snapmark`; its manual release process.
 - **Deadline:** none.
 - **Rules that apply:** the design (`docs/designs/2026-10-27-snapmark-online.md`), OMR shared principles (simplicity, provider pattern, no secrets in repos), tokens and i18n lint, module boundaries, `europe-west3`.
+- **UX rules (A24, A29):** the 30 Laws of UX; the interaction guidelines, extended for the web; the owner's design system.
+- **UI building blocks:** HeroUI components behind Snapmark wrappers; a sitemap planned before any screen.
+- **UX tools:** `omr-ux` (design, sitemap, conformance, validate), `impeccable`, `frontend-design`, `ux-patterns`, `ui-ux-pro-max`.
 
 ## Open questions
 
