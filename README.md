@@ -28,4 +28,4 @@ npm run format && npm run lint && npm run typecheck && npm test
 
 ## Releases and updates
 
-A merge to `main` whose Conventional Commit title is `feat:` or `fix:` releases the app (semantic-release, `vX.Y.Z` tags). The release workflow uploads the signed builds to the public bucket `gs://snapmark-updates/mac/`, where installed copies look for updates. The code itself stays private. Details: [snapmark-app/README.md](snapmark-app/README.md).
+Releases are manual: run **Actions › Release › Run workflow** on `main`. semantic-release picks the version from the Conventional Commit titles merged since the last release (`vX.Y.Z` tags); every merge shows the pending version in that workflow's run summary. The release workflow uploads the signed builds to the public bucket `gs://snapmark-updates/mac/`, where installed copies look for updates. The code itself stays private. Details: [snapmark-app/README.md](snapmark-app/README.md).
