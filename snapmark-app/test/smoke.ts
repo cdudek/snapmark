@@ -1773,6 +1773,23 @@ app
       ticked(fromSettings) === '10 fps,10 Seconds,Show Mouse Pointer' &&
       backLabel === 'Capture' &&
       settingsShows === 'true,0,false';
+    // @F87 Capture Scrolling's row: without Accessibility it says so and offers the button (never clicked here: it would
+    // open System Settings); allowed while away, the window says so when it comes forward, without the button
+    const scrollRow = () =>
+      inWin(
+        set,
+        `return document.getElementById('scrolls').textContent + '|' + !document.getElementById('accessibility').hidden + '|' + document.getElementById('accessibility').textContent`,
+      );
+    const notAllowed = await scrollRow();
+    desk.trusted = () => true;
+    await inWin(set, `window.dispatchEvent(new Event('focus'));`);
+    await sleep(200);
+    const allowed = await scrollRow();
+    desk.trusted = () => false;
+    viewer['@F87 Settings ▸ Capture says whether Capture Scrolling can scroll by itself'] =
+      notAllowed === 'Capture Scrolling needs Accessibility to scroll by itself.|true|Open Accessibility Settings…' &&
+      allowed === 'Capture Scrolling scrolls by itself.|false|Open Accessibility Settings…';
+    why.F87 = [notAllowed, allowed];
     // Shortcuts: the six global keys, each taken here (quiet mode registers none); Show All Shortcuts opens the list
     await inWin(set, `document.getElementById('tab-shortcuts').click();`);
     const keyRows = await inWin(

@@ -56,6 +56,10 @@
     box(d.capture.oneShot ? 'oneshot' : 'current').checked = true;
     el<HTMLSelectElement>('timer').value = String(d.capture.timer);
     box('pointer').checked = d.capture.pointer;
+    el('scrolls').textContent = d.scrolls
+      ? 'Capture Scrolling scrolls by itself.'
+      : 'Capture Scrolling needs Accessibility to scroll by itself.';
+    button('accessibility').hidden = d.scrolls;
     box('single').checked = d.singleKeys;
     el('keys').replaceChildren(
       ...d.keys.map(({ cap, name, taken }) => {
@@ -75,7 +79,7 @@
   };
   const load = () => void s.settingsInit().then(render);
   load();
-  // Login approval given in System Settings, or an option changed in the capture bar, shows when the window comes back.
+  // Login or Accessibility approval given in System Settings, or an option changed in the capture bar, shows when the window comes back.
   window.addEventListener('focus', load);
 
   const set = (key: SettingsKey, value: boolean | number) => void s.settingsSet(key, value).then(render);
@@ -90,6 +94,7 @@
     ['clear', 'clearOld'],
     ['updates', 'checkUpdates'],
     ['login-items', 'loginItems'],
+    ['accessibility', 'accessibility'],
     ['all', 'shortcuts'],
   ] as const)
     button(id).onclick = () => void s.settingsRun(what).then(render);

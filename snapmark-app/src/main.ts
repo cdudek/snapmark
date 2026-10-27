@@ -1625,6 +1625,7 @@ const settingsInit = (): SettingsInit => ({
     .filter(([k]) => k.startsWith('⌃⇧'))
     .map(([cap, name]) => ({ cap, name, taken: !registered.has(`Control+Shift+${cap.slice(2)}`) })),
   capture: captureOpts,
+  scrolls: desk.trusted(),
 });
 
 // Every window shares one preload: only the Settings window may change settings (M2-3).
@@ -1649,6 +1650,8 @@ ipcMain.handle('settings:run', async (e, what: SettingsRun): Promise<SettingsIni
   else if (what === 'clearOld') await clearOldSessions();
   else if (what === 'checkUpdates') await checkForUpdatesNow();
   else if (what === 'loginItems') await shell.openExternal('x-apple.systempreferences:com.apple.LoginItems-Settings.extension');
+  else if (what === 'accessibility')
+    await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
   else if (what === 'shortcuts') showShortcuts();
   return settingsInit();
 });

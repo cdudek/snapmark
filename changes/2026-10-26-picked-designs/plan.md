@@ -65,7 +65,7 @@ After it, a long page scrolls itself into one screenshot, and the owner scrolls 
 | #   | Feature                                                             | Facts        | Branch                       | State |
 | --- | ------------------------------------------------------------------- | ------------ | ---------------------------- | ----- |
 | 4.1 | Auto-scroll with manual fallback; scrolling control ⓧ and Done keys | F82–F86, F88 | `milestone/picked-designs-4` | done  |
-| 4.2 | Settings ▸ Capture: the Accessibility row                           | F87          | `milestone/picked-designs-4` | todo  |
+| 4.2 | Settings ▸ Capture: the Accessibility row                           | F87          | `milestone/picked-designs-4` | done  |
 
 ## Approach
 
@@ -210,7 +210,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 ### Milestone 4
 
 - [x] 16. Auto-scroll, fallback, panel keys. Proof: `@F82`–`@F86`, `@F88` pass.
-- [ ] 17. Settings row. Proof: `@F87` passes.
+- [x] 17. Settings row. Proof: `@F87` passes.
 - [ ] 18. Gate. Proof: `VERIFY PASS milestone`.
 
 ## Risks
