@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webFrame } from 'electron';
 
 const api: Window['snapmark'] = {
   init: () => ipcRenderer.invoke('editor:init'),
+  frame: (i) => ipcRenderer.invoke('editor:frame', i),
   save: (data) => ipcRenderer.invoke('editor:save', data),
   copyImage: (png) => ipcRenderer.invoke('editor:copy', png),
   saveImageAs: (png) => ipcRenderer.invoke('editor:saveAs', png),
@@ -42,7 +43,7 @@ const api: Window['snapmark'] = {
   onBarState: (cb) => void ipcRenderer.on('bar:state', (_e, s: BarInit) => cb(s)),
   onScrollStatus: (cb) => void ipcRenderer.on('scroll:status', (_e, status: ScrollStatus) => cb(status)),
   onRecordStatus: (cb) => void ipcRenderer.on('record:status', (_e, status: RecordStatus) => cb(status)),
-  recorderFrame: (t, png) => ipcRenderer.send('recorder:frame', t, png),
+  recorderFrame: (t, png, thumb) => ipcRenderer.send('recorder:frame', t, png, thumb),
   recorderFailed: (reason) => ipcRenderer.send('recorder:failed', reason),
   onCountdown: (cb) => void ipcRenderer.on('countdown:digit', (_e, s: number) => cb(s)),
 };

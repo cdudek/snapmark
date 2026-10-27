@@ -1,7 +1,9 @@
 import assert from 'assert';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import zlib from 'zlib';
 import { secretBoxes } from '../src/redact';
 import * as sessions from '../src/sessions';
 
@@ -471,4 +473,127 @@ assert.ok(linksIn(entryOf(rtMd(), 13)).every((l) => l.src.startsWith('img/013/')
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
-console.log('sessions: ok');
+// @F71 @F75 Add to Session for a recording, with a fake one: 6 frames at 15 fps, frames 1 and 2 the same picture
+void (async () => {
+  const recRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-test-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
+  const name = sessions.create(recRoot, 'rec');
+  // A 16×12 PNG of one colour, from Node's own zlib
+  const png = (rgb: number[]) => {
+    const chunk = (type: string, data: Buffer) => {
+      const body = Buffer.concat([Buffer.from(type), data]);
+      const out = Buffer.alloc(body.length + 8);
+      out.writeUInt32BE(data.length);
+      body.copy(out, 4);
+      out.writeUInt32BE(zlib.crc32(body), body.length + 4);
+      return out;
+    };
+    const ihdr = Buffer.alloc(13);
+    ihdr.writeUInt32BE(16);
+    ihdr.writeUInt32BE(12, 4);
+    ihdr.set([8, 2], 8);
+    const row = Buffer.from([0, ...Array.from({ length: 16 }, () => rgb).flat()]);
+    const idat = zlib.deflateSync(Buffer.concat(Array(12).fill(row)));
+    return Buffer.concat([
+      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+      chunk('IHDR', ihdr),
+      chunk('IDAT', idat),
+      chunk('IEND', Buffer.alloc(0)),
+    ]);
+  };
+  const colours = [
+    [255, 0, 0],
+    [0, 255, 0],
+    [0, 255, 0],
+    [0, 0, 255],
+    [255, 255, 0],
+    [0, 255, 255],
+  ];
+  const frames = colours.map((c, i) => {
+    const f = path.join(tmp, `${String(i).padStart(4, '0')}.png`);
+    fs.writeFileSync(f, png(c));
+    return f;
+  });
+  const times = [0, 0.0667, 0.1333, 0.2, 0.2667, 0.3333];
+  const rec: Recording = { dir: tmp, frames, times, end: 0.4, fps: 15, hashes: colours.map(String), keys: [0, 1, 3, 5] };
+  const state = { caption: 'Spinner', items: [{ t: 'marker', c: '#e5484d', x: 10, y: 5, note: 'here', f: 4 }] };
+  const filmstrip = Buffer.from('the marked filmstrip');
+  const add = () =>
+    sessions.addRecording(recRoot, name, filmstrip, { caption: 'Spinner' }, [], rec, state, {
+      keep: [0, 1, 3, 5, 4],
+      jpeg: () => Buffer.from('jpeg'),
+    });
+  if (process.platform !== 'darwin') {
+    await assert.rejects(add(), /ImageIO/, '@F71 no GIF off macOS');
+    assert.strictEqual(sessions.count(recRoot, name), 0, '@F71 a recording whose GIF cannot be written adds nothing');
+    console.log('sessions: ok (recording checks skipped: no ImageIO off macOS)');
+    return;
+  }
+  const n = await add();
+  const files = sessions.recordingFiles(recRoot, name, n);
+  // @F71 the session gains the marked filmstrip PNG and the GIF
+  assert.ok(fs.readFileSync(path.join(recRoot, name, 'img', '001.png')).equals(filmstrip), '@F71 the filmstrip is the entry image');
+  assert.strictEqual(fs.readFileSync(files.gif).subarray(0, 6).toString(), 'GIF89a', '@F71 the GIF beside it');
+  assert.match(fs.readFileSync(path.join(recRoot, name, 'session.md'), 'utf8'), /!\[Screenshot 1\]\(img\/001\.png\)\n\nSpinner\n/);
+  assert.strictEqual(sessions.count(recRoot, name), 1, '@F71 one entry; the GIF is not counted as a screenshot');
+  // @F70 @F71 the GIF reads back at the real timing: the repeated frame merged, sub-0.1 s delays kept, 0.4 s in all
+  const READ = String.raw`ObjC.import('ImageIO');
+  function run(argv) {
+    const src = $.CGImageSourceCreateWithURL($.NSURL.fileURLWithPath(argv[0]), $());
+    const delays = [];
+    for (let i = 0; i < $.CGImageSourceGetCount(src); i++)
+      delays.push(ObjC.deepUnwrap(ObjC.castRefToObject($.CGImageSourceCopyPropertiesAtIndex(src, i, $())))['{GIF}'].UnclampedDelayTime);
+    return JSON.stringify(delays);
+  }`;
+  const delays = JSON.parse(execFileSync('osascript', ['-l', 'JavaScript', '-e', READ, files.gif], { encoding: 'utf8' })) as number[];
+  assert.deepStrictEqual(delays, [0.07, 0.13, 0.07, 0.06, 0.07], '@F71 each frame as long as it showed');
+  assert.ok(Math.abs(delays.reduce((a, b) => a + b, 0) - 0.4) < 1e-9, '@F71 the GIF plays as long as the recording');
+  // @F75 the frames, their times and the marks are kept as data: each picture once, key and marked frames as PNG
+  const json = JSON.parse(fs.readFileSync(sessions.editFiles(recRoot, name, n).json, 'utf8'));
+  assert.deepStrictEqual(json.recording.frames, ['0000.png', '0001.png', '0001.png', '0003.png', '0004.png', '0005.png'], '@F75');
+  assert.deepStrictEqual(
+    [json.recording.times, json.recording.end, json.recording.fps, json.recording.keys],
+    [times, 0.4, 15, [0, 1, 3, 5]],
+  );
+  assert.deepStrictEqual(json.items, state.items, '@F75 the marks, each on its frame');
+  assert.deepStrictEqual(fs.readdirSync(files.frames).sort(), ['0000.png', '0001.png', '0003.png', '0004.png', '0005.png'], '@F75');
+  // @F75 Edit Again reopens them: the same frames, times and key frames, where the session keeps them
+  const again = sessions.editedRecording(recRoot, name, n)!;
+  assert.deepStrictEqual(
+    again.frames.map((f) => fs.readFileSync(f).equals(png(colours[frames.indexOf(path.join(tmp, path.basename(f)))]))),
+    [true, true, true, true, true, true],
+    '@F75 the frames come back',
+  );
+  assert.deepStrictEqual([again.times, again.keys, again.dir], [times, [0, 1, 3, 5], files.frames], '@F75');
+  sessions.saveEdit(recRoot, name, 9, Buffer.from('clean'), '{"items":[]}');
+  assert.strictEqual(sessions.editedRecording(recRoot, name, 9), null, '@F75 a screenshot has no frames');
+  // A frame neither key nor marked is kept as JPEG: Edit Again saving with frame 4 unmarked
+  await sessions.addRecording(
+    recRoot,
+    name,
+    filmstrip,
+    {},
+    [],
+    again,
+    { caption: '', items: [] },
+    {
+      replace: n,
+      keep: [0, 1, 3, 5],
+      jpeg: () => Buffer.from('jpeg'),
+    },
+  );
+  const replaced = JSON.parse(fs.readFileSync(sessions.editFiles(recRoot, name, n).json, 'utf8')).recording.frames;
+  assert.deepStrictEqual(replaced, ['0000.png', '0001.png', '0001.png', '0003.png', '0004.jpg', '0005.png'], '@F75 non-key frames as JPEG');
+  assert.strictEqual(sessions.count(recRoot, name), 1, '@F75 Edit Again replaces the entry');
+  // Removed from the session, its GIF and frames go to Discarded with it, and come back with it
+  sessions.removeShot(recRoot, name, n);
+  assert.ok(!fs.existsSync(files.gif) && !fs.existsSync(files.data), 'the GIF and frames leave with the entry');
+  sessions.restoreShot(recRoot, sessions.discardedIn(recRoot, name)[0]);
+  assert.ok(fs.existsSync(files.gif) && fs.readdirSync(files.frames).length === 5, 'and come back with it');
+  fs.rmSync(recRoot, { recursive: true, force: true });
+  fs.rmSync(tmp, { recursive: true, force: true });
+  console.log('sessions: ok');
+})().catch((e: unknown) => {
+  console.error(e);
+  process.exit(1);
+});

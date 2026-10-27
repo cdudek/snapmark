@@ -1,6 +1,9 @@
-// Session = a folder under root holding session.md and img/NNN.png.
+// Session = a folder under root holding session.md and img/NNN.png (and img/NNN.gif for a recording).
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
+import { writeGif } from './gif';
+import { gifTiming } from './keyframes';
 
 export interface ShotText {
   caption?: string;
@@ -232,6 +235,108 @@ export function saveEdit(root: string, name: string, n: number, original: Buffer
   fs.writeFileSync(f.json, state);
 }
 
+// ---------- Recordings: the filmstrip as the entry's image, its GIF beside it, and the frames for Edit Again ----------
+
+// img/NNN.gif plays the recording; .edit/NNN/frames/ holds its frames, and .edit/NNN.json's `recording` says which
+// file each frame is, with the times, the key frames and the marks (F75).
+export function recordingFiles(root: string, name: string, n: number) {
+  const data = path.join(root, name, '.edit', pad(n));
+  return { gif: path.join(root, name, 'img', `${pad(n)}.gif`), data, frames: path.join(data, 'frames') };
+}
+
+// The GIF's frames at the real timing (keyframes.ts gifTiming): the same picture in a row shows once, for as long.
+export const gifFrames = (r: Recording) =>
+  gifTiming(r.times, r.end, r.hashes ?? r.frames).map(({ frame, delay }) => ({ png: r.frames[frame], delay }));
+
+// What a recording saved in a session keeps of itself in .edit/NNN.json.
+interface KeptRecording {
+  frames: string[]; // each frame's file in .edit/NNN/frames/; the same picture shares one
+  times: number[];
+  end: number;
+  fps: number;
+  keys: number[];
+  evenly: boolean;
+}
+
+export interface RecordingSave {
+  replace?: number; // Edit Again: the entry it replaces
+  keep: number[]; // the key and marked frames: kept as PNG
+  jpeg?: (png: string) => Buffer; // the other frames as JPEG, so a 30 s recording stays small (plan, Risks)
+}
+
+// Add to Session for a recording (F71): the marked filmstrip as the entry's image, the GIF beside it, and the frames,
+// their times and the marks for Edit Again (F75). The GIF is written first: when it cannot be, nothing is added.
+export async function addRecording(
+  root: string,
+  name: string,
+  png: Buffer,
+  text: ShotText,
+  parts: Buffer[],
+  r: Recording,
+  state: object,
+  { replace, keep, jpeg }: RecordingSave,
+): Promise<number> {
+  const tmp = path.join(os.tmpdir(), `snapmark-${process.pid}-${Date.now()}.gif`);
+  try {
+    await writeGif(tmp, gifFrames(r));
+    const n = replace && replaceShot(root, name, replace, png, text, parts) ? replace : addShot(root, name, png, text, parts);
+    try {
+      const f = recordingFiles(root, name, n);
+      fs.copyFileSync(tmp, f.gif); // not a rename: the session may be on another disk
+      const first = fs.readFileSync(r.frames[0]); // Edit Again's frames may be the ones keepFrames replaces
+      const frames = keepFrames(f.data, r, new Set(keep), jpeg);
+      const kept: KeptRecording = { frames, times: r.times, end: r.end, fps: r.fps, keys: r.keys ?? [0], evenly: !!r.evenly };
+      saveEdit(root, name, n, first, JSON.stringify({ ...state, recording: kept }));
+    } catch (err) {
+      // A new entry that is not whole goes again, so the recording is not in the session
+      const gone = n !== replace && removeShot(root, name, n);
+      if (gone) fs.rmSync(gone, { recursive: true, force: true });
+      throw err;
+    }
+    return n;
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
+}
+
+// Writes the frames into `data`/frames/, each picture once: a key or marked one as it is, the rest as JPEG when
+// `jpeg` is given (one already JPEG stays so). Written beside the old ones first, then swapped. Returns each frame's file.
+function keepFrames(data: string, r: Recording, keep: Set<number>, jpeg?: (png: string) => Buffer): string[] {
+  const ids = r.hashes ?? r.frames;
+  const sharp = new Set([...keep].map((i) => ids[i]));
+  const fresh = `${data}.new`;
+  fs.rmSync(fresh, { recursive: true, force: true });
+  fs.mkdirSync(path.join(fresh, 'frames'), { recursive: true });
+  try {
+    const named = new Map<string, string>();
+    const files = r.frames.map((src, i) => {
+      const had = named.get(ids[i]);
+      if (had) return had;
+      const small = !!jpeg && !sharp.has(ids[i]) && src.endsWith('.png');
+      const file = `${String(i).padStart(4, '0')}${small ? '.jpg' : path.extname(src)}`;
+      const to = path.join(fresh, 'frames', file);
+      if (small) fs.writeFileSync(to, jpeg(src));
+      else fs.copyFileSync(src, to);
+      named.set(ids[i], file);
+      return file;
+    });
+    fs.rmSync(data, { recursive: true, force: true });
+    fs.renameSync(fresh, data);
+    return files;
+  } catch (err) {
+    fs.rmSync(fresh, { recursive: true, force: true });
+    throw err;
+  }
+}
+
+// Edit Again on a recording: its frames where the session keeps them, or null for a screenshot.
+export function editedRecording(root: string, name: string, n: number): Recording | null {
+  const kept = (JSON.parse(fs.readFileSync(editFiles(root, name, n).json, 'utf8')) as { recording?: KeptRecording }).recording;
+  if (!kept) return null;
+  const dir = recordingFiles(root, name, n).frames;
+  return { ...kept, dir, frames: kept.frames.map((f) => path.join(dir, f)), hashes: kept.frames };
+}
+
 // Replaces entry n's image and text, keeping its number and time. Returns false if the entry is gone. All or nothing:
 // new parts go to img/NNN.new/ first; then the old parts move to img/NNN.old/, the new ones take their place, and the
 // one image and the entry are written; the old parts go last. Any failure puts every file back as it was. No parts:
@@ -319,12 +424,14 @@ export function discardCapture(root: string, session: string, image: string, sta
 
 // A recording cancelled with ⓧ (F67): its frames and their times, kept 7 days as a closed screenshot is; the first
 // frame is the Discarded tab's picture. Returns the folder.
-export function discardRecording(root: string, session: string, r: Recording): string {
-  const dir = discardDir(root, { kind: 'capture', session, recording: true });
+// A recording editor closed without saving keeps its marks too (`state`); `copied`: Copy Filmstrip closed a One-Shot.
+export function discardRecording(root: string, session: string, r: Recording, state?: string, copied = false): string {
+  const dir = discardDir(root, { kind: 'capture', session, recording: true, ...(copied && { copied }) });
   fs.cpSync(r.dir, path.join(dir, 'frames'), { recursive: true });
   fs.copyFileSync(r.frames[0], path.join(dir, 'image.png'));
   const { times, end, fps } = r;
   fs.writeFileSync(path.join(dir, 'recording.json'), JSON.stringify({ frames: r.frames.map((f) => path.basename(f)), times, end, fps }));
+  if (state) fs.writeFileSync(path.join(dir, 'state.json'), state);
   return dir;
 }
 
@@ -389,6 +496,12 @@ export function restoreShot(root: string, d: Discarded): number {
       fs.readFileSync(path.join(d.dir, 'original.png')),
       fs.readFileSync(path.join(d.dir, 'state.json'), 'utf8'),
     );
+  const rec = recordingFiles(root, d.session, n);
+  if (fs.existsSync(path.join(d.dir, 'image.gif'))) fs.renameSync(path.join(d.dir, 'image.gif'), rec.gif);
+  if (fs.existsSync(path.join(d.dir, 'frames'))) {
+    fs.mkdirSync(path.dirname(rec.data), { recursive: true });
+    fs.renameSync(path.join(d.dir, 'frames'), rec.data);
+  }
   const mdPath = path.join(dir, 'session.md');
   const md = fs.readFileSync(mdPath, 'utf8');
   const later = [...md.matchAll(/^## (\d+) · /gm)].find((m) => parseInt(m[1], 10) > n);
@@ -420,6 +533,10 @@ export function removeShot(root: string, name: string, n: number): string | null
     fs.renameSync(edit.png, path.join(to, 'original.png'));
     fs.renameSync(edit.json, path.join(to, 'state.json'));
   }
+  // A recording's GIF and frames go with it, and expire with it
+  const rec = recordingFiles(root, name, n);
+  if (fs.existsSync(rec.gif)) fs.renameSync(rec.gif, path.join(to, 'image.gif'));
+  if (fs.existsSync(rec.data)) fs.renameSync(rec.data, path.join(to, 'frames'));
   fs.writeFileSync(mdPath, (md.slice(0, start).trimEnd() + '\n' + md.slice(end).replace(/^\n+/, '\n')).replace(/\n{3,}/g, '\n\n'));
   return to;
 }

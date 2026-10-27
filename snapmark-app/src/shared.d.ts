@@ -10,6 +10,18 @@ interface EditorInit {
   singleKeys: boolean; // Settings ▸ Single-Key Tools; off, a plain letter or digit picks no tool and ⌘1–⌘7 still do
   color?: string; // the annotation colour last picked in any editor, also before a restart
   customColors: string[]; // the colour panel's Custom row, newest first, kept in state.json
+  recording?: RecordingInit; // a recording: the canvas is a grid of its frames (src is empty)
+}
+
+// The recording editor's frames: their pictures come one at a time through frame(i).
+interface RecordingInit {
+  size: { width: number; height: number }; // a frame's pixels
+  times: number[]; // each frame's time in seconds
+  end: number; // the recording's length in seconds
+  fps: number;
+  keys: number[]; // the key frames (keyframes.ts), by index
+  evenly: boolean; // finding them took too long: evenly spaced instead (F77)
+  ids: string[]; // the same id for frames that are the same picture, so each is read once
 }
 
 // Everything on a screenshot except the screenshot, as plain data (editor.ts writes and reads the items).
@@ -86,10 +98,14 @@ interface CaptureOpts {
 // frame in `dir`, in order, each written as it was grabbed.
 interface Recording {
   dir: string;
-  frames: string[]; // PNG files
+  frames: string[]; // PNG files (JPEG too, for a recording kept in a session)
   times: number[]; // each frame's time in seconds from the first
   end: number; // seconds from the first frame to the stop
   fps: number;
+  thumbs?: import('./stitch').Bitmap[]; // the recorder's 64-pixel-wide copy of each frame, for finding key frames at once
+  hashes?: string[]; // equal for frames that are the same picture: the GIF shows them as one
+  keys?: number[]; // the key frames, once found
+  evenly?: boolean;
 }
 
 // The recording control (scroll.html#record), every 100 ms.
@@ -142,10 +158,11 @@ interface Window {
     scrollDone(ok: boolean): void; // the scrolling or recording control: Done (true) or Cancel (false)
     onScrollStatus(cb: (status: ScrollStatus) => void): void;
     onRecordStatus(cb: (status: RecordStatus) => void): void;
-    recorderFrame(t: number, png: Uint8Array): void; // recorder.html: the next frame, t ms after the first
+    recorderFrame(t: number, png: Uint8Array, thumb: Uint8Array): void; // recorder.html: the next frame, t ms after the first, and its 64-pixel-wide RGBA copy
     recorderFailed(reason: string): void; // recorder.html: the screen could not be grabbed
     onCountdown(cb: (seconds: number) => void): void; // countdown.html: the next digit, each second
     init(): Promise<EditorInit>;
+    frame(i: number): Promise<Uint8Array<ArrayBuffer>>; // a recording's frame i, as its file holds it
     save(data: EditorSave): Promise<number>;
     copyImage(png: string): Promise<void>; // base64 PNG to the clipboard, not into the session
     saveImageAs(png: string): Promise<string | null>; // base64 PNG to a file the owner picks; null when cancelled

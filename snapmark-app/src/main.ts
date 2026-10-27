@@ -18,6 +18,7 @@ import {
 } from 'electron';
 import type { IpcMainEvent } from 'electron';
 import { execFile } from 'child_process';
+import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -49,6 +50,8 @@ import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
 import { Box, OcrLine, recognize } from './ocr';
 import { secretBoxes } from './redact';
+import { keyFrames } from './keyframes';
+import { writeGif } from './gif';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
@@ -86,6 +89,7 @@ interface EditorWin {
   state?: EditState;
   replace?: number;
   oneShot?: boolean;
+  recording?: Recording; // the recording editor: its frames, which it owns like `image`
 }
 const editors = new Map<number, EditorWin>();
 // Session windows, keyed by webContents.id; known = the session.md text the window shows
@@ -433,12 +437,38 @@ async function captureRecord(o: CaptureOpts) {
   if (r) recordings.open(r, o.oneShot);
 }
 
-// What Done hands over. Swappable, so the smoke test sees the frames.
-// shortcut: a stub until 3.4, which opens the recording editor on the frames here; until then they stay in their
-// temp folder and nothing opens.
+// What Done hands over: the recording editor on its key frames. Swappable, so the smoke test sees the frames.
 export const recordings = {
-  open: (r: Recording, oneShot: boolean) => console.log(`Recorded ${r.frames.length} frames in ${r.dir}${oneShot ? ' (One-Shot)' : ''}`),
+  open: (r: Recording, oneShot: boolean) => void openRecording(r, { oneShot }),
 };
+
+// The key frames (keyframes.ts): at once from the recorder's small copies; a recording reopened from Discarded has
+// none, so its files are read again, for at most LIMIT_MS (F77). Frames with the same bytes are the same picture.
+// shortcut: that second way blocks the main process while it reads (seconds for a long Retina recording); move it
+// to a worker if reopening a recording ever feels stuck.
+function findKeys(r: Recording): Recording {
+  if (r.keys) return r;
+  const small = (i: number) => {
+    const img = nativeImage.createFromPath(r.frames[i]).resize({ width: 64 });
+    return { ...img.getSize(), data: img.toBitmap() };
+  };
+  const { keys, evenly } = keyFrames(r.frames.length, r.thumbs ? (i) => r.thumbs![i] : small);
+  const hashes = r.hashes ?? r.frames.map((f) => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex'));
+  return { ...r, thumbs: undefined, keys, evenly, hashes };
+}
+
+// The recording editor: `r`'s frames, which it owns and deletes on close, with marks to put back (`state`), and
+// Edit Again's entry (`replace`).
+function openRecording(r: Recording, opts: { session?: string; state?: EditState; replace?: number; oneShot?: boolean }) {
+  return openEditor(r.frames[0], { ...opts, recording: findKeys(r) });
+}
+
+// The editor deletes its frames on close, so a recording kept in Discarded or a session opens on a copy.
+function tempRecording(r: Recording): Recording {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
+  fs.cpSync(r.dir, dir, { recursive: true });
+  return { ...r, dir, frames: r.frames.map((f) => path.join(dir, path.basename(f))) };
+}
 
 // Done (true) or ⓧ (false) while Record records: ⌃⇧5 and the menu bar icon are Done too (F66).
 let stopRecording: ((keep: boolean) => void) | null = null;
@@ -450,6 +480,7 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
   recording = true;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
   const [frames, times]: [string[], number[]] = [[], []];
+  const [thumbs, hashes]: [Bitmap[], string[]] = [[], []];
   const { id, bounds: b } = screen.getDisplayMatching(a);
   // The outline and the panel are content-protected and the recorder never shows, so no Snapmark window is in a frame (F68)
   const outline = countdownPanel(0, a);
@@ -471,8 +502,9 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
       tray?.setTitle('');
       stopRecording = null;
       recording = false;
-      const r: Recording = { dir, frames, times, end: Math.min(cap, Date.now() - started) / 1000, fps: o.fps };
-      if (how === 'done') return resolve(r);
+      const r: Recording = { dir, frames, times, end: Math.min(cap, Date.now() - started) / 1000, fps: o.fps, thumbs, hashes };
+      // The key frames come from the small copies at once, so "Finding key frames…" never shows (FBK-6: past 400 ms)
+      if (how === 'done') return resolve(findKeys(r));
       if (how !== 'cancel')
         notify(`Recording failed: ${how.failed.replace(/\.$/, '')}. Nothing was added. Click to try again.`, () =>
           busy() ? undefined : void captureRecord({ ...captureOpts, mode: 'record' }),
@@ -490,8 +522,9 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
       resolve(null);
     };
     const failed = (err: unknown) => finish({ failed: err instanceof Error ? err.message : String(err) });
-    const onFrame = (e: IpcMainEvent, t: unknown, png: unknown) => {
+    const onFrame = (e: IpcMainEvent, t: unknown, png: unknown, thumb: unknown) => {
       if (ended || e.sender !== rec?.webContents || typeof t !== 'number' || !Number.isFinite(t) || !(png instanceof Uint8Array)) return;
+      if (!(thumb instanceof Uint8Array) || !thumb.length || thumb.length % 256) return; // 64 pixels wide, RGBA
       if (t >= cap) return finish('done');
       const file = path.join(dir, `${String(frames.length).padStart(4, '0')}.png`);
       try {
@@ -501,6 +534,8 @@ export function recordArea(a: Area, o: { fps: number; oneShot?: boolean }, cap =
       }
       frames.push(file);
       times.push(t / 1000);
+      thumbs.push({ width: 64, height: thumb.length / 256, data: thumb });
+      hashes.push(crypto.createHash('sha1').update(png).digest('hex'));
       started ||= Date.now() - t;
       if (pending) finish('done');
     };
@@ -788,7 +823,8 @@ export async function scrollCapture(a: Area, grab = grabArea, opts: { oneShot?: 
 
 // Opens the editor on a screenshot file, which it owns and deletes on close. `session` is where it saves (default:
 // the current one); `state` puts marks back; `replace` makes saving replace that entry (Edit Again); `oneShot` opens
-// it in one-shot mode, which has no session and never makes or changes one.
+// it in one-shot mode, which has no session and never makes or changes one. `recording` opens the recording editor on
+// its frames (`image` is its first), which it owns instead.
 // An editor or session window opens centred on the screen with the pointer: at 90 % of it the first time, then at the
 // size the owner last gave that kind of window, never larger than that screen.
 function openingBounds(remembered: { width: number; height: number } | null) {
@@ -800,9 +836,9 @@ function openingBounds(remembered: { width: number; height: number } | null) {
 
 export function openEditor(
   image: string,
-  opts: { session?: string; state?: EditState; replace?: number; oneShot?: boolean } = {},
+  opts: { session?: string; state?: EditState; replace?: number; oneShot?: boolean; recording?: Recording } = {},
 ): BrowserWindow {
-  const { oneShot } = opts;
+  const { oneShot, recording } = opts;
   const session = oneShot ? '' : (opts.session ?? active ?? sessions.create(root));
   if (!opts.replace && !oneShot) setActive(session);
   const win = new BrowserWindow({
@@ -817,9 +853,10 @@ export function openEditor(
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   const id = win.webContents.id;
-  // Read while the editor loads: auto-redact and session.md wait for it, opening the editor never does.
-  const text = desk.recognize(image);
-  editors.set(id, { image, text, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot });
+  // Read while the editor loads: auto-redact and session.md wait for it, opening the editor never does. Not for a
+  // recording: its filmstrip is not one picture until it is saved.
+  const text = recording ? Promise.resolve(null) : desk.recognize(image);
+  editors.set(id, { image, text, root, session, win, dirty: false, state: opts.state, replace: opts.replace, oneShot, recording });
   win.once('focus', updateDock);
   win.on('page-title-updated', (e) => e.preventDefault()); // editor.html's <title> would replace the session name
   win.on('resized', () => {
@@ -830,7 +867,7 @@ export function openEditor(
   win.on('closed', () => {
     editors.delete(id);
     updateDock();
-    fs.rmSync(image, { force: true });
+    fs.rmSync(recording ? recording.dir : image, { recursive: true, force: true });
   });
   win.loadFile(path.join(__dirname, 'editor.html'));
   focusApp();
@@ -847,10 +884,21 @@ function editorFor(id: number) {
 }
 
 ipcMain.handle('editor:init', (e): EditorInit => {
-  const { image, root: into, session, state, replace, oneShot } = editorFor(e.sender.id);
-  const src = `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
+  const { image, root: into, session, state, replace, oneShot, recording: r } = editorFor(e.sender.id);
+  const src = r ? '' : `data:image/png;base64,${fs.readFileSync(image, 'base64')}`;
   return {
     src,
+    ...(r && {
+      recording: {
+        size: nativeImage.createFromPath(image).getSize(),
+        times: r.times,
+        end: r.end,
+        fps: r.fps,
+        keys: r.keys ?? [0],
+        evenly: !!r.evenly,
+        ids: r.hashes ?? r.frames,
+      },
+    }),
     ...(oneShot
       ? { session, count: 0, oneShot }
       : { session: sessions.shortName(session), count: sessions.count(into, session), replacing: replace }),
@@ -861,6 +909,13 @@ ipcMain.handle('editor:init', (e): EditorInit => {
     color: color ?? undefined,
     customColors,
   };
+});
+
+// A recording's frame as its file holds it: the page reads only the ones it shows.
+ipcMain.handle('editor:frame', (e, i: unknown): Promise<Buffer> => {
+  const r = editorFor(e.sender.id).recording;
+  if (!r || !Number.isInteger(i) || (i as number) < 0 || (i as number) >= r.frames.length) throw new Error(`No frame ${String(i)}`);
+  return fs.promises.readFile(r.frames[i as number]);
 });
 
 // Session | One-Shot in the editor: the same window switches, so its marks and undo stay (plan 2.1). Back in Session
@@ -934,8 +989,37 @@ ipcMain.on('editor:share-menu', (e, at: Area) => {
   const ed = editors.get(e.sender.id);
   if (!ed) return;
   const send = (what: 'copy' | 'saveAs') => () => void (ed.win.isDestroyed() || ed.win.webContents.send('editor:share', what));
-  popUnder(ed.win, copyMenu({ copyImage: send('copy'), saveAs: send('saveAs') }), at);
+  const gif = ed.recording && { copyGif: () => void copyGif(ed), saveGifAs: () => void saveGifAs(ed) };
+  popUnder(ed.win, copyMenu({ copyImage: send('copy'), saveAs: send('saveAs') }, gif || undefined), at);
 });
+
+// Copy or Save ▸ Copy GIF and Save GIF As…: the recording's GIF, without marks, at the real timing.
+const errText = (err: unknown) => (err instanceof Error ? err.message : String(err)).replace(/\.$/, '');
+async function copyGif(ed: EditorWin) {
+  const tmp = path.join(os.tmpdir(), `snapmark-${Date.now()}.gif`);
+  try {
+    await writeGif(tmp, sessions.gifFrames(ed.recording!));
+    await desk.copyGif(fs.readFileSync(tmp));
+    notify('GIF copied.');
+  } catch (err) {
+    notify(`Couldn't copy the GIF: ${errText(err)}. Try Save GIF As….`);
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
+}
+async function saveGifAs(ed: EditorWin) {
+  const { canceled, filePath } = await desk.savePath(ed.win, {
+    defaultPath: ed.oneShot ? `Snapmark ${new Date().toLocaleString('sv-SE').replace(/:/g, '.')}.gif` : `${ed.session} recording.gif`,
+    filters: [{ name: 'GIF image', extensions: ['gif'] }],
+  });
+  if (canceled || !filePath) return;
+  try {
+    await writeGif(filePath, sessions.gifFrames(ed.recording!));
+    notify(`Saved ${path.basename(filePath)}.`, () => shell.showItemInFolder(filePath));
+  } catch (err) {
+    notify(`Couldn't save ${path.basename(filePath)}: ${errText(err)}`);
+  }
+}
 
 ipcMain.on('editor:beautify', (e, settings: Beautify) => {
   if (!editors.get(e.sender.id)?.oneShot) return;
@@ -948,13 +1032,14 @@ ipcMain.on('editor:beautify', (e, settings: Beautify) => {
 ipcMain.on('editor:stash', (e, state: EditState, copied: unknown) => {
   const ed = editors.get(e.sender.id);
   if (ed && fs.existsSync(ed.image)) {
-    sessions.discardCapture(
+    const [into, as, kept, closedByCopy] = [
       ed.root,
       ed.oneShot ? 'one-shot' : ed.session,
-      ed.image,
       JSON.stringify(state),
       !!ed.oneShot && copied === true,
-    );
+    ];
+    if (ed.recording) sessions.discardRecording(into, as, ed.recording, kept, closedByCopy);
+    else sessions.discardCapture(into, as, ed.image, kept, closedByCopy);
     for (const v of viewers.values()) if (v.root === ed.root && v.session === ed.session) reloadViewer(v); // its Discarded tab
   }
   e.returnValue = null;
@@ -988,17 +1073,25 @@ ipcMain.handle('editor:secrets', async (e): Promise<Box[] | null> => {
 });
 
 ipcMain.handle('editor:save', async (e, { png, caption, notes, cards, moves, state }: EditorSave): Promise<number> => {
-  const { root: into, session, image, replace, oneShot } = editorFor(e.sender.id);
+  const { root: into, session, image, replace, oneShot, recording: rec } = editorFor(e.sender.id);
   if (oneShot) throw new Error('A one-shot screenshot is never added to a session');
   for (const v of viewers.values()) if (v.root === into && v.session === session) await flushViewer(v);
   const out = fitForAI(Buffer.from(png, 'base64'));
   const text = { caption, notes, cards, moves };
   // Cut from the flattened image, so Redact marks and auto-redact reach every part (F9).
   const parts = cutParts(out);
+  // A recording: the filmstrip, its GIF and its frames, where every marked frame is kept sharp as a key frame (F74)
+  const marked = state.items.flatMap((i) => (typeof (i as { f?: unknown }).f === 'number' ? [(i as { f: number }).f] : []));
+  // shortcut: encoded here, in the main process, one frame after another: seconds for 30 s of changing Retina frames.
+  // Move it to the recorder page or a worker if Add to Session ever feels stuck.
+  const jpeg = (f: string) => nativeImage.createFromPath(f).toJPEG(85);
   // Edit Again on an entry removed in the meantime adds it back as a new one.
-  const n =
-    replace && sessions.replaceShot(into, session, replace, out, text, parts) ? replace : sessions.addShot(into, session, out, text, parts);
-  sessions.saveEdit(into, session, n, fs.readFileSync(image), JSON.stringify(state));
+  const n = rec
+    ? await sessions.addRecording(into, session, out, text, parts, rec, state, { replace, keep: [...(rec.keys ?? []), ...marked], jpeg })
+    : replace && sessions.replaceShot(into, session, replace, out, text, parts)
+      ? replace
+      : sessions.addShot(into, session, out, text, parts);
+  if (!rec) sessions.saveEdit(into, session, n, fs.readFileSync(image), JSON.stringify(state));
   // Only the marks changed: session.md is the same text, so the watcher never reloads; show the new image anyway (F21).
   if (n === replace)
     for (const v of viewers.values())
@@ -1027,6 +1120,11 @@ export const desk = {
     Menu.buildFromTemplate(items).popup({ window: win, x: Math.round(at.x), y: Math.round(at.y + at.height) }),
   copyImage: (png: Buffer) => clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(png)], { type: 'image/png' }) })]),
   copyText: (text: string): void => void clipboard.writeText(text),
+  // The GIF as macOS's own GIF type, which Electron passes as a raw pasteboard format
+  copyGif: (gif: Buffer) =>
+    clipboard.write([
+      new ClipboardItem({ 'electron application/osclipboard;format="com.compuserve.gif"': new Blob([new Uint8Array(gif)]) }),
+    ]),
   savePath: (win: BrowserWindow, opts: Electron.SaveDialogOptions) => dialog.showSaveDialog(win, opts),
   notify: (body: string, onClick?: () => void) => {
     const n = new Notification({ title: 'Snapmark', body });
@@ -1053,7 +1151,7 @@ const outImage = (ed: EditorWin, png: string) => (ed.oneShot ? Buffer.from(png, 
 ipcMain.handle('editor:copy', async (e, png: string) => {
   const ed = editorFor(e.sender.id);
   await desk.copyImage(outImage(ed, png));
-  notify(ed.oneShot ? 'Image copied.' : 'Marked-up image copied. It is not in the session.');
+  notify(ed.recording ? 'Filmstrip copied.' : ed.oneShot ? 'Image copied.' : 'Marked-up image copied. It is not in the session.');
 });
 
 ipcMain.handle('editor:saveAs', async (e, png: string): Promise<string | null> => {
@@ -1191,7 +1289,11 @@ ipcMain.on('viewer:edit', (e, n: number) => {
   if (!fs.existsSync(f.json)) return;
   const open = [...editors.values()].find((ed) => ed.root === v.root && ed.session === v.session && ed.replace === n);
   if (open) return void open.win.show();
-  openEditor(tempCopy(f.png), { session: v.session, state: JSON.parse(fs.readFileSync(f.json, 'utf8')), replace: n });
+  const state = JSON.parse(fs.readFileSync(f.json, 'utf8')) as EditState;
+  // A recording reopens on its frames, their times and its marks (F75)
+  const rec = sessions.editedRecording(v.root, v.session, n);
+  if (rec) return void openRecording(tempRecording(rec), { session: v.session, state, replace: n });
+  openEditor(tempCopy(f.png), { session: v.session, state, replace: n });
 });
 // Also says which Discarded folder it went to, so ⌘Z puts back exactly that one.
 ipcMain.handle('viewer:remove', async (e, n: number): Promise<{ data: ViewerInit; dir: string | null }> => {
@@ -1243,8 +1345,15 @@ function tempCopy(file: string): string {
 // ---------- Discarded: closed screenshots and removed entries, kept 7 days ----------
 
 export function reopen(d: sessions.Discarded, into = root) {
-  // shortcut: 3.4 reopens a cancelled recording in the recording editor; until then its frames are handed over as Done's
-  if (d.recording) return recordings.open(sessions.discardedRecording(d), d.session === 'one-shot');
+  if (d.recording) {
+    // The recording editor, on a copy of its frames, with the marks it was closed with
+    const kept = path.join(d.dir, 'state.json');
+    const state = fs.existsSync(kept) ? (JSON.parse(fs.readFileSync(kept, 'utf8')) as EditState) : undefined;
+    const session = sessions.list(into).includes(d.session) ? d.session : undefined;
+    openRecording(tempRecording(sessions.discardedRecording(d)), { session, state, oneShot: d.session === 'one-shot' });
+    fs.rmSync(d.dir, { recursive: true, force: true });
+    return;
+  }
   if (d.kind === 'shot') {
     const n = sessions.restoreShot(into, d);
     notify(`Screenshot ${n} is back in ${sessions.shortName(d.session)}.`);

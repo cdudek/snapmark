@@ -37,8 +37,9 @@ const canvas = new fabric.Canvas($<HTMLCanvasElement>('canvas'), {
   preserveObjectStacking: true,
   uniformScaling: false,
 });
-// Every step goes both ways; objs are the marks a step added, so an empty new card can take its step back out.
-type Step = { undo: () => void; redo: () => void; objs?: FObject[] };
+// Every step goes both ways; objs are the marks a step added, so an empty new card can take its step back out. In a
+// recording, `cells` is the grid it was made in: it is undone and redone there (inLayout).
+type Step = { undo: () => void; redo: () => void; objs?: FObject[]; cells?: Map<number, Rect> };
 const undoStack: Step[] = [];
 const redoStack: Step[] = [];
 const links = new WeakMap<FObject, FObject[]>(); // cut piece -> its ghost and arrow
@@ -52,6 +53,18 @@ let replacing = false; // Edit Again: saves back into its entry, so the destinat
 let copied = false; // a One-Shot closed by Copy Image: Discarded lists it as "Copied One-Shot"
 let beauty: Beautify = DEFAULT_BEAUTY; // One-Shot's settings, loaded in Session too so a switch needs no reload
 let singleKeys = true; // Settings ▸ Single-Key Tools: off, only ⌘1–⌘7 pick tools
+// A recording (F72): the canvas is a grid of its frames, each with its time above it, and every mark belongs to the
+// frame where it starts (F74). `cells` is where each shown frame sits now, in canvas pixels; `zero` puts every frame
+// at 0,0, so state keeps marks in their frame's own pixels and any grid can take them back.
+let rec: RecordingInit | null = null;
+let allFrames = false; // Show All Frames (⇧⌘F)
+let cells = new Map<number, Rect>();
+let zero = new Map<number, Rect>();
+let scene = { width: 0, height: 0 }; // the grid's size in canvas pixels
+let [cw, ch] = [0, 0]; // a frame's size on the canvas
+let downFrame = -1; // the frame the pointer went down on: a new mark belongs to it
+let adding: number | null = null; // the frame restore() is putting a mark back on
+const frameOf = new WeakMap<FObject, number>();
 
 const tool = (): Tool => GROUPS[group].tools[variant[group]].id;
 const color = () => GROUPS[group].color ?? colorEl.value;
@@ -318,7 +331,7 @@ function drawGhost() {
   ghostShown = true;
   const { x, y } = pointer;
   ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.setTransform(...canvas.viewportTransform); // a recording's long grid of all frames is drawn smaller
   ctx.globalAlpha = 0.45;
   if (t === 'marker') drawMarker(ctx, x, y, unit * 8, color(), markers().length + 1);
   else if (t === 'card') {
@@ -549,13 +562,14 @@ function redact(r: Rect) {
 }
 
 function makeRedact(r: Rect) {
-  const img = new fabric.FabricImage(background!.getElement(), {
+  const [el, x, y] = source(r);
+  const img = new fabric.FabricImage(el, {
     left: r.x,
     top: r.y,
     originX: 'left',
     originY: 'top',
-    cropX: r.x,
-    cropY: r.y,
+    cropX: x,
+    cropY: y,
     width: r.w,
     height: r.h,
     lockMovementX: true,
@@ -606,13 +620,14 @@ function makeCut(r: Rect, c: string): [FObject, FObject, FObject] {
   });
   const arrow = new Arrow({ x: r.x, y: r.y }, { x: r.x, y: r.y }, c);
   arrow.set({ selectable: false, evented: false, visible: false });
-  const piece = new fabric.FabricImage(background!.getElement(), {
+  const [el, x, y] = source(r);
+  const piece = new fabric.FabricImage(el, {
     left: r.x,
     top: r.y,
     originX: 'left',
     originY: 'top',
-    cropX: r.x,
-    cropY: r.y,
+    cropX: x,
+    cropY: y,
     width: r.w,
     height: r.h,
   });
@@ -626,9 +641,11 @@ function makeCut(r: Rect, c: string): [FObject, FObject, FObject] {
   return [ghost, arrow, piece];
 }
 
+// In a recording, the frame under the pointer takes the mark (F74); outside every frame no mark starts.
+canvas.on('mouse:down', ({ scenePoint }) => void (downFrame = rec ? frameAt(scenePoint) : -1));
 canvas.on('mouse:down', ({ scenePoint: p }) => {
   const t = tool();
-  if (!background || t === 'select' || t === 'pen') return;
+  if (!background || t === 'select' || t === 'pen' || (rec && downFrame < 0)) return;
   if (t === 'marker') {
     const m = new Marker(p, color());
     canvas.add(m);
@@ -646,8 +663,9 @@ canvas.on('mouse:down', ({ scenePoint: p }) => {
   drag = { start: { x: p.x, y: p.y }, obj };
 });
 
-canvas.on('mouse:move', ({ scenePoint: p }) => {
+canvas.on('mouse:move', ({ scenePoint }) => {
   if (!drag?.obj) return;
+  const p = inFrame(scenePoint); // a drag that leaves the frame stops at its edge
   if (drag.obj instanceof Arrow) drag.obj.set({ x2: p.x, y2: p.y });
   else {
     const r = rect(drag.start, p, false) ?? { ...drag.start, w: 0, h: 0 };
@@ -656,8 +674,9 @@ canvas.on('mouse:move', ({ scenePoint: p }) => {
   canvas.requestRenderAll();
 });
 
-canvas.on('mouse:up', ({ scenePoint: p }) => {
+canvas.on('mouse:up', ({ scenePoint }) => {
   if (!drag) return;
+  const p = inFrame(scenePoint);
   const { start, obj } = drag;
   drag = null;
   const t = tool();
@@ -687,7 +706,8 @@ canvas.on('mouse:up', ({ scenePoint: p }) => {
   canvas.requestRenderAll();
 });
 
-canvas.on('path:created', ({ path }) => added(path));
+// A pen stroke started outside every frame of a recording belongs to none: it goes
+canvas.on('path:created', ({ path }) => (rec && downFrame < 0 ? canvas.remove(path) : added(path)));
 
 // Registered after the drawing handlers, so they see the drag state those handlers just set.
 canvas.on('mouse:move', ({ scenePoint: p }) => {
@@ -712,6 +732,7 @@ canvas.on('mouse:out', () => {
 
 function after() {
   markers().forEach((m, i) => (m.n = i + 1));
+  renderFacts();
   renderRefs();
   renderNotesKept();
   undoBtn.disabled = !undoStack.length;
@@ -720,6 +741,7 @@ function after() {
 }
 
 function record(step: Step) {
+  step.cells = cells;
   undoStack.push(step);
   redoStack.length = 0;
   after();
@@ -854,7 +876,7 @@ const dropGroup = () => canvas.getActiveObject() instanceof fabric.ActiveSelecti
 function undo() {
   dropGroup();
   const step = undoStack.pop();
-  step?.undo();
+  if (step) inLayout(step.cells, step.undo);
   if (step) redoStack.push(step);
   dropGroup();
   after();
@@ -863,7 +885,7 @@ function undo() {
 function redo() {
   dropGroup();
   const step = redoStack.pop();
-  step?.redo();
+  if (step) inLayout(step.cells, step.redo);
   if (step) undoStack.push(step);
   dropGroup();
   after();
@@ -948,16 +970,23 @@ function stateOf(): EditState {
   // A multi-selection holds its marks' positions relative to itself; dropping it puts them back on the image.
   if (canvas.getActiveObject() instanceof fabric.ActiveSelection) canvas.discardActiveObject();
   const extras = new Set(canvas.getObjects().flatMap((o) => links.get(o) ?? [])); // a cut's outline and arrow
-  const items = canvas
-    .getObjects()
-    .filter((o) => !extras.has(o))
-    .map(itemOf)
-    .filter(Boolean);
+  // A recording's marks in their frame's own pixels, each with its frame (`f`)
+  const items = inLayout(rec ? zero : undefined, () =>
+    canvas
+      .getObjects()
+      .filter((o) => !extras.has(o))
+      .map((o) => {
+        const i = itemOf(o);
+        return i && rec ? { ...i, f: frameOf.get(o) } : i;
+      })
+      .filter(Boolean),
+  );
   return { caption: captionField?.value() ?? '', items, redacted, ...(oneShot ? { beautify: beauty } : {}) };
 }
 
 async function restore(items: Item[]) {
   for (const i of items) {
+    adding = rec ? ((i as { f?: number }).f ?? 0) : null; // a recording's: put back on its frame, in its pixels
     if (i.t === 'glyph') canvas.add(new Glyph(i.kind, { x: i.left, y: i.top, w: i.width, h: i.height }, i.c).set({ angle: i.angle }));
     else if (i.t === 'arrow') canvas.add(new Arrow(i.a, i.b, i.c));
     else if (i.t === 'marker') canvas.add(Object.assign(new Marker({ x: i.x, y: i.y }, i.c), { note: i.note }));
@@ -974,6 +1003,7 @@ async function restore(items: Item[]) {
       relink(piece);
     }
   }
+  adding = null;
   after();
 }
 
@@ -1018,7 +1048,13 @@ function renderRefs() {
       });
       fields.set(m, mounted);
       void mounted.then((f) => ready.set(m, f));
-      row.append(badge, field);
+      if (rec) {
+        // In a recording, the reference's frame time above its note
+        const time = Object.assign(document.createElement('small'), { className: 'ref-time', textContent: timeOf(frameOf.get(m) ?? 0) });
+        const body = document.createElement('div');
+        body.append(time, field);
+        row.append(badge, body);
+      } else row.append(badge, field);
       return row;
     }),
   );
@@ -1064,7 +1100,8 @@ function flatten(): string {
   const shot = canvas.toCanvasElement(1);
   refs.forEach((m) => (m.visible = true));
   canvas.requestRenderAll();
-  return beautified(shot).toDataURL('image/png').split(',')[1];
+  // Beautify works on screenshots only: a recording's filmstrip is copied as it is
+  return (rec ? shot : beautified(shot)).toDataURL('image/png').split(',')[1];
 }
 
 // The one-shot image: the marked screenshot on its backdrop, with padding, rounded corners and shadow, at the
@@ -1098,7 +1135,7 @@ async function save() {
   saveBtn.disabled = true;
   saving = true;
   await redacting;
-  const png = flatten();
+  const png = rec ? await filmstrip() : flatten();
   const state = stateOf();
   await window.snapmark
     .save({
@@ -1112,7 +1149,12 @@ async function save() {
     .catch((e: unknown) => {
       saving = false;
       saveBtn.disabled = false;
-      throw e;
+      if (!rec) throw e;
+      // Writing the GIF or the frames failed: nothing was added, and the marks stay (interaction.md, Errors)
+      const reason = (e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
+      const shown = $('save-error');
+      shown.textContent = `Couldn't save the recording: ${reason.replace(/\.$/, '')}. Your marks are still here. Try Add to Session again.`;
+      shown.hidden = false;
     });
 }
 
@@ -1127,14 +1169,14 @@ const copyImage = async () => {
   if (!background) return;
   const kept = canvas.getActiveObjects();
   await redacting;
-  const png = flatten();
+  const png = rec ? await filmstrip() : flatten();
   if (!oneShot) return void (window.snapmark.copyImage(png), select(kept));
   await window.snapmark.copyImage(png); // copied before the window goes
   copied = true;
   window.close();
 };
 const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-const saveImageAs = () => void (background && redacting.then(() => window.snapmark.saveImageAs(flatten())));
+const saveImageAs = () => void (background && redacting.then(async () => window.snapmark.saveImageAs(rec ? await filmstrip() : flatten())));
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && e.key === 'Enter') return primary();
@@ -1148,6 +1190,10 @@ document.addEventListener('keydown', (e) => {
   if (k === 'o' || k === 'p') {
     e.preventDefault();
     return void (k === 'o' ? setDestination(!oneShot) : openSessions()); // F46, F47
+  }
+  if (k === 'f' && rec) {
+    e.preventDefault();
+    return toggleFrames(); // F73
   }
   // ⌘S, as in Preview: add to the session; one-shot mode has no session, so Save As…. Also while typing.
   if (e.metaKey && !e.shiftKey && e.key === 's') {
@@ -1233,14 +1279,15 @@ $<HTMLButtonElement>('cancel').onclick = () => window.close();
 // Backing store at the screenshot's full resolution, displayed scaled down to fit the window. An image so tall that
 // fitting it whole would show it at under half its real size (Capture Scrolling) fits the width and scrolls instead.
 // In one-shot mode the whole beautified image fits, and the Beautify frame is drawn around the canvas at its scale.
+// A recording's grid always fits the width; more rows scroll (screens.md).
 function fit() {
   if (!background) return;
-  const [w, h] = [background.width, background.height];
-  const L = oneShot ? beautyLayout(w, h, beauty) : null;
+  const [w, h] = rec ? [scene.width, scene.height] : [background.width, background.height];
+  const L = oneShot && !rec ? beautyLayout(w, h, beauty) : null;
   const [fw, fh] = L ? [L.width, L.height] : [w, h];
   const kw = Math.min(1, (mainEl.clientWidth - 32) / fw);
   const whole = Math.min(kw, (mainEl.clientHeight - 32) / fh);
-  const tall = whole * devicePixelRatio < 0.5;
+  const tall = !!rec || whole * devicePixelRatio < 0.5;
   const k = tall ? kw : whole;
   Object.assign(mainEl.style, { overflowY: tall ? 'auto' : '', alignItems: tall ? 'start' : '' });
   canvas.setDimensions({ width: `${w * k}px`, height: `${h * k}px` }, { cssOnly: true });
@@ -1335,6 +1382,216 @@ function renderBeauty() {
 // Refit whenever the canvas area changes size: window resizes, and the toolbar wrapping onto a second line.
 new ResizeObserver(fit).observe(mainEl);
 
+// ---------- recording: the key frames in a grid, each mark on its frame (F72–F76) ----------
+
+const COLS = 4; // frames a row, on the canvas and in the saved filmstrip
+const [MAX_SIDE, MAX_AREA] = [16_000, 120e6]; // canvas pixels Chromium holds comfortably
+const allBtn = $<HTMLButtonElement>('all-frames');
+const timeOf = (f: number) => `${rec!.times[f].toFixed(1)} s`;
+
+// The frame whose cell holds `p`, or -1 in a gutter or a time label.
+function frameAt(p: Point): number {
+  for (const [f, c] of cells) if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) return f;
+  return -1;
+}
+// `p` kept inside the frame the drag started on.
+function inFrame(p: Point): Point {
+  const c = rec && cells.get(downFrame);
+  return c ? { x: Math.min(Math.max(p.x, c.x), c.x + c.w), y: Math.min(Math.max(p.y, c.y), c.y + c.h) } : p;
+}
+
+// Every mark of a recording belongs to the frame it starts on and is clipped to it, in the editor and in the
+// filmstrip: drawn inside its frame's cell, wherever the grid puts that frame (F74).
+canvas.on('object:added', ({ target: o }) => {
+  if (!rec || frameOf.has(o)) return;
+  frameOf.set(o, adding ?? downFrame);
+  const draw = o.render.bind(o);
+  o.render = (ctx: CanvasRenderingContext2D) => {
+    const c = cells.get(frameOf.get(o)!);
+    if (!c) return draw(ctx);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(c.x, c.y, c.w, c.h);
+    ctx.clip();
+    draw(ctx);
+    ctx.restore();
+  };
+});
+
+// Each frame's picture, read from its file through the main process and decoded off this thread, at `width`; the same
+// picture is read once. `pictures` keeps the largest of each frame so far, for Redact and Cut.
+const reads = new Map<string, Promise<ImageBitmap>>();
+const pictures = new Map<number, ImageBitmap>();
+function picture(f: number, width: number): Promise<ImageBitmap> {
+  const key = `${rec!.ids[f]} ${width}`;
+  let read = reads.get(key);
+  if (!read) {
+    read = window.snapmark.frame(f).then((png) => createImageBitmap(new Blob([png]), { resizeWidth: width, resizeQuality: 'high' }));
+    reads.set(key, read);
+  }
+  return read.then((bm) => {
+    if ((pictures.get(f)?.width ?? 0) < bm.width) pictures.set(f, bm);
+    return bm;
+  });
+}
+
+// A frame at its canvas size, for Redact and Cut, which take pixels from it in the frame's own coordinates.
+// shortcut: in Show All Frames a frame may have only its small picture yet, so its Redact or Cut is that, enlarged;
+// read the full one first if that ever shows.
+const sharp = new Map<number, HTMLCanvasElement>();
+function frameCanvas(f: number): HTMLCanvasElement {
+  const kept = sharp.get(f);
+  if (kept) return kept;
+  const c = document.createElement('canvas');
+  [c.width, c.height] = [cw, ch];
+  const p = pictures.get(f);
+  if (p) c.getContext('2d')!.drawImage(p, 0, 0, cw, ch);
+  if (p && p.width >= cw) sharp.set(f, c);
+  return c;
+}
+
+// Where Redact and Cut take their pixels: the screenshot, or a recording's frame (the one the mark goes on).
+function source(r: Rect): [ReturnType<import('fabric').FabricImage['getElement']>, number, number] {
+  if (!rec) return [background!.getElement(), r.x, r.y];
+  const f = adding ?? downFrame;
+  const c = cells.get(f) ?? zero.get(f)!;
+  return [frameCanvas(f), r.x - c.x, r.y - c.y];
+}
+
+// The grid of `frames`, by time: up to 4 a row, each with its time above it. The spacing follows the frame's width.
+function grid(frames: number[]) {
+  const [gap, label] = [Math.round(cw / 15), Math.round(cw / 11)];
+  const cols = Math.max(1, Math.min(COLS, frames.length));
+  const at = new Map<number, Rect>(
+    frames.map((f, k) => [
+      f,
+      { x: gap + (k % cols) * (cw + gap), y: gap + label + Math.floor(k / cols) * (label + ch + gap), w: cw, h: ch },
+    ]),
+  );
+  return { at, label, width: gap + cols * (cw + gap), height: gap + Math.ceil(frames.length / cols) * (label + ch + gap) };
+}
+
+// The key frames and every frame with a mark on it, by time: the default view and the saved filmstrip (F74).
+const keyed = () =>
+  [...new Set([...rec!.keys, ...canvas.getObjects().flatMap((o) => ((frameOf.get(o) ?? -1) >= 0 ? [frameOf.get(o)!] : []))])].sort(
+    (a, b) => a - b,
+  );
+
+// Moves every mark with its frame from the current grid to `next`. A frame missing from either leaves its marks be.
+function regrid(next: Map<number, Rect>) {
+  if (canvas.getActiveObject() instanceof fabric.ActiveSelection) canvas.discardActiveObject();
+  for (const o of canvas.getObjects()) {
+    const f = frameOf.get(o) ?? -1;
+    const [a, b] = [cells.get(f), next.get(f)];
+    if (!a || !b) continue;
+    const [dx, dy] = [b.x - a.x, b.y - a.y];
+    o.set({ left: o.left + dx, top: o.top + dy });
+    if (o instanceof Card && o.pointAt) o.pointAt = { x: o.pointAt.x + dx, y: o.pointAt.y + dy };
+    o.setCoords();
+  }
+  cells = next;
+  canvas.getObjects().forEach(relink);
+}
+
+// Runs `fn` with the marks in the grid `at`, then puts them back: an undo step in the grid it was made in, state in
+// the frames' own pixels.
+function inLayout<T>(at: Map<number, Rect> | undefined, fn: () => T): T {
+  if (!rec || !at || at === cells) return fn();
+  const back = cells;
+  regrid(at);
+  try {
+    return fn();
+  } finally {
+    regrid(back);
+  }
+}
+
+// Shows the key frames (with the marked ones) or every frame (F73), as the canvas background; the marks move with
+// their frames. A long grid is drawn smaller (z), so the canvas stays within Chromium's limits; marks keep their pixels.
+async function showView(all: boolean) {
+  const frames = all ? rec!.times.map((_, i) => i) : keyed();
+  const G = grid(frames);
+  const z = Math.min(1, MAX_SIDE / G.width, MAX_SIDE / G.height, Math.sqrt(MAX_AREA / (G.width * G.height)));
+  const pics = await Promise.all(frames.map((f) => picture(f, Math.max(1, Math.round(cw * z)))));
+  const bg = document.createElement('canvas');
+  [bg.width, bg.height] = [Math.round(G.width * z), Math.round(G.height * z)];
+  const g = bg.getContext('2d')!;
+  g.fillStyle = '#f2f2f4';
+  g.fillRect(0, 0, bg.width, bg.height);
+  g.fillStyle = '#1d1d1f';
+  g.font = `600 ${(cw / 16) * z}px -apple-system, system-ui, sans-serif`;
+  g.textBaseline = 'bottom';
+  frames.forEach((f, k) => {
+    const c = G.at.get(f)!;
+    g.fillText(timeOf(f), c.x * z, (c.y - G.label * 0.2) * z); // the frame's time, also in the saved filmstrip
+    g.drawImage(pics[k], c.x * z, c.y * z, cw * z, ch * z);
+  });
+  allFrames = all;
+  regrid(G.at);
+  scene = { width: G.width, height: G.height };
+  background = new fabric.FabricImage(bg, { originX: 'left', originY: 'top', left: 0, top: 0, scaleX: 1 / z, scaleY: 1 / z });
+  canvas.backgroundImage = background;
+  canvas.setDimensions({ width: bg.width, height: bg.height });
+  canvas.setZoom(z);
+  // The times in the grid, for VoiceOver: the canvas is one picture
+  $('frame-times').replaceChildren(...frames.map((f) => Object.assign(document.createElement('li'), { textContent: timeOf(f) })));
+  renderFacts();
+  fit();
+  canvas.requestRenderAll();
+}
+
+// "Recording · 3.2 s · 10 fps · 4 key frames of 32", and Show All Frames, greyed when every frame is a key frame (F72).
+function renderFacts() {
+  if (!rec) return;
+  const [n, keys] = [rec.times.length, keyed().length];
+  const shown = allFrames ? `${n} of ${n} frames` : `${keys} key frame${keys === 1 ? '' : 's'} of ${n}`;
+  $('rec-facts').textContent = `Recording · ${rec.end.toFixed(1)} s · ${rec.fps} fps · ${shown}${rec.evenly ? ' · evenly spaced' : ''}`;
+  allBtn.textContent = allFrames ? 'Show Key Frames' : 'Show All Frames';
+  allBtn.disabled = !allFrames && keys === n;
+  $('all-wrap').title = allBtn.disabled ? `All ${n} frames are key frames` : '';
+}
+
+// One view change at a time; the filmstrip waits for it too.
+let viewing = Promise.resolve();
+function toggleFrames() {
+  if (allBtn.disabled) return;
+  viewing = viewing.then(() => showView(!allFrames));
+}
+allBtn.onclick = toggleFrames;
+
+// The filmstrip the session keeps and Copy Filmstrip copies (F71, F76): the key frames and every marked frame, by
+// time, 4 a row, each with its time, whatever the view.
+function filmstrip(): Promise<string> {
+  const made = viewing.then(async () => {
+    const was = allFrames;
+    await showView(false);
+    const png = flatten();
+    if (was) await showView(true);
+    return png;
+  });
+  viewing = made.then(
+    () => undefined,
+    () => undefined,
+  );
+  return made;
+}
+
+// The recording editor opens on its key frames, with the marks it was closed or saved with put back on their frames.
+async function openFrames(r: RecordingInit, state: EditState | undefined, fresh: boolean) {
+  cw = Math.min(r.size.width, 960);
+  ch = Math.round((r.size.height * cw) / r.size.width);
+  unit = Math.max(2, Math.round(cw / 100)); // strokes suit a frame, as a screenshot's suit the screenshot
+  zero = new Map(r.times.map((_, f) => [f, { x: 0, y: 0, w: cw, h: ch }]));
+  cells = zero;
+  canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+  const items = (state?.items ?? []) as { f?: number }[];
+  // Redact and Cut marks are put back from their frames' pictures
+  await Promise.all([...new Set(items.map((i) => i.f ?? 0))].map((f) => picture(f, cw)));
+  if (state) await restore(state.items as Item[]);
+  await showView(false);
+  if (fresh) $('announce').textContent = 'Recording stopped';
+}
+
 // ---------- destination: Session | One-Shot and the session pop-up, at the toolbar's right end ----------
 
 const headerEl = document.querySelector('header')!;
@@ -1361,9 +1618,14 @@ sessionEl.onclick = openSessions;
 
 // The primary button names what it does here (F51); One-Shot's is Copy Image, which closes the editor (F39).
 function renderPrimary() {
-  const [label, key] = replacing ? ['Save Changes', '⌘↩'] : oneShot ? ['Copy Image', '⌘C'] : ['Add to Session', '⌘↩'];
+  const copy = rec ? 'Copy Filmstrip' : 'Copy Image'; // F76
+  const [label, key] = replacing ? ['Save Changes', '⌘↩'] : oneShot ? [copy, '⌘C'] : ['Add to Session', '⌘↩'];
   saveBtn.replaceChildren(`${label} `, keycap(key));
-  saveBtn.title = oneShot ? 'Copy the image with its background, at full resolution, and close' : '';
+  saveBtn.title = !oneShot
+    ? ''
+    : rec
+      ? 'Copy the filmstrip with its marks, and close'
+      : 'Copy the image with its background, at full resolution, and close';
 }
 
 // One-Shot hides the notes; when there are some, it says they stay (F49).
@@ -1376,6 +1638,10 @@ function renderNotesKept() {
 function renderDestination(session: string, count: number) {
   document.body.classList.toggle('one-shot', oneShot);
   $('beautify').hidden = !oneShot;
+  // Beautify works on screenshots only: greyed for a recording, with its reason (F76)
+  $('beautify').inert = !!rec;
+  $('beautify').classList.toggle('off', !!rec);
+  $('beautify-off').hidden = !(rec && oneShot);
   segs.forEach((b, i) => {
     b.setAttribute('aria-checked', String(i === Number(oneShot)));
     b.tabIndex = i === Number(oneShot) ? 0 : -1;
@@ -1450,33 +1716,53 @@ window.snapmark.onSingleKeys((on) => {
 });
 window.snapmark
   .init()
-  .then(async ({ src, session, count, state, replacing: edit, oneShot: one, beautify, singleKeys: keys, color: saved, customColors }) => {
-    singleKeys = keys;
-    customs = customColors;
-    renderCustoms();
-    if (saved) setColor(saved, false); // also draws the toolbar
-    renderToolbar();
-    replacing = !!edit;
-    oneShot = !!one;
-    beauty = { ...DEFAULT_BEAUTY, ...beautify };
-    renderBeauty();
-    renderDestination(session, count);
-    captionField = await MdNotes.mount($('caption'), state?.caption ?? '', {
-      placeholder: 'About the whole screenshot…',
-      labelledBy: 'caption-label',
-      onChange: markDirty,
-    });
-    background = await fabric.FabricImage.fromURL(src);
-    background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });
-    // A tall scrolling capture counts as twice its width high: the strokes suit the part in view, not the whole page.
-    unit = Math.max(2, Math.round(Math.max(background.width, Math.min(background.height, 2 * background.width)) / 400));
-    canvas.setDimensions({ width: background.width, height: background.height });
-    canvas.backgroundImage = background;
-    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-    fit();
-    if (state) await restore(state.items as Item[]);
-    applyTool();
-    redacted = !!state?.redacted;
-    if (!redacted) redacting = autoRedact();
-  });
+  .then(
+    async ({
+      src,
+      session,
+      count,
+      state,
+      replacing: edit,
+      oneShot: one,
+      beautify,
+      singleKeys: keys,
+      color: saved,
+      customColors,
+      recording,
+    }) => {
+      rec = recording ?? null;
+      document.body.classList.toggle('recording', !!rec);
+      $('rec-bar').hidden = !rec;
+      singleKeys = keys;
+      customs = customColors;
+      renderCustoms();
+      if (saved) setColor(saved, false); // also draws the toolbar
+      renderToolbar();
+      replacing = !!edit;
+      oneShot = !!one;
+      beauty = { ...DEFAULT_BEAUTY, ...beautify };
+      renderBeauty();
+      renderDestination(session, count);
+      captionField = await MdNotes.mount($('caption'), state?.caption ?? '', {
+        placeholder: 'About the whole screenshot…',
+        labelledBy: 'caption-label',
+        onChange: markDirty,
+      });
+      if (rec) await openFrames(rec, state, !state && !edit);
+      else {
+        background = await fabric.FabricImage.fromURL(src);
+        background.set({ originX: 'left', originY: 'top', left: 0, top: 0 });
+        // A tall scrolling capture counts as twice its width high: the strokes suit the part in view, not the whole page.
+        unit = Math.max(2, Math.round(Math.max(background.width, Math.min(background.height, 2 * background.width)) / 400));
+        canvas.setDimensions({ width: background.width, height: background.height });
+        canvas.backgroundImage = background;
+        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+        fit();
+        if (state) await restore(state.items as Item[]);
+      }
+      applyTool();
+      redacted = !!state?.redacted;
+      if (!redacted) redacting = autoRedact();
+    },
+  );
 setColor(colorEl.value, false); // shows it on the swatch and draws the toolbar

@@ -42,6 +42,11 @@
     const canvas = document.createElement('canvas');
     [canvas.width, canvas.height] = [Math.round(w * k), Math.round(h * k)];
     const g = canvas.getContext('2d')!;
+    // Each frame also 64 pixels wide, as keyframes.ts compares frames, so the key frames are found at once on Done
+    const thumb = document.createElement('canvas');
+    [thumb.width, thumb.height] = [64, Math.max(1, Math.round((64 * canvas.height) / canvas.width))];
+    const tg = thumb.getContext('2d', { willReadFrequently: true })!;
+    tg.imageSmoothingQuality = 'high';
     const start = performance.now();
     // Each frame on the frame rate's clock; one that took too long to encode moves the next on, never two at once
     for (let next = start; ;) {
@@ -51,7 +56,9 @@
       g.drawImage(video, x * k, y * k, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
       const png = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
       if (!png) throw new Error('a frame could not be encoded');
-      window.snapmark.recorderFrame(t, new Uint8Array(await png.arrayBuffer()));
+      tg.drawImage(canvas, 0, 0, thumb.width, thumb.height);
+      const small = new Uint8Array(tg.getImageData(0, 0, thumb.width, thumb.height).data.buffer);
+      window.snapmark.recorderFrame(t, new Uint8Array(await png.arrayBuffer()), small);
       next = Math.max(next + 1000 / fps, performance.now());
     }
   };

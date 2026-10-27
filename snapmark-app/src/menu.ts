@@ -225,10 +225,13 @@ export function editorSessionMenu(st: MenuState, session: string, a: EditorSessi
 }
 
 // The editor's Copy or Save button: the two buttons it replaces. The keys are the editor page's own, so the menu only
-// shows them.
-export function copyMenu(a: { copyImage(): void; saveAs(): void }): Item[] {
+// shows them. A recording (`gif`) copies its filmstrip, and offers its GIF too.
+export function copyMenu(a: { copyImage(): void; saveAs(): void }, gif?: { copyGif(): void; saveGifAs(): void }): Item[] {
+  const copy: Item = { label: gif ? 'Copy Filmstrip' : 'Copy Image', accelerator: 'Shift+Command+C', registerAccelerator: false };
   return [
-    { label: 'Copy Image', accelerator: 'Shift+Command+C', registerAccelerator: false, click: () => a.copyImage() },
+    { ...copy, click: () => a.copyImage() },
+    ...(gif ? [{ label: 'Copy GIF', click: () => gif.copyGif() }] : []),
     { label: 'Save As…', accelerator: 'Shift+Command+S', registerAccelerator: false, click: () => a.saveAs() },
+    ...(gif ? [{ label: 'Save GIF As…', click: () => gif.saveGifAs() }] : []),
   ];
 }

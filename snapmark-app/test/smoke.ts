@@ -2861,6 +2861,140 @@ app
       forgotLine === 'New session: drag the area' && forgotHint === 'New session: drag the area. ⌃⇧4 captures it again. Esc cancels.';
     why.F7 = { forgotLine, forgotHint, url: forgotPicker.webContents.getURL() };
     await escPicker(forgotPicker);
+    // @F72–@F76: the recording editor on a made-up recording, never the screen: 32 frames of 320 × 180 at 10 fps, whose
+    // picture changes at frames 4, 24 and 31, so the key frames are 0, 4, 24 and 31. In its own session.
+    const recSession = sessions.create(root, 'smoke-rec');
+    setActive(recSession);
+    const fakeRecording = (): Recording => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapmark-rec-'));
+      const frames = Array.from({ length: 32 }, (_, i) => {
+        const px = Buffer.alloc(320 * 180 * 4, 40 + 50 * [0, 4, 24, 31].filter((k) => k <= i).length);
+        for (let a = 3; a < px.length; a += 4) px[a] = 255;
+        const f = path.join(dir, `${String(i).padStart(4, '0')}.png`);
+        fs.writeFileSync(f, nativeImage.createFromBitmap(px, { width: 320, height: 180 }).toPNG());
+        return f;
+      });
+      return { dir, frames, times: frames.map((_, i) => i / 10), end: 3.2, fps: 10 };
+    };
+    // The grid of 320 px frames: 21 px gutters and 29 px time labels (editor.ts grid)
+    const gridSize = (n: number) => ({ width: 21 + Math.min(4, n) * 341, height: 21 + Math.ceil(n / 4) * 230 });
+    const recEditor = async (oneShot: boolean) => {
+      const before = BrowserWindow.getAllWindows();
+      recordings.open(fakeRecording(), oneShot);
+      const w = await loadedWindow(before);
+      await loaded(w);
+      return w;
+    };
+    const recView = async (w: BrowserWindow) =>
+      JSON.parse(
+        await inWin(
+          w,
+          `return JSON.stringify({ facts: document.getElementById('rec-facts').textContent, toggle: document.getElementById('all-frames').textContent,
+            times: [...document.querySelectorAll('#frame-times li')].map((l) => l.textContent), rows: new Set([...cells.values()].map((c) => c.y)).size,
+            primary: document.getElementById('save').textContent.trim(), scene });`,
+        ),
+      ) as { facts: string; toggle: string; times: string[]; rows: number; primary: string; scene: { width: number; height: number } };
+    const showAll = (w: BrowserWindow) =>
+      inWin(
+        w,
+        `const was = document.getElementById('all-frames').textContent;
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', code: 'KeyF', metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));
+        for (let i = 0; i < 50 && document.getElementById('all-frames').textContent === was; i++) await new Promise((r) => setTimeout(r, 100));`,
+      );
+    const recEd = await recEditor(false);
+    const keyView = await recView(recEd);
+    viewer['@F72 the recording editor shows the facts line and each key frame with its time, 4 a row'] =
+      keyView.facts === 'Recording · 3.2 s · 10 fps · 4 key frames of 32' &&
+      keyView.times.join() === '0.0 s,0.4 s,2.4 s,3.1 s' &&
+      keyView.rows === 1 &&
+      JSON.stringify(keyView.scene) === JSON.stringify(gridSize(4)) &&
+      keyView.primary === 'Add to Session ⌘↩';
+    // @F73 ⇧⌘F shows every frame, then the key frames again
+    await showAll(recEd);
+    const allView = await recView(recEd);
+    viewer['@F73 ⇧⌘F switches between key frames and all frames'] =
+      allView.facts === 'Recording · 3.2 s · 10 fps · 32 of 32 frames' &&
+      allView.toggle === 'Show Key Frames' &&
+      allView.times.length === 32 &&
+      allView.rows === 8;
+    // @F74 a box on frame 10 (no key frame), dragged past its right edge: it stops at the edge, belongs to frame 10,
+    // and frame 10 joins the key frames
+    const drawn = JSON.parse(
+      await inWin(
+        recEd,
+        `const up = document.querySelector('.upper-canvas');
+        const ev = (type, x, y) => { const b = up.getBoundingClientRect();
+          up.dispatchEvent(new MouseEvent(type, { clientX: b.left + (x / scene.width) * b.width, clientY: b.top + (y / scene.height) * b.height, button: 0, buttons: type === 'mouseup' ? 0 : 1, bubbles: true })); };
+        const c = cells.get(10);
+        ev('mousedown', c.x + c.w * 0.5, c.y + c.h * 0.3); ev('mousemove', c.x + c.w * 1.5, c.y + c.h * 0.6); ev('mouseup', c.x + c.w * 1.5, c.y + c.h * 0.6);
+        const box = canvas.getObjects().at(-1);
+        return JSON.stringify({ f: frameOf.get(box), right: box.left + box.width, edge: c.x + c.w });`,
+      ),
+    ) as { f: number; right: number; edge: number };
+    await showAll(recEd);
+    const marked = await recView(recEd);
+    const stays = await inWin(
+      recEd,
+      `const box = canvas.getObjects().at(-1), c = cells.get(10); return box.left >= c.x && box.left + box.width <= c.x + c.w + 0.5;`,
+    );
+    viewer['@F74 a mark belongs to the frame where it starts, clipped to it, and that frame joins the key frames'] =
+      drawn.f === 10 &&
+      Math.abs(drawn.right - drawn.edge) < 0.5 &&
+      marked.facts === 'Recording · 3.2 s · 10 fps · 5 key frames of 32' &&
+      marked.times.join() === '0.0 s,0.4 s,1.0 s,2.4 s,3.1 s' &&
+      stays === true;
+    // @F71 @F74 Add to Session: the marked filmstrip (5 frames, 2 rows) and the GIF; frame 10 is kept with its mark.
+    // Off macOS there is no ImageIO, so the GIF cannot be written: nothing is added and the editor says so.
+    await inWin(
+      recEd,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', metaKey: true, bubbles: true, cancelable: true }));`,
+    );
+    const recImg = path.join(root, recSession, 'img', '001.png');
+    if (process.platform === 'darwin') {
+      for (let i = 0; i < 100 && !recEd.isDestroyed(); i++) await sleep(100);
+      const kept = JSON.parse(fs.readFileSync(sessions.editFiles(root, recSession, 1).json, 'utf8'));
+      viewer['@F71 Add to Session keeps the marked filmstrip PNG and the GIF'] =
+        recEd.isDestroyed() &&
+        JSON.stringify(nativeImage.createFromPath(recImg).getSize()) === JSON.stringify(gridSize(5)) &&
+        fs
+          .readFileSync(sessions.recordingFiles(root, recSession, 1).gif)
+          .subarray(0, 6)
+          .toString() === 'GIF89a';
+      viewer['@F74 the marked frame is always saved'] = kept.items[0]?.f === 10 && kept.recording.frames[10].endsWith('.png');
+      why.F71 = { kept: kept.recording, items: kept.items };
+    } else {
+      const said = await inWin(
+        recEd,
+        `const e = document.getElementById('save-error'); for (let i = 0; i < 50 && e.hidden; i++) await new Promise((r) => setTimeout(r, 100)); return e.textContent;`,
+      );
+      viewer['@F71 a GIF that cannot be written adds nothing, and the marks stay'] =
+        said === "Couldn't save the recording: GIFs are written by macOS ImageIO. Your marks are still here. Try Add to Session again." &&
+        !fs.existsSync(recImg) &&
+        !recEd.isDestroyed();
+      recEd.destroy();
+    }
+    // @F76 One-Shot: Beautify greyed with its reason; "Copy Filmstrip ⌘C" copies the marked filmstrip and closes
+    const oneRec = await recEditor(true);
+    const oneLook = await recView(oneRec);
+    const greyed = await inWin(
+      oneRec,
+      `const off = document.getElementById('beautify-off'); return document.getElementById('beautify').inert && !off.hidden && off.textContent === 'Beautify works on screenshots only.';`,
+    );
+    await inWin(
+      oneRec,
+      `document.body.focus(); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));`,
+    );
+    for (let i = 0; i < 50 && !oneRec.isDestroyed(); i++) await sleep(100);
+    const film = copied as Buffer | null; // set by desk.copyImage; an earlier copy is a screenshot of another size
+    const filmSize = film && nativeImage.createFromBuffer(film).getSize();
+    viewer['@F76 in One-Shot a recording copies its filmstrip with Copy Filmstrip ⌘C'] =
+      oneLook.primary === 'Copy Filmstrip ⌘C' &&
+      greyed === true &&
+      oneRec.isDestroyed() &&
+      JSON.stringify(filmSize) === JSON.stringify(gridSize(4)) &&
+      notes.at(-1)?.body === 'Filmstrip copied.';
+    why.F72 = { keyView, allView, drawn, marked, stays, oneLook, greyed, filmSize };
+    for (const d of sessions.discarded(root)) if (d.recording) fs.rmSync(d.dir, { recursive: true, force: true });
     // Milestone 3, tall captures: in their own session, so the smoke session's counts stay as they are
     const tallSession = sessions.create(root, 'smoke-tall');
     setActive(tallSession);
