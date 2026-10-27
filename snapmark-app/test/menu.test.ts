@@ -307,8 +307,8 @@ assert.deepStrictEqual(
 // The bar's pop-up picks make the session current (main.ts wires moveTo to setActive, the menu bar's makeCurrent)
 const mainTs = fs.readFileSync(path.join(__dirname, '../../src/main.ts'), 'utf8');
 assert.ok(
-  mainTs.includes('const pick = { moveTo: setActive, older: () => void otherSession(), newSession };') &&
-    mainTs.includes("editorSessionMenu(menuState(), active ?? '', pick)") &&
+  /moveTo: \(name: string\) => \{\s*toSession\(\);\s*setActive\(name\);/.test(mainTs) &&
+    mainTs.includes("editorSessionMenu(menuState(), captureOpts.oneShot ? '' : (active ?? ''), pick)") &&
     mainTs.includes('makeCurrent: setActive,'),
   '@F23 a pick in the bar makes the session current',
 );

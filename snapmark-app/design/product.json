@@ -1,0 +1,23 @@
+{
+  "$description": "Snapmark: values only. The accent is the brand blue #0f72db in light and dark, with white on it (owner, 2026-10-27). No role is renamed. scripts/sync-tokens.mjs builds it into src/tokens.css.",
+  "role": {
+    "color": {
+      "accent": {
+        "$value": "#0f72db",
+        "$extensions": {
+          "mode": {
+            "dark": "#0f72db"
+          }
+        }
+      },
+      "on-accent": {
+        "$value": "#ffffff",
+        "$extensions": {
+          "mode": {
+            "dark": "#ffffff"
+          }
+        }
+      }
+    }
+  }
+}

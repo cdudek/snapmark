@@ -82,10 +82,10 @@ interface CaptureOpts {
 }
 
 interface BarInit extends CaptureOpts {
-  label: string; // the Capture button: "Capture" or "Capture One-Shot"
-  heads: Record<CaptureMode, [headline: string, hint: string]>; // capture.ts barHeads
-  session: { label: string; count: number } | null; // the session pop-up's face; null: no session yet
-  narrow: boolean; // under 1000 pt of work area: the hint wraps under the headline (F27)
+  labels: Record<CaptureMode, string>; // the Capture button per mode: "Capture", "Start Scrolling" or "Capture One-Shot"
+  session: { label: string; count: number } | null; // the destination's face: the session's name, no date; null: no session yet
+  ring: string | null; // the focus ring: macOS's accent where it reaches 3:1, else null for the text colour (F10)
+  narrow: boolean; // the bar does not fit its work area: the modes show their icons only (F14)
 }
 
 // The Settings window (settings.html): what its three tabs show.
@@ -118,8 +118,8 @@ interface Window {
     barCapture(mode: CaptureMode): void; // closes the bar, then runs the mode
     barOptions(mode: CaptureMode, at: Area): void; // the Options menu under `at` (window points), for the chosen mode
     barClose(): void;
-    barOneShot(on: boolean): void; // the bar's Session | One-Shot
-    barSessions(at: Area): void; // the session pop-up under `at` (window points); nothing while One-Shot is chosen
+    barOneShot(on: boolean): void; // ⇧⌘O: One-Shot or the last session
+    barSessions(at: Area): void; // the destination pop-up under `at` (window points): One-Shot, then the sessions
     onBarState(cb: (s: BarInit) => void): void; // an option or the current session changed
     areaDone(area: Area | null): void; // the area picker: the dragged area, or null for Esc
     scrollDone(ok: boolean): void; // Capture Scrolling: Done (true) or Cancel (false)

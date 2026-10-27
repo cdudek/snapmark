@@ -4,299 +4,243 @@
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
     <title>Capture Options</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <script src="surface.js"></script>
     <style>
-      /* The change's tokens (spec screens.md, Tokens): blue means chosen, the next move and the area outline, as the
-         macOS accent. Only Capture is filled blue. */
-      :root {
-        color-scheme: light dark;
-        --accent: #2492ff; /* icons of the chosen mode */
-        --accent-fill: #0f72db; /* the one blue filled button; white text 4.7:1 */
-        --fill-selected: light-dark(#e5e5ea, #3a3a3c); /* the chosen mode, the selected segment */
-        --accent-text: light-dark(#0a62c2, #6cb4ff); /* their text: 4.7:1 light, 5.2:1 dark (N1) */
-        --hairline: rgb(128 128 128 / 0.4); /* the editor toolbar's .sep */
-        --secondary: light-dark(#5e5e63, #a1a1a6);
-      }
+      /* The calm capture bar (spec screens.md): colours, sizes and shapes from tokens.css only (F15). The window's
+         material and system text on macOS, the tokens' greys elsewhere; only Capture is filled with the accent. */
       html,
       body {
         margin: 0;
         user-select: none;
         font:
-          13px -apple-system,
+          var(--ds-type-control-weight) var(--ds-type-control-size) / var(--ds-type-control-line) -apple-system,
           system-ui,
           sans-serif;
       }
-      /* Opaque where there is no vibrancy (Linux); on macOS the window's popover material shows through. The window is
-         as tall as this content (preferred size), so a wrapped hint grows the bar. */
+      /* One row, 8 of padding round 32-high controls: 48 tall (F4). The window is as tall as this content. */
       body {
         display: flex;
-        flex-direction: column;
-        gap: 10px;
+        align-items: center;
+        gap: var(--ds-space-4);
         box-sizing: border-box;
-        padding: 12px 16px;
-        border-radius: 12px;
+        padding: var(--ds-space-8);
+        border-radius: var(--ds-radius-large);
         overflow: hidden;
-        background: Canvas;
-        color: CanvasText;
+        background: var(--ds-color-panel);
+        color: var(--ds-color-ink);
       }
-      body.mac {
-        background: transparent;
-      }
+      /* No border or outline at rest (F8); the chosen option is the soft pill, hover a fainter one (F7). */
       button {
         font: inherit;
         color: inherit;
-        padding: 0;
+        height: var(--ds-control-md);
+        padding: 0 10px;
         border: 0;
-        border-radius: 8px;
-        background: transparent;
+        outline: 0;
+        border-radius: var(--ds-radius);
+        background: none;
         display: inline-flex;
         align-items: center;
-        justify-content: center;
+        gap: var(--ds-space-6);
         flex: none;
+        white-space: nowrap;
       }
-      /* The accent text colour: 3:1 or more on the bar in light and dark, and around the blue Capture too. */
+      button:hover {
+        background: var(--ds-color-soft-hover);
+      }
+      [role='radio'][aria-checked='true'] {
+        background: var(--ds-color-soft);
+      }
+      /* The focus ring after Tab only, in the system's focus colour: bar.ts sets --ds-color-focus to macOS's accent where
+         it reaches 3:1, else to the text colour (F9, F10, N1). */
       button:focus-visible {
-        outline: 2px solid var(--accent-text);
-        outline-offset: 2px;
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
+        outline-offset: var(--ds-ring-offset);
       }
       svg {
-        width: 24px;
-        height: 24px;
+        width: 18px;
+        height: 18px;
+        flex: none;
         fill: none;
         stroke: currentColor;
         stroke-width: 1.5;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      .key {
-        font-size: 11px;
-        color: var(--secondary);
-        font-variant-numeric: tabular-nums;
-      }
-
-      /* Row 1: what the chosen mode does, then where the capture goes. */
-      #head {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      #title {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-wrap: wrap; /* the hint wraps under the headline rather than hide */
-        align-items: baseline;
-        column-gap: 12px;
-      }
-      #headline {
-        font-size: 20px;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-      #hint {
-        color: var(--secondary);
-      }
-      [role='radiogroup'] {
-        display: flex;
-        align-items: center;
-      }
-      #dest {
-        border: 1px solid var(--hairline);
-        border-radius: 8px;
-        padding: 2px;
-      }
-      /* 24 + 2 × 2 padding + 2 × 1 border: 30 high, level with the pop-up */
-      #dest [role='radio'] {
-        width: 100px;
-        height: 24px;
-        border-radius: 5px;
-      }
-      #session {
-        height: 30px;
-        max-width: 260px;
-        gap: 6px;
-        padding: 0 10px;
-        border: 1px solid var(--hairline);
-      }
-      #session-face {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      #session svg {
-        width: 12px;
-        height: 12px;
-        flex: none;
-      }
-      /* One-Shot: no session to pick (F21) */
-      #session[aria-disabled='true'] {
-        opacity: 0.45;
-      }
-      .hairline {
-        height: 1px;
-        background: var(--hairline);
-      }
-
-      /* Row 2: Esc, the modes, Options, then the one blue Capture. */
-      #controls {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      #controls > button,
-      #modes [role='radio'] {
-        flex-direction: column;
-        gap: 2px;
-        height: 64px;
+      .chev {
+        width: 10px;
+        height: 10px;
+        color: var(--ds-color-dim);
       }
       #close {
-        width: 48px;
-      }
-      #close svg {
-        width: 22px;
-        height: 22px;
+        width: var(--ds-control-md);
+        padding: 0;
+        justify-content: center;
+        color: var(--ds-color-dim);
       }
       #modes {
-        gap: 4px;
-      }
-      #modes [role='radio'] {
-        min-width: 64px;
-        padding: 0 4px;
-        box-sizing: border-box;
-        white-space: nowrap;
-      }
-      .name {
-        font-size: 12px;
-      }
-      /* The chosen mode: grey fill, blue icon, accent text; never a blue fill (F14). */
-      [role='radio'][aria-checked='true'] {
-        background: var(--fill-selected);
-        color: var(--accent-text);
-      }
-      [role='radio'][aria-checked='true'] .key {
-        color: var(--accent-text);
-      }
-      #modes [aria-checked='true'] svg {
-        color: var(--accent);
+        display: flex;
+        gap: var(--ds-space-4);
       }
       .sep {
         width: 1px;
-        height: 40px;
+        height: 20px;
+        margin: 0 var(--ds-space-4);
         flex: none;
-        background: var(--hairline);
+        background: var(--ds-color-edge);
+      }
+      /* The destination gives way first: a long session name ends in an ellipsis. "To" is in the text colour, as the
+         system's dim text misses 4.5:1 (N1). Options stays beside it; the spare room falls before Capture, alone at the right. */
+      #dest {
+        flex: 0 1 auto;
+        min-width: 0;
+      }
+      #dest-face {
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       #options {
-        padding: 0 10px;
-      }
-      #options .name {
-        font-size: 13px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-      #options svg {
-        width: 12px;
-        height: 12px;
+        margin-right: auto;
       }
       #capture {
-        margin-left: auto;
-        width: 160px;
-        height: 48px;
-        gap: 8px;
-        border-radius: 10px;
-        background: var(--accent-fill);
-        color: #fff;
-        font-size: 17px;
-        font-weight: 600;
-        white-space: nowrap;
+        margin-left: var(--ds-space-4);
+        padding: 0 14px;
+        background: var(--ds-button-fill-primary);
+        color: var(--ds-button-text-primary);
+        font-weight: var(--ds-button-weight-primary);
       }
       #capture kbd {
         font: inherit;
+        font-weight: var(--ds-font-weight-regular);
+        opacity: 0.75;
       }
-
-      /* Under 1000 pt of work area, or at 150 %: the hint goes under the headline and the destination shrinks. */
-      body.narrow #title {
-        flex-direction: column;
-        align-items: flex-start;
+      /* Each control's name and key, drawn by bar.ts beside the control and inside the bar, as native tooltips never show
+         in this panel (F11). System colours: the tooltip tokens. */
+      #tip {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: var(--ds-z-tooltip);
+        display: flex;
+        gap: var(--ds-space-8);
+        padding: var(--ds-space-4) var(--ds-space-8);
+        border-radius: var(--ds-tooltip-radius);
+        background: var(--ds-tooltip-fill);
+        color: var(--ds-color-ink);
+        box-shadow: var(--ds-e1);
+        white-space: nowrap;
+        pointer-events: none;
       }
-      body.narrow #dest [role='radio'] {
-        width: 80px;
+      #tip[hidden] {
+        display: none;
       }
-      body.narrow #session {
-        max-width: 200px;
+      #tip kbd {
+        font: inherit;
+      }
+      /* Where the bar does not fit its work area: the modes show their icons only, their names stay in the tooltips (F14). */
+      body.narrow #modes .name {
+        display: none;
+      }
+      body.narrow #modes [role='radio'] {
+        width: var(--ds-control-md);
+        padding: 0;
+        justify-content: center;
       }
     </style>
   </head>
   <body>
-    <div id="head">
-      <div id="title"><span id="headline"></span><span id="hint" aria-live="polite"></span></div>
-      <div id="dest" role="radiogroup" aria-label="Save to">
-        <button role="radio" aria-checked="true" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">Session</button>
-        <button role="radio" aria-checked="false" tabindex="-1" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">
-          One-Shot
-        </button>
-      </div>
-      <span class="key" aria-hidden="true">⇧⌘O</span>
-      <button id="session" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P">
-        <span id="session-face"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg
-        ><span class="key">⇧⌘P</span>
+    <button id="close" aria-label="Close" aria-keyshortcuts="Escape" data-tip="Close" data-key="Esc">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg>
+    </button>
+    <span class="sep" aria-hidden="true"></span>
+    <div id="modes" role="radiogroup" aria-label="Mode">
+      <button
+        role="radio"
+        data-mode="area"
+        aria-checked="false"
+        tabindex="-1"
+        aria-label="New Area"
+        aria-keyshortcuts="1"
+        data-tip="New Area"
+        data-key="1"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1" stroke-dasharray="2.5 2.5" /></svg
+        ><span class="name">New Area</span>
       </button>
-    </div>
-    <div class="hairline" aria-hidden="true"></div>
-    <div id="controls">
-      <button id="close" aria-label="Close" aria-keyshortcuts="Escape">
+      <button
+        role="radio"
+        data-mode="window"
+        aria-checked="false"
+        tabindex="-1"
+        aria-label="Window"
+        aria-keyshortcuts="2"
+        data-tip="Window"
+        data-key="2"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M9 9l6 6M15 9l-6 6" />
-        </svg>
-        <span class="key">Esc</span>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 9h18" /></svg
+        ><span class="name">Window</span>
       </button>
-      <span class="sep" aria-hidden="true"></span>
-      <div id="modes" role="radiogroup" aria-label="Mode">
-        <button role="radio" data-mode="area" aria-checked="false" tabindex="-1" aria-label="New Area" aria-keyshortcuts="1">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1" stroke-dasharray="2.5 2.5" /></svg>
-          <span class="name">New Area</span><span class="key">1</span>
-        </button>
-        <button role="radio" data-mode="window" aria-checked="false" tabindex="-1" aria-label="Window" aria-keyshortcuts="2">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M3 9h18M6 7h.01M8 7h.01" />
-          </svg>
-          <span class="name">Window</span><span class="key">2</span>
-        </button>
-        <button role="radio" data-mode="full" aria-checked="false" tabindex="-1" aria-label="Full Screen" aria-keyshortcuts="3">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="2.5" y="4" width="19" height="13" rx="1.5" />
-            <path d="M9 20.5h6M12 17v3.5" />
-          </svg>
-          <span class="name">Full Screen</span><span class="key">3</span>
-        </button>
-        <button role="radio" data-mode="last" aria-checked="false" tabindex="-1" aria-label="Last Area" aria-keyshortcuts="4">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="2.5" y="4" width="16" height="12" rx="1.5" />
-            <circle cx="18.5" cy="16.5" r="3.5" fill="currentColor" />
-          </svg>
-          <span class="name">Last Area</span><span class="key">4</span>
-        </button>
-        <button role="radio" data-mode="scroll" aria-checked="false" tabindex="-1" aria-label="Scrolling" aria-keyshortcuts="5">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="4" y="2.5" width="16" height="12" rx="1.5" />
-            <path d="M12 15v6.5M9 18.5l3 3 3-3" />
-          </svg>
-          <span class="name">Scrolling</span><span class="key">5</span>
-        </button>
-      </div>
-      <span class="sep" aria-hidden="true"></span>
-      <button id="options" aria-haspopup="menu" aria-label="Options" aria-keyshortcuts="Alt+O">
-        <span class="name"
-          >Options<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg
-        ></span>
-        <span class="key">⌥O</span>
+      <button
+        role="radio"
+        data-mode="full"
+        aria-checked="false"
+        tabindex="-1"
+        aria-label="Full Screen"
+        aria-keyshortcuts="3"
+        data-tip="Full Screen"
+        data-key="3"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2.5" y="4" width="19" height="13" rx="1.5" />
+          <path d="M9 20.5h6M12 17v3.5" /></svg
+        ><span class="name">Full Screen</span>
       </button>
-      <span class="sep" aria-hidden="true"></span>
-      <button id="capture" aria-label="Capture" aria-keyshortcuts="Enter Meta+Enter">
-        <span id="capture-label">Capture</span><kbd aria-hidden="true">↩</kbd>
+      <button
+        role="radio"
+        data-mode="last"
+        aria-checked="false"
+        tabindex="-1"
+        aria-label="Last Area"
+        aria-keyshortcuts="4"
+        data-tip="Last Area"
+        data-key="4"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2.5" y="4" width="16" height="12" rx="1.5" />
+          <circle cx="18.5" cy="16.5" r="3.5" fill="currentColor" /></svg
+        ><span class="name">Last Area</span>
+      </button>
+      <button
+        role="radio"
+        data-mode="scroll"
+        aria-checked="false"
+        tabindex="-1"
+        aria-label="Scrolling"
+        aria-keyshortcuts="5"
+        data-tip="Scrolling"
+        data-key="5"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4" y="2.5" width="16" height="12" rx="1.5" />
+          <path d="M12 15v6.5M9 18.5l3 3 3-3" /></svg
+        ><span class="name">Scrolling</span>
       </button>
     </div>
+    <span class="sep" aria-hidden="true"></span>
+    <button id="dest" aria-haspopup="menu" aria-keyshortcuts="Shift+Meta+P Shift+Meta+O" data-tip="Destination" data-key="⇧⌘P">
+      <span id="dest-to">To</span><span id="dest-face"></span
+      ><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+    </button>
+    <button id="options" aria-haspopup="menu" aria-keyshortcuts="Alt+O" data-tip="Options" data-key="⌥O">
+      Options<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+    </button>
+    <button id="capture" aria-label="Capture" aria-keyshortcuts="Enter Meta+Enter" data-tip="Capture" data-key="↩">
+      <span id="capture-label">Capture</span><kbd aria-hidden="true">↩</kbd>
+    </button>
+    <div id="tip" aria-hidden="true" hidden><span></span><kbd></kbd></div>
     <script src="bar.js"></script>
   </body>
 </html>

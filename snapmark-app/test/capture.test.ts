@@ -2,7 +2,21 @@ import assert from 'assert';
 import type { MenuItemConstructorOptions as Item } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { MODES, FIRST, captureArgs, shotFiles, timed, barHeads, barSize, barLabel, barOptions, checkedCapture } from '../src/capture';
+import {
+  MODES,
+  FIRST,
+  captureArgs,
+  shotFiles,
+  timed,
+  barSize,
+  barLabel,
+  barOptions,
+  barRing,
+  checkedCapture,
+  contrast,
+  destMenu,
+} from '../src/capture';
+import { namePart } from '../src/sessions';
 import type { OptionsActions } from '../src/capture';
 
 const calls: string[] = [];
@@ -18,6 +32,7 @@ const find = (items: Item[], label: string) => {
   assert.ok(i, `no item "${label}"`);
   return i;
 };
+const shape = (items: Item[]) => items.map((i) => (i.type === 'separator' ? '—' : `${i.type ?? 'normal'} ${i.label}`));
 const click = (i: Item, item: Partial<Electron.MenuItem> = {}) => i.click!(item as never, undefined, {} as never);
 const area = { x: 10, y: 40.4, width: 1280, height: 720 };
 
@@ -54,28 +69,47 @@ assert.deepStrictEqual(
   '@F15 @F18 bar.html: each mode with its name and digit',
 );
 
-// @F17 the headline and hint per mode (spec screens.md); Last Area names the area's size, or that a drag comes first
-assert.deepStrictEqual(
-  barHeads(area),
-  {
-    area: ['Capture New Area', 'Drag to choose the area'],
-    window: ['Capture Window', 'Click a window after Capture'],
-    full: ['Capture Full Screen', 'Every display, one screenshot each'],
-    last: ['Capture Last Area', '1280 × 720'],
-    scroll: ['Capture Scrolling', 'Scroll the area yourself, then Done'],
-  },
-  '@F17',
-);
-assert.deepStrictEqual(barHeads(null).last, ['Capture Last Area', 'No area yet: drag one after Capture'], '@F17 no area yet');
+// @F14 @2026-10-27-calm-style the one-row bar: 1000 pt at 100 %, wider by the zoom as far as the work area allows;
+// narrow (the modes show their icons only) where that does not fit, so on a 900 pt work area at 130 % nothing clips
+assert.deepStrictEqual(barSize(1440), { width: 1000, narrow: false }, '@F14');
+assert.deepStrictEqual(barSize(1440, 1.3), { width: 1300, narrow: false }, '@F14 130 % on a wide display');
+assert.deepStrictEqual(barSize(1048), { width: 1000, narrow: false }, '@F14 just fits');
+assert.deepStrictEqual(barSize(1000), { width: 952, narrow: true }, '@F14');
+assert.deepStrictEqual(barSize(900, 1.3), { width: 852, narrow: true }, '@F14 900 pt at 130 %');
 
-// @F27 under 1000 pt of work area the bar is narrow (the hint wraps, nothing hides); otherwise 960 pt
-assert.deepStrictEqual(barSize(1440), { width: 960, narrow: false }, '@F27');
-assert.deepStrictEqual(barSize(1000), { width: 952, narrow: false }, '@F27');
-assert.deepStrictEqual(barSize(900), { width: 852, narrow: true }, '@F27');
-// @F27 at 150 % (a page zoom; ⌘+ steps to 1.44) narrow too, and wider by the zoom as far as the work area allows
-assert.deepStrictEqual(barSize(1512, 1.5), { width: 1440, narrow: true }, '@F27 150 %');
-assert.deepStrictEqual(barSize(1440, 1.44), { width: 1382, narrow: true }, '@F27 150 % capped by the work area');
-assert.deepStrictEqual(barSize(1440, 1.2), { width: 1152, narrow: false }, '@F27 120 % is not narrow');
+// @F12 @2026-10-27-calm-style the destination pop-up: One-Shot first, checked while chosen, then the session rows it is
+// given; One-Shot picked turns One-Shot on
+const sessionRows: Item[] = [
+  { label: 'Ledgerly Q4 review (3)', type: 'checkbox', checked: true },
+  { type: 'separator' },
+  { label: 'New Session' },
+];
+const picked: boolean[] = [];
+const dests = (oneShot: boolean) => destMenu(oneShot, sessionRows, (on) => picked.push(on));
+assert.deepStrictEqual(
+  shape(dests(false)),
+  ['checkbox One-Shot', '—', 'checkbox Ledgerly Q4 review (3)', '—', 'normal New Session'],
+  '@F12',
+);
+assert.deepStrictEqual([dests(false)[0].checked, dests(true)[0].checked], [false, true], '@F12 One-Shot checked while chosen');
+assert.deepStrictEqual([dests(false)[0].accelerator, dests(false)[0].registerAccelerator], ['Shift+Command+O', false], '@F13 ⇧⌘O shown');
+click(dests(false)[0]);
+assert.deepStrictEqual(picked, [true], '@F13 One-Shot picked');
+// @F12 @2026-10-27-calm-style the face names the session without its date, "To Ledgerly Q4 review"; the rows keep it.
+// A session with only its stamp keeps the stamp
+assert.strictEqual(namePart('2026-10-27 09.12 Ledgerly Q4 review'), 'Ledgerly Q4 review', '@F12 the name part');
+assert.ok(main.includes('session: cur && { label: sessions.namePart(cur.name) || cur.label, count: cur.count },'), '@F12 the face');
+
+// @F10 @N1 @2026-10-27-calm-style the ring is macOS's accent where it reaches 3:1 on the bar's material, light or dark;
+// else null, and the bar rings in its text colour. Chromium's own -webkit-focus-ring-color is orange #e59700, 1.9:1
+assert.strictEqual(barRing('007affff', false), '#007aff', '@F10 blue, light');
+assert.strictEqual(barRing('0A84FFFF', true), '#0a84ff', '@F10 blue, dark');
+assert.strictEqual(barRing('ffc600ff', false), null, '@N1 yellow on light is under 3:1');
+assert.strictEqual(barRing('8c8c8cff', false), null, '@N1 graphite on light is under 3:1');
+assert.strictEqual(barRing(undefined, false), null, '@F10 no accent off macOS');
+assert.strictEqual(barRing('not a colour', true), null, '@F10 an unreadable accent');
+assert.ok(contrast('#e59700', '#e5e5ea') < 3 && contrast('#000000', '#e5e5ea') >= 3 && contrast('#ffffff', '#1c1c1e') >= 3, '@N1');
+assert.ok(main.includes("barRing(process.platform === 'darwin' ? systemPreferences.getAccentColor() : undefined"), '@F10 main');
 
 // F210 screencapture arguments: each mode as its menu item did; Full Screen is ⌃⇧3's, with -C for the pointer
 assert.deepStrictEqual(captureArgs('window', { pointer: false }), ['-i', '-w', '-o'], 'F210 window');
@@ -86,9 +120,8 @@ assert.deepStrictEqual(captureArgs('full', { pointer: false }), [], '@F4 F210 fu
 assert.deepStrictEqual(captureArgs('full', { pointer: true }), ['-C'], 'F210 full with the pointer');
 assert.throws(() => captureArgs('last', { pointer: false }, null), 'F210 an area mode needs the area');
 
-// @F26 Options menu: Timer and Show Mouse Pointer, the current choices checked; no Save to (the bar's Session | One-Shot
+// @F26 Options menu: Timer and Show Mouse Pointer, the current choices checked; no Save to (the bar's destination pop-up
 // replaces it) and no New Session (the session pop-up has it)
-const shape = (items: Item[]) => items.map((i) => (i.type === 'separator' ? '—' : `${i.type ?? 'normal'} ${i.label}`));
 assert.deepStrictEqual(
   shape(opts()),
   ['header Timer', 'radio None', 'radio 3 Seconds', 'radio 5 Seconds', 'radio 10 Seconds', '—', 'checkbox Show Mouse Pointer'],
@@ -112,8 +145,15 @@ assert.strictEqual(calls.pop(), 'setPointer:true', '@F26');
 assert.deepStrictEqual(calls, [], '@F26 nothing else');
 
 // @F22 Capture One-Shot: the Capture button says where the capture goes (F212, CAP-5)
-assert.strictEqual(barLabel({ oneShot: true }), 'Capture One-Shot', '@F22');
-assert.strictEqual(barLabel({ oneShot: false }), 'Capture', '@F22');
+assert.strictEqual(barLabel({ mode: 'area', oneShot: true }), 'Capture One-Shot', '@F22');
+assert.strictEqual(barLabel({ mode: 'area', oneShot: false }), 'Capture', '@F22');
+// @2026-10-27-calm-style and follows the mode (spec screens.md): Start Scrolling; One-Shot still says One-Shot
+assert.deepStrictEqual(
+  MODES.map((m) => barLabel({ mode: m.id, oneShot: false })),
+  ['Capture', 'Capture', 'Capture', 'Capture', 'Start Scrolling'],
+  'Capture follows the mode',
+);
+assert.strictEqual(barLabel({ mode: 'scroll', oneShot: true }), 'Capture One-Shot', '@F22 One-Shot in Scrolling');
 
 // F215 pointer: -C in New Area, Last Area and Full Screen, never in Window
 assert.deepStrictEqual(captureArgs('area', { pointer: true }, area), ['-C', '-R', '10,40,1280,720'], 'F215 area');

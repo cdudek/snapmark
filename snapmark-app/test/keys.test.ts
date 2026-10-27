@@ -123,22 +123,33 @@ assert.deepStrictEqual(
   ],
   '@F18 F236 Capture bar',
 );
-// @F18 the bar's controls carry the keys the group lists, in bar order: the destination row, then Esc, 1–5, Options and
-// Capture
+// @F18 the bar's controls carry the keys the group lists, in bar order: Esc, 1–5, the destination (⇧⌘P, ⇧⌘O),
+// Options and Capture
 const bar = read('src/bar.html');
 assert.deepStrictEqual(
   [...bar.matchAll(/aria-keyshortcuts="([^"]+)"/g)].map((m) => m[1]),
-  ['Shift+Meta+O', 'Shift+Meta+O', 'Shift+Meta+P', 'Escape', '1', '2', '3', '4', '5', 'Alt+O', 'Enter Meta+Enter'],
+  ['Escape', '1', '2', '3', '4', '5', 'Shift+Meta+P Shift+Meta+O', 'Alt+O', 'Enter Meta+Enter'],
   '@F18 the bar buttons carry the keys the group lists',
 );
-// @F18 and show them: native tooltips never show in this panel, so ⇧⌘O and ⇧⌘P are captions on the bar too
+// @F11 @2026-10-27-calm-style and name them in the tooltips the bar draws (no native `title`, which never shows in this
+// panel); no key captions on the bar, only Capture's ↩
 assert.deepStrictEqual(
-  [...bar.slice(bar.indexOf('<div id="head">'), bar.indexOf('<div class="hairline"')).matchAll(/class="key"[^>]*>([^<]+)</g)].map(
-    (m) => m[1],
-  ),
-  ['⇧⌘O', '⇧⌘P'],
-  '@F18 the destination row shows ⇧⌘O and ⇧⌘P',
+  [...bar.matchAll(/<button\s[^>]*?data-tip="([^"]+)"\s+data-key="([^"]+)"/g)].map((m) => `${m[1]}  ${m[2]}`),
+  [
+    'Close  Esc',
+    'New Area  1',
+    'Window  2',
+    'Full Screen  3',
+    'Last Area  4',
+    'Scrolling  5',
+    'Destination  ⇧⌘P',
+    'Options  ⌥O',
+    'Capture  ↩',
+  ],
+  '@F11 each control has its key in its tooltip',
 );
+assert.ok(!/<button\s[^>]*title=/.test(bar) && bar.includes('<div id="tip" aria-hidden="true" hidden>'), '@F11 drawn, not native');
+assert.ok(!bar.includes('class="key"') && bar.match(/↩<\/kbd>/g)?.length === 1, '@F11 no key captions; Capture alone shows ↩');
 assert.deepStrictEqual(
   KEY_GROUPS[2].rows,
   [
