@@ -5,7 +5,7 @@
   "description": "Capture, annotate and collect screenshots into Markdown sessions",
   "main": "dist/src/main.js",
   "scripts": {
-    "build": "node scripts/link-hoisted.cjs && tsc && cp src/editor.html src/viewer.html src/area.html src/scroll.html src/bar.html src/settings.html src/shortcuts.html src/countdown.html src/recorder.html src/tokens.css dist/src/ && esbuild src/md-notes.ts --bundle --format=iife --global-name=MdNotes --minify --log-level=warning --outfile=dist/src/md-notes.js",
+    "build": "node scripts/link-hoisted.cjs && tsc && cp src/editor.html src/viewer.html src/area.html src/scroll.html src/bar.html src/settings.html src/shortcuts.html src/countdown.html src/recorder.html src/tokens.css src/logo.svg dist/src/ && esbuild src/md-notes.ts --bundle --format=iife --global-name=MdNotes --minify --log-level=warning --outfile=dist/src/md-notes.js",
     "start": "npm run build && electron .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

@@ -2,53 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data:; style-src 'self' 'unsafe-inline'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data: 'self'; style-src 'self' 'unsafe-inline'" />
     <title>Snapmark</title>
     <link rel="stylesheet" href="tokens.css" />
     <script src="surface.js"></script>
     <style>
-      /* Two colour systems: --accent (brand blue) is for the app's own controls only; marks use the annotation colour. */
-      :root {
-        color-scheme: light dark;
-        --bg: #ececee;
-        --panel: #f7f7f8;
-        --field: #fff;
-        --ink: #1d1d1f;
-        --muted: #6e6e73;
-        --line: rgb(0 0 0 / 0.1);
-        --hover: rgb(0 0 0 / 0.05);
-        --accent: #2492ff; /* tints, outlines, focus rings, icons */
-        --accent-fill: #0f72db; /* filled buttons with white text: 4.7:1, where #2492ff is 3.2:1 */
-        --accent-tint: rgb(36 146 255 / 0.14);
-        --focus: #0f72db; /* focus rings: --accent is 3:1 on the light panels */
-        --accent-ink: #0f72db; /* the picked tool's icon: 3.8:1 on its tint, where #2492ff is 2.6:1 */
-        --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
-        --lift: 0 10px 30px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.06);
-        --hairline: rgb(0 0 0 / 0.12); /* the edge of a colour dot, so Graphite and pale picks keep their outline */
-        --slot: rgb(0 0 0 / 0.22);
-        --danger: #c42b31; /* 5.6:1 on --field */
-        --fill-selected: light-dark(#e5e5ea, #3a3a3c); /* the selected segment, as in the capture bar */
-        --accent-text: light-dark(#0a62c2, #6cb4ff); /* its text: 4.7:1 light, 5.2:1 dark (N1) */
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #1c1c1e;
-          --panel: #262628;
-          --field: #313134;
-          --ink: #f5f5f7;
-          --muted: #a4a4a9; /* 5.2:1 on --field, 6.1:1 on --panel: small secondary text stays above 4.5:1 */
-          --line: rgb(255 255 255 / 0.1);
-          --hover: rgb(255 255 255 / 0.07);
-          --accent-tint: rgb(36 146 255 / 0.24);
-          --focus: #2492ff;
-          --accent-ink: #2492ff; /* 3.4:1 on the dark tint */
-          --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
-          --lift: 0 10px 30px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.1);
-          --hairline: rgb(255 255 255 / 0.16);
-          --slot: rgb(255 255 255 / 0.24);
-          --danger: #ff7a7a; /* 5.5:1 on --field */
-        }
-      }
+      /* The calm editor (spec screens.md): colours, sizes and shapes from tokens.css only (F30). The app's controls
+         take the system's colours and the soft pill when chosen; the accent fills one button, Add to Session or Copy
+         Image (F23, F24). Marks keep the annotation colour, exactly as in v0.24.0 (F31). */
       * {
         box-sizing: border-box;
       }
@@ -58,241 +19,224 @@
         display: grid;
         grid-template: auto auto 1fr / 1fr 320px;
         font:
-          13px -apple-system,
+          var(--ds-type-control-weight) var(--ds-type-control-size) -apple-system,
           system-ui,
           sans-serif;
-        background: var(--bg);
-        color: var(--ink);
+        background: var(--ds-color-ground);
+        color: var(--ds-color-ink);
       }
+      /* The focus ring after Tab only, in the system's focus colour: surface.js sets --ds-color-focus to macOS's accent
+         where it reaches 3:1, else to the text colour (F25, N1). */
       :focus-visible {
-        outline: 2px solid var(--focus);
-        outline-offset: 1px;
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
+        outline-offset: var(--ds-ring-offset);
       }
-      /* One keycap style for every key the editor shows (A18): the system font's own ⌘ ⇧ ⌥ ⌃ ↵ glyphs, which stand as
-         tall as its digits (a <kbd>'s default monospace draws ⇧ a third smaller), 11 px, weight 500, in the colour of
-         the text it belongs to. Under an icon button it is the caption; in a text button it follows the label. */
+      /* The main button's key, after its label (only it shows one): the label's font, a little lighter. */
       kbd {
-        font:
-          500 11px/14px -apple-system,
-          system-ui,
-          sans-serif;
+        font: inherit;
+        font-weight: var(--ds-font-weight-regular);
         font-variant-numeric: tabular-nums;
-        color: inherit;
         white-space: nowrap;
+        opacity: 0.75;
       }
       /* The title row: the traffic lights sit in it (titleBarStyle hiddenInset), so it drags the window. */
       .titlebar {
         grid-column: 1 / -1;
         height: 32px;
         display: flex;
-        gap: 6px;
+        gap: var(--ds-space-6);
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        background: var(--panel);
+        font-weight: var(--ds-font-weight-semibold);
+        background: var(--ds-color-panel);
         user-select: none;
         -webkit-app-region: drag;
       }
-      .titlebar svg {
+      .titlebar img {
         width: 16px;
         height: 16px;
       }
-      /* The toolbar: every control's 36 px box sits on one row (so tool icons and Undo line up); tool captions hang
-         below it. Clusters (tools │ colour │ history and share) are split by hairlines, on an 8 pt rhythm. */
+      /* The toolbar: one row of 32 pt controls, 8 of padding (F26). Clusters (tools │ colour │ history and share) are
+         split by hairlines; the destination sits at the right end, then More (⋯) when tools do not fit. Keys are in
+         the tooltips (editor.ts showTip), never in captions. */
       header {
         grid-column: 1 / -1;
-        /* One line, always: a wrapping toolbar would shift the canvas under the pointer when tool labels change. */
+        /* One line, always: a wrapping toolbar would shift the canvas under the pointer. Tools that do not fit go into More. */
         overflow-x: auto;
         display: flex;
-        gap: 4px;
-        align-items: flex-start;
-        padding: 4px 16px 6px; /* the header clips (overflow), so the 3 px focus ring needs this room */
-        border-bottom: 1px solid var(--line);
-        background: var(--panel);
+        gap: var(--ds-space-4);
+        align-items: center;
+        padding: var(--ds-space-8) var(--ds-space-16);
+        border-bottom: var(--ds-border) solid var(--ds-color-edge);
+        background: var(--ds-color-panel);
         -webkit-app-region: drag; /* between the controls */
-      }
-      header button {
-        -webkit-app-region: no-drag;
       }
       header .sep {
         flex: none;
         width: 1px;
-        height: 24px;
-        margin: 6px 8px 0;
-        background: var(--line);
+        height: 20px;
+        margin: 0 var(--ds-space-4);
+        background: var(--ds-color-edge);
       }
-      .actions button {
-        font: inherit;
-        padding: 5px 10px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--field);
-        box-shadow: var(--shadow);
-        color: inherit;
-        cursor: pointer;
-      }
-      .actions button:hover {
-        background-image: linear-gradient(var(--hover), var(--hover));
-      }
-      /* Toolbar buttons are borderless, like a macOS toolbar: a soft fill on hover, the blue tint when picked. */
+      /* No border or outline at rest (F25): a fainter pill on hover, the soft pill when chosen (F24). */
       header button {
         flex: none;
-        display: grid;
-        place-items: center;
-        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--ds-space-6);
+        min-width: var(--ds-control-md);
+        height: var(--ds-control-md);
         padding: 0;
         border: 0;
-        border-radius: 8px;
-        background: transparent;
+        border-radius: var(--ds-radius);
+        background: none;
         color: inherit;
         font: inherit;
+        white-space: nowrap;
         cursor: pointer;
+        -webkit-app-region: no-drag;
       }
-      header button:hover:not(:disabled) {
-        background: var(--hover);
+      header button:hover:not(:disabled, [aria-disabled='true']) {
+        background: var(--ds-color-soft-hover);
       }
       header button:disabled {
-        opacity: 0.35;
+        opacity: var(--ds-state-disabled-content);
         cursor: default;
       }
       #tools {
         display: flex;
-        gap: 4px;
+        gap: var(--ds-space-4);
       }
-      header .group {
+      /* The chosen tool, or More while it holds the chosen tool: the soft pill, its icon in the text colour */
+      #tools button[aria-pressed='true'],
+      #more.chosen {
+        background: var(--ds-color-soft);
+      }
+      header svg,
+      #more-menu svg {
+        width: 20px;
+        height: 20px;
         flex: none;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-      }
-      header .cap {
-        height: 14px;
-        font-size: 11px;
-        color: var(--ink);
-      }
-      header .group:has(button:disabled) .cap {
-        color: var(--muted); /* dims with its button, still 4.7:1 or more */
-      }
-      #tools button {
-        width: 40px;
-      }
-      #tools button[aria-pressed='true'] {
-        background: var(--accent-tint);
-        color: var(--accent-ink);
-      }
-      header svg {
         fill: none;
         stroke: currentColor;
         stroke-width: 1.8;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      #tools svg {
-        width: 22px;
-        height: 22px;
+      #tools svg,
+      #more-menu svg {
         overflow: visible; /* a two-tool button's back layer sits just outside the glyph's 24-unit box */
       }
       /* A key with two tools: the current tool in front, the corner of a second layer behind it. */
       #tools .back {
         opacity: 0.5;
       }
-      /* Undo, Redo and Copy or Save: icons; the name and key are in the tooltip and the accessible name. */
-      header .icon-btn {
-        width: 36px;
-      }
-      header .icon-btn svg {
-        width: 20px;
-        height: 20px;
-      }
-      /* Where this screenshot goes, at the toolbar's right end: Session | One-Shot, 12 pt, then the session pop-up. Both
+      /* Where this screenshot goes, at the toolbar's right end: Session | One-Shot, then the session pop-up. Both
          behave as the capture bar's; the flexible gap sits before them. One wrapper, so a greyed pair has one reason. */
       #dest-wrap {
         display: flex;
         flex: none;
-        gap: 4px;
-        align-items: flex-start;
+        gap: var(--ds-space-4);
+        align-items: center;
         margin-left: auto;
       }
       #dest {
         display: flex;
-        margin-top: 3px;
-        padding: 2px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        -webkit-app-region: no-drag;
+        gap: var(--ds-space-4);
       }
-      /* 24 + 2 × 2 padding + 2 × 1 border: 30 high, level with the pop-up */
       header #dest button {
-        width: 100px;
-        height: 24px;
-        border-radius: 5px;
+        padding: 0 10px;
       }
       header #dest [aria-checked='true'] {
-        background: var(--fill-selected);
-        color: var(--accent-text);
+        background: var(--ds-color-soft);
       }
-      /* The session pop-up: "<session> (<n>)" and a chevron; only the name shortens, with "…", so the count stays. Greyed,
-         without the chevron, in One-Shot and Edit Again. The chevron sits in the right padding. */
+      /* The session pop-up: "<session> (<n>)" and a chevron; only the name shortens, with "…", so the count stays. In the
+         text colour without the chevron in One-Shot and Edit Again. The chevron sits in the right padding. */
       header #session {
         position: relative;
-        display: flex;
-        align-items: center;
-        flex: none;
+        gap: 0;
         max-width: 260px;
-        height: 30px;
-        margin: 3px 0 0 8px;
+        margin-left: var(--ds-space-8);
         padding: 0 26px 0 10px;
-        border: 1px solid var(--line);
-        white-space: nowrap;
-        color: var(--muted);
       }
       #session-name {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      /* Greyed by colour, not opacity, so "Not in a session" still reads; aria-disabled keeps it in Tab and VoiceOver (F45) */
+      /* aria-disabled keeps it in Tab and VoiceOver (F45) */
       header #session[aria-disabled='true'] {
         padding-right: 10px;
-        background: transparent;
         cursor: default;
       }
-      /* Too narrow for one line (N2), in the spec's order: the name to 96 pt, the segments to 72, then the tool captions
-         go and the tools and separators tighten (editor.ts fitToolbar). */
+      /* Too narrow for one line (N2), in the spec's order: the name to 96 pt, the segments tighten, then the tools go
+         into More from the last (editor.ts fitToolbar, F26). */
       header.fit-name #session-name {
         max-width: 96px;
       }
       header.fit-segments #dest button {
-        width: 72px;
+        padding: 0 var(--ds-space-6);
       }
-      header.fit-tools {
-        gap: 2px;
-        padding-inline: 12px;
+      /* More (⋯) and its menu: the tools that do not fit, each with its icon, name and key */
+      #more-menu {
+        position: fixed;
+        z-index: var(--ds-z-menu);
+        min-width: 200px;
+        padding: var(--ds-space-4);
+        border-radius: var(--ds-radius-large);
+        background: var(--ds-popover-fill);
+        box-shadow: var(--ds-menu-shadow);
       }
-      header.fit-tools #tools {
-        gap: 2px;
+      #more-menu button {
+        display: flex;
+        align-items: center;
+        gap: var(--ds-space-8);
+        width: 100%;
+        height: var(--ds-control-md);
+        padding: 0 var(--ds-space-8);
+        border: 0;
+        border-radius: var(--ds-radius);
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
       }
-      header.fit-tools .cap {
-        display: none;
+      #more-menu button:hover {
+        background: var(--ds-color-soft-hover);
       }
-      header.fit-tools #tools button {
-        width: 32px;
+      #more-menu [aria-checked='true'] {
+        background: var(--ds-color-soft);
       }
-      header.fit-tools .sep {
-        margin-inline: 4px;
+      #more-menu kbd {
+        margin-left: auto;
+        padding-left: var(--ds-space-16);
+      }
+      /* A control's name and key, drawn by editor.ts under it (above it near the bottom), as in the capture bar */
+      #tip {
+        position: fixed;
+        z-index: var(--ds-z-tooltip);
+        width: max-content;
+        max-width: min(360px, calc(100vw - 16px));
+        padding: var(--ds-space-4) var(--ds-space-8);
+        border-radius: var(--ds-tooltip-radius);
+        background: var(--ds-tooltip-fill);
+        color: var(--ds-color-ink);
+        box-shadow: var(--ds-e1);
+        pointer-events: none;
       }
       /* The failed move, under the pop-up for 8 s */
       #move-error {
         position: fixed;
-        z-index: 10;
+        z-index: var(--ds-z-toast);
         max-width: 320px;
         margin: 0;
         padding: 6px 10px;
-        border-radius: 8px;
-        background: var(--field);
-        box-shadow: var(--lift);
-        color: var(--danger);
+        border-radius: var(--ds-radius);
+        background: var(--ds-popover-fill);
+        box-shadow: var(--ds-popover-shadow);
+        color: var(--ds-color-error-text);
         font-size: 12px;
       }
       .sr {
@@ -309,17 +253,13 @@
         width: 10px;
         height: 10px;
         margin-top: -5px;
-        fill: none;
-        stroke: currentColor;
         stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
       }
       /* The annotation colour: a swatch, and a popover of presets, the Custom row, a hex field and Custom… (the macOS
          colour panel). One dot everywhere (A17): the swatch and every circle in the popover are 24 px circles, and the
          picked colour wears the same ring, a 2 px gap and then 2 px of the colour itself. */
       #swatch {
-        width: 40px;
+        width: var(--ds-control-md);
       }
       #swatch i,
       #palette .swatches > * {
@@ -330,7 +270,7 @@
         border: 0;
         border-radius: 50%;
         background-color: currentColor;
-        box-shadow: inset 0 0 0 1px var(--hairline);
+        box-shadow: inset 0 0 0 1px var(--ds-color-soft); /* the dot's edge, so Graphite and pale picks keep their outline */
         outline: 0 solid currentColor;
         outline-offset: 2px;
       }
@@ -340,12 +280,12 @@
       }
       #palette {
         position: fixed; /* the header scrolls sideways, so a popover inside it would be clipped */
-        z-index: 10;
+        z-index: var(--ds-z-menu);
         width: 196px; /* five 24 px dots, 12 px apart, in 14 px of padding */
         padding: 14px;
-        border-radius: 12px;
-        background: var(--field);
-        box-shadow: var(--lift);
+        border-radius: var(--ds-radius-large);
+        background: var(--ds-popover-fill);
+        box-shadow: var(--ds-popover-shadow);
       }
       #palette .swatches {
         display: grid;
@@ -358,9 +298,9 @@
       /* Focus sits outside the picked ring, so both show at once. */
       #palette .swatches button:focus-visible {
         box-shadow:
-          inset 0 0 0 1px var(--hairline),
-          0 0 0 5px var(--field),
-          0 0 0 7px var(--focus);
+          inset 0 0 0 1px var(--ds-color-soft),
+          0 0 0 5px var(--ds-popover-fill),
+          0 0 0 7px var(--ds-color-focus);
       }
       #palette .swatches [aria-pressed='true'] {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 12.5l3.2 3.2L17 9' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -369,39 +309,36 @@
       #palette .swatches .slot {
         background: none;
         box-shadow: none;
-        border: 1px dashed var(--slot);
+        border: 1px dashed var(--ds-color-edge);
       }
       #palette h3 {
         margin: 14px 0 8px;
         font-size: 11px;
-        font-weight: 500;
+        font-weight: var(--ds-font-weight-medium);
         line-height: 14px;
-        color: var(--muted);
       }
       #palette hr {
         margin: 14px 0 12px;
         border: 0;
-        border-top: 1px solid var(--line);
+        border-top: var(--ds-border) solid var(--ds-color-edge);
       }
-      /* The hex fields, the annotation colour's and Beautify's: "#" is drawn, the field holds the digits (HEX-1). */
+      /* The hex fields, the annotation colour's and Beautify's: "#" is drawn, the field holds the digits (HEX-1). No edge:
+         a soft fill, and the error's red edge only when the code is refused (F56). */
       .hex {
         display: flex;
         align-items: center;
-        height: 28px;
-        padding: 0 8px;
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: var(--panel);
-        color: var(--muted);
+        height: var(--ds-field-height);
+        padding: 0 var(--ds-space-8);
+        border: var(--ds-border) solid var(--ds-field-edge);
+        border-radius: var(--ds-field-radius);
+        background: var(--ds-field-fill);
         cursor: text;
       }
-      .hex:focus-within {
-        border-color: var(--accent);
-        outline: 2px solid var(--focus); /* --accent and its tint are under 3:1 on the panels */
+      .hex:has(input:focus-visible) {
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
       }
       .hex:has([aria-invalid='true']) {
-        border-color: var(--danger);
-        box-shadow: none;
+        border-color: var(--ds-color-error-text);
       }
       .hex input {
         flex: 1;
@@ -410,17 +347,17 @@
         padding: 0;
         border: 0;
         outline: 0;
-        background: transparent;
-        color: var(--ink);
+        background: none;
+        color: inherit;
         font: inherit;
         font-variant-numeric: tabular-nums;
-        font-weight: 400;
+        font-weight: var(--ds-font-weight-regular);
       }
       .hex-error {
         margin: 6px 0 0;
         font-size: 11px;
         line-height: 14px;
-        color: var(--danger);
+        color: var(--ds-color-error-text);
       }
       #palette .custom {
         position: relative;
@@ -429,15 +366,15 @@
         gap: 8px;
         margin: 8px -4px -4px;
         padding: 4px;
-        border-radius: 8px;
-        font-weight: 400;
+        border-radius: var(--ds-radius);
+        font-weight: var(--ds-font-weight-regular);
         cursor: pointer;
       }
       #palette .custom:hover {
-        background: var(--hover);
+        background: var(--ds-color-soft-hover);
       }
       #palette .custom:has(input:focus-visible) {
-        outline: 2px solid var(--accent);
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
       }
       /* Reached by Tab and by a click on its label; the colour panel it opens is the visible part. */
       #palette .custom input {
@@ -447,12 +384,20 @@
         opacity: 0;
         pointer-events: none;
       }
+      /* Custom…'s colour wheel, in the annotation palette's own colours; its hole is the popover's fill */
       #palette .ring {
+        position: relative;
         width: 24px;
         height: 24px;
         border-radius: 50%;
         background: conic-gradient(#e5484d, #ffb224, #30a46c, #05a2c2, #2492ff, #8b3dff, #ef28a7, #e5484d);
-        mask: radial-gradient(circle, transparent 7px, #000 8px);
+      }
+      #palette .ring::after {
+        content: '';
+        position: absolute;
+        inset: 5px;
+        border-radius: 50%;
+        background: var(--ds-popover-fill);
       }
       main {
         overflow: hidden;
@@ -461,9 +406,7 @@
         padding: 16px;
       }
       .canvas-container {
-        box-shadow:
-          0 1px 3px rgb(0 0 0 / 0.1),
-          0 8px 30px rgb(0 0 0 / 0.12);
+        box-shadow: var(--ds-e2);
       }
       /* The screenshot's frame: nothing in session mode; in one-shot mode the Beautify preview (sized by editor.ts). */
       #stage {
@@ -476,13 +419,14 @@
       .one-shot .canvas-container {
         overflow: hidden; /* rounded corners clip the screenshot */
       }
-      /* Transparent shows as a checkerboard, in the preview and on the None swatch. */
+      /* No background shows as a checkerboard, in the preview and on the None swatch. */
       .checker {
-        background: repeating-conic-gradient(#d8d8dc 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+        background: repeating-conic-gradient(var(--ds-primitive-color-neutral-200) 0 25%, var(--ds-primitive-color-neutral-0) 0 50%) 0 0 /
+          16px 16px;
       }
+      /* Text that must be read is in the text colour: the system's dim text misses 4.5:1 (N1, questions.md). */
       #notes-kept {
         margin: 0;
-        color: var(--muted);
       }
       /* The recording editor: the facts line and Show All Frames above the grid of frames (screens.md). */
       body.recording main {
@@ -493,41 +437,42 @@
         justify-self: stretch;
         display: flex;
         justify-content: space-between;
+        align-items: center;
         gap: 16px;
-        color: var(--muted);
       }
+      /* Show All Frames: a plain button, no edge at rest */
       .link {
-        padding: 0;
+        height: var(--ds-control-md);
+        padding: 0 10px;
         border: 0;
+        border-radius: var(--ds-radius);
         background: none;
         font: inherit;
-        color: var(--accent-text);
+        color: inherit;
         cursor: pointer;
       }
       .link:hover:not(:disabled, [aria-disabled='true']) {
-        text-decoration: underline;
+        background: var(--ds-color-soft-hover);
       }
       .link:disabled,
       .link[aria-disabled='true'] {
-        color: var(--muted);
+        opacity: var(--ds-state-disabled-content);
         cursor: default;
       }
       .ref-time {
         display: block;
         margin-bottom: 2px;
-        color: var(--muted);
         font-variant-numeric: tabular-nums;
       }
       #beautify-off {
         margin: 0;
-        color: var(--muted);
       }
       #beautify.off {
         opacity: 0.45;
       }
       #save-error {
         margin: 0;
-        color: var(--danger);
+        color: var(--ds-color-error-text);
       }
       .one-shot #caption-label,
       .one-shot #caption,
@@ -542,7 +487,7 @@
       #refs-label {
         margin: 8px 0 -2px;
         font-size: inherit;
-        font-weight: 600;
+        font-weight: var(--ds-font-weight-semibold);
       }
       #refs-label {
         margin-top: 10px;
@@ -552,7 +497,7 @@
       #refs-rule {
         margin: 10px 4px 0;
         border: 0;
-        border-top: 1px solid var(--hairline);
+        border-top: var(--ds-border) solid var(--ds-color-edge);
       }
       #refs-rule:has(+ #refs-label[hidden]) {
         display: none;
@@ -563,7 +508,7 @@
         flex-direction: column;
         gap: 12px;
       }
-      /* Beautify (one-shot mode): sliders with their values, background swatches, ratio as a segmented control. */
+      /* Beautify (one-shot mode): sliders with their values, background swatches, ratio as the soft pill. */
       #beautify {
         display: flex;
         flex-direction: column;
@@ -574,16 +519,16 @@
         grid-template-columns: 1fr 34px;
         align-items: center;
         gap: 2px 8px;
-        font-weight: 400;
+        font-weight: var(--ds-font-weight-regular);
       }
+      /* The slider's filled part in the text colour: the accent is for the main button and checks that are on */
       #beautify .row input {
         grid-column: 1 / -1;
         margin: 0;
-        accent-color: var(--accent);
+        accent-color: var(--ds-color-ink);
       }
       #beautify output {
         text-align: right;
-        color: var(--muted);
         font-variant-numeric: tabular-nums;
       }
       #beautify h3 {
@@ -602,18 +547,19 @@
         height: 36px;
         padding: 0;
         border: 0;
-        border-radius: 8px;
-        box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+        border-radius: var(--ds-radius);
+        box-shadow: inset 0 0 0 1px var(--ds-color-soft);
         cursor: pointer;
       }
+      /* The picked background: a ring in the text colour, clear of the swatch */
       #backdrops [aria-pressed='true'],
       #backdrops .picked {
         box-shadow:
-          0 0 0 2px var(--panel),
-          0 0 0 4px var(--accent);
+          0 0 0 2px var(--ds-color-ground),
+          0 0 0 4px var(--ds-color-ink);
       }
       #backdrops .custom:has(input:focus-visible) {
-        outline: 2px solid var(--accent);
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
       }
       /* Custom… starts its own row, with the hex field and its error beside it (screens.md, Hex fields). */
       #backdrops .custom-row {
@@ -627,9 +573,6 @@
         grid-column: 2 / -1;
         align-self: center;
       }
-      #backdrops .hex {
-        background: var(--field); /* a field on the column, as the notes are */
-      }
       #backdrops .hex-error {
         margin-top: -4px; /* 6 px under the field, as in the colour popover, inside the 10 px row gap */
       }
@@ -642,30 +585,29 @@
       }
       #ratios {
         display: flex;
-        padding: 2px;
-        border-radius: 8px;
-        background: var(--hover);
+        gap: var(--ds-space-4);
       }
       #ratios button {
         flex: 1;
-        padding: 4px 0;
+        height: var(--ds-control-md);
+        padding: 0;
         border: 0;
-        border-radius: 6px;
-        background: transparent;
+        border-radius: var(--ds-radius);
+        background: none;
         color: inherit;
         font: inherit;
         cursor: pointer;
       }
+      #ratios button:hover {
+        background: var(--ds-color-soft-hover);
+      }
       #ratios button[aria-pressed='true'] {
-        background: var(--field);
-        box-shadow: var(--shadow);
-        color: var(--accent);
-        font-weight: 600;
+        background: var(--ds-color-soft);
       }
       /* The notes scroll; Discard and "Add to session" stay in view below them. */
       aside {
-        border-left: 1px solid var(--line);
-        background: var(--panel);
+        border-left: var(--ds-border) solid var(--ds-color-edge);
+        background: var(--ds-color-panel);
         display: flex;
         flex-direction: column;
         min-height: 0;
@@ -683,28 +625,25 @@
         display: none !important;
       }
       label {
-        font-weight: 600;
+        font-weight: var(--ds-font-weight-semibold);
       }
-      /* Markdown fields (md-notes.js): grow with their text, format as you type. */
+      /* Markdown fields (md-notes.js): grow with their text, format as you type. No edge: a soft fill. */
       .md {
         position: relative;
         width: 100%;
         min-height: 2.2em;
         padding: 7px 10px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--field);
-        box-shadow: var(--shadow);
+        border: var(--ds-border) solid var(--ds-field-edge);
+        border-radius: var(--ds-field-radius);
+        background: var(--ds-field-fill);
         cursor: text;
       }
-      .md:focus-within {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-tint);
+      .md:has(:focus-visible) {
+        outline: var(--ds-ring-width) solid var(--ds-color-focus);
       }
       .md[data-empty='true']::before {
         content: attr(data-placeholder);
         position: absolute;
-        color: var(--muted);
         pointer-events: none;
       }
       .md .ProseMirror {
@@ -744,21 +683,19 @@
       .md blockquote {
         margin: 0 0 4px;
         padding-left: 8px;
-        border-left: 3px solid var(--line);
-        color: var(--muted);
+        border-left: 3px solid var(--ds-color-edge);
       }
       .md code {
         font:
           0.92em ui-monospace,
           monospace;
-        background: rgb(127 127 127 / 0.18);
+        background: var(--ds-color-soft);
         padding: 0 3px;
         border-radius: 3px;
       }
       #redacted {
         margin: 0;
         font-size: 12px;
-        color: var(--muted);
       }
       .ref {
         display: grid;
@@ -766,7 +703,7 @@
         gap: 6px;
         align-items: start;
       }
-      /* The marker's diamond, in the marker's colour (--mark, set per row). */
+      /* The marker's diamond, in the marker's colour (--mark, set per row), its number in white as on the mark. */
       .ref b {
         position: relative;
         z-index: 0;
@@ -775,7 +712,7 @@
         width: 24px;
         height: 24px;
         margin-top: 5px;
-        color: #fff;
+        color: var(--ds-primitive-color-neutral-0);
         font-size: 12px;
       }
       .ref b::before {
@@ -787,61 +724,47 @@
         background: var(--mark);
         transform: rotate(45deg);
       }
+      /* Discard on the soft fill; the one accent-filled button is the main action (F23). */
       .actions {
         display: flex;
-        gap: 8px;
+        gap: var(--ds-space-8);
         padding: 12px;
-        border-top: 1px solid var(--line);
+        border-top: var(--ds-border) solid var(--ds-color-edge);
       }
       .actions button {
         flex: 1;
-        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--ds-space-6);
+        height: var(--ds-control-md);
+        padding: 0 var(--ds-space-12);
+        border: 0;
+        border-radius: var(--ds-radius);
+        background: var(--ds-button-fill-secondary);
+        color: inherit;
+        font: inherit;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .actions button:hover {
+        background-image: linear-gradient(var(--ds-color-soft-hover), var(--ds-color-soft-hover));
       }
       .actions .primary {
-        background-color: var(--accent-fill);
-        border-color: var(--accent-fill);
-        color: #fff;
-        font-weight: 600;
-      }
-      .actions kbd {
-        margin-left: 3px; /* after the label's space: about 7 px in all */
+        background-color: var(--ds-button-fill-primary);
+        color: var(--ds-button-text-primary);
+        font-weight: var(--ds-button-weight-primary);
       }
     </style>
   </head>
   <body>
-    <div class="titlebar">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <defs>
-          <linearGradient id="cool" x1="0" y1="0" x2=".85" y2="1">
-            <stop stop-color="#20F4EC" />
-            <stop offset=".45" stop-color="#2492FF" />
-            <stop offset="1" stop-color="#8B3DFF" />
-          </linearGradient>
-          <linearGradient id="pink" x1="0" y1="0" x2=".8" y2="1">
-            <stop stop-color="#FA6CFF" />
-            <stop offset="1" stop-color="#EF28A7" />
-          </linearGradient>
-        </defs>
-        <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1c20" />
-        <g transform="translate(14 14) scale(.72)">
-          <path
-            d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63"
-            fill="none"
-            stroke="url(#cool)"
-            stroke-width="12"
-            stroke-linecap="round"
-          />
-          <rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#pink)" />
-        </g>
-      </svg>
-      Snapmark
-    </div>
+    <div class="titlebar"><img src="logo.svg" alt="" />Snapmark</div>
     <header>
       <span id="tools"></span>
       <span class="sep" aria-hidden="true"></span>
       <button
         id="swatch"
-        title="Annotation colour"
+        data-tip="Annotation colour"
         aria-label="Annotation colour"
         aria-haspopup="dialog"
         aria-expanded="false"
@@ -850,25 +773,19 @@
         <i></i>
       </button>
       <span class="sep" aria-hidden="true"></span>
-      <div class="group">
-        <button id="undo" class="icon-btn" title="Undo (⌘Z)" aria-label="Undo (⌘Z)" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 14L4 9l5-5" />
-            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
-          </svg>
-        </button>
-        <div class="cap"><kbd>⌘Z</kbd></div>
-      </div>
-      <div class="group">
-        <button id="redo" class="icon-btn" title="Redo (⇧⌘Z)" aria-label="Redo (⇧⌘Z)" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 14l5-5-5-5" />
-            <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
-          </svg>
-        </button>
-        <div class="cap"><kbd>⇧⌘Z</kbd></div>
-      </div>
-      <button id="share" class="icon-btn" title="Copy Image or Save As…" aria-label="Copy or Save" aria-haspopup="menu">
+      <button id="undo" data-tip="Undo (⌘Z)" aria-label="Undo (⌘Z)" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 14L4 9l5-5" />
+          <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+        </svg>
+      </button>
+      <button id="redo" data-tip="Redo (⇧⌘Z)" aria-label="Redo (⇧⌘Z)" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 14l5-5-5-5" />
+          <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+        </svg>
+      </button>
+      <button id="share" data-tip="Copy Image or Save As…" aria-label="Copy or Save" aria-haspopup="menu">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3v12M8 7l4-4 4 4" />
           <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
@@ -877,8 +794,8 @@
       <span id="dest-wrap">
         <span id="dest-reason" class="sr"></span>
         <span id="dest" role="radiogroup" aria-label="Save to">
-          <button role="radio" aria-checked="true" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">Session</button>
-          <button role="radio" aria-checked="false" tabindex="-1" aria-keyshortcuts="Shift+Meta+O" title="Session or One-Shot (⇧⌘O)">
+          <button role="radio" aria-checked="true" aria-keyshortcuts="Shift+Meta+O" data-tip="Session or One-Shot (⇧⌘O)">Session</button>
+          <button role="radio" aria-checked="false" tabindex="-1" aria-keyshortcuts="Shift+Meta+O" data-tip="Session or One-Shot (⇧⌘O)">
             One-Shot
           </button>
         </span>
@@ -887,7 +804,12 @@
           <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
         </button>
       </span>
+      <button id="more" aria-label="More tools" aria-haspopup="menu" aria-expanded="false" aria-controls="more-menu" data-tip="More" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01" stroke-width="3" /></svg>
+      </button>
     </header>
+    <div id="more-menu" role="menu" aria-label="More tools" hidden></div>
+    <div id="tip" aria-hidden="true" hidden></div>
     <p id="move-error" role="status" hidden></p>
     <p id="announce" class="sr" aria-live="polite"></p>
     <div id="palette" role="dialog" aria-label="Annotation colour" hidden>
@@ -953,7 +875,7 @@
         <p id="save-error" role="status" hidden></p>
       </div>
       <div class="actions">
-        <button id="cancel">Discard <kbd>⌘W</kbd></button>
+        <button id="cancel" aria-keyshortcuts="Meta+W" data-tip="Discard (⌘W)">Discard</button>
         <button id="save" class="primary">Add to Session <kbd>⌘↩</kbd></button>
       </div>
     </aside>

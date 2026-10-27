@@ -109,4 +109,59 @@ assert.deepStrictEqual(
 );
 assert.ok(scroll.includes('background: var(--ds-color-error);') && !scroll.includes('--rec-dot'), '@F20 the recording dot from the tokens');
 
+// @F31 @2026-10-27-calm-style the annotation colours and marks are exactly as in v0.24.0: the palette, the card's colour,
+// Remove's and Highlight's (tools.ts), and every line that draws a mark (editor.ts's shapes section, hashed at v0.24.0)
+const editorTs = read('src/editor.ts');
+const shapes = editorTs.slice(editorTs.indexOf('// ---------- shapes ----------'), editorTs.indexOf('// ---------- tools ----------'));
+assert.strictEqual(
+  crypto.createHash('sha256').update(shapes).digest('hex'),
+  'ad24df6b4d87eacf42d1c431da2c0577036a0b8fe44b9f575d62406c2ca03bcb',
+  '@F31 the marks are drawn as in v0.24.0',
+);
+const palette: [string, string][] = [
+  ['Coral red', 'RED'],
+  ['Orange', "'#f76b15'"],
+  ['Amber', "'#ffb224'"],
+  ['Green', "'#30a46c'"],
+  ['Teal', "'#12a594'"],
+  ['Cyan', "'#05a2c2'"],
+  ['Blue', "'#2492ff'"],
+  ['Violet', "'#8b3dff'"],
+  ['Pink', "'#ef28a7'"],
+  ['Graphite', "'#2c2c31'"],
+];
+assert.ok(
+  editorTs.includes(`const PALETTE: [string, string][] = [\n${palette.map(([n, c]) => `  ['${n}', ${c}],\n`).join('')}];`),
+  '@F31 the palette',
+);
+assert.ok(editorTs.includes("const CARD_BG = '#fef9c3';"), "@F31 the card's colour");
+const toolsTs = read('src/tools.ts');
+assert.ok(toolsTs.includes("const RED = '#e5484d';") && toolsTs.includes("const YELLOW = '#facc15';"), "@F31 Remove's and Highlight's");
+
+// @F26 @2026-10-27-calm-style every tool stays reachable by key, wherever its button is: the keys pick a group from
+// GROUPS, never from the toolbar's buttons, some of which More holds
+assert.ok(
+  editorTs.includes('const numbered = e.metaKey && /^\\d$/.test(e.key) ? GROUPS.findIndex((x) => x.key === e.key) : -1;') &&
+    editorTs.includes('const g = GROUPS.findIndex((x) => x.key === e.key.toLowerCase());'),
+  '@F26 the keys',
+);
+assert.ok(editorTs.includes('b.hidden = i >= GROUPS.length - overflow;'), '@F26 More holds the last tools');
+
+// @F25 @N1 @2026-10-27-calm-style the editor's ring is set from main's accent (surface.ts), never Chromium's orange; its
+// text that must be read is in the text colour, never the system's dim text, which misses 4.5:1 (questions.md)
+assert.ok(
+  read('src/surface.ts').includes(
+    "document.documentElement.style.setProperty('--ds-color-focus', new URLSearchParams(location.search).get('ring') || 'var(--ds-color-ink)');",
+  ),
+  '@F25 @N1 every window takes its ring from main',
+);
+const editorHtml = read('src/editor.html');
+assert.ok(!/--ds-color-(?:dim|faint)\b/.test(editorHtml), '@N1 the editor has no dim text');
+assert.ok(
+  read('src/main.ts').includes("loadFile(path.join(__dirname, 'editor.html'), { query: { ring: focusRing() ?? '' } })"),
+  '@F25 the editor gets its ring',
+);
+// @2026-10-27-calm-style no captions: the editor's keys are in drawn tooltips, as the bar's (owner, milestone 1 finding 4)
+assert.ok(!/class="(?:cap|group)"/.test(editorHtml) && !editorTs.includes("'cap'"), 'no key captions under the tools');
+
 console.log('style: ok');

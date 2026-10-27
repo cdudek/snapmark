@@ -364,35 +364,153 @@ function cursorFor(t: Tool): string {
 const STACK_BACK = '<path class="back" d="M7 0.5h13a3 3 0 0 1 3 3V17"/>';
 const STACK_FRONT = 'translate(-1.2 1.6) scale(0.92)';
 
+// A group's icon: its current tool, as a stack where the key has two tools (static markup from tools.ts)
+function toolIcon(i: number) {
+  const g = GROUPS[i];
+  const stack = g.tools.length > 1;
+  const front = `<g class="front"${stack ? ` transform="${STACK_FRONT}"` : ''}>${g.tools[variant[i]].icon}</g>`;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${stack ? STACK_BACK : ''}${front}</svg>`;
+}
+
 // One icon button per key, showing the group's current tool; pressing the key again swaps the icon. A key with two
-// tools draws its icon as a stack: the current tool in front, a layer behind it. Under the button: the key that
-// always works (capFor). Redrawn when Settings ▸ Single-Key Tools changes.
+// tools draws its icon as a stack: the current tool in front, a layer behind it. Its keys are in its tooltip (tipFor),
+// never in a caption. The last `overflow` groups are in More instead (fitToolbar, F26). Redrawn when Settings ▸
+// Single-Key Tools changes.
+let overflow = 0;
 function renderToolbar() {
   toolsEl.replaceChildren(
     ...GROUPS.map((g, i) => {
       const t = g.tools[variant[i]];
-      const wrap = document.createElement('div');
-      wrap.className = 'group';
       const b = document.createElement('button');
       b.dataset.group = g.key;
       b.dataset.tool = t.id;
       b.setAttribute('aria-label', t.label);
       b.setAttribute('aria-pressed', String(i === group));
-      b.title = tipFor(g, variant[i], singleKeys);
-      const stack = g.tools.length > 1;
-      const front = `<g class="front"${stack ? ` transform="${STACK_FRONT}"` : ''}>${t.icon}</g>`;
-      b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${stack ? STACK_BACK : ''}${front}</svg>`; // static markup from tools.ts
+      b.dataset.tip = tipFor(g, variant[i], singleKeys);
+      b.innerHTML = toolIcon(i);
       b.onclick = () => pickGroup(i);
-      const cap = document.createElement('div');
-      cap.className = 'cap';
-      cap.append(keycap(capFor(g, singleKeys)));
-      wrap.append(b, cap);
-      return wrap;
+      b.hidden = i >= GROUPS.length - overflow;
+      return b;
     }),
   );
+  moreBtn.hidden = !overflow;
+  moreBtn.classList.toggle('chosen', group >= GROUPS.length - overflow); // the chosen tool is never out of sight
+  if (!moreMenu.hidden) renderMore();
 }
 
-// One keycap style everywhere (A18): a <kbd>, styled once in editor.html.
+// ---------- More (⋯): the tools that do not fit, at the toolbar's end (F26). Each still has its key. ----------
+
+const moreBtn = $<HTMLButtonElement>('more');
+const moreMenu = $<HTMLDivElement>('more-menu');
+const moreItems = () => [...moreMenu.querySelectorAll<HTMLButtonElement>('[role=menuitemradio]')];
+function renderMore() {
+  moreMenu.replaceChildren(
+    ...GROUPS.map((g, i) => [g, i] as const)
+      .slice(GROUPS.length - overflow)
+      .map(([g, i]) => {
+        const b = document.createElement('button');
+        b.setAttribute('role', 'menuitemradio');
+        b.setAttribute('aria-checked', String(i === group));
+        b.tabIndex = -1;
+        b.dataset.group = g.key;
+        b.innerHTML = toolIcon(i);
+        b.append(g.tools[variant[i]].label, keycap(capFor(g, singleKeys)));
+        b.onclick = () => {
+          closeMore();
+          pickGroup(i);
+        };
+        return b;
+      }),
+  );
+}
+// Under More, its right edge on More's; the first tool takes the focus, its ring only from the keyboard
+function openMore(keyboard: boolean) {
+  renderMore();
+  moreMenu.hidden = false;
+  const r = moreBtn.getBoundingClientRect();
+  Object.assign(moreMenu.style, { top: `${r.bottom + 4}px`, left: `${Math.max(8, r.right - moreMenu.offsetWidth)}px` });
+  moreBtn.setAttribute('aria-expanded', 'true');
+  moreItems()[0]?.focus({ focusVisible: keyboard });
+}
+function closeMore(refocus = false) {
+  if (moreMenu.hidden) return;
+  moreMenu.hidden = true;
+  moreBtn.setAttribute('aria-expanded', 'false');
+  if (refocus) moreBtn.focus();
+}
+moreBtn.onclick = (e) => (moreMenu.hidden ? openMore(!e.detail) : closeMore()); // detail 0: Space or ↩
+// A menu's keys: the arrows walk it, Esc closes it, Tab leaves it. They stop here, so they never nudge a mark.
+moreMenu.addEventListener('keydown', (e) => {
+  const items = moreItems();
+  const i = items.indexOf(document.activeElement as HTMLButtonElement);
+  const to = ({ ArrowDown: i + 1, ArrowUp: i - 1 + items.length, Home: 0, End: items.length - 1 } as Record<string, number | undefined>)[
+    e.key
+  ];
+  if (to !== undefined) items[to % items.length].focus();
+  else if (e.key === 'Escape') closeMore(true);
+  else if (e.key === 'Tab') closeMore();
+  else return;
+  if (e.key !== 'Tab') e.preventDefault();
+  e.stopPropagation();
+});
+moreBtn.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowDown') return; // as a macOS pop-up button
+  e.preventDefault();
+  e.stopPropagation();
+  openMore(true);
+});
+document.addEventListener('mousedown', (e) => {
+  if (!moreMenu.contains(e.target as Node) && !moreBtn.contains(e.target as Node)) closeMore();
+});
+
+// ---------- tooltips: a control's name and key, drawn under it as the capture bar draws its own (F11) ----------
+
+const tipEl = $<HTMLDivElement>('tip');
+const TIP_DELAY = 1000; // about as long as macOS waits before a tooltip
+let tipOn: HTMLElement | null = null; // the control the tooltip is shown for
+let over: HTMLElement | null = null; // the control under the pointer
+let hover = 0;
+// Under the control, or above it where the window ends; never past the window's sides
+function showTip(b: HTMLElement) {
+  if (!b.dataset.tip || !b.isConnected) return;
+  tipOn = b;
+  tipEl.textContent = b.dataset.tip;
+  tipEl.hidden = false;
+  const [r, gap] = [b.getBoundingClientRect(), 8];
+  const [w, h] = [tipEl.offsetWidth, tipEl.offsetHeight];
+  const below = r.bottom + gap + h <= innerHeight - gap;
+  Object.assign(tipEl.style, {
+    left: `${Math.max(gap, Math.min(r.left + r.width / 2 - w / 2, innerWidth - gap - w))}px`,
+    top: `${below ? r.bottom + gap : r.top - gap - h}px`,
+  });
+}
+function hideTip() {
+  clearTimeout(hover);
+  tipEl.hidden = true;
+  tipOn = null;
+}
+const tipped = (e: Event) => (e.target as Element).closest?.<HTMLElement>('[data-tip]') ?? null;
+document.addEventListener('mouseover', (e) => {
+  const b = tipped(e);
+  if (b === over) return;
+  over = b;
+  hideTip();
+  if (b) hover = window.setTimeout(() => showTip(b), TIP_DELAY);
+});
+document.documentElement.addEventListener('mouseleave', () => {
+  over = null;
+  hideTip();
+});
+document.addEventListener('mousedown', hideTip);
+// A keyboard focus shows it at once; a key hides it first, so the focus a key moves shows its own
+document.addEventListener('keydown', hideTip, true);
+document.addEventListener('focusin', (e) => {
+  const b = tipped(e);
+  if (b && b === e.target && b.matches(':focus-visible')) showTip(b);
+});
+document.addEventListener('focusout', (e) => e.target === tipOn && hideTip());
+
+// The main button's key, after its label: only it shows one (owner rule; the others are in their tooltips)
 function keycap(keys: string) {
   const k = document.createElement('kbd');
   k.textContent = keys;
@@ -1600,6 +1718,7 @@ async function openFrames(r: RecordingInit, state: EditState | undefined, fresh:
 
 const headerEl = document.querySelector('header')!;
 const segs = [...document.querySelectorAll<HTMLButtonElement>('#dest [role=radio]')];
+const segTip = segs[0].dataset.tip!; // "Session or One-Shot (⇧⌘O)"
 const sessionEl = $<HTMLButtonElement>('session');
 const nameEl = $<HTMLSpanElement>('session-name');
 const countEl = $<HTMLSpanElement>('session-count');
@@ -1612,7 +1731,7 @@ function showSession(session: string, count: number) {
   countEl.textContent = !oneShot && count ? ` (${count})` : '';
   sessionEl.replaceChildren(nameEl, countEl, ...(switchable() ? [chevron] : []));
   // The full name, also when it shortens; in Edit Again the wrapper's reason shows instead
-  sessionEl.title = switchable() ? `${session} · Switch Session` : replacing ? '' : nameEl.textContent;
+  sessionEl.dataset.tip = switchable() ? `${session} · Switch Session` : replacing ? '' : nameEl.textContent;
   sessionEl.setAttribute('aria-label', `Session: ${nameEl.textContent}${countEl.textContent}`);
   sessionEl.setAttribute('aria-disabled', String(!switchable())); // not disabled: it stays in Tab and VoiceOver (F45)
   fitToolbar();
@@ -1625,7 +1744,7 @@ function renderPrimary() {
   const copy = rec ? 'Copy Filmstrip' : 'Copy Image'; // F76
   const [label, key] = replacing ? ['Save Changes', '⌘↩'] : oneShot ? [copy, '⌘C'] : ['Add to Session', '⌘↩'];
   saveBtn.replaceChildren(`${label} `, keycap(key));
-  saveBtn.title = !oneShot
+  saveBtn.dataset.tip = !oneShot
     ? ''
     : rec
       ? 'Copy the filmstrip with its marks, and close'
@@ -1650,6 +1769,7 @@ function renderDestination(session: string, count: number) {
     b.setAttribute('aria-checked', String(i === Number(oneShot)));
     b.tabIndex = i === Number(oneShot) ? 0 : -1;
     b.disabled = replacing;
+    b.dataset.tip = replacing ? '' : segTip; // in Edit Again the wrapper's reason shows instead
   });
   const reason = replacing ? `Edit Again saves back into ${session}.` : '';
   $('dest-wrap').title = reason;
@@ -1687,14 +1807,21 @@ segs.forEach((b, i) =>
   }),
 );
 
-// Too wide for one line (N2): shrink in the spec's order until it fits.
-const FIT = ['fit-name', 'fit-segments', 'fit-tools'];
+// Too wide for one line (N2): shrink in the spec's order until it fits, then move tools into More from the last
+// until it fits (F26). Their keys still pick them.
+const FIT = ['fit-name', 'fit-segments'];
 function fitToolbar() {
+  const fits = () => headerEl.scrollWidth <= headerEl.clientWidth;
+  const was = overflow;
   headerEl.classList.remove(...FIT);
-  for (const c of FIT) {
-    if (headerEl.scrollWidth <= headerEl.clientWidth) return;
-    headerEl.classList.add(c);
+  overflow = 0;
+  renderToolbar();
+  for (const c of FIT) if (!fits()) headerEl.classList.add(c);
+  while (!fits() && overflow < GROUPS.length) {
+    overflow++;
+    renderToolbar();
   }
+  if (overflow !== was) closeMore();
 }
 window.addEventListener('resize', fitToolbar);
 

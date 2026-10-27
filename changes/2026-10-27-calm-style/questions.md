@@ -71,3 +71,38 @@ Open questions met while building. Each has the default taken; the owner answers
 - **Default taken:** kept, as dim caption text, so the one key that stops a recording stays in view. Done's tooltip also reads "Done (⌃⇧5)".
 - **Milestone:** 2
 - **Answer:**
+
+## Q11 The editor's key captions
+
+- **Question:** the editor showed ⌘1… under each tool, ⌘Z and ⇧⌘Z under Undo and Redo, and ⌘W after Discard. The owner rejected captions in the bar (milestone 1, finding 4). Where do the editor's keys go?
+- **Default taken:** into drawn tooltips, as the bar's: the toolbar's controls and Discard draw "<name> (<key>)" under the control after a moment, or at once on a keyboard focus, with the words they had as `title`. Only the main button keeps its key (⌘↩, or ⌘C in One-Shot). The colour dots and Beautify's backgrounds keep their native `title` (names, no keys), and Edit Again's reason stays the wrapper's native `title`.
+- **Milestone:** 3
+- **Answer:**
+
+## Q12 Dim text in the editor, the session window, Settings and Keyboard Shortcuts
+
+- **Question:** the dim text role is GrayText (#808080), under 4.5:1 in light; milestone 2's finding 1 waits for the owner. What colour is secondary text here: notes, counts, hints, headings, placeholders and the greyed session pop-up?
+- **Default taken:** the text colour for everything that must be read, placeholders and the greyed pop-up included (the pop-up still loses its chevron). A dim token that reaches 4.5:1 would bring the hierarchy back.
+- **Milestone:** 3
+- **Answer:**
+
+## Q13 The editor's More menu
+
+- **Question:** at the editor's minimum size the tools that do not fit go into a More (⋯) menu at the toolbar's end. Which tools go first, and how does a chosen tool inside it show?
+- **Default taken:** the session name and the segments shrink first, as before; then the tools leave from the last (Edit image) towards Select. More sits at the right end, after the destination, and wears the soft pill while it holds the chosen tool. Its rows show the tool's icon, name and the key that always works (C, ⌘1–⌘7). A click, Space, ↩ or ↓ opens it; the arrows walk it; Esc closes it.
+- **Milestone:** 3
+- **Answer:**
+
+## Q14 Beautify's sliders and chosen background
+
+- **Question:** the sliders were filled with the accent, and the chosen background ringed in it. The accent is for the main button and for checks that are on. Which colour?
+- **Default taken:** the text colour, for the sliders' filled part and the chosen background's ring.
+- **Milestone:** 3
+- **Answer:**
+
+## Q15 The title-row logo
+
+- **Question:** the editor's and the session window's logo was inline SVG with its own colours. F30 allows no colour literal in a page but the annotation palette.
+- **Default taken:** the logo is `src/logo.svg`, the same drawing, shown as an image. It looks as before.
+- **Milestone:** 3
+- **Answer:**

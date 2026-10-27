@@ -41,7 +41,7 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 
 ### Milestone 3: editor, session window, Settings and Keyboard Shortcuts
 
-- [ ] 3.1 Editor: pill tools, one blue button, edgeless fields, the More menu. F23–F26, F31.
+- [x] 3.1 Editor: pill tools, one blue button, edgeless fields, the More menu. F23–F26, F31.
 - [ ] 3.2 Session window. F23–F25.
 - [ ] 3.3 Settings and Keyboard Shortcuts: pill tabs, a window that grows, accent switches. F27, F28.
 - [ ] 3.4 Zoom stops at 130 %, and every window fits. No colour literals left. F29, F30, N1.
@@ -186,3 +186,13 @@ The criteria as data are in [done.json](done.json).
 - Milestone 2 gate: 2.2's ring query hid both controls from the smoke's URL matchers. Matchers fixed; the fake grab gets a guard.
 - Milestone 2 fix round (finding 2): `#status` is scoped to the recording control, so scrolling shows no clock.
   - A smoke key under @F20 checks it.
+- 3.1: new `src/logo.svg`, the title row's logo as an image (Q15). `snapmark-app/package.json` copies it; the editor's CSP lets `img-src` load it.
+- 3.1: `src/surface.ts` sets every window's ring from main's `ring` query, as `scroll.ts` does. `main.ts` passes it to the editor.
+  - The smoke's URL matchers for the editor, session window, Settings and Keyboard Shortcuts read the path, as the query follows it.
+- 3.1: the editor's captions go into drawn tooltips (Q11), so these smoke checks change with them.
+  - "key under each button" and F103's C, ⌘1–⌘7 captions became the tooltip check; F106 reads the tooltips.
+  - F107's 36 pt buttons and 22 px icons became 32 pt and 20 px.
+  - The blue-tint check of the chosen tool became @F24.
+  - A18's keycap under every icon button became "only the main button shows its key".
+  - F111 finds the logo as an image; F112, F116 and the tool tooltip read `data-tip`, not `title`.
+- 3.1: the toolbar's last fit stage, `fit-tools` (captions off, tighter tools), is gone: More takes the tools instead.

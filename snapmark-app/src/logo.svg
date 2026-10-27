@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- The title-row logo of the editor and the session window, an image so their pages hold no colour literal (F30) -->
+  <defs>
+    <linearGradient id="cool" x1="0" y1="0" x2=".85" y2="1">
+      <stop stop-color="#20F4EC" />
+      <stop offset=".45" stop-color="#2492FF" />
+      <stop offset="1" stop-color="#8B3DFF" />
+    </linearGradient>
+    <linearGradient id="pink" x1="0" y1="0" x2=".8" y2="1">
+      <stop stop-color="#FA6CFF" />
+      <stop offset="1" stop-color="#EF28A7" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1c20" />
+  <g transform="translate(14 14) scale(.72)">
+    <path
+      d="M37 17H29Q17 17 17 29V37M63 17H71Q83 17 83 29V37M83 63V71Q83 83 71 83H63M37 83H29Q17 83 17 71V63"
+      fill="none"
+      stroke="url(#cool)"
+      stroke-width="12"
+      stroke-linecap="round"
+    />
+    <rect x="37" y="37" width="26" height="26" rx="8" transform="rotate(45 50 50)" fill="url(#pink)" />
+  </g>
+</svg>

@@ -696,7 +696,7 @@ export function openCaptureBar(run: (o: CaptureOpts) => unknown = runCapture): B
   return win;
 }
 
-// The focus ring of the bar and the panels: macOS's accent where it reaches 3:1 on their material, else null for the
+// Every window's focus ring: macOS's accent where it reaches 3:1 on the bar's material, else null for the
 // text colour, as Chromium's -webkit-focus-ring-color is its own orange (F10, N1)
 function focusRing() {
   return barRing(process.platform === 'darwin' ? systemPreferences.getAccentColor() : undefined, nativeTheme.shouldUseDarkColors);
@@ -931,7 +931,7 @@ export function openEditor(
     updateDock();
     fs.rmSync(recording ? recording.dir : image, { recursive: true, force: true });
   });
-  win.loadFile(path.join(__dirname, 'editor.html'));
+  win.loadFile(path.join(__dirname, 'editor.html'), { query: { ring: focusRing() ?? '' } }); // its focus ring (surface.ts)
   focusApp();
   return win;
 }

@@ -153,9 +153,29 @@ app
     const note = async (text) => { for (let i = 0; i < 50 && !document.activeElement?.closest?.('#refs .md'); i++) await sleep(20); document.execCommand('insertText', false, text); document.activeElement.blur(); };
     const setMd = (el, lines) => { el.querySelector('.ProseMirror').focus(); document.execCommand('selectAll'); lines.forEach((l, i) => { if (i) document.execCommand('insertParagraph'); document.execCommand('insertText', false, l); }); };
     const r = {};
-    // Header like the mock (F111–F113): a title row that drags, icon Undo and Redo, one Copy or Save button
-    r['F111 title row'] = (() => { const t = document.querySelector('.titlebar'); return !!t && t.textContent.trim() === 'Snapmark' && !!t.querySelector('svg') && getComputedStyle(t).getPropertyValue('-webkit-app-region') === 'drag'; })();
-    r['F112 Undo and Redo are icons'] = [['undo', 'Undo (⌘Z)'], ['redo', 'Redo (⇧⌘Z)']].every(([id, name]) => { const b = document.getElementById(id); return !!b.querySelector('svg') && b.textContent.trim() === '' && b.title === name && b.getAttribute('aria-label') === name; });
+    // @F23–@F25 (calm style), as the editor opens: the accent fills one button, Add to Session, and colours no icon or
+    // label; the chosen tool is the soft pill with its icon in the text colour; no control has an edge at rest (a field's
+    // is clear), and no focus ring shows. A token's colour is read as an outline colour, as in the capture bar's checks.
+    const token = (v) => { const i = document.createElement('i'); i.style.outline = '1px solid var(' + v + ')'; document.body.append(i); const c = getComputedStyle(i).outlineColor; i.remove(); return c; };
+    const shownEls = () => [...document.querySelectorAll('body *')].filter((e) => e.getClientRects().length);
+    const accentUse = () => { const accent = token('--ds-color-accent'); const cs = (e) => getComputedStyle(e);
+      return JSON.stringify({ filled: shownEls().filter((e) => cs(e).backgroundColor === accent).map((e) => e.id),
+        inked: shownEls().filter((e) => { const t = cs(e); return [t.color, t.stroke, t.fill, t.borderTopColor, t.outlineColor].includes(accent); }).map((e) => e.id || e.tagName) }); };
+    const clearColour = (c) => c === 'transparent' || c.endsWith(', 0)');
+    const restful = () => shownEls().filter((e) => e.matches('button, select, input:not([type=range]), [role=tab], .md, .hex')).every((e) => { const s = getComputedStyle(e);
+      return ['Top', 'Right', 'Bottom', 'Left'].every((d) => s['border' + d + 'Style'] === 'none' || s['border' + d + 'Width'] === '0px' || clearColour(s['border' + d + 'Color'])) &&
+        (s.outlineStyle === 'none' || s.outlineWidth === '0px'); });
+    r['@F23 @2026-10-27-calm-style the editor fills one button with the accent, Add to Session; no icon or label is the accent'] =
+      accentUse() === JSON.stringify({ filled: ['save'], inked: [] });
+    r['@F25 @2026-10-27-calm-style as the editor opens no control has a border or outline, and no focus ring shows'] = restful() && !document.querySelector(':focus-visible');
+    const chosenTool = document.querySelector('#tools [aria-pressed="true"]');
+    r['@F24 @2026-10-27-calm-style the chosen tool is the soft pill with its icon in the text colour'] =
+      getComputedStyle(chosenTool).backgroundColor === token('--ds-color-soft') && getComputedStyle(chosenTool.querySelector('svg')).color === token('--ds-color-ink') &&
+      [...document.querySelectorAll('#tools [aria-pressed="false"]')].every((b) => getComputedStyle(b).backgroundColor === 'rgba(0, 0, 0, 0)');
+    // Header like the mock (F111–F113): a title row that drags, icon Undo and Redo, one Copy or Save button. The logo is
+    // an image (calm style: no colour literal in the page, F30); Undo's and Redo's names and keys are drawn tooltips.
+    r['F111 title row'] = (() => { const t = document.querySelector('.titlebar'); return !!t && t.textContent.trim() === 'Snapmark' && !!t.querySelector('img[src="logo.svg"]') && getComputedStyle(t).getPropertyValue('-webkit-app-region') === 'drag'; })();
+    r['F112 Undo and Redo are icons'] = [['undo', 'Undo (⌘Z)'], ['redo', 'Redo (⇧⌘Z)']].every(([id, name]) => { const b = document.getElementById(id); return !!b.querySelector('svg') && b.textContent.trim() === '' && b.dataset.tip === name && b.getAttribute('aria-label') === name; });
     r['F113 one Copy or Save button'] = !document.getElementById('copy') && !document.getElementById('save-as') && !!document.getElementById('share');
     r['References hidden before the first reference'] = document.getElementById('refs-label').hidden && !document.querySelector('#refs .md');
     r['@F53 no hairline before the first reference'] = getComputedStyle(document.getElementById('refs-rule')).display === 'none';
@@ -228,15 +248,21 @@ app
     const btns = [...document.querySelectorAll('#tools button')];
     r['toolbar: one icon button per key, C 1-7, no text in the buttons'] = btns.map((b) => b.dataset.group).join('') === 'c1234567' && btns.every((b) => b.querySelector('svg') && b.textContent.trim() === '');
     const stackOk = (b, i) => { const g = GROUPS[i], svg = b.querySelector('svg'), ref = document.createElementNS('http://www.w3.org/2000/svg', 'g'); ref.innerHTML = g.tools[variant[i]].icon; return svg.querySelector(':scope > .front').innerHTML === ref.innerHTML && svg.querySelectorAll('.back').length === (g.tools.length > 1 ? 1 : 0); };
-    r['toolbar: key under each button, a stacked icon (current tool in front) where a key has more tools, no dots'] = [...document.querySelectorAll('#tools .cap')].every((c, i) => { const g = GROUPS[i]; return c.children.length === 1 && c.textContent === capFor(g, true) && c.querySelector('kbd').textContent === capFor(g, true); }) && btns.every(stackOk) && !document.querySelector('#tools .dots') && !/[●○]/.test(document.getElementById('tools').textContent);
-    r['F103 captions read C, ⌘1–⌘7'] = [...document.querySelectorAll('#tools .cap kbd')].map((k) => k.textContent).join() === 'C,⌘1,⌘2,⌘3,⌘4,⌘5,⌘6,⌘7';
+    // Calm style: the keys are in each button's tooltip, never in a caption under it (replaces F103's C, ⌘1–⌘7 captions)
+    r['@2026-10-27-calm-style toolbar: each key in its tooltip, no caption; a stacked icon (current tool in front) where a key has more tools, no dots'] = btns.every((b, i) => b.dataset.tip === tipFor(GROUPS[i], variant[i], true)) && !document.querySelector('header .cap, header kbd') && btns.every(stackOk) && !document.querySelector('#tools .dots') && !/[●○]/.test(document.getElementById('tools').textContent);
     const css = (sel, pseudo) => getComputedStyle(document.querySelector(sel), pseudo);
-    r['F107 toolbar sizes'] = css('#tools svg').width === '22px' && css('#tools svg').height === '22px' && css('#tools button').width === '40px' && css('#tools button').height === '36px' && css('#tools .cap').fontSize === '11px' && css('#tools .cap').color === getComputedStyle(document.body).color;
+    r['F107 @2026-10-27-calm-style toolbar sizes: 32 pt controls, radius 8, 20 px icons'] = css('#tools svg').width === '20px' && css('#tools svg').height === '20px' && css('#tools button').width === '32px' && css('#tools button').height === '32px' && css('#tools button').borderRadius === '8px';
     pick('box');
     const tb = () => document.querySelector('#tools [data-group="2"]');
-    r['toolbar: active button has a blue tint and a blue icon (#0f72db light, 3.8:1 on the tint)'] = tb().getAttribute('aria-pressed') === 'true' && getComputedStyle(tb()).backgroundColor.startsWith('rgba(36, 146, 255') && getComputedStyle(tb()).color === (matchMedia('(prefers-color-scheme: dark)').matches ? 'rgb(36, 146, 255)' : 'rgb(15, 114, 219)');
     r['"Add to session" is the darker brand blue, for white text'] = getComputedStyle(document.getElementById('save')).backgroundColor === 'rgb(15, 114, 219)';
-    r['toolbar: tooltip names the tool, key and next tool'] = tb().title === 'Box (2 or ⌘2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').title === 'Arrow (3 or ⌘3)';
+    r['toolbar: tooltip names the tool, key and next tool'] = tb().dataset.tip === 'Box (2 or ⌘2) · press again for Ellipse' && document.querySelector('#tools [data-group="3"]').dataset.tip === 'Arrow (3 or ⌘3)';
+    // Resting the pointer on a tool draws its tooltip after a moment, under it and inside the window, as the bar does
+    const arrowBtn = document.querySelector('#tools [data-group="3"]'), tipEl = document.getElementById('tip');
+    arrowBtn.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    await sleep(1100);
+    const tipBox = tipEl.getBoundingClientRect();
+    r['@2026-10-27-calm-style resting the pointer on a tool draws its tooltip under it, inside the window'] = !tipEl.hidden && tipEl.textContent === 'Arrow (3 or ⌘3)' && tipBox.top >= arrowBtn.getBoundingClientRect().bottom && tipBox.left >= 0 && tipBox.right <= innerWidth;
+    document.body.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
     key('2');
     r['toolbar: pressing the key again swaps the icon'] = tool() === 'ellipse' && tb().dataset.tool === 'ellipse' && stackOk(tb(), group);
     document.querySelector('#tools [data-group="4"]').click();
@@ -326,23 +352,15 @@ app
     hex.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     if (!pal.hidden) sw.click();
     sw.click(); presets[0].click();
-    // A18: one keycap style. Every key the editor shows is a <kbd> at 11 px, weight 500, in the system font, in the
-    // colour of its text (a disabled button's in --muted), at 4.5:1 or more; under every icon button, after the label of every text button
-    const kbds = [...document.querySelectorAll('kbd')];
-    const keyStyle = (k) => { const s = getComputedStyle(k); return [s.fontSize, s.fontWeight, s.fontFamily.split(',')[0].trim()].join(); };
-    const rgb = (c) => c.match(/[0-9.]+/g).slice(0, 3).map(Number);
-    const ink = (k, ground) => contrast(rgb(getComputedStyle(k).color), rgb(getComputedStyle(ground).backgroundColor)) >= 4.5;
-    const iconBtns = [...document.querySelectorAll('#tools button'), document.getElementById('undo'), document.getElementById('redo')];
-    const below = (b) => { const c = b.parentElement.querySelector(':scope > .cap'), br = b.getBoundingClientRect(), cr = c.getBoundingClientRect(); return !!c.querySelector('kbd') && cr.top >= br.bottom && Math.abs(cr.left + cr.right - br.left - br.right) < 2; };
-    const textBtns = [document.getElementById('cancel'), document.getElementById('save')];
+    // Calm style (replaces A18's one keycap style under every icon button): only the main button shows its key, after its
+    // label, in its own colour; Discard's and the tools' keys are in their tooltips. Every control is 32 pt tall.
+    const kbds = [...document.querySelectorAll('kbd')].filter((k) => k.getClientRects().length);
+    const save = document.getElementById('save'), cancel = document.getElementById('cancel');
     const after = (b) => { const k = b.lastElementChild, kr = k.getBoundingClientRect(), br = b.getBoundingClientRect(); return k.tagName === 'KBD' && b.firstChild.nodeType === 3 && kr.top > br.top && kr.bottom < br.bottom; };
-    const heights = (els) => new Set(els.map((e) => e.getBoundingClientRect().height + '/' + getComputedStyle(e).paddingTop + '/' + getComputedStyle(e).paddingLeft)).size === 1;
-    r['A18 one keycap style: 11 px, 500, system glyphs, its text colour at 4.5:1; under icon buttons, after text labels'] =
-      kbds.length === 12 && kbds.every((k) => keyStyle(k) === '11px,500,-apple-system' && getComputedStyle(k).color === getComputedStyle(k.parentElement).color) &&
-      iconBtns.every(below) && iconBtns.every((b) => ink(b.parentElement.querySelector('.cap kbd'), document.querySelector('header'))) &&
-      textBtns.every((b) => after(b) && ink(b.querySelector('kbd'), b)) &&
-      document.getElementById('save').textContent === 'Add to Session ⌘↩' && document.getElementById('cancel').textContent === 'Discard ⌘W' &&
-      heights([...document.querySelectorAll('header button')].filter((b) => b.id !== 'session' && !b.closest('#dest'))) && heights(textBtns);
+    r['@2026-10-27-calm-style only the main button shows its key; Discard and the tools have theirs in tooltips; controls 32 pt tall'] =
+      kbds.length === 1 && kbds[0].parentElement === save && after(save) && getComputedStyle(kbds[0]).color === getComputedStyle(save).color &&
+      save.textContent === 'Add to Session ⌘↩' && cancel.textContent === 'Discard' && cancel.dataset.tip === 'Discard (⌘W)' &&
+      [...document.querySelectorAll('header button, .actions button')].filter((b) => !b.hidden).every((b) => b.getBoundingClientRect().height === 32);
     r['toolbar shows the session name alone while it is empty'] = document.getElementById('session').textContent === 'smoke';
     const tail = bubbleTail(50, 20, { x: -200, y: -100 }, 2);
     r['card: the bubble tail leaves the top edge toward its target; none when the target is inside'] = !!tail && tail[2].y < -20 && tail[2].x < tail[0].x && tail[0].y === -18 && bubbleTail(50, 20, { x: 10, y: 5 }, 2) === null;
@@ -528,17 +546,19 @@ app
     console.log('F12 F13 names', JSON.stringify({ fieldNames, refNums }));
     inPage['F12 the top box is headed General comment'] &&= fieldNames.includes('General comment');
     inPage['F13 a note asks What about n'] &&= refNums.length > 0 && refNums.every((n) => fieldNames.includes(`Note for reference ${n}`));
-    // F106: Settings ▸ Single-Key Tools redraws an open editor's captions and tooltips, without reopening it
-    const toolbarSays = (cap: string, tip: string) =>
+    // F106: Settings ▸ Single-Key Tools redraws an open editor's tooltips, without reopening it (calm style: the keys
+    // are in the tooltips only, Select's included, so its caption is no longer read)
+    const toolbarSays = (select: string, tip: string) =>
       win.webContents.executeJavaScript(`(async () => {
-        const ok = () => document.querySelector('#tools .cap kbd').textContent === ${JSON.stringify(cap)} && document.querySelector('#tools [data-group="2"]').title === ${JSON.stringify(tip)};
+        const ok = () => document.querySelector('#tools [data-group="c"]').dataset.tip.startsWith(${JSON.stringify(select)}) && document.querySelector('#tools [data-group="2"]').dataset.tip === ${JSON.stringify(tip)};
         for (let i = 0; i < 10 && !ok(); i++) await new Promise((r) => setTimeout(r, 100));
         return ok();
       })()`);
     setSingleKeys(false);
-    const redrawnOff = await toolbarSays('Esc', 'Box (⌘2) · press ⌘2 again for Ellipse');
+    const redrawnOff = await toolbarSays('Select (Esc)', 'Box (⌘2) · press ⌘2 again for Ellipse');
     setSingleKeys(true);
-    inPage['F106 the setting redraws the toolbar'] = redrawnOff && (await toolbarSays('C', 'Box (2 or ⌘2) · press again for Ellipse'));
+    inPage['F106 the setting redraws the toolbar'] =
+      redrawnOff && (await toolbarSays('Select (C or Esc)', 'Box (2 or ⌘2) · press again for Ellipse'));
     // F110: the setting (Settings ▸ Shortcuts ▸ Pick tools with single keys calls setSingleKeys; F225 clicks it) saves
     // to state.json in the temp folder and tells the editor
     setSingleKeys(false);
@@ -558,6 +578,32 @@ app
       (await win.webContents.executeJavaScript(
         `(() => { const h = document.querySelector('header'); return h.scrollWidth <= h.clientWidth && getComputedStyle(document.getElementById('session-name')).textOverflow === 'ellipsis'; })()`,
       ));
+    // @F26 at the minimum size, at 100 % and at 130 %, the tools that do not fit are in More (⋯) at the toolbar's end: no
+    // tool is clipped, More shows only while it holds some, every key's tool is in one or the other, and picking one in
+    // More chooses it (More then wears the soft pill)
+    const reach = async () =>
+      JSON.parse(
+        await win.webContents.executeJavaScript(`(async () => {
+          await new Promise((r) => setTimeout(r, 300));
+          const h = document.querySelector('header'), hb = h.getBoundingClientRect(), more = document.getElementById('more');
+          const inside = (b) => { const r = b.getBoundingClientRect(); return r.left >= hb.left && r.right <= hb.right; };
+          const shown = [...document.querySelectorAll('#tools button')].filter((b) => !b.hidden);
+          let inMore = [];
+          if (!more.hidden) { more.click(); inMore = [...document.querySelectorAll('#more-menu [role=menuitemradio]')].map((b) => b.dataset.group); }
+          const last = inMore.at(-1);
+          if (last) document.querySelector('#more-menu [data-group="' + last + '"]').click();
+          return JSON.stringify({ fits: h.scrollWidth <= h.clientWidth && shown.every(inside) && (more.hidden || (inside(more) && more === h.lastElementChild)),
+            keys: [...shown.map((b) => b.dataset.group), ...inMore].join(''), more: !more.hidden, picked: !last || GROUPS[group].key === last,
+            chosen: !last || more.classList.contains('chosen'), closed: document.getElementById('more-menu').hidden });
+        })()`),
+      ) as { fits: boolean; keys: string; more: boolean; picked: boolean; chosen: boolean; closed: boolean };
+    const moreAt100 = await reach();
+    win.webContents.setZoomFactor(1.3);
+    const moreAt130 = await reach();
+    win.webContents.setZoomFactor(1);
+    inPage['@F26 @2026-10-27-calm-style at the minimum size the tools that do not fit are in More; none is clipped'] =
+      moreAt130.more && [moreAt100, moreAt130].every((s) => s.fits && s.keys === 'c1234567' && s.picked && s.chosen && s.closed);
+    why.calmF26 = { moreAt100, moreAt130 };
     win.setSize(w0, h0);
     await new Promise((r) => setTimeout(r, 300));
     // Real input events (not synthetic DOM ones) include the browser's default mousedown handling, which moved focus.
@@ -836,7 +882,7 @@ app
     await finished(fromGrid);
     await loaded(fromGrid);
     viewer["snap-c5c the grid's Edit Again button opens the editor"] =
-      fromGrid.webContents.getURL().endsWith('editor.html') &&
+      fromGrid.webContents.getURL().includes('/editor.html') &&
       (await inWin(fromGrid, `return document.getElementById('save').textContent`)) === 'Save Changes ⌘↩'; // @F51
     fromGrid.destroy();
     await sleep(300);
@@ -846,7 +892,7 @@ app
     keyIn('o', ['meta']);
     const again = await nextWindow(windows);
     await finished(again);
-    viewer['F18 ⌘O edits again'] = again.webContents.getURL().endsWith('editor.html');
+    viewer['F18 ⌘O edits again'] = again.webContents.getURL().includes('/editor.html');
     await loaded(again);
     const restored = JSON.parse(await inWin(again, counts));
     viewer['Edit Again restores references, cards, moves, comment and notes'] =
@@ -1000,7 +1046,7 @@ app
       (await label(`${long} (2)`)) &&
       (await inWin(
         watching,
-        `const s = document.getElementById('session'), n = document.getElementById('session-name'); return n.scrollWidth > n.clientWidth && s.title.startsWith(${JSON.stringify(long)});`,
+        `const s = document.getElementById('session'), n = document.getElementById('session-name'); return n.scrollWidth > n.clientWidth && s.dataset.tip.startsWith(${JSON.stringify(long)});`,
       ));
     await rename('smoke', 'Return'); // back, for the checks below
     viewer['renamed back'] = await waitFor(`document.getElementById('title').textContent === 'smoke'`);
@@ -1954,7 +2000,7 @@ app
         Array(3)
           .fill(`-R ${display.x + 100},${display.y + 120},300,200 -x`)
           .join() &&
-      repeats.every((w) => w.webContents.getURL().endsWith('editor.html')) &&
+      repeats.every((w) => w.webContents.getURL().includes('/editor.html')) &&
       !pickerOpen() &&
       dockOnOpen.join() === 'false,false,false' &&
       dockAfterFocus;
@@ -2013,7 +2059,7 @@ app
     viewer['F219 one Settings window'] = openSettings() === firstSettings;
     await settingsReady(firstSettings);
     viewer['F219 one Settings window'] &&=
-      BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().endsWith('settings.html')).length === 1;
+      BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().includes('/settings.html')).length === 1;
     const tabNames = await inWin(
       firstSettings,
       `return [...document.querySelectorAll('[role=tab]')].map((t) => t.textContent.trim()).join()`,
@@ -2158,9 +2204,9 @@ app
       `for (let i = 0; i < 50 && !document.querySelector('#tool-rows tr'); i++) await new Promise((r) => setTimeout(r, 100));`,
     );
     viewer['F233 one Keyboard Shortcuts window'] &&=
-      BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().endsWith('shortcuts.html')).length === 1;
+      BrowserWindow.getAllWindows().filter((w) => w.webContents.getURL().includes('/shortcuts.html')).length === 1;
     viewer['F229 Keyboard Shortcuts is its own page'] =
-      keysWin.webContents.getURL().endsWith('shortcuts.html') && keysWin.getTitle() === 'Keyboard Shortcuts';
+      keysWin.webContents.getURL().includes('/shortcuts.html') && keysWin.getTitle() === 'Keyboard Shortcuts';
     keysWin.setSize(980, 680);
     await sleep(200);
     const sheet = JSON.parse(
@@ -2664,7 +2710,7 @@ app
     // @F5: an area is set (Choose New Area above), so ⌃⇧4 captures it at once, no picker
     const atOnce = await keyWin('capture');
     viewer['@F5 ⌃⇧4 captures the set area at once'] =
-      atOnce.webContents.getURL().endsWith('editor.html') && rectOf(shots.at(-1)!) === `-R ${display.x + 100},${display.y + 120},300,200`;
+      atOnce.webContents.getURL().includes('/editor.html') && rectOf(shots.at(-1)!) === `-R ${display.x + 100},${display.y + 120},300,200`;
     atOnce.destroy();
     // @F1, @F2: ⌃⇧1 opens the picker, captures the dragged area, and keeps it for ⌃⇧4
     const newPicker = await keyWin('newArea');
@@ -2680,10 +2726,10 @@ app
     const keptArea = await keyWin('capture');
     viewer['@F1 ⌃⇧1 opens the picker and captures the dragged area'] =
       newHint === 'Drag over the area to capture. ⌃⇧4 captures it again. Esc cancels.' &&
-      newUrl.endsWith('editor.html') &&
+      newUrl.includes('/editor.html') &&
       newRect === `-R ${display.x + 50},${display.y + 60},200,150`;
     viewer['@F2 the area dragged after ⌃⇧1 is the one ⌃⇧4 captures'] =
-      keptArea.webContents.getURL().endsWith('editor.html') && rectOf(shots.at(-1)!) === newRect && !pickerOpen();
+      keptArea.webContents.getURL().includes('/editor.html') && rectOf(shots.at(-1)!) === newRect && !pickerOpen();
     why.F1 = { newHint, newRect, last: shots.at(-1) };
     keptArea.destroy();
     // @F3: ⌃⇧2 runs macOS's overlay (-i), and the result opens in One-Shot
