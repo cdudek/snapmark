@@ -1321,6 +1321,17 @@ app
     // @F11 the global Esc is the bar's only outside quiet runs, so this run never takes the owner's Esc (checked by hand,
     // validation.md; the registration is checked in test/capture.test.ts)
     viewer['@F11 the bar takes no global Esc in a quiet run'] = !globalShortcut.isRegistered('Escape');
+    // @F9 just opened: the focus is on the chosen mode, for the keys, and shows no ring
+    const openRing = JSON.parse(
+      await inWin(
+        barWin,
+        `const a = document.activeElement; const s = getComputedStyle(a);
+        return JSON.stringify({ on: a.dataset.mode, visible: a.matches(':focus-visible'), outline: s.outlineStyle === 'none' || s.outlineWidth === '0px' });`,
+      ),
+    );
+    viewer['@F9 @2026-10-27-calm-style no focus ring shows when the bar opens'] =
+      openRing.on === 'area' && !openRing.visible && openRing.outline;
+    why.calmF9 = openRing;
     // @F8 just opened, at rest: no control has a border or an outline
     const atRest = await inWin(
       barWin,
@@ -1336,7 +1347,7 @@ app
     );
     viewer['@F4 @2026-10-27-calm-style the capture bar is one row, at most 56 pt tall'] =
       rows === 1 && bb.height <= 56 && barWin.webContents.getZoomFactor() === 1;
-    why.F4 = { rows, height: bb.height };
+    why.calmF4 = { rows, height: bb.height };
     // @F13 (v0.24.0) one blue filled button: Capture with its ↩ keycap, white text
     const fills = JSON.parse(
       await inWin(
@@ -1364,7 +1375,7 @@ app
           ['Last Area', true],
           ['Scrolling', true],
         ]) && !(await inWin(barWin, `return !!document.querySelector('.key')`));
-    why.F5 = modeFaces;
+    why.calmF5 = modeFaces;
     // @F11 each control's key is in its tooltip; Capture alone shows a key, ↩
     const tips = await inWin(
       barWin,
@@ -1383,7 +1394,23 @@ app
         ['Options (⌥O)', false],
         ['Capture (↩)', true],
       ]);
-    why.F11 = tips;
+    why.calmF11 = tips;
+    // @F10 after Tab: the focused control shows a 2 pt ring in the system focus colour, 2 pt outside it; Shift-Tab back
+    keyTo(barWin, 'Tab');
+    await sleep(80);
+    const tabRing = JSON.parse(
+      await inWin(
+        barWin,
+        `${tokenColour} const a = document.activeElement; const s = getComputedStyle(a);
+        return JSON.stringify({ on: a.id, visible: a.matches(':focus-visible'), style: s.outlineStyle, width: s.outlineWidth, offset: s.outlineOffset,
+          system: s.outlineColor === token('--ds-color-focus') && s.outlineColor !== token('--ds-color-accent') });`,
+      ),
+    );
+    keyTo(barWin, 'Tab', ['shift']);
+    await sleep(80);
+    viewer['@F10 @2026-10-27-calm-style after Tab the focus ring shows: 2 pt, the system focus colour, 2 pt outside'] =
+      JSON.stringify(tabRing) === JSON.stringify({ on: 'dest', visible: true, style: 'solid', width: '2px', offset: '2px', system: true });
+    why.calmF10 = tabRing;
     // @F19 no drawn label: resting the pointer on a button opens no window
     const beforeRest = BrowserWindow.getAllWindows().length;
     await inWin(barWin, `document.querySelector('[data-mode="window"]').dispatchEvent(new MouseEvent('mouseenter'));`);
@@ -1419,7 +1446,7 @@ app
     viewer['@F6 @2026-10-27-calm-style only Capture is filled with the accent; nothing else is the accent'] = accents.every(
       (a) => a === JSON.stringify({ filled: ['capture'], inked: [] }),
     );
-    why.F6 = accents;
+    why.calmF6 = accents;
     viewer['@F15 1–5 choose a mode and never capture'] =
       perMode.join(' ') === 'area,area window,window full,full last,last scroll,scroll' && runs.length === 0 && !barWin.isDestroyed();
     why.F15 = perMode;
@@ -1433,7 +1460,7 @@ app
       menuShape(sessionRows).startsWith('One-Shot|—|') &&
       sessionRows[0].checked === false &&
       menuShape(sessionRows).endsWith('—|Older Sessions…|New Session');
-    why.F12 = { dest: opened.dest, rows: menuShape(sessionRows) };
+    why.calmF12 = { dest: opened.dest, rows: menuShape(sessionRows) };
     // @F13 a session picked in the pop-up becomes current, and the pop-up says so; then the first one again
     const otherRow = sessionRows.find((i) => i.type === 'checkbox' && i.label !== 'One-Shot' && !i.checked)!;
     pick(sessionRows, otherRow.label!);
@@ -1460,7 +1487,7 @@ app
       !inOneShot.some((i) => i.label !== 'One-Shot' && i.checked) &&
       backLook.dest === `To ${sessionName(currentRow)}` &&
       backLook.label === 'Capture';
-    why.F13 = { afterPick, menuSays, oneShotLook, inOneShot: menuShape(inOneShot), backLook };
+    why.calmF13 = { afterPick, menuSays, oneShotLook, inOneShot: menuShape(inOneShot), backLook };
     // @F13 ⇧⌘O switches between One-Shot and the last session, both ways
     const dests: string[] = [];
     for (let i = 0; i < 2; i++) {
@@ -1471,7 +1498,7 @@ app
     }
     viewer['@F13 @2026-10-27-calm-style ⇧⌘O switches One-Shot and the last session'] =
       JSON.stringify(dests) === JSON.stringify(['One-Shot|Capture One-Shot', `To ${sessionName(currentRow)}|Capture`]);
-    why.F13dests = dests;
+    why.calmF13dests = dests;
     // @F26 ⌥O opens Options: Timer and Show Mouse Pointer, no Save to; greyed for Scrolling, which is chosen now
     const viaKey = await popWith(() => keyTo(barWin, 'O', ['alt']));
     const greyedNow = viaKey.filter((i) => i.enabled === false).map((i) => i.label);
@@ -1543,7 +1570,7 @@ app
     );
     viewer['@F14 @2026-10-27-calm-style on a 900 pt work area at 130 % every bar control sits inside the window'] =
       fit.narrow && narrow.whole && narrow.fits && barReopened.getBounds().width === fit.width;
-    why.F14 = { fit, ...narrow };
+    why.calmF14 = { fit, ...narrow };
     barReopened.webContents.setZoomFactor(1);
     keyTo(barReopened, 'Return', ['meta']);
     for (let i = 0; i < 30 && runs.length < 2; i++) await sleep(100);

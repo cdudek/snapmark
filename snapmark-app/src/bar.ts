@@ -14,14 +14,16 @@
   let s: BarInit | null = null;
   let mode: CaptureMode = 'area';
 
-  // A radio group with roving focus: only the chosen one is in the Tab order.
-  const choose = (m: CaptureMode) => {
+  // A radio group with roving focus: only the chosen one is in the Tab order. `ring`: false as the bar opens, so the
+  // focus is there for the keys but shows no ring until the owner presses Tab (F9, F10). Chromium otherwise draws the
+  // ring for a focus set by script before any click.
+  const choose = (m: CaptureMode, ring = true) => {
     mode = m;
     for (const b of modes) {
       b.setAttribute('aria-checked', String(b.dataset.mode === m));
       b.tabIndex = b.dataset.mode === m ? 0 : -1;
     }
-    modes.find((b) => b.dataset.mode === m)!.focus();
+    modes.find((b) => b.dataset.mode === m)!.focus({ focusVisible: ring });
   };
   const render = (next: BarInit) => {
     s = next;
@@ -39,7 +41,7 @@
 
   void window.snapmark.barInit().then((init) => {
     render(init);
-    choose(init.mode);
+    choose(init.mode, false);
   });
   window.snapmark.onBarState(render);
   for (const b of modes) b.onclick = () => choose(b.dataset.mode as CaptureMode); // chooses; never captures (CAP-4)
