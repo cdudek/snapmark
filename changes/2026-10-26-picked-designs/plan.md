@@ -196,7 +196,7 @@ Each step has a proof. No checks run between features; the proofs run at the mil
 - [x] 6. Destination IPC, toolbar controls, pop-up, Copy closes, ⌘C guard. Proof: `@F36`–`@F51` and `@N2` pass.
 - [x] 7. Notes spacing and hex fields. Proof: `@F52`–`@F56` pass.
 - [x] 8. Session window size. Proof: `@F57`, `@F58` pass.
-- [ ] 9. Gate. Proof: `VERIFY PASS milestone`.
+- [x] 9. Gate. Proof: `VERIFY PASS milestone`.
 
 ### Milestone 3
 
@@ -289,6 +289,8 @@ The kit's `templates/goal/run.txt`, filled, with this repo's rules added. The br
 - 2.1 (N2): hiding the tool captions frees no width. The last shrink step also narrows the tools to 32 pt and tightens the gaps (questions.md).
 - Milestone 2 fix round (findings.md 17–24): `snapmark-app/README.md` and `docs/ux/setup.md` were edited, a departure from Files that change. They described the old editor toolbar, keys, sizes and tokens.
 - Milestone 2 fix round: tests this change owns follow the fixes.
-  - `test/smoke.ts`: `@F43` and `@F44` read the menu's current line as "smoke" or "smoke · <n> screenshots", wait for the editor instead of a fixed sleep, and record `why.F43` and `why.F44`.
+  - `test/smoke.ts`: `@F43` and `@F44` read the menu's current line as "smoke" or "smoke · <n> screenshots".
+  - `test/smoke.ts`: both wait for the editor instead of a fixed sleep, and record `why.F43` and `why.F44`.
   - `test/smoke.ts`: the pop-up is greyed by `aria-disabled`, inside `#dest-wrap`, with its reason as `aria-describedby` (`@F36`, `@F45`, F115).
-  - `test/smoke.ts`: the move and hex errors are `role="status"` (`@F44`, `@F56`); A15 and `@F56` keep the hex error while the value is bad and clear it once valid, as interaction.md says.
+  - `test/smoke.ts`: the move and hex errors are `role="status"` (`@F44`, `@F56`).
+  - `test/smoke.ts`: A15 and `@F56` keep the hex error while the value is bad, and clear it once valid, as interaction.md says.
