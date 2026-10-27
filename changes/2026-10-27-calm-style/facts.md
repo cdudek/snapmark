@@ -4,7 +4,9 @@ type: facts
 change: 2026-10-27-calm-style
 design: null
 author: Claude (orchestrator)
-status: draft
+status: approved
+reviewed_by: Calvin Dudek
+approved_at: 2026-10-27
 created: 2026-10-27
 ---
 
