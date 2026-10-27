@@ -1,9 +1,11 @@
 name: Release
 
-# Every merge to main is checked by semantic-release; the commit messages decide the version (see the version job).
+# A merge to main only reports the next version; publishing is manual (owner, 2026-10-27):
+# Actions > Release > Run workflow on main. The commit messages since the last release decide the version.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,7 +20,8 @@ jobs:
     #   feat:                         -> minor  (0.4.1 -> 0.5.0)
     #   feat!: or "BREAKING CHANGE:"  -> major  (-> 1.0.0)
     #   docs: chore: ci: test: ...    -> no release
-    # This cheap Ubuntu job only asks for the next version (dry run), so the macOS job runs only when one exists.
+    # This cheap Ubuntu job only asks for the next version (dry run) and shows it in the run summary;
+    # the macOS job runs only on a manual run from main, and only when there is a version to publish.
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
@@ -39,10 +42,15 @@ jobs:
           echo "$out"
           version="$(printf '%s\n' "$out" | sed -n 's/.*The next release version is \([0-9][0-9.]*\).*/\1/p' | tail -1)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ -n "$version" ]; then
+            echo "Next release: **v$version**. Publish it with Actions > Release > Run workflow on main." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No release pending: no fix, perf or feat commits since the last release." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   release:
     needs: version
-    if: needs.version.outputs.version != ''
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && needs.version.outputs.version != ''
     runs-on: macos-latest
     permissions:
       contents: write

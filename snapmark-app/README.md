@@ -163,7 +163,7 @@ CI (`.github/workflows/ci.yml`) runs format check, lint, typecheck, unit test an
 
 ## Release
 
-Versions follow [semver](https://semver.org) and are chosen automatically by [semantic-release](https://semantic-release.gitbook.io) from the commit messages on `main`. Every pull request is squash-merged with its title as the commit, and CI rejects titles that are not [Conventional Commits](https://www.conventionalcommits.org):
+Releases are manual: run **Actions › Release › Run workflow** on `main`; a merge only shows the pending version in the run summary. Versions follow [semver](https://semver.org) and are chosen by [semantic-release](https://semantic-release.gitbook.io) from all commit messages on `main` since the last release. Every pull request is squash-merged with its title as the commit, and CI rejects titles that are not [Conventional Commits](https://www.conventionalcommits.org):
 
 | PR title starts with                              | Release              |
 | ------------------------------------------------- | -------------------- |
@@ -176,7 +176,7 @@ A major version is the owner's decision. CI fails a PR that would make one (`!` 
 
 The version lives in the release tag; `package.json` is not bumped in git.
 
-`.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, uploads them to the public bucket `gs://snapmark-updates/mac/` (keeping the newest 10 versions), and publishes the GitHub release and its `vX.Y.Z` tag with generated notes, at the version semantic-release chose for that commit. The upload logs in to GCP with Workload Identity Federation, so no key is stored.
+`.github/workflows/release.yml` builds `arm64` and `x64` DMGs and ZIPs on macOS, signs and notarizes them, uploads them to the public bucket `gs://snapmark-updates/mac/` (keeping the newest 10 versions), and publishes the GitHub release and its `vX.Y.Z` tag with generated notes, at the version semantic-release chose for that commit. It does this only when started by hand on `main`. The upload logs in to GCP with Workload Identity Federation, so no key is stored.
 
 The app checks the bucket's `latest-mac.yml` on start, then once a day, and from **Check for Updates…** in the Settings window, downloads in the background, and installs on quit (`electron-updater`). Two conditions must hold for it to work:
 
