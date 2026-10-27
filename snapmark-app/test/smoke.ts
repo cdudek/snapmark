@@ -2505,7 +2505,7 @@ app
     const atCap = await recordArea(recArea, { fps: 10 }, 1200);
     viewer['@F64 at the cap the recording stops as Done does'] =
       !!atCap && Math.abs(atCap.end - 1.2) < 0.05 && atCap.frames.length >= 9 && atCap.frames.length <= 13 && !panelUp() && !recorderUp();
-    why.F64 = { frames: atCap?.frames.length, end: atCap?.end };
+    why.F64 = { frames: atCap?.frames.length, end: atCap?.end, times: atCap?.times.at(-1), panel: !!panelUp(), recorder: !!recorderUp() };
     // @F66: ⌃⇧5 and the menu bar icon stop and keep it too, and open no bar or menu
     const stops: Record<string, boolean> = {};
     for (const [how, stop] of [
@@ -2697,13 +2697,15 @@ app
       oneRec,
       `const off = document.getElementById('beautify-off'); return document.getElementById('beautify').inert && !off.hidden && off.textContent === 'Beautify works on screenshots only.';`,
     );
+    got.copy = null; // desk.copyImage is the One-Shot checks' stub since @F39
     await inWin(
       oneRec,
       `document.body.focus(); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true, cancelable: true }));`,
     );
     for (let i = 0; i < 50 && !oneRec.isDestroyed(); i++) await sleep(100);
-    const film = copied as Buffer | null; // set by desk.copyImage; an earlier copy is a screenshot of another size
+    const film = got.copy as Buffer | null; // set after the reset above, by the editor's copy
     const filmSize = film && nativeImage.createFromBuffer(film).getSize();
+    why.F76 = { destroyed: oneRec.isDestroyed(), filmSize, note: notes.at(-1)?.body };
     viewer['@F76 in One-Shot a recording copies its filmstrip with Copy Filmstrip ⌘C'] =
       oneLook.primary === 'Copy Filmstrip ⌘C' &&
       greyed === true &&
