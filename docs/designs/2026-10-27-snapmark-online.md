@@ -183,44 +183,61 @@ Feedback given on production v1.4 → fixed in PR #212 → accepted on its previ
 
 ### 8.1 Repo layout
 
-The existing npm-workspaces monorepo stays (owner kept code in one repo; strategy moved to `snapmark-context`). Existing folder names stay.
+**One repo per app (owner, 2026-10-27; replaces the monorepo).** All repos live in the `pokbytes` GitHub organisation. Repo names follow the working name and change with the final product name.
+
+| Repo                  | Holds                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `snapmark-context`    | Strategy, audiences, decisions, design-system pointers (exists)                                              |
+| `snapmark`            | The Mac app (today's repo, moved to `pokbytes`; the empty `snapmark-chrome/` and `snapmark-web/` folders go) |
+| `snapmark-web`        | Next.js: public, app and operator areas, REST API, MCP server                                                |
+| `snapmark-chrome`     | The Chrome extension (MV3)                                                                                   |
+| `snapmark-kit`        | Shared packages, published to GitHub Packages (private npm)                                                  |
+| `snapmark-dev-plugin` | The optional build plugin, published to public npm (later)                                                   |
+
+**`snapmark-kit` (Claude's call; the one place code shared across apps lives):**
 
 ```
-snapmark/
-├── snapmark-app/              # Mac app (Electron), today's code; gains the localhost bridge
-├── snapmark-chrome/           # Chrome extension (MV3)
-├── snapmark-web/              # Next.js web app, API and MCP server
-│   ├── src/app/[locale]/      # routes; only `en` ships
-│   │   ├── (public)/          # landing, waitlist, blog (MDX)
-│   │   ├── (app)/             # organisations, workspaces, feedback
-│   │   └── (operator)/        # Snapmark staff: waitlist, invites, seats, flags
-│   ├── src/app/api/v1/        # REST API for extension, Mac app and integrations
-│   ├── src/app/mcp/           # MCP endpoint
-│   ├── src/features/<name>/   # one folder per feature: components, server actions, queries
-│   └── messages/en.json       # UI text, keys follow the glossary
+snapmark-kit/
 ├── packages/
-│   ├── contracts/             # zod schemas and types for every API and MCP payload; versioned
-│   ├── domain/                # pure logic: status rules, acceptance rule, entitlements, anchor resolution. No I/O.
-│   ├── db/                    # Drizzle schema, migrations, queries
-│   ├── auth/                  # Better Auth setup, permission checks (one module decides who may do what)
-│   ├── mail/                  # base.ts, factory.ts, providers/resend.ts; React Email templates
-│   ├── storage/               # base.ts, factory.ts, providers/gcs.ts
-│   ├── billing/               # base.ts, factory.ts, providers/paddle.ts
-│   ├── annotations/           # shape and anchor format shared by Mac app, extension and web
-│   ├── redaction/             # secret and email detection, shared by Mac app and extension
-│   ├── tokens/                # build step: design system → CSS variables, Tailwind theme, HeroUI theme
-│   ├── ui/                    # HeroUI wrappers and Snapmark components; the only place styling decisions live
-│   ├── i18n/                  # next-intl setup, typed message keys
-│   └── dev-plugin/            # the optional build plugin (Vite, Next.js, webpack)
-└── docs/                      # designs, ADRs, UX docs (glossary, guidelines, sitemap)
+│   ├── contracts/     # zod schemas and types for every API and MCP payload
+│   ├── annotations/   # shape and anchor format (Mac app, extension, web)
+│   ├── redaction/     # secret and email detection (Mac app, extension)
+│   ├── tokens/        # design system → CSS variables, Tailwind theme, HeroUI theme
+│   └── ui/            # HeroUI wrappers and Snapmark components (web, extension pop-up)
+└── .changeset/        # one changeset per change → semver release per package
+```
+
+**`snapmark-web` inside (Claude's call):**
+
+```
+snapmark-web/
+├── src/app/[locale]/
+│   ├── (public)/          # landing, waitlist, blog (MDX)
+│   ├── (app)/             # organisations, workspaces, feedback
+│   └── (operator)/        # Snapmark staff: waitlist, invites, seats, flags
+├── src/app/api/v1/        # REST API for extension, Mac app and integrations
+├── src/app/mcp/           # MCP endpoint
+├── src/features/<name>/   # one folder per feature: components, server actions, queries
+├── src/domain/            # pure logic: status, acceptance rule, entitlements, anchor resolution. No I/O.
+├── src/server/
+│   ├── db/                # Drizzle schema, migrations, queries
+│   ├── auth/              # Better Auth, the one permission policy module
+│   ├── mail/              # base.ts, factory.ts, providers/resend.ts; React Email templates
+│   ├── storage/           # base.ts, factory.ts, providers/gcs.ts
+│   └── billing/           # base.ts, factory.ts, providers/paddle.ts
+├── messages/en.json       # UI text, keys follow the glossary
+└── docs/                  # designs, ADRs, UX docs (glossary, guidelines, sitemap)
 ```
 
 **Rules**
 
-- `domain` imports nothing that does I/O; `db`, `mail`, `storage`, `billing` never import from `snapmark-web`.
+- Shared code lives only in `snapmark-kit`; apps never copy from each other. Each app pins kit versions; Dependabot opens the bump PRs.
+- A change to `contracts` that breaks clients is a new API version (`/api/v2`), never an edit in place. The server supports the current and the previous version, because the extension and the Mac app update later than the server.
+- Each repo has its own CI, rulesets, semantic-release and `CLAUDE.md`, all importing `snapmark-context`.
+- `src/domain` imports nothing that does I/O; `src/server/*` never imports from `src/app`.
 - Swappable services use the provider pattern: an interface (`base.ts`), a factory that picks the provider from settings (`factory.ts`), one file per provider. Resend is the first mail provider (owner).
-- The API is defined once in `contracts`; web, extension, Mac app and MCP all use it. Paths are versioned (`/api/v1`); clients send their version; the server supports the current and previous contract version, because the extension and the Mac app update later than the server.
-- Every permission check goes through `auth`'s policy module; no route decides on its own.
+- Every permission check goes through the auth policy module; no route decides on its own.
+- **Cost of separate repos, accepted:** a change to a shared format is a kit release plus a bump PR per app, and versions can drift; Dependabot and the two-version API rule keep that in check.
 
 ### 8.2 Data model (Postgres)
 
@@ -253,7 +270,7 @@ Open question. Claude's suggestion: server-sent events from the web app for thre
 
 - **Stack (owner):** Next.js (App Router), Tailwind, HeroUI, Motion. TypeScript strict.
 - **Design system (owner):** the owner's `design-system-starter` (`system.tokens.json` plus a Snapmark overlay, rules in `examples/snapmark.md`), adjusted for the web app.
-- **Tokens:** `packages/tokens` turns the design system into CSS variables, Tailwind's theme and HeroUI's theme (colours, radius, typography, spacing, motion durations). Components use tokens only. A lint rule blocks raw colours and arbitrary values (`#fff`, `p-[13px]`, inline `style` for visual properties).
+- **Tokens:** `snapmark-kit`'s `tokens` package turns the design system into CSS variables, Tailwind's theme and HeroUI's theme (colours, radius, typography, spacing, motion durations). Components use tokens only. A lint rule blocks raw colours and arbitrary values (`#fff`, `p-[13px]`, inline `style` for visual properties).
 - **HeroUI (owner):** minimal styling on top of its base: colours, border radius and general theming, defined in tokens where needed.
 - **Calm (owner, from the Mac app's style):** system-like, brand blue `#2492FF` only on primary buttons, no blue outlines, one obvious next action per screen.
 - **Motion:** short, purposeful, from motion tokens; respects reduced motion.
