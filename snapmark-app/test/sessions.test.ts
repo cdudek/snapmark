@@ -599,6 +599,10 @@ void (async () => {
     /Recording 0\.4 s at 15 fps\. Key frames: 0\.0 s, 0\.1 s, 0\.2 s, 0\.3 s, 0\.3 s \(5 of 6\)\.\n\n!\[Recording 1\]\(img\/001\.png\)\n\nGIF: \[001\.gif\]\(img\/001\.gif\)\n\nSpinner\n/,
     '@F78 the entry line, the filmstrip and the GIF link',
   );
+  assert.ok(
+    !entryOf(fs.readFileSync(path.join(recRoot, name, 'session.md'), 'utf8'), n).includes('<details>'),
+    `@F1 ${NS} a recording's entry has no recognised text`,
+  );
   assert.strictEqual(sessions.count(recRoot, name), 1, '@F71 one entry; the GIF is not counted as a screenshot');
   // @F70 @F71 the GIF reads back at the real timing: the repeated frame merged, sub-0.1 s delays kept, 0.4 s in all
   const READ = String.raw`ObjC.import('ImageIO');
