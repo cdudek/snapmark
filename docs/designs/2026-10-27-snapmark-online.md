@@ -84,7 +84,7 @@ These words are the product's vocabulary: UI text, API names, table names and do
 
 ### 4.1 Give feedback
 
-1. A member or guest captures an element (extension) or a screen area (Mac app) on any environment.
+1. A member or guest captures an element (extension) or a screen area (Mac app) on any environment. In Chrome, the page's existing feedback shows first as pins, so people add to a thread instead of opening a duplicate (section 9.5).
 2. The capture gets its anchor and version stamp automatically (section 7).
 3. They draw (shapes stored as vector data on top of the capture), write, and choose: comment, or request a change.
 4. The feedback lands in the workspace, grouped by module and page.
@@ -139,13 +139,13 @@ Feedback given on production v1.4 → fixed in PR #212 → accepted on its previ
 
 ## 7. Clients and where code context comes from
 
-| Client                                    | Does                                                                                                                        |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Web app** (`snapmark-web`)              | Workspaces, feedback, threads, versions, reviews, decisions, settings, billing.                                             |
-| **Chrome extension** (`snapmark-chrome`)  | Picks an element or area on any page, captures it with anchor and version stamp, posts feedback. Works without the Mac app. |
-| **Mac app** (`snapmark-app`, today's app) | Captures anything on screen; keeps sessions in two-way sync with a workspace; the **localhost bridge** for the extension.   |
-| **MCP server** (route of the web app)     | The copilot's door: list, read, ask, post versions, report implementations.                                                 |
-| **Dev package** (new, optional)           | Build plugin that stamps repo, `file:line`, region and module onto elements and writes the version stamp into the page.     |
+| Client                                    | Does                                                                                                                                                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Web app** (`snapmark-web`)              | Workspaces, feedback, threads, versions, reviews, decisions, settings, billing.                                                                                                                                           |
+| **Chrome extension** (`snapmark-chrome`)  | Picks an element or area on any page, captures it with anchor and version stamp, posts feedback. Shows the page's feedback as pins and in a side panel with threads and reviews (section 9.5). Works without the Mac app. |
+| **Mac app** (`snapmark-app`, today's app) | Captures anything on screen; keeps sessions in two-way sync with a workspace; the **localhost bridge** for the extension.                                                                                                 |
+| **MCP server** (route of the web app)     | The copilot's door: list, read, ask, post versions, report implementations.                                                                                                                                               |
+| **Dev package** (new, optional)           | Build plugin that stamps repo, `file:line`, region and module onto elements and writes the version stamp into the page.                                                                                                   |
 
 **Anchor and version, most reliable first:**
 
@@ -295,6 +295,7 @@ Settings
 
 - Sections per workspace collapse. Navigation by page and module becomes a sub-navigation later (owner).
 - **Feedback view (owner):** the screenshot is the centre, with markers; versions as tabs above it (v0 now, v1 mockup, v2 PR #212) with a before/after comparison; on the right a panel with the thread, the review actions (Approve, Request changes, Comment, Vote) and the anchor details (region, module, element, version stamp).
+- **Review like GitHub (proposal, Claude, 2026-10-28; owner confirms):** one **Review vN** button, the primary, last in the panel's footer. It opens a summary comment, a choice of Comment, Approve or Request changes, and **Submit Review** (primary, right). Marks and comments drawn before submitting are held as a pending review and land with the verdict. **Accept vN** is the merge: a separate box under the thread with the rule's state ("1 approval · 0 open objections"), active only once the rule in section 4.2 holds. Phones keep the direct buttons (section 9.2).
 
 ### 9.2 Phones (owner: mainly answering and approving)
 
@@ -312,6 +313,21 @@ The phone is for reacting, not creating: Inbox → open an item → screenshot o
 - **In-app Inbox** for everything that concerns your items.
 - **Email, sent at once,** for an @mention, a decision request or review request addressed to you, and an answer to your question. Daily email digest: opt-in.
 - **Slack in release 2 (owner):** each person chooses email or Slack DM for the immediate ones; a channel per workspace gets new feedback, decisions and accepted changes. Messages carry a screenshot preview and buttons: Approve, Request changes, Vote, Reply, Open. Snapmark links unfurl with the screenshot. Discussion stays in Snapmark (no two-way thread sync), so the paper trail lives in one place. Built behind the same provider pattern as mail.
+
+### 9.5 Chrome extension (proposal, Claude, 2026-10-28; owner confirms)
+
+The extension is where feedback is given and read on the running product, not only a capture button. Three surfaces, all from `snapmark-kit/ui` and the same tokens as the web app.
+
+- **Toolbar icon:** a badge with the open feedback on this page. A click opens the side panel; there is no separate pop-up. A Chrome shortcut (default ⌥⇧S) starts picking.
+- **Side panel** (Chrome's `sidePanel`, stays open while you move between pages): a header with organisation, workspace and the detected environment and version ("staging · PR #212"). Two tabs:
+  - **This page:** the feedback anchored to this address, by route rule. Each row: thumbnail, title, status, last reply. A row opens its thread in the panel: version tabs, the thread, a comment field and the same **Review vN** button as the web app. Feedback whose element is no longer on the page stays listed under "Not found on this page", never hidden. **New Feedback** is the primary, last in the footer.
+  - **Inbox:** the web app's Inbox for this organisation, so answering never needs a tab switch.
+- **On the page** (a content script in a shadow root, so neither side's styles leak):
+  - **Pins:** a numbered pin on every anchored element, the same marker as the Mac app. Hover outlines the element; a click opens its thread in the side panel; selecting a row in the panel scrolls to its pin. Pins can be hidden per tab.
+  - **Pick:** hover outlines elements, a click picks one, a drag picks an area, Esc leaves.
+  - **Annotate:** after the pick, the area is captured (the capture never changes) and the drawing tools open over it, on the page, with the Mac app's tools and Fabric renderer. Title, comment, and Comment or Request change are written in the side panel; **Post Feedback** is the primary, last.
+- **Signed out:** the panel shows Sign In only. **Page outside every workspace:** the panel says so and lets an admin add the address as an environment.
+- **Open (owner):** (1) is the side panel in release 1, or capture only first? Claude: release 1, because pins and threads on the page are what stops duplicate feedback. (2) Annotate on a frozen capture (above) or on the live page? Claude: frozen, so the drawing matches what was seen. (3) Can a review be submitted from the side panel? Claude: yes, the same rule and button as the web app.
 
 ## 10. AI safety (owner: strict)
 
@@ -331,6 +347,7 @@ Feedback text, written by members and by guests, ends up in coding agents. It is
 - **Tokens:** `snapmark-kit`'s `tokens` package turns the design system into CSS variables, Tailwind's theme and HeroUI's theme (colours, radius, typography, spacing, motion durations). Components use tokens only. A lint rule blocks raw colours and arbitrary values (`#fff`, `p-[13px]`, inline `style` for visual properties).
 - **HeroUI (owner):** minimal styling on top of its base: colours, border radius and general theming, defined in tokens where needed.
 - **Calm (owner, from the Mac app's style):** system-like, brand blue `#2492FF` only on primary buttons, no blue outlines, one obvious next action per screen.
+- **Primary button right (owner, 2026-10-28):** the primary is always the last button in its row, at the right; More goes first. Two equal verdicts are no exception. The rule lives in the design system's `docs/components/button.md`.
 - **Motion:** short, purposeful, from motion tokens; respects reduced motion.
 - **Accessibility:** WCAG 2.2 AA, full keyboard use, visible focus, ⌘K command menu.
 - **Dark mode:** from tokens, following the system setting by default.
