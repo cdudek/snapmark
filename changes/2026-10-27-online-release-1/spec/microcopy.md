@@ -22,58 +22,58 @@ Change 2026-10-27-online-release-1 · draft for the Stage 2 gate · 2026-10-27. 
 
 ## Common
 
-| Key                                 | Text                                                                                                 | Notes                                           |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `common.actions.cancel`             | Cancel                                                                                               |                                                 |
-| `common.actions.save`               | Save                                                                                                 |                                                 |
-| `common.actions.done`               | Done                                                                                                 |                                                 |
-| `common.actions.close`              | Close                                                                                                |                                                 |
-| `common.actions.back`               | Back                                                                                                 |                                                 |
-| `common.actions.undo`               | Undo                                                                                                 | toast action                                    |
-| `common.actions.tryAgain`           | Try Again                                                                                            |                                                 |
-| `common.actions.more`               | More                                                                                                 | aria-label of every More button                 |
-| `common.actions.showAll`            | Show All                                                                                             |                                                 |
-| `common.actions.showMore`           | Show {count} More                                                                                    | count is 50                                     |
-| `common.actions.setUpExtension`     | Set Up the Extension                                                                                 |                                                 |
-| `common.actions.copyValue`          | Copy {field}                                                                                         | Tooltip on a copy button                        |
-| `common.withKey`                    | {label} ({key})                                                                                      | Tooltip pattern: "Compare (C)"                  |
-| `common.saved`                      | Saved                                                                                                | beside the field for 2 s                        |
-| `common.deleted`                    | Deleted {name}.                                                                                      | toast, with Undo                                |
-| `common.copied.link`                | Copied link to #{n}                                                                                  | toast; also used for a link to one comment      |
-| `common.copied.versionLink`         | Copied link to #{n} v{version}                                                                       | toast                                           |
-| `common.copied.value`               | Copied {value}                                                                                       | toast; the value is shown in full               |
-| `common.via`                        | {name} via {client}                                                                                  | the copilot: "Ben via Claude"                   |
-| `common.live.newCount`              | {count, plural, one {# new} other {# new}}                                                           | pill in lists, Inbox and thread                 |
-| `common.disabled.adminOnly`         | Only admins can change this.                                                                         |                                                 |
-| `common.errors.server`              | Snapmark had a problem. Try again.                                                                   | fallback for any write without its own message  |
-| `common.errors.offline`             | Offline. You can read what’s loaded. Replies and reviews wait until you’re back.                     | same text as `app.offline.banner`               |
-| `common.roles.owner`                | Owner                                                                                                |                                                 |
-| `common.roles.admin`                | Admin                                                                                                |                                                 |
-| `common.roles.member`               | Member                                                                                               |                                                 |
-| `common.roles.guest`                | Guest                                                                                                |                                                 |
-| `common.roles.guestChip`            | Guest                                                                                                | Chip on guest text, everywhere including emails |
-| `common.roles.inSentence`           | {role, select, owner {an owner} admin {an admin} member {a member} guest {a guest} other {a member}} | lower case with its article, inside sentences   |
-| `common.status.open`                | Open                                                                                                 | status chip                                     |
-| `common.status.inProgress`          | In Progress                                                                                          |                                                 |
-| `common.status.implemented`         | Implemented                                                                                          |                                                 |
-| `common.status.accepted`            | Accepted                                                                                             |                                                 |
-| `common.flags.needsAnswer`          | Needs Answer                                                                                         |                                                 |
-| `common.flags.needsDecision`        | Needs Decision                                                                                       |                                                 |
-| `common.flags.decided`              | Decided                                                                                              |                                                 |
-| `common.kind.changeRequest`         | Change Request                                                                                       | feedback kind                                   |
-| `common.kind.comment`               | Comment                                                                                              | feedback kind                                   |
-| `common.versionKind.original`       | Original                                                                                             |                                                 |
-| `common.versionKind.mockup`         | Mockup                                                                                               |                                                 |
-| `common.versionKind.alternative`    | Alternative                                                                                          |                                                 |
-| `common.versionKind.implementation` | Implementation                                                                                       |                                                 |
-| `common.environmentKind.production` | Production                                                                                           |                                                 |
-| `common.environmentKind.staging`    | Staging                                                                                              |                                                 |
-| `common.environmentKind.preview`    | Preview                                                                                              |                                                 |
-| `common.environmentKind.local`      | Local                                                                                                |                                                 |
-| `common.invitationStatus.sent`      | Sent                                                                                                 |                                                 |
-| `common.invitationStatus.accepted`  | Accepted                                                                                             |                                                 |
-| `common.invitationStatus.expired`   | Expired                                                                                              |                                                 |
-| `common.invitationStatus.revoked`   | Revoked                                                                                              |                                                 |
+| Key                                 | Text                                                                                                         | Notes                                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `common.actions.cancel`             | Cancel                                                                                                       |                                                                                                 |
+| `common.actions.save`               | Save                                                                                                         |                                                                                                 |
+| `common.actions.done`               | Done                                                                                                         |                                                                                                 |
+| `common.actions.close`              | Close                                                                                                        |                                                                                                 |
+| `common.actions.back`               | Back                                                                                                         |                                                                                                 |
+| `common.actions.undo`               | Undo                                                                                                         | toast action                                                                                    |
+| `common.actions.tryAgain`           | Try Again                                                                                                    |                                                                                                 |
+| `common.actions.more`               | More                                                                                                         | aria-label of every More button                                                                 |
+| `common.actions.showAll`            | Show All                                                                                                     |                                                                                                 |
+| `common.actions.showMore`           | Show {count} More                                                                                            | count is 50                                                                                     |
+| `common.actions.setUpExtension`     | Set Up the Extension                                                                                         |                                                                                                 |
+| `common.actions.copyValue`          | Copy {field}                                                                                                 | Tooltip on a copy button                                                                        |
+| `common.withKey`                    | {label} ({key})                                                                                              | Tooltip pattern: "Compare (C)"                                                                  |
+| `common.saved`                      | Saved                                                                                                        | beside the field for 2 s                                                                        |
+| `common.deleted`                    | Deleted {name}.                                                                                              | toast, with Undo                                                                                |
+| `common.copied.link`                | Copied link to #{n}.                                                                                         | toast; also used for a link to one comment                                                      |
+| `common.copied.versionLink`         | Copied link to #{n} v{version}.                                                                              | toast                                                                                           |
+| `common.copied.value`               | Copied {value}.                                                                                              | toast; the value is shown in full                                                               |
+| `common.via`                        | {name} via {client}                                                                                          | the copilot: "Ben via Claude"                                                                   |
+| `common.live.newCount`              | {count, plural, one {# new} other {# new}}                                                                   | pill in lists, Inbox and thread                                                                 |
+| `common.disabled.adminOnly`         | Only admins can change this.                                                                                 |                                                                                                 |
+| `common.errors.server`              | Snapmark had a problem. Try again.                                                                           | fallback for any write without its own message                                                  |
+| `common.errors.offline`             | Offline. You can read what’s loaded. Replying and reviewing are off until you’re back. Your drafts are kept. | same text as `app.offline.banner`; changed 2026-10-28 (WEB-18 blocks writes, it does not queue) |
+| `common.roles.owner`                | Owner                                                                                                        |                                                                                                 |
+| `common.roles.admin`                | Admin                                                                                                        |                                                                                                 |
+| `common.roles.member`               | Member                                                                                                       |                                                                                                 |
+| `common.roles.guest`                | Guest                                                                                                        |                                                                                                 |
+| `common.roles.guestChip`            | Guest                                                                                                        | Chip on guest text, everywhere including emails                                                 |
+| `common.roles.inSentence`           | {role, select, owner {an owner} admin {an admin} member {a member} guest {a guest} other {a member}}         | lower case with its article, inside sentences                                                   |
+| `common.status.open`                | Open                                                                                                         | status chip                                                                                     |
+| `common.status.inProgress`          | In Progress                                                                                                  |                                                                                                 |
+| `common.status.implemented`         | Implemented                                                                                                  |                                                                                                 |
+| `common.status.accepted`            | Accepted                                                                                                     |                                                                                                 |
+| `common.flags.needsAnswer`          | Needs Answer                                                                                                 |                                                                                                 |
+| `common.flags.needsDecision`        | Needs Decision                                                                                               |                                                                                                 |
+| `common.flags.decided`              | Decided                                                                                                      |                                                                                                 |
+| `common.kind.changeRequest`         | Change Request                                                                                               | feedback kind                                                                                   |
+| `common.kind.comment`               | Comment                                                                                                      | feedback kind                                                                                   |
+| `common.versionKind.original`       | Original                                                                                                     |                                                                                                 |
+| `common.versionKind.mockup`         | Mockup                                                                                                       |                                                                                                 |
+| `common.versionKind.alternative`    | Alternative                                                                                                  |                                                                                                 |
+| `common.versionKind.implementation` | Implementation                                                                                               |                                                                                                 |
+| `common.environmentKind.production` | Production                                                                                                   |                                                                                                 |
+| `common.environmentKind.staging`    | Staging                                                                                                      |                                                                                                 |
+| `common.environmentKind.preview`    | Preview                                                                                                      |                                                                                                 |
+| `common.environmentKind.local`      | Local                                                                                                        |                                                                                                 |
+| `common.invitationStatus.sent`      | Sent                                                                                                         |                                                                                                 |
+| `common.invitationStatus.accepted`  | Accepted                                                                                                     |                                                                                                 |
+| `common.invitationStatus.expired`   | Expired                                                                                                      |                                                                                                 |
+| `common.invitationStatus.revoked`   | Revoked                                                                                                      |                                                                                                 |
 
 ---
 
@@ -262,47 +262,52 @@ Only if the Account › Notifications "Daily digest" switch ships in release 1.
 
 ### Sign in, Check your email, Verify
 
-| Key                             | Text                                                                            | Notes                                              |
-| ------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `auth.signIn.title`             | Sign In to Snapmark                                                             |                                                    |
-| `auth.signIn.email.label`       | Email                                                                           |                                                    |
-| `auth.signIn.email.placeholder` | you@company.com                                                                 |                                                    |
-| `auth.signIn.submit`            | Send Sign-In Link                                                               |                                                    |
-| `auth.signIn.submitting`        | Sending the sign-in link…                                                       | announced                                          |
-| `auth.signIn.waitlist`          | New here? Join the waitlist.                                                    | link to `/`                                        |
-| `auth.signIn.sessionEnded`      | Your session ended. Sign in to continue.                                        | your draft is kept and you return to the same page |
-| `auth.signIn.errors.email`      | Enter an email address like name@company.com.                                   | inline                                             |
-| `auth.signIn.errors.expired`    | This sign-in link has expired. Links work for 15 minutes. Send a new one below. | callout                                            |
-| `auth.signIn.errors.used`       | This sign-in link was already used. Each link works once. Send a new one below. | callout                                            |
-| `auth.signIn.errors.invalid`    | This sign-in link doesn’t work. Send a new one below.                           | callout                                            |
-| `auth.signIn.errors.rate`       | Too many links in a short time. Wait a minute, then send again.                 |                                                    |
-| `auth.signIn.errors.server`     | Couldn’t send the link. Snapmark had a problem. Try again.                      | added                                              |
-| `auth.check.title`              | Check Your Email                                                                |                                                    |
-| `auth.check.text`               | We sent a sign-in link to {email}. It works once, for 15 minutes.               |                                                    |
-| `auth.check.localHint`          | Running locally: the link is in the terminal where Snapmark runs.               | release 1 only                                     |
-| `auth.check.another`            | Use Another Email                                                               |                                                    |
-| `auth.check.resend`             | Send Again                                                                      |                                                    |
-| `auth.check.resendIn`           | Send Again in {seconds} s                                                       | disabled countdown                                 |
-| `auth.verify.loading`           | Signing you in…                                                                 |                                                    |
+| Key                             | Text                                                                            | Notes                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `auth.signIn.title`             | Sign In to Snapmark                                                             |                                                                       |
+| `auth.signIn.email.label`       | Email                                                                           |                                                                       |
+| `auth.signIn.email.placeholder` | you@company.com                                                                 |                                                                       |
+| `auth.signIn.submit`            | Send Sign-In Link                                                               |                                                                       |
+| `auth.signIn.submitting`        | Sending the sign-in link…                                                       | announced                                                             |
+| `auth.signIn.waitlist`          | New here? Join the waitlist.                                                    | link to `/`                                                           |
+| `auth.signIn.sessionEnded`      | You were signed out. Your draft is kept. Sign in to continue.                   | changed 2026-10-28: "session" is the Mac word for a screenshot folder |
+| `auth.signIn.errors.email`      | Enter an email address like name@company.com.                                   | inline                                                                |
+| `auth.signIn.errors.expired`    | This sign-in link has expired. Links work for 15 minutes. Send a new one below. | callout                                                               |
+| `auth.signIn.errors.used`       | This sign-in link was already used. Each link works once. Send a new one below. | callout                                                               |
+| `auth.signIn.errors.invalid`    | This sign-in link doesn’t work. Send a new one below.                           | callout                                                               |
+| `auth.signIn.errors.rate`       | Too many links in a short time. Wait a minute, then send again.                 |                                                                       |
+| `auth.signIn.errors.server`     | Couldn’t send the link. Snapmark had a problem. Try again.                      | added                                                                 |
+| `auth.check.title`              | Check Your Email                                                                |                                                                       |
+| `auth.check.text`               | We sent a sign-in link to {email}. It works once, for 15 minutes.               |                                                                       |
+| `auth.check.localHint`          | Running locally: the link is in the terminal where Snapmark runs.               | release 1 only                                                        |
+| `auth.check.another`            | Use Another Email                                                               |                                                                       |
+| `auth.check.resend`             | Send Again                                                                      |                                                                       |
+| `auth.check.resendIn`           | Send Again in {seconds} s                                                       | disabled countdown                                                    |
+| `auth.verify.loading`           | Signing you in…                                                                 |                                                                       |
 
 ### Invitation (`/invite/{token}`)
 
-| Key                                  | Text                                                                                                                                                                      | Notes            |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| `auth.invitation.title`              | Join {organisation}                                                                                                                                                       |                  |
-| `auth.invitation.line`               | {inviter} invited you to {organisation} as {role, select, owner {an owner} admin {an admin} member {a member} guest {a guest} other {a member}}.                          |                  |
-| `auth.invitation.guestWorkspaces`    | You’ll see {workspaces}.                                                                                                                                                  | guests only      |
-| `auth.invitation.join`               | Join {organisation}                                                                                                                                                       |                  |
-| `auth.invitation.joining`            | Joining {organisation}…                                                                                                                                                   | announced        |
-| `auth.invitation.continueWithEmail`  | Continue with Email                                                                                                                                                       | signed out       |
-| `auth.invitation.wrongAccount`       | This invitation is for {email}. You’re signed in as {current}.                                                                                                            |                  |
-| `auth.invitation.signOutAndContinue` | Sign Out and Continue                                                                                                                                                     |                  |
-| `auth.invitation.already`            | You’re already in {organisation}.                                                                                                                                         |                  |
-| `auth.invitation.goTo`               | Go to {organisation}                                                                                                                                                      |                  |
-| `auth.invitation.expired`            | This invitation has expired. Ask {inviter} to send a new one.                                                                                                             |                  |
-| `auth.invitation.noSeat`             | {organisation} has no free seat for {role, select, owner {an owner} admin {an admin} other {a member}} right now. Ask {inviter} to free one, or to invite you as a guest. |                  |
-| `auth.invitation.invalid`            | This invitation isn’t valid any more. Ask the person who sent it for a new one.                                                                                           | what to do added |
-| `auth.invitation.errors.server`      | Couldn’t join {organisation}. Snapmark had a problem. Try again.                                                                                                          |                  |
+| Key                                  | Text                                                                                                                                                                      | Notes                                                |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `auth.invitation.title`              | Join {organisation}                                                                                                                                                       |                                                      |
+| `auth.invitation.line`               | {inviter} invited you to {organisation} as {role, select, owner {an owner} admin {an admin} member {a member} guest {a guest} other {a member}}.                          |                                                      |
+| `auth.invitation.guestWorkspaces`    | You’ll see {workspaces}.                                                                                                                                                  | guests only                                          |
+| `auth.invitation.join`               | Join {organisation}                                                                                                                                                       |                                                      |
+| `auth.invitation.joining`            | Joining {organisation}…                                                                                                                                                   | announced                                            |
+| `auth.invitation.continueWithEmail`  | Continue with Email                                                                                                                                                       | signed out                                           |
+| `auth.invitation.wrongAccount`       | This invitation is for {email}. You’re signed in as {current}.                                                                                                            |                                                      |
+| `auth.invitation.signOutAndContinue` | Sign Out and Continue                                                                                                                                                     |                                                      |
+| `auth.invitation.already`            | You’re already in {organisation}.                                                                                                                                         |                                                      |
+| `auth.invitation.goTo`               | Go to {organisation}                                                                                                                                                      |                                                      |
+| `auth.invitation.expired`            | This invitation has expired. Ask {inviter} to send a new one.                                                                                                             | with the link "Go to Snapmark" (`app.notFound.home`) |
+| `auth.invitation.noSeat`             | {organisation} has no free seat for {role, select, owner {an owner} admin {an admin} other {a member}} right now. Ask {inviter} to free one, or to invite you as a guest. |                                                      |
+| `auth.invitation.invalid`            | This invitation isn’t valid any more. Ask the person who sent it for a new one.                                                                                           | what to do added                                     |
+| `auth.invitation.errors.server`      | Couldn’t join {organisation}. Snapmark had a problem. You’re not in yet. Try again.                                                                                       | consequence added 2026-10-28                         |
+| `auth.invitation.waitlist.title`     | Set Up Your Team                                                                                                                                                          | waitlist invitation variant (sitemap F1)             |
+| `auth.invitation.waitlist.line`      | Sign in with {email} to name your organisation and first workspace.                                                                                                       |                                                      |
+| `auth.invitation.waitlist.continue`  | Set Up Your Team                                                                                                                                                          | signed in as {email}; then `/welcome`                |
+| `auth.invitation.waitlist.already`   | You already have an organisation, {organisation}. This invitation can set up one more team.                                                                               | with Set Up Your Team and Go to {organisation}       |
+| `auth.invitation.revoked`            | This invitation was withdrawn. Ask the person who sent it for a new one.                                                                                                  | with "Go to Snapmark"                                |
 
 ### Welcome (first run)
 
@@ -325,28 +330,28 @@ Only if the Account › Notifications "Daily digest" switch ships in release 1.
 
 ### Device consent (`/device`, `/authorize`)
 
-| Key                                        | Text                                                                                                                    | Notes                  |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| `auth.device.codeHeading`                  | Confirm the code shown on your Mac.                                                                                     |                        |
-| `auth.device.codeLabel`                    | Code                                                                                                                    |                        |
-| `auth.device.continue`                     | Continue                                                                                                                |                        |
-| `auth.device.mismatch`                     | This code doesn’t match any waiting device. Check the code on your Mac.                                                 |                        |
-| `auth.consent.title`                       | Allow {client} to use your Snapmark account?                                                                            |                        |
-| `auth.consent.read`                        | {client} on {device} can read feedback in every workspace you can see.                                                  |                        |
-| `auth.consent.extension`                   | The Chrome extension can also send feedback you capture.                                                                |                        |
-| `auth.consent.mac`                         | The Mac app can also sync the sessions you share.                                                                       |                        |
-| `auth.consent.scopesHeading`               | It may also:                                                                                                            |                        |
-| `auth.consent.scopes.reply`                | Reply in threads                                                                                                        | Switch, off by default |
-| `auth.consent.scopes.postVersion`          | Post versions                                                                                                           | agents only            |
-| `auth.consent.scopes.reportImplementation` | Report implementations                                                                                                  | agents only            |
-| `auth.consent.safety`                      | It can never approve or request changes. Text people write, guests included, reaches it as data, never as instructions. |                        |
-| `auth.consent.allow`                       | Allow                                                                                                                   |                        |
-| `auth.consent.deny`                        | Deny                                                                                                                    |                        |
-| `auth.consent.allowing`                    | Connecting {client}…                                                                                                    | announced              |
-| `auth.consent.allowed`                     | {client} is connected. You can close this tab.                                                                          |                        |
-| `auth.consent.goToDevices`                 | Go to Devices                                                                                                           |                        |
-| `auth.consent.denied`                      | {client} was not connected.                                                                                             |                        |
-| `auth.consent.expired`                     | This request has expired. Start again from {client}.                                                                    |                        |
+| Key                                        | Text                                                                                                                    | Notes                         |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `auth.device.codeHeading`                  | Confirm the code shown on your Mac.                                                                                     |                               |
+| `auth.device.codeLabel`                    | Code                                                                                                                    |                               |
+| `auth.device.continue`                     | Continue                                                                                                                |                               |
+| `auth.device.mismatch`                     | This code doesn’t match any waiting device. Check the code on your Mac.                                                 |                               |
+| `auth.consent.title`                       | Allow {client} to use your Snapmark account?                                                                            |                               |
+| `auth.consent.read`                        | {client} on {device} can read feedback in every workspace you can see.                                                  |                               |
+| `auth.consent.extension`                   | The Chrome extension can also send feedback you capture.                                                                |                               |
+| `auth.consent.mac`                         | The Mac app can also sync the sessions you share.                                                                       |                               |
+| `auth.consent.scopesHeading`               | It may also:                                                                                                            |                               |
+| `auth.consent.scopes.reply`                | Reply in threads                                                                                                        | Switch, off by default        |
+| `auth.consent.scopes.postVersion`          | Post versions                                                                                                           | agents only                   |
+| `auth.consent.scopes.reportImplementation` | Report implementations                                                                                                  | agents only                   |
+| `auth.consent.safety`                      | It can never approve or request changes. Text people write, guests included, reaches it as data, never as instructions. |                               |
+| `auth.consent.allow`                       | Allow {client}                                                                                                          | names its object (2026-10-28) |
+| `auth.consent.deny`                        | Deny                                                                                                                    |                               |
+| `auth.consent.allowing`                    | Connecting {client}…                                                                                                    | announced                     |
+| `auth.consent.allowed`                     | {client} is connected. You can close this tab.                                                                          |                               |
+| `auth.consent.goToDevices`                 | Go to Devices                                                                                                           |                               |
+| `auth.consent.denied`                      | {client} was not connected.                                                                                             |                               |
+| `auth.consent.expired`                     | This request has expired. Start again from {client}.                                                                    |                               |
 
 ---
 
@@ -354,50 +359,50 @@ Only if the Account › Notifications "Daily digest" switch ships in release 1.
 
 ### App shell: sidebar, command menu, shortcuts, 404
 
-| Key                              | Text                                                                             | Notes                    |
-| -------------------------------- | -------------------------------------------------------------------------------- | ------------------------ |
-| `app.nav.search`                 | Search                                                                           | with Kbd ⌘K / Ctrl+K     |
-| `app.nav.inbox`                  | Inbox                                                                            |                          |
-| `app.nav.myWork`                 | My Work                                                                          |                          |
-| `app.nav.open`                   | Open                                                                             | list name                |
-| `app.nav.needsDecision`          | Needs Decision                                                                   |                          |
-| `app.nav.inReview`               | In Review                                                                        |                          |
-| `app.nav.done`                   | Done                                                                             |                          |
-| `app.nav.modules`                | Modules                                                                          |                          |
-| `app.nav.allModules`             | All Modules                                                                      |                          |
-| `app.nav.sessions`               | Sessions                                                                         |                          |
-| `app.nav.settings`               | Settings                                                                         |                          |
-| `app.nav.noModules`              | No modules yet                                                                   |                          |
-| `app.nav.menu`                   | Menu                                                                             | phone, aria-label        |
-| `app.nav.collapse`               | Collapse Sidebar                                                                 | Tooltip adds the key     |
-| `app.nav.expand`                 | Expand Sidebar                                                                   |                          |
-| `app.nav.switchOrganisation`     | Switch to {organisation}                                                         | ⌘K result                |
-| `app.nav.workspaceMenu.settings` | Workspace Settings                                                               |                          |
-| `app.nav.workspaceMenu.copyLink` | Copy Link                                                                        |                          |
-| `app.nav.account.profile`        | Profile                                                                          | avatar menu              |
-| `app.nav.account.signInMethods`  | Sign-In Methods                                                                  |                          |
-| `app.nav.account.devices`        | Devices                                                                          | was "Devices and Tokens" |
-| `app.nav.account.notifications`  | Notifications                                                                    |                          |
-| `app.nav.account.shortcuts`      | Keyboard Shortcuts                                                               |                          |
-| `app.nav.account.signOut`        | Sign Out                                                                         |                          |
-| `app.command.placeholder`        | Search or jump to…                                                               |                          |
-| `app.command.groups.goTo`        | Go To                                                                            |                          |
-| `app.command.groups.feedback`    | Feedback                                                                         |                          |
-| `app.command.groups.page`        | Actions on This Page                                                             |                          |
-| `app.command.groups.settings`    | Settings                                                                         |                          |
-| `app.command.filterBy`           | Filter by {filter}                                                               |                          |
-| `app.command.add`                | Add {object}                                                                     |                          |
-| `app.command.empty`              | Nothing matches “{query}”. Search feedback by number, like #42.                  |                          |
-| `app.command.error`              | Couldn’t search. Snapmark had a problem. Try again.                              |                          |
-| `app.shortcuts.title`            | Keyboard Shortcuts                                                               |                          |
-| `app.shortcuts.groups.anywhere`  | Anywhere                                                                         |                          |
-| `app.shortcuts.groups.lists`     | Lists                                                                            |                          |
-| `app.shortcuts.groups.feedback`  | Feedback                                                                         |                          |
-| `app.shortcuts.groups.drawing`   | Drawing                                                                          |                          |
-| `app.offline.banner`             | Offline. You can read what’s loaded. Replies and reviews wait until you’re back. |                          |
-| `app.notFound.text`              | This page doesn’t exist, or you don’t have access.                               |                          |
-| `app.notFound.inbox`             | Go to Inbox                                                                      |                          |
-| `app.notFound.home`              | Go to Snapmark                                                                   | signed out               |
+| Key                              | Text                                                                                                         | Notes                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| `app.nav.search`                 | Search                                                                                                       | with Kbd ⌘K / Ctrl+K     |
+| `app.nav.inbox`                  | Inbox                                                                                                        |                          |
+| `app.nav.myWork`                 | My Work                                                                                                      |                          |
+| `app.nav.open`                   | Open                                                                                                         | list name                |
+| `app.nav.needsDecision`          | Needs Decision                                                                                               |                          |
+| `app.nav.inReview`               | In Review                                                                                                    |                          |
+| `app.nav.done`                   | Done                                                                                                         |                          |
+| `app.nav.modules`                | Modules                                                                                                      |                          |
+| `app.nav.allModules`             | All Modules                                                                                                  |                          |
+| `app.nav.sessions`               | Sessions                                                                                                     |                          |
+| `app.nav.settings`               | Settings                                                                                                     |                          |
+| `app.nav.noModules`              | No modules yet                                                                                               |                          |
+| `app.nav.menu`                   | Menu                                                                                                         | phone, aria-label        |
+| `app.nav.collapse`               | Collapse Sidebar                                                                                             | Tooltip adds the key     |
+| `app.nav.expand`                 | Expand Sidebar                                                                                               |                          |
+| `app.nav.switchOrganisation`     | Switch to {organisation}                                                                                     | ⌘K result                |
+| `app.nav.workspaceMenu.settings` | Workspace Settings                                                                                           |                          |
+| `app.nav.workspaceMenu.copyLink` | Copy Link                                                                                                    |                          |
+| `app.nav.account.profile`        | Profile                                                                                                      | avatar menu              |
+| `app.nav.account.signInMethods`  | Sign-In Methods                                                                                              |                          |
+| `app.nav.account.devices`        | Devices                                                                                                      | was "Devices and Tokens" |
+| `app.nav.account.notifications`  | Notifications                                                                                                |                          |
+| `app.nav.account.shortcuts`      | Keyboard Shortcuts                                                                                           |                          |
+| `app.nav.account.signOut`        | Sign Out                                                                                                     |                          |
+| `app.command.placeholder`        | Search or jump to…                                                                                           |                          |
+| `app.command.groups.goTo`        | Go To                                                                                                        |                          |
+| `app.command.groups.feedback`    | Feedback                                                                                                     |                          |
+| `app.command.groups.page`        | Actions on This Page                                                                                         |                          |
+| `app.command.groups.settings`    | Settings                                                                                                     |                          |
+| `app.command.filterBy`           | Filter by {filter}                                                                                           |                          |
+| `app.command.add`                | Add {object}                                                                                                 |                          |
+| `app.command.empty`              | Nothing matches “{query}”. Search feedback by number, like #42.                                              |                          |
+| `app.command.error`              | Couldn’t search. Snapmark had a problem. Try again.                                                          |                          |
+| `app.shortcuts.title`            | Keyboard Shortcuts                                                                                           |                          |
+| `app.shortcuts.groups.anywhere`  | Anywhere                                                                                                     |                          |
+| `app.shortcuts.groups.lists`     | Lists                                                                                                        |                          |
+| `app.shortcuts.groups.feedback`  | Feedback                                                                                                     |                          |
+| `app.shortcuts.groups.drawing`   | Drawing                                                                                                      |                          |
+| `app.offline.banner`             | Offline. You can read what’s loaded. Replying and reviewing are off until you’re back. Your drafts are kept. | changed 2026-10-28       |
+| `app.notFound.text`              | This page doesn’t exist, or you don’t have access.                                                           |                          |
+| `app.notFound.inbox`             | Go to Inbox                                                                                                  |                          |
+| `app.notFound.home`              | Go to Snapmark                                                                                               | signed out               |
 
 ### Inbox
 
@@ -481,152 +486,153 @@ Only if the Account › Notifications "Daily digest" switch ships in release 1.
 
 ### Modules and one module
 
-| Key                             | Text                                                             | Notes                             |
-| ------------------------------- | ---------------------------------------------------------------- | --------------------------------- |
-| `modules.title`                 | Modules                                                          |                                   |
-| `modules.columns.module`        | Module                                                           |                                   |
-| `modules.columns.open`          | Open                                                             |                                   |
-| `modules.columns.needsDecision` | Needs Decision                                                   |                                   |
-| `modules.columns.inReview`      | In Review                                                        |                                   |
-| `modules.columns.lastActivity`  | Last Activity                                                    |                                   |
-| `modules.add`                   | Add Module                                                       |                                   |
-| `modules.empty.heading`         | Name the parts of your product.                                  | A30                               |
-| `modules.empty.text`            | Modules group feedback by part, like Checkout Summary or Header. |                                   |
-| `modules.emptyStatus`           | No {status} feedback in {module}.                                | status lower case in running text |
+| Key                             | Text                                                             | Notes                                                                                                       |
+| ------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `modules.title`                 | Modules                                                          |                                                                                                             |
+| `modules.columns.module`        | Module                                                           |                                                                                                             |
+| `modules.columns.open`          | Open                                                             |                                                                                                             |
+| `modules.columns.needsDecision` | Needs Decision                                                   |                                                                                                             |
+| `modules.columns.inReview`      | In Review                                                        |                                                                                                             |
+| `modules.columns.lastActivity`  | Last Activity                                                    |                                                                                                             |
+| `modules.manage`                | Manage Modules                                                   | link to Workspace Settings › Modules, members and up; adding, renaming and deleting live there (sitemap F3) |
+| `modules.empty.heading`         | Name the parts of your product.                                  | A30                                                                                                         |
+| `modules.empty.text`            | Modules group feedback by part, like Checkout Summary or Header. |                                                                                                             |
+| `modules.emptyStatus`           | No {status} feedback in {module}.                                | status lower case in running text                                                                           |
 
 ### Feedback view
 
-| Key                                    | Text                                                                                 | Notes                                                      |
-| -------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| `feedback.meta.title`                  | #{n} {title} · {workspace}                                                           |                                                            |
-| `feedback.breadcrumb`                  | {workspace} › {list} › #{n}                                                          |                                                            |
-| `feedback.versions.tab`                | v{version} {kind}                                                                    | "v1 Mockup"                                                |
-| `feedback.versions.author`             | {name}                                                                               | after the tab: "v1 Mockup · Dana"                          |
-| `feedback.versions.pr`                 | PR #{pr}                                                                             |                                                            |
-| `feedback.versions.accepted`           | Accepted version                                                                     | Tooltip on the tick                                        |
-| `feedback.versions.menu.copyLink`      | Copy Link                                                                            | on the version tab's More; was "Copy Link to Version"      |
-| `feedback.versions.menu.delete`        | Delete Version                                                                       | own versions                                               |
-| `feedback.versions.deleted`            | Deleted v{version}.                                                                  | toast, with Undo; added                                    |
-| `feedback.toolbar.compare`             | Compare                                                                              | key C                                                      |
-| `feedback.toolbar.draw`                | Draw on Screenshot                                                                   | key D                                                      |
-| `feedback.toolbar.zoomOut`             | Zoom Out                                                                             | key −                                                      |
-| `feedback.toolbar.fit`                 | Fit                                                                                  | key 0                                                      |
-| `feedback.toolbar.zoomIn`              | Zoom In                                                                              | key +                                                      |
-| `feedback.toolbar.left`                | Left                                                                                 | Compare side picker                                        |
-| `feedback.toolbar.right`               | Right                                                                                |                                                            |
-| `feedback.toolbar.compareDisabled`     | Compare needs two versions.                                                          |                                                            |
-| `feedback.panel.tabs.thread`           | Thread                                                                               |                                                            |
-| `feedback.panel.tabs.details`          | Details                                                                              |                                                            |
-| `feedback.acceptance.notReviewed`      | Not reviewed yet                                                                     |                                                            |
-| `feedback.acceptance.approved`         | Approved by {names}                                                                  | names joined with Intl list format                         |
-| `feedback.acceptance.objection`        | {count, plural, one {# objection open} other {# objections open}} · {name}: “{text}” | text is the first line                                     |
-| `feedback.acceptance.accepted`         | Accepted · approved by {names}                                                       |                                                            |
-| `feedback.acceptance.rule`             | Accepted when it has at least one Approve and no open objection.                     | Tooltip                                                    |
-| `feedback.claimed`                     | In Progress · {name} via {client}                                                    |                                                            |
-| `feedback.system.statusChanged`        | {name} changed the status to {status}.                                               |                                                            |
-| `feedback.system.claimed`              | {name} via {client} claimed this.                                                    |                                                            |
-| `feedback.system.claimRefusedAnswer`   | {name} via {client} couldn’t claim this. It needs an answer first.                   |                                                            |
-| `feedback.system.claimRefusedDecision` | {name} via {client} couldn’t claim this. A decision is open.                         |                                                            |
-| `feedback.system.accepted`             | Accepted · approved by {name}.                                                       |                                                            |
-| `feedback.system.editedElsewhere`      | Edited elsewhere: {text}                                                             |                                                            |
-| `feedback.entryKind.question`          | Question                                                                             |                                                            |
-| `feedback.entryKind.answer`            | Answer                                                                               |                                                            |
-| `feedback.entryKind.approve`           | Approve                                                                              |                                                            |
-| `feedback.entryKind.requestChanges`    | Request Changes                                                                      |                                                            |
-| `feedback.entryKind.vote`              | Vote                                                                                 |                                                            |
-| `feedback.entry.onVersion`             | on v{version}                                                                        |                                                            |
-| `feedback.thread.empty`                | No comments yet.                                                                     |                                                            |
-| `feedback.composer.comment`            | Comment on v{version}…                                                               | placeholder                                                |
-| `feedback.composer.requestChanges`     | What should change in v{version}?                                                    | placeholder                                                |
-| `feedback.composer.answer`             | Answer {name}’s question…                                                            | placeholder                                                |
-| `feedback.composer.marks`              | {count, plural, one {# mark} other {# marks}}                                        | chip                                                       |
-| `feedback.composer.discardMarks`       | Discard Marks                                                                        |                                                            |
-| `feedback.composer.newerVersion`       | v{version} was just posted. Your comment will go on v{old}.                          |                                                            |
-| `feedback.composer.moveTo`             | Move to v{version}                                                                   |                                                            |
-| `feedback.actions.comment`             | Comment                                                                              | key R, send ⌘↩                                             |
-| `feedback.actions.approve`             | Approve v{version}                                                                   | key A                                                      |
-| `feedback.actions.requestChanges`      | Request Changes                                                                      | key ⇧R                                                     |
-| `feedback.actions.vote`                | Vote                                                                                 | key V                                                      |
-| `feedback.actions.answer`              | Answer                                                                               |                                                            |
-| `feedback.disabled.empty`              | Write a comment first.                                                               |                                                            |
-| `feedback.disabled.guest`              | Guests can comment and vote. Approving needs a member.                               |                                                            |
-| `feedback.disabled.offline`            | Offline. Your comment is kept here and can be sent when you’re back.                 |                                                            |
-| `feedback.menu.copyLink`               | Copy Link                                                                            | header More, key ⌘⇧C                                       |
-| `feedback.menu.moveToModule`           | Move to Module                                                                       |                                                            |
-| `feedback.menu.changeKind`             | Change Kind                                                                          |                                                            |
-| `feedback.menu.unclaim`                | Unclaim                                                                              |                                                            |
-| `feedback.menu.delete`                 | Delete Feedback                                                                      | author, admin                                              |
-| `feedback.menu.askQuestion`            | Ask a Question                                                                       |                                                            |
-| `feedback.menu.requestDecision`        | Request a Decision                                                                   |                                                            |
-| `feedback.menu.postVersion`            | Post Version                                                                         |                                                            |
-| `feedback.entryMenu.copyLink`          | Copy Link                                                                            | on a comment's More; was "Copy Link to Entry"              |
-| `feedback.entryMenu.edit`              | Edit                                                                                 | 15 minutes                                                 |
-| `feedback.entryMenu.withdrawApproval`  | Withdraw Approval                                                                    |                                                            |
-| `feedback.entryMenu.withdrawObjection` | Withdraw Objection                                                                   |                                                            |
-| `feedback.entryMenu.markNotAnswered`   | Mark Not Answered                                                                    |                                                            |
-| `feedback.entryMenu.delete`            | Delete                                                                               |                                                            |
-| `feedback.entryDeleted`                | Deleted your comment.                                                                | toast, with Undo; added                                    |
-| `feedback.nav.previous`                | Previous                                                                             | key K                                                      |
-| `feedback.nav.next`                    | Next                                                                                 | key J                                                      |
-| `feedback.nav.first`                   | First in {list}                                                                      | disabled reason                                            |
-| `feedback.nav.last`                    | Last in {list}                                                                       | disabled reason                                            |
-| `feedback.details.region`              | Region                                                                               |                                                            |
-| `feedback.details.module`              | Module                                                                               |                                                            |
-| `feedback.details.component`           | Component                                                                            |                                                            |
-| `feedback.details.file`                | File                                                                                 |                                                            |
-| `feedback.details.repo`                | Repo                                                                                 |                                                            |
-| `feedback.details.branch`              | Branch                                                                               |                                                            |
-| `feedback.details.worktree`            | Worktree                                                                             |                                                            |
-| `feedback.details.environment`         | Environment                                                                          |                                                            |
-| `feedback.details.version`             | Version                                                                              | version stamp; shared with compose                         |
-| `feedback.details.commit`              | Commit                                                                               |                                                            |
-| `feedback.details.deployment`          | Deployment                                                                           |                                                            |
-| `feedback.details.pr`                  | PR                                                                                   |                                                            |
-| `feedback.details.captured`            | Captured                                                                             | date and time                                              |
-| `feedback.details.page`                | Page                                                                                 |                                                            |
-| `feedback.details.selector`            | Selector                                                                             |                                                            |
-| `feedback.details.viewport`            | Viewport                                                                             |                                                            |
-| `feedback.details.text`                | Text                                                                                 |                                                            |
-| `feedback.details.session`             | Session                                                                              |                                                            |
-| `feedback.details.notFound`            | Not found                                                                            |                                                            |
-| `feedback.details.noCode`              | No code location found. The agent searches by page, selector and text.               |                                                            |
-| `feedback.deleted`                     | Deleted #{n}.                                                                        | toast, with Undo (8 s)                                     |
-| `feedback.errors.screenshot`           | Couldn’t load the screenshot. The feedback and thread are fine. Try again.           |                                                            |
-| `feedback.errors.comment`              | Couldn’t post your comment. Snapmark had a problem. Your text is kept. Try again.    | inline at the entry                                        |
-| `feedback.errors.review`               | Couldn’t save your review. Snapmark had a problem. Try again.                        |                                                            |
-| `feedback.errors.offScreen`            | Couldn’t save your change to #{n}. Open it to try again.                             | toast only when the item is off screen; stays until closed |
-| `feedback.notFound`                    | This feedback doesn’t exist, or you don’t have access.                               |                                                            |
+| Key                                    | Text                                                                                 | Notes                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `feedback.meta.title`                  | #{n} {title} · {workspace}                                                           |                                                                                                            |
+| `feedback.breadcrumb`                  | {workspace} › {list} › #{n}                                                          |                                                                                                            |
+| `feedback.versions.tab`                | v{version} {kind}                                                                    | "v1 Mockup"                                                                                                |
+| `feedback.versions.author`             | {name}                                                                               | after the tab: "v1 Mockup · Dana"                                                                          |
+| `feedback.versions.pr`                 | PR #{pr}                                                                             |                                                                                                            |
+| `feedback.versions.accepted`           | Accepted version                                                                     | Tooltip on the tick                                                                                        |
+| `feedback.versions.menu.copyLink`      | Copy Link                                                                            | on the version tab's More; was "Copy Link to Version"                                                      |
+| `feedback.versions.menu.delete`        | Delete Version                                                                       | own versions                                                                                               |
+| `feedback.versions.deleted`            | Deleted v{version}.                                                                  | toast, with Undo; added                                                                                    |
+| `feedback.toolbar.compare`             | Compare                                                                              | key C                                                                                                      |
+| `feedback.toolbar.draw`                | Draw on Screenshot                                                                   | key D                                                                                                      |
+| `feedback.toolbar.zoomOut`             | Zoom Out                                                                             | key −                                                                                                      |
+| `feedback.toolbar.fit`                 | Fit                                                                                  | key 0                                                                                                      |
+| `feedback.toolbar.zoomIn`              | Zoom In                                                                              | key +                                                                                                      |
+| `feedback.toolbar.left`                | Left                                                                                 | Compare side picker                                                                                        |
+| `feedback.toolbar.right`               | Right                                                                                |                                                                                                            |
+| `feedback.toolbar.compareDisabled`     | Compare needs two versions.                                                          |                                                                                                            |
+| `feedback.panel.tabs.thread`           | Thread                                                                               |                                                                                                            |
+| `feedback.panel.tabs.details`          | Details                                                                              |                                                                                                            |
+| `feedback.acceptance.notReviewed`      | Not reviewed yet                                                                     |                                                                                                            |
+| `feedback.acceptance.approved`         | Approved by {names}                                                                  | names joined with Intl list format                                                                         |
+| `feedback.acceptance.objection`        | {count, plural, one {# objection open} other {# objections open}} · {name}: “{text}” | text is the first line                                                                                     |
+| `feedback.acceptance.accepted`         | Accepted · approved by {names}                                                       |                                                                                                            |
+| `feedback.acceptance.rule`             | Accepted when it has at least one Approve and no open objection.                     | a line of text under the acceptance line and in the phone Details sheet, never only a Tooltip (2026-10-28) |
+| `feedback.claimed`                     | In Progress · {name} via {client}                                                    |                                                                                                            |
+| `feedback.system.statusChanged`        | {name} changed the status to {status}.                                               |                                                                                                            |
+| `feedback.system.claimed`              | {name} via {client} claimed this.                                                    |                                                                                                            |
+| `feedback.system.claimRefusedAnswer`   | {name} via {client} couldn’t claim this. It needs an answer first.                   |                                                                                                            |
+| `feedback.system.claimRefusedDecision` | {name} via {client} couldn’t claim this. A decision is open.                         |                                                                                                            |
+| `feedback.system.accepted`             | Accepted · approved by {name}.                                                       |                                                                                                            |
+| `feedback.system.editedElsewhere`      | Edited elsewhere: {text}                                                             |                                                                                                            |
+| `feedback.entryKind.question`          | Question                                                                             |                                                                                                            |
+| `feedback.entryKind.answer`            | Answer                                                                               |                                                                                                            |
+| `feedback.entryKind.approve`           | Approve                                                                              |                                                                                                            |
+| `feedback.entryKind.requestChanges`    | Request Changes                                                                      |                                                                                                            |
+| `feedback.entryKind.vote`              | Vote                                                                                 |                                                                                                            |
+| `feedback.entry.onVersion`             | on v{version}                                                                        |                                                                                                            |
+| `feedback.thread.empty`                | No comments yet.                                                                     |                                                                                                            |
+| `feedback.composer.comment`            | Comment on v{version}…                                                               | placeholder                                                                                                |
+| `feedback.composer.requestChanges`     | What should change in v{version}?                                                    | placeholder                                                                                                |
+| `feedback.composer.answer`             | Answer {name}’s question…                                                            | placeholder                                                                                                |
+| `feedback.composer.marks`              | {count, plural, one {# mark} other {# marks}}                                        | chip                                                                                                       |
+| `feedback.composer.discardMarks`       | Discard Marks                                                                        |                                                                                                            |
+| `feedback.composer.newerVersion`       | v{version} was just posted. Your comment will go on v{old}.                          |                                                                                                            |
+| `feedback.composer.moveTo`             | Move to v{version}                                                                   |                                                                                                            |
+| `feedback.actions.comment`             | Comment                                                                              | key R, send ⌘↩                                                                                             |
+| `feedback.actions.approve`             | Approve v{version}                                                                   | key A                                                                                                      |
+| `feedback.actions.requestChanges`      | Request Changes                                                                      | key ⇧R                                                                                                     |
+| `feedback.actions.vote`                | Vote                                                                                 | key V                                                                                                      |
+| `feedback.actions.answer`              | Answer Question                                                                      | names its object (2026-10-28)                                                                              |
+| `feedback.disabled.empty`              | Write a comment first.                                                               |                                                                                                            |
+| `feedback.disabled.guest`              | Guests can comment, draw and vote. Approving and requesting changes need a member.   |                                                                                                            |
+| `feedback.disabled.offline`            | Offline. Your comment is kept here and can be sent when you’re back.                 |                                                                                                            |
+| `feedback.menu.copyLink`               | Copy Link                                                                            | header More, key Y (⌘⇧C is Chrome’s Inspect)                                                               |
+| `feedback.menu.moveToModule`           | Move to Module                                                                       |                                                                                                            |
+| `feedback.menu.changeKind`             | Change Kind                                                                          |                                                                                                            |
+| `feedback.menu.unclaim`                | Unclaim                                                                              |                                                                                                            |
+| `feedback.menu.delete`                 | Delete Feedback                                                                      | author, admin                                                                                              |
+| `feedback.menu.askQuestion`            | Ask a Question                                                                       |                                                                                                            |
+| `feedback.menu.requestDecision`        | Request a Decision                                                                   |                                                                                                            |
+| `feedback.menu.postVersion`            | Post Version                                                                         |                                                                                                            |
+| `feedback.entryMenu.copyLink`          | Copy Link                                                                            | on a comment's More; was "Copy Link to Entry"                                                              |
+| `feedback.entryMenu.edit`              | Edit                                                                                 | 15 minutes                                                                                                 |
+| `feedback.entryMenu.withdrawApproval`  | Withdraw Approval                                                                    |                                                                                                            |
+| `feedback.entryMenu.withdrawObjection` | Withdraw Objection                                                                   |                                                                                                            |
+| `feedback.entryMenu.markNotAnswered`   | Mark Not Answered                                                                    |                                                                                                            |
+| `feedback.entryMenu.delete`            | Delete                                                                               |                                                                                                            |
+| `feedback.entryDeleted`                | Deleted your comment.                                                                | toast, with Undo; added                                                                                    |
+| `feedback.nav.previous`                | Previous                                                                             | key K                                                                                                      |
+| `feedback.nav.next`                    | Next                                                                                 | key J                                                                                                      |
+| `feedback.nav.first`                   | First in {list}                                                                      | disabled reason                                                                                            |
+| `feedback.nav.last`                    | Last in {list}                                                                       | disabled reason                                                                                            |
+| `feedback.details.region`              | Region                                                                               |                                                                                                            |
+| `feedback.details.module`              | Module                                                                               |                                                                                                            |
+| `feedback.details.component`           | Component                                                                            |                                                                                                            |
+| `feedback.details.file`                | File                                                                                 |                                                                                                            |
+| `feedback.details.repo`                | Repo                                                                                 |                                                                                                            |
+| `feedback.details.branch`              | Branch                                                                               |                                                                                                            |
+| `feedback.details.worktree`            | Worktree                                                                             |                                                                                                            |
+| `feedback.details.environment`         | Environment                                                                          |                                                                                                            |
+| `feedback.details.version`             | Version                                                                              | version stamp; shared with compose                                                                         |
+| `feedback.details.commit`              | Commit                                                                               |                                                                                                            |
+| `feedback.details.deployment`          | Deployment                                                                           |                                                                                                            |
+| `feedback.details.pr`                  | PR                                                                                   |                                                                                                            |
+| `feedback.details.captured`            | Captured                                                                             | date and time                                                                                              |
+| `feedback.details.page`                | Page                                                                                 |                                                                                                            |
+| `feedback.details.selector`            | Selector                                                                             |                                                                                                            |
+| `feedback.details.viewport`            | Viewport                                                                             |                                                                                                            |
+| `feedback.details.text`                | Text                                                                                 |                                                                                                            |
+| `feedback.details.session`             | Session                                                                              |                                                                                                            |
+| `feedback.details.notFound`            | Not found                                                                            |                                                                                                            |
+| `feedback.details.noCode`              | No code location found. The agent searches by page, selector and text.               |                                                                                                            |
+| `feedback.deleted`                     | Deleted #{n}.                                                                        | toast, with Undo (8 s)                                                                                     |
+| `feedback.errors.screenshot`           | Couldn’t load the screenshot. The feedback and thread are fine. Try again.           |                                                                                                            |
+| `feedback.errors.comment`              | Couldn’t post your comment. Snapmark had a problem. Your text is kept. Try again.    | inline at the entry                                                                                        |
+| `feedback.errors.review`               | Couldn’t save your review. Snapmark had a problem. It isn’t recorded yet. Try again. | consequence added 2026-10-28                                                                               |
+| `feedback.errors.offScreen`            | Couldn’t save your change to #{n}. Open it to try again.                             | toast only when the item is off screen; stays until closed                                                 |
+| `feedback.notFound`                    | This feedback doesn’t exist, or you don’t have access.                               |                                                                                                            |
 
 ### Decision request: dialog and card
 
-| Key                                           | Text                                                                                     | Notes                    |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------ |
-| `decisionRequest.dialog.title`                | Request a Decision                                                                       |                          |
-| `decisionRequest.dialog.labels.versions`      | Versions to compare                                                                      |                          |
-| `decisionRequest.dialog.labels.people`        | People to ask                                                                            |                          |
-| `decisionRequest.dialog.labels.due`           | Due (optional)                                                                           |                          |
-| `decisionRequest.dialog.labels.comment`       | Comment (optional)                                                                       | was "Note (optional)"    |
-| `decisionRequest.dialog.commentPlaceholder`   | What should people weigh?                                                                |                          |
-| `decisionRequest.dialog.submit`               | Request Decision                                                                         |                          |
-| `decisionRequest.dialog.submitting`           | Requesting the decision…                                                                 | announced                |
-| `decisionRequest.dialog.oneVersion`           | A decision needs at least two versions. Post a mockup or alternative first.              | with Post Version        |
-| `decisionRequest.disabled.versions`           | Choose at least two versions.                                                            |                          |
-| `decisionRequest.disabled.open`               | A decision is already open on this feedback.                                             |                          |
-| `decisionRequest.card.heading`                | {opener} asked {names} to decide                                                         |                          |
-| `decisionRequest.card.due`                    | Due {date}                                                                               |                          |
-| `decisionRequest.card.overdue`                | Overdue since {date}                                                                     |                          |
-| `decisionRequest.card.tally`                  | {count, plural, one {# vote} other {# votes}}                                            | per version              |
-| `decisionRequest.card.voted`                  | You voted for v{version}.                                                                |                          |
-| `decisionRequest.card.actions.vote`           | Vote                                                                                     |                          |
-| `decisionRequest.card.actions.changeVote`     | Change Vote                                                                              |                          |
-| `decisionRequest.card.actions.showVotes`      | Show Votes                                                                               | closed only              |
-| `decisionRequest.card.actions.close`          | Close Request                                                                            |                          |
-| `decisionRequest.card.disabled.choose`        | Choose a version first.                                                                  |                          |
-| `decisionRequest.card.closed.decided`         | Decided: v{version}, approved by {name}. Votes: {tally}.                                 | tally like "v1 3 · v2 1" |
-| `decisionRequest.card.closed.withoutDecision` | Closed by {name} without a decision.                                                     |                          |
-| `decisionRequest.thread.line`                 | {name} requested a decision between {versions}.                                          |                          |
-| `decisionRequest.errors.request`              | Couldn’t request the decision. Snapmark had a problem. Your choices are kept. Try again. |                          |
-| `decisionRequest.errors.vote`                 | Couldn’t save your vote. Your vote isn’t counted yet. Try again.                         |                          |
+| Key                                           | Text                                                                                     | Notes                                                 |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `decisionRequest.dialog.title`                | Request a Decision                                                                       |                                                       |
+| `decisionRequest.dialog.labels.versions`      | Versions to compare                                                                      |                                                       |
+| `decisionRequest.dialog.labels.people`        | People to ask                                                                            |                                                       |
+| `decisionRequest.dialog.labels.due`           | Due (optional)                                                                           |                                                       |
+| `decisionRequest.dialog.labels.comment`       | Comment (optional)                                                                       | was "Note (optional)"                                 |
+| `decisionRequest.dialog.commentPlaceholder`   | What should people weigh?                                                                |                                                       |
+| `decisionRequest.dialog.submit`               | Request Decision                                                                         |                                                       |
+| `decisionRequest.dialog.submitting`           | Requesting the decision…                                                                 | announced                                             |
+| `decisionRequest.dialog.oneVersion`           | A decision needs at least two versions. Post a mockup or alternative first.              | with Post Version                                     |
+| `decisionRequest.disabled.versions`           | Choose at least two versions.                                                            |                                                       |
+| `decisionRequest.disabled.open`               | A decision is already open on this feedback.                                             |                                                       |
+| `decisionRequest.card.heading`                | {opener} asked {names} to decide                                                         |                                                       |
+| `decisionRequest.card.due`                    | Due {date}                                                                               |                                                       |
+| `decisionRequest.card.overdue`                | Overdue since {date}                                                                     |                                                       |
+| `decisionRequest.card.tally`                  | {count, plural, one {# vote} other {# votes}}                                            | per version                                           |
+| `decisionRequest.card.voted`                  | You voted for v{version}.                                                                |                                                       |
+| `decisionRequest.card.actions.vote`           | Vote                                                                                     |                                                       |
+| `decisionRequest.card.actions.changeVote`     | Change Vote                                                                              |                                                       |
+| `decisionRequest.card.actions.showVotes`      | Show Votes                                                                               | closed only                                           |
+| `decisionRequest.card.actions.close`          | Close Request                                                                            |                                                       |
+| `decisionRequest.card.closedToast`            | Closed the decision request.                                                             | toast with Undo (8 s); Undo reopens it with its votes |
+| `decisionRequest.card.disabled.choose`        | Choose a version first.                                                                  |                                                       |
+| `decisionRequest.card.closed.decided`         | Decided: v{version}, approved by {name}. Votes: {tally}.                                 | tally like "v1 3 · v2 1"                              |
+| `decisionRequest.card.closed.withoutDecision` | Closed by {name} without a decision.                                                     |                                                       |
+| `decisionRequest.thread.line`                 | {name} requested a decision between {versions}.                                          |                                                       |
+| `decisionRequest.errors.request`              | Couldn’t request the decision. Snapmark had a problem. Your choices are kept. Try again. |                                                       |
+| `decisionRequest.errors.vote`                 | Couldn’t save your vote. Your vote isn’t counted yet. Try again.                         |                                                       |
 
 ### Post Version (dialog)
 
@@ -755,7 +761,7 @@ Only if the Account › Notifications "Daily digest" switch ships in release 1.
 | `organisationSettings.invite.emails`                | Emails                                                                                                                          |                                       |
 | `organisationSettings.invite.emailsPlaceholder`     | name@company.com, another@company.com                                                                                           |                                       |
 | `organisationSettings.invite.role`                  | Role                                                                                                                            |                                       |
-| `organisationSettings.invite.roleHelp`              | Members and admins use a seat. Guests comment and vote in the workspaces you choose, and need no seat.                          |                                       |
+| `organisationSettings.invite.roleHelp`              | Members and admins use a seat. Guests comment, draw and vote in the workspaces you choose, and need no seat.                    |                                       |
 | `organisationSettings.invite.workspaces`            | Workspaces                                                                                                                      | guests only                           |
 | `organisationSettings.invite.submit`                | Send Invitations                                                                                                                |                                       |
 | `organisationSettings.invite.submitting`            | Sending the invitations…                                                                                                        | announced                             |
@@ -782,47 +788,47 @@ Only if the Account › Notifications "Daily digest" switch ships in release 1.
 
 ### Account: Profile, Sign-In Methods, Devices, Notifications
 
-| Key                                             | Text                                                                                                 | Notes                          |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `account.title`                                 | Account                                                                                              |                                |
-| `account.tabs.profile`                          | Profile                                                                                              |                                |
-| `account.tabs.signInMethods`                    | Sign-In Methods                                                                                      |                                |
-| `account.tabs.devices`                          | Devices                                                                                              | was "Devices and Tokens"       |
-| `account.tabs.notifications`                    | Notifications                                                                                        |                                |
-| `account.profile.name`                          | Name                                                                                                 |                                |
-| `account.profile.changePicture`                 | Change Picture                                                                                       |                                |
-| `account.profile.email`                         | Email                                                                                                |                                |
-| `account.profile.emailLater`                    | Changing your email comes later.                                                                     |                                |
-| `account.profile.singleKeys`                    | Single-key shortcuts                                                                                 | Switch                         |
-| `account.profile.singleKeysHelp`                | Use J, K, R, A and other single keys. They never fire while you type.                                |                                |
-| `account.methods.emailLink`                     | Email link                                                                                           |                                |
-| `account.methods.detail`                        | {email}                                                                                              |                                |
-| `account.methods.lastMethod`                    | Your only sign-in method can’t be removed.                                                           |                                |
-| `account.devices.columns.device`                | Device                                                                                               |                                |
-| `account.devices.columns.kind`                  | Kind                                                                                                 |                                |
-| `account.devices.columns.reply`                 | Reply                                                                                                |                                |
-| `account.devices.columns.postVersions`          | Post Versions                                                                                        | agents only                    |
-| `account.devices.columns.reportImplementations` | Report Implementations                                                                               | agents only                    |
-| `account.devices.columns.lastUsed`              | Last Used                                                                                            |                                |
-| `account.devices.columns.revoke`                | Revoke                                                                                               |                                |
-| `account.devices.kinds.extension`               | Extension                                                                                            |                                |
-| `account.devices.kinds.mac`                     | Mac App                                                                                              |                                |
-| `account.devices.kinds.agent`                   | Agent                                                                                                |                                |
-| `account.devices.name`                          | {client} on {device}                                                                                 | "Claude Code on Ben’s MacBook" |
-| `account.devices.readNote`                      | Every device can read the workspaces you can see.                                                    |                                |
-| `account.devices.lastUsed`                      | Last used {date}                                                                                     |                                |
-| `account.devices.revoke.confirm`                | Revoke {device}? It stops working at once and must sign in again.                                    |                                |
-| `account.devices.revoke.submit`                 | Revoke                                                                                               |                                |
-| `account.devices.empty.heading`                 | Connect your browser, Mac or agent.                                                                  |                                |
-| `account.devices.empty.text`                    | The Chrome extension, the Mac app and agents like Claude Code sign in from their own Sign In button. |                                |
-| `account.notifications.emailsAtOnce`            | Emails at once                                                                                       | group heading                  |
-| `account.notifications.mentions`                | Mentions                                                                                             | Switch                         |
-| `account.notifications.decisions`               | Decision requests                                                                                    |                                |
-| `account.notifications.reviews`                 | Review requests                                                                                      |                                |
-| `account.notifications.questions`               | Questions on my feedback                                                                             | added: the question email      |
-| `account.notifications.answers`                 | Answers to my questions                                                                              |                                |
-| `account.notifications.digest`                  | Daily digest                                                                                         |                                |
-| `account.notifications.digestHelp`              | One email each morning with what changed.                                                            |                                |
+| Key                                             | Text                                                                                                 | Notes                                            |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `account.title`                                 | Account                                                                                              |                                                  |
+| `account.tabs.profile`                          | Profile                                                                                              |                                                  |
+| `account.tabs.signInMethods`                    | Sign-In Methods                                                                                      |                                                  |
+| `account.tabs.devices`                          | Devices                                                                                              | was "Devices and Tokens"                         |
+| `account.tabs.notifications`                    | Notifications                                                                                        |                                                  |
+| `account.profile.name`                          | Name                                                                                                 |                                                  |
+| `account.profile.changePicture`                 | Change Picture                                                                                       |                                                  |
+| `account.profile.email`                         | Email                                                                                                |                                                  |
+| `account.profile.emailLater`                    | Changing your email comes later.                                                                     |                                                  |
+| `account.profile.singleKeys`                    | Single-key shortcuts                                                                                 | Switch                                           |
+| `account.profile.singleKeysHelp`                | Use J, K, R, A and other single keys. They never fire while you type.                                |                                                  |
+| `account.methods.emailLink`                     | Email link                                                                                           |                                                  |
+| `account.methods.detail`                        | {email}                                                                                              |                                                  |
+| `account.methods.lastMethod`                    | Your only sign-in method can’t be removed.                                                           |                                                  |
+| `account.devices.columns.device`                | Device                                                                                               |                                                  |
+| `account.devices.columns.kind`                  | Kind                                                                                                 |                                                  |
+| `account.devices.columns.reply`                 | Reply in Threads                                                                                     | one phrase for the scope everywhere (2026-10-28) |
+| `account.devices.columns.postVersions`          | Post Versions                                                                                        | agents only                                      |
+| `account.devices.columns.reportImplementations` | Report Implementations                                                                               | agents only                                      |
+| `account.devices.columns.lastUsed`              | Last Used                                                                                            |                                                  |
+| `account.devices.columns.revoke`                | Revoke                                                                                               |                                                  |
+| `account.devices.kinds.extension`               | Extension                                                                                            |                                                  |
+| `account.devices.kinds.mac`                     | Mac App                                                                                              |                                                  |
+| `account.devices.kinds.agent`                   | Agent                                                                                                |                                                  |
+| `account.devices.name`                          | {client} on {device}                                                                                 | "Claude Code on Ben’s MacBook"                   |
+| `account.devices.readNote`                      | Every device can read the workspaces you can see.                                                    |                                                  |
+| `account.devices.lastUsed`                      | Last used {date}                                                                                     |                                                  |
+| `account.devices.revoke.confirm`                | Revoke {device}? It stops working at once and must sign in again.                                    |                                                  |
+| `account.devices.revoke.submit`                 | Revoke Device                                                                                        | also the row button (2026-10-28)                 |
+| `account.devices.empty.heading`                 | Connect your browser, Mac or agent.                                                                  |                                                  |
+| `account.devices.empty.text`                    | The Chrome extension, the Mac app and agents like Claude Code sign in from their own Sign In button. |                                                  |
+| `account.notifications.emailsAtOnce`            | Emails at once                                                                                       | group heading                                    |
+| `account.notifications.mentions`                | Mentions                                                                                             | Switch                                           |
+| `account.notifications.decisions`               | Decision requests                                                                                    |                                                  |
+| `account.notifications.reviews`                 | Review requests                                                                                      |                                                  |
+| `account.notifications.questions`               | Questions on my feedback                                                                             | added: the question email                        |
+| `account.notifications.answers`                 | Answers to my questions                                                                              |                                                  |
+| `account.notifications.digest`                  | Daily digest                                                                                         |                                                  |
+| `account.notifications.digestHelp`              | One email each morning with what changed.                                                            |                                                  |
 
 ---
 
@@ -836,20 +842,23 @@ Uses the Inbox strings unchanged.
 
 Everything not listed uses the Feedback view strings.
 
-| Key                                     | Text                         | Notes      |
-| --------------------------------------- | ---------------------------- | ---------- |
-| `phone.feedback.replyPlaceholder`       | Reply…                       |            |
-| `phone.feedback.requestChangesPrompt`   | What should change?          |            |
-| `phone.feedback.zoom`                   | Zoom screenshot              | aria-label |
-| `phone.feedback.actions.approve`        | Approve                      |            |
-| `phone.feedback.actions.requestChanges` | Request Changes              |            |
-| `phone.feedback.actions.vote`           | Vote                         |            |
-| `phone.feedback.actions.send`           | Send                         |            |
-| `phone.feedback.actions.back`           | Back                         |            |
-| `phone.feedback.actions.details`        | Details                      |            |
-| `phone.feedback.actions.close`          | Close                        |            |
-| `phone.feedback.disabled.empty`         | Write a reply first.         |            |
-| `phone.feedback.guestLine`              | Guests can comment and vote. |            |
+| Key                                     | Text                                                                               | Notes                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `phone.feedback.commentPlaceholder`     | Comment…                                                                           | one verb with the desktop Comment button (2026-10-28) |
+| `phone.feedback.zoomIn`                 | Zoom In                                                                            | 44 px, with double-tap (WCAG 2.5.1)                   |
+| `phone.feedback.zoomOut`                | Zoom Out                                                                           | 44 px                                                 |
+| `phone.feedback.fit`                    | Fit                                                                                | 44 px                                                 |
+| `phone.feedback.requestChangesPrompt`   | What should change?                                                                |                                                       |
+| `phone.feedback.zoom`                   | Zoom screenshot                                                                    | aria-label                                            |
+| `phone.feedback.actions.approve`        | Approve                                                                            |                                                       |
+| `phone.feedback.actions.requestChanges` | Request Changes                                                                    |                                                       |
+| `phone.feedback.actions.vote`           | Vote                                                                               |                                                       |
+| `phone.feedback.actions.send`           | Send                                                                               |                                                       |
+| `phone.feedback.actions.back`           | Back                                                                               |                                                       |
+| `phone.feedback.actions.details`        | Details                                                                            |                                                       |
+| `phone.feedback.actions.close`          | Close                                                                              |                                                       |
+| `phone.feedback.disabled.empty`         | Write a comment first.                                                             |                                                       |
+| `phone.feedback.guestLine`              | Guests can comment, draw and vote. Approving and requesting changes need a member. |                                                       |
 
 ### Desktop-only message
 
@@ -881,7 +890,7 @@ These strings seed the extension's own messages, not `en.json`.
 | `extension.popup.bridge.noRepo`      | Your Mac found no repo serving {host}. A dev server in Docker can’t be traced.      |                                              |
 | `extension.popup.capture`            | Capture                                                                             | the one primary                              |
 | `extension.popup.captureTooltip`     | Capture ({shortcut})                                                                | ⌘⇧K on a Mac, Ctrl+Shift+K elsewhere         |
-| `extension.popup.disabled.guest`     | Guests can comment and vote. Ask an admin to make you a member to capture.          |                                              |
+| `extension.popup.disabled.guest`     | Guests can comment, draw and vote. Ask an admin to make you a member to capture.    |                                              |
 | `extension.popup.disabled.page`      | Chrome doesn’t let extensions capture this page. Open your product in a normal tab. | what to do added                             |
 | `extension.popup.recent`             | Recently Sent                                                                       |                                              |
 | `extension.popup.menu.openApp`       | Open Snapmark                                                                       |                                              |
@@ -900,56 +909,56 @@ These strings seed the extension's own messages, not `en.json`.
 
 ### Drawing and compose
 
-| Key                                        | Text                                                                                         | Notes                                             |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `extension.compose.title`                  | New Feedback in {workspace}                                                                  |                                                   |
-| `extension.compose.kind.changeRequest`     | Request a Change                                                                             |                                                   |
-| `extension.compose.kind.comment`           | Comment                                                                                      |                                                   |
-| `extension.compose.titleLabel`             | Title                                                                                        |                                                   |
-| `extension.compose.titlePlaceholder`       | Total should be bold                                                                         |                                                   |
-| `extension.compose.descriptionLabel`       | Description                                                                                  | was "Details"                                     |
-| `extension.compose.descriptionPlaceholder` | What should it look like instead?                                                            |                                                   |
-| `extension.compose.references`             | References                                                                                   |                                                   |
-| `extension.compose.refLabel`               | Note for {number}                                                                            |                                                   |
-| `extension.compose.refPlaceholder`         | What about {number}?                                                                         |                                                   |
-| `extension.compose.module.label`           | Module                                                                                       |                                                   |
-| `extension.compose.module.placeholder`     | Choose or type a module                                                                      |                                                   |
-| `extension.compose.module.add`             | Add module “{name}”                                                                          |                                                   |
-| `extension.compose.where.heading`          | Where                                                                                        | labels reuse `feedback.details.*`                 |
-| `extension.compose.where.noCode`           | No code location found. The agent searches by page, selector and text.                       |                                                   |
-| `extension.compose.where.repoUnknown`      | Unknown. Open the Mac app to add it.                                                         |                                                   |
-| `extension.compose.actions.discard`        | Discard                                                                                      | first press keeps a copy; ⌘Z brings it back       |
-| `extension.compose.actions.send`           | Send Feedback                                                                                | ⌘↩                                                |
-| `extension.compose.actions.sending`        | Sending the feedback…                                                                        | announced                                         |
-| `extension.compose.actions.sendingPercent` | Sending the feedback… {percent} %                                                            | announced                                         |
-| `extension.compose.disabled`               | Write what you expect, or draw on the screenshot.                                            |                                                   |
-| `extension.compose.errors.send`            | Couldn’t send the feedback. Snapmark had a problem. Your marks and text are kept. Try again. | with Try Again                                    |
-| `annotations.tools.select`                 | Select                                                                                       | shared with the Mac app                           |
-| `annotations.tools.reference`              | Reference                                                                                    |                                                   |
-| `annotations.tools.card`                   | Card                                                                                         |                                                   |
-| `annotations.tools.box`                    | Box                                                                                          |                                                   |
-| `annotations.tools.ellipse`                | Ellipse                                                                                      |                                                   |
-| `annotations.tools.arrow`                  | Arrow                                                                                        |                                                   |
-| `annotations.tools.pen`                    | Pen                                                                                          |                                                   |
-| `annotations.tools.cross`                  | Cross                                                                                        |                                                   |
-| `annotations.tools.hatchedArea`            | Hatched Area                                                                                 |                                                   |
-| `annotations.tools.highlighter`            | Highlighter                                                                                  |                                                   |
-| `annotations.tools.spotlight`              | Spotlight                                                                                    |                                                   |
-| `annotations.tools.cutAndMove`             | Cut & Move                                                                                   |                                                   |
-| `annotations.tools.redact`                 | Redact                                                                                       |                                                   |
-| `annotations.tools.markColour`             | Mark Colour                                                                                  | British on the web; the Mac app says "Mark color" |
-| `annotations.tools.undo`                   | Undo                                                                                         |                                                   |
-| `annotations.tools.redo`                   | Redo                                                                                         |                                                   |
-| `annotations.tooltip`                      | {tool} ({key}) · press again for {next}                                                      | "Box (2) · press again for Ellipse"               |
+| Key                                        | Text                                                                                         | Notes                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `extension.compose.title`                  | New Feedback in {workspace}                                                                  |                                                                        |
+| `extension.compose.kind.changeRequest`     | Change Request                                                                               | was "Request a Change", one letter from "Request Changes" (2026-10-28) |
+| `extension.compose.kind.comment`           | Comment                                                                                      |                                                                        |
+| `extension.compose.titleLabel`             | Title                                                                                        |                                                                        |
+| `extension.compose.titlePlaceholder`       | Total should be bold                                                                         |                                                                        |
+| `extension.compose.descriptionLabel`       | Description                                                                                  | was "Details"                                                          |
+| `extension.compose.descriptionPlaceholder` | What should it look like instead?                                                            |                                                                        |
+| `extension.compose.references`             | References                                                                                   |                                                                        |
+| `extension.compose.refLabel`               | Note for {number}                                                                            |                                                                        |
+| `extension.compose.refPlaceholder`         | What about {number}?                                                                         |                                                                        |
+| `extension.compose.module.label`           | Module                                                                                       |                                                                        |
+| `extension.compose.module.placeholder`     | Choose or type a module                                                                      |                                                                        |
+| `extension.compose.module.add`             | Add module “{name}”                                                                          |                                                                        |
+| `extension.compose.where.heading`          | Where                                                                                        | labels reuse `feedback.details.*`                                      |
+| `extension.compose.where.noCode`           | No code location found. The agent searches by page, selector and text.                       |                                                                        |
+| `extension.compose.where.repoUnknown`      | Unknown. Open the Mac app to add it.                                                         |                                                                        |
+| `extension.compose.actions.discard`        | Discard Feedback                                                                             | first press keeps a copy; ⌘Z brings it back                            |
+| `extension.compose.actions.send`           | Send Feedback                                                                                | ⌘↩                                                                     |
+| `extension.compose.actions.sending`        | Sending the feedback…                                                                        | announced                                                              |
+| `extension.compose.actions.sendingPercent` | Sending the feedback… {percent} %                                                            | announced                                                              |
+| `extension.compose.disabled`               | Write what you expect, or draw on the screenshot.                                            |                                                                        |
+| `extension.compose.errors.send`            | Couldn’t send the feedback. Snapmark had a problem. Your marks and text are kept. Try again. | with Try Again                                                         |
+| `annotations.tools.select`                 | Select                                                                                       | shared with the Mac app                                                |
+| `annotations.tools.reference`              | Reference                                                                                    |                                                                        |
+| `annotations.tools.card`                   | Card                                                                                         |                                                                        |
+| `annotations.tools.box`                    | Box                                                                                          |                                                                        |
+| `annotations.tools.ellipse`                | Ellipse                                                                                      |                                                                        |
+| `annotations.tools.arrow`                  | Arrow                                                                                        |                                                                        |
+| `annotations.tools.pen`                    | Pen                                                                                          |                                                                        |
+| `annotations.tools.cross`                  | Cross                                                                                        |                                                                        |
+| `annotations.tools.removeArea`             | Remove Area                                                                                  | the Mac tool’s name ("Remove area" in Mac sentence case)               |
+| `annotations.tools.highlighter`            | Highlighter                                                                                  |                                                                        |
+| `annotations.tools.spotlight`              | Spotlight                                                                                    |                                                                        |
+| `annotations.tools.cutAndMove`             | Cut & Move                                                                                   |                                                                        |
+| `annotations.tools.redact`                 | Redact                                                                                       |                                                                        |
+| `annotations.tools.markColour`             | Mark Colour                                                                                  | British on the web; the Mac app says "Mark color"                      |
+| `annotations.tools.undo`                   | Undo                                                                                         |                                                                        |
+| `annotations.tools.redo`                   | Redo                                                                                         |                                                                        |
+| `annotations.tooltip`                      | {tool} ({key}) · press again for {next}                                                      | "Box (2) · press again for Ellipse"                                    |
 
 ### Sent confirmation
 
-| Key                             | Text                         | Notes |
-| ------------------------------- | ---------------------------- | ----- |
-| `extension.sent.line`           | Sent to {workspace} as #{n}. |       |
-| `extension.sent.open`           | Open                         |       |
-| `extension.sent.captureAnother` | Capture Another              |       |
-| `extension.sent.close`          | Close                        |       |
+| Key                             | Text                         | Notes                         |
+| ------------------------------- | ---------------------------- | ----------------------------- |
+| `extension.sent.line`           | Sent to {workspace} as #{n}. |                               |
+| `extension.sent.open`           | Open Feedback                | names its object (2026-10-28) |
+| `extension.sent.captureAnother` | Capture Another              |                               |
+| `extension.sent.close`          | Close                        |                               |
 
 ---
 
@@ -957,56 +966,58 @@ These strings seed the extension's own messages, not `en.json`.
 
 These strings go to the Mac app's string catalogue. They follow macOS Title Case for menu items, buttons and status lines, as the Mac glossary does.
 
-| Key                               | Text                                                                                          | Notes        |
-| --------------------------------- | --------------------------------------------------------------------------------------------- | ------------ |
-| `mac.settings.online.tab`         | Online                                                                                        |              |
-| `mac.settings.online.heading`     | Snapmark Online                                                                               |              |
-| `mac.settings.online.signedOut`   | Share sessions with your team, and let the Chrome extension find your repos.                  |              |
-| `mac.settings.online.signIn`      | Sign In…                                                                                      |              |
-| `mac.settings.online.signOut`     | Sign Out                                                                                      |              |
-| `mac.settings.online.openBrowser` | Open Browser                                                                                  |              |
-| `mac.settings.online.cancel`      | Cancel                                                                                        |              |
-| `mac.settings.online.code`        | Enter This Code in Your Browser: {code}                                                       |              |
-| `mac.settings.online.signedIn`    | Signed In as {email}                                                                          |              |
-| `mac.settings.online.expired`     | The code expired. Sign in again.                                                              |              |
-| `mac.settings.bridge.heading`     | Localhost Bridge                                                                              |              |
-| `mac.settings.bridge.help`        | Tells the Chrome extension which repo a localhost page comes from.                            |              |
-| `mac.settings.bridge.connected`   | Extension connected                                                                           |              |
-| `mac.settings.bridge.notFound`    | Extension not found                                                                           |              |
-| `mac.share.menu`                  | Share to Workspace…                                                                           | Session menu |
-| `mac.share.title`                 | Share “{session}” to a Workspace                                                              |              |
-| `mac.share.signIn`                | Sign in to Snapmark online first.                                                             |              |
-| `mac.share.openSettings`          | Open Settings…                                                                                |              |
-| `mac.share.share`                 | Share                                                                                         |              |
-| `mac.share.cancel`                | Cancel                                                                                        |              |
-| `mac.share.viewOnline`            | View Online                                                                                   |              |
-| `mac.share.stopSharing`           | Stop Sharing…                                                                                 |              |
-| `mac.share.stop.confirm`          | Stop sharing “{session}”? The online copy stays in {workspace}. New changes stay on this Mac. |              |
-| `mac.share.stop.submit`           | Stop Sharing                                                                                  |              |
-| `mac.share.stop.cancel`           | Cancel                                                                                        |              |
-| `mac.sync.synced`                 | Synced · {time}                                                                               |              |
-| `mac.sync.syncing`                | {count, plural, one {Syncing # Change} other {Syncing # Changes}}                             |              |
-| `mac.sync.offline`                | {count, plural, one {Offline · # Change Waiting} other {Offline · # Changes Waiting}}         |              |
-| `mac.sync.notShared`              | Not Shared                                                                                    |              |
-| `mac.sync.menuSuffix.synced`      | · Synced                                                                                      |              |
-| `mac.sync.menuSuffix.offline`     | · Offline                                                                                     |              |
-| `mac.sync.editedElsewhere`        | Edited elsewhere. The other text is kept in the thread online.                                |              |
+| Key                               | Text                                                                                                                                                                                                 | Notes                        |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `mac.settings.online.tab`         | Online                                                                                                                                                                                               |                              |
+| `mac.settings.online.heading`     | Snapmark Online                                                                                                                                                                                      |                              |
+| `mac.settings.online.signedOut`   | Share sessions with your team, and let the Chrome extension find your repos.                                                                                                                         |                              |
+| `mac.settings.online.signIn`      | Sign In…                                                                                                                                                                                             |                              |
+| `mac.settings.online.signOut`     | Sign Out                                                                                                                                                                                             |                              |
+| `mac.settings.online.openBrowser` | Open Browser                                                                                                                                                                                         |                              |
+| `mac.settings.online.cancel`      | Cancel                                                                                                                                                                                               |                              |
+| `mac.settings.online.code`        | Enter this code in your browser: {code}                                                                                                                                                              | Mac sentence case (WRD-1)    |
+| `mac.settings.online.signedIn`    | Signed in as {email}                                                                                                                                                                                 | Mac sentence case (WRD-1)    |
+| `mac.settings.online.expired`     | The code expired. Sign in again.                                                                                                                                                                     |                              |
+| `mac.settings.bridge.heading`     | Localhost Bridge                                                                                                                                                                                     |                              |
+| `mac.settings.bridge.help`        | Tells the Chrome extension which repo a localhost page comes from.                                                                                                                                   |                              |
+| `mac.settings.bridge.connected`   | Extension connected                                                                                                                                                                                  |                              |
+| `mac.settings.bridge.notFound`    | Extension not found                                                                                                                                                                                  |                              |
+| `mac.share.menu`                  | Share to Workspace…                                                                                                                                                                                  | Session menu                 |
+| `mac.share.title`                 | Share “{session}” to a Workspace                                                                                                                                                                     |                              |
+| `mac.share.manifest`              | {count, plural, one {# screenshot} other {# screenshots}} and their notes from “{session}” go to {organisation} › {workspace}, where {people, plural, one {# person} other {# people}} can see them. | external-write review line   |
+| `mac.share.stays`                 | After Stop Sharing, the online copy stays in {workspace}.                                                                                                                                            |                              |
+| `mac.share.signIn`                | Sign in to Snapmark Online first.                                                                                                                                                                    | same capitals as the heading |
+| `mac.share.openSettings`          | Open Settings…                                                                                                                                                                                       |                              |
+| `mac.share.share`                 | Share                                                                                                                                                                                                |                              |
+| `mac.share.cancel`                | Cancel                                                                                                                                                                                               |                              |
+| `mac.share.viewOnline`            | View Online                                                                                                                                                                                          |                              |
+| `mac.share.stopSharing`           | Stop Sharing…                                                                                                                                                                                        |                              |
+| `mac.share.stop.confirm`          | Stop sharing “{session}”? The online copy stays in {workspace}. New changes stay on this Mac.                                                                                                        |                              |
+| `mac.share.stop.submit`           | Stop Sharing                                                                                                                                                                                         |                              |
+| `mac.share.stop.cancel`           | Cancel                                                                                                                                                                                               |                              |
+| `mac.sync.synced`                 | Synced · {time}                                                                                                                                                                                      |                              |
+| `mac.sync.syncing`                | {count, plural, one {Syncing # Change} other {Syncing # Changes}}                                                                                                                                    |                              |
+| `mac.sync.offline`                | {count, plural, one {Offline · # Change Waiting} other {Offline · # Changes Waiting}}                                                                                                                |                              |
+| `mac.sync.notShared`              | Not Shared                                                                                                                                                                                           |                              |
+| `mac.sync.menuSuffix.synced`      | · Synced                                                                                                                                                                                             |                              |
+| `mac.sync.menuSuffix.offline`     | · Offline                                                                                                                                                                                            |                              |
+| `mac.sync.editedElsewhere`        | Edited elsewhere. The other text is kept in the thread online.                                                                                                                                       |                              |
 
 ---
 
 ## Operator area
 
-| Key                          | Text                             | Notes                   |
-| ---------------------------- | -------------------------------- | ----------------------- |
-| `operator.nav.label`         | Operator                         |                         |
-| `operator.nav.waitlist`      | Waitlist                         |                         |
-| `operator.nav.invitations`   | Invitations                      |                         |
-| `operator.nav.organisations` | Organisations                    |                         |
-| `operator.nav.users`         | Users                            |                         |
-| `operator.nav.flags`         | Flags                            |                         |
-| `operator.nav.usage`         | Usage                            |                         |
-| `operator.nav.backToApp`     | Back to App                      |                         |
-| `operator.readOnly`          | Read-only. Every view is logged. | organisations and users |
+| Key                          | Text                             | Notes                                |
+| ---------------------------- | -------------------------------- | ------------------------------------ |
+| `operator.nav.label`         | Operator                         |                                      |
+| `operator.nav.waitlist`      | Waitlist                         |                                      |
+| `operator.nav.invitations`   | Invitations                      |                                      |
+| `operator.nav.organisations` | Organisations                    |                                      |
+| `operator.nav.users`         | Users                            |                                      |
+| `operator.nav.flags`         | Feature Flags                    | same as the page title (sitemap F15) |
+| `operator.nav.usage`         | Usage                            |                                      |
+| `operator.nav.backToApp`     | Back to App                      |                                      |
+| `operator.readOnly`          | Read-only. Every view is logged. | organisations and users              |
 
 ### Waitlist
 
@@ -1136,7 +1147,7 @@ The agent reads these, never a person. They live in the MCP server's catalogue (
 
 | Key                            | Text                                                                                           | Notes                         |
 | ------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------- |
-| `mcp.errors.scopeReply`        | This device can’t reply. Turn on Reply in Account › Devices.                                   | was "…in Devices and Tokens." |
+| `mcp.errors.scopeReply`        | This device can’t reply. Turn on Reply in Threads in Account › Devices.                        | was "…in Devices and Tokens." |
 | `mcp.errors.scopePostVersion`  | This device can’t post versions. Turn on Post Versions in Account › Devices.                   | added                         |
 | `mcp.errors.scopeReport`       | This device can’t report implementations. Turn on Report Implementations in Account › Devices. | added                         |
 | `mcp.errors.claimNeedsAnswer`  | Can’t claim #{n}. It needs an answer first.                                                    |                               |
@@ -1147,7 +1158,7 @@ The agent reads these, never a person. They live in the MCP server's catalogue (
 
 ## Changes to screens.md
 
-Old → new, and why. screens.md itself is unchanged.
+Old → new, and why. Applied to screens.md on 2026-10-28; the two files now agree.
 
 **Glossary and alias table**
 
@@ -1190,9 +1201,25 @@ Old → new, and why. screens.md itself is unchanged.
 28. Toasts named in interaction.md but missing from screens.md: "Moved #{n} to {module}.", "Deleted v{n}.", "Deleted your comment.", "Copied link to #{n} v{n}", and the off-screen write failure. Also the agent-facing MCP messages for missing scopes and refused claims, and `auth.signIn.errors.server`.
 29. Strings from screens.md's Controls and Lists tables that had no key: "Continue with Email", "Sign Out and Continue", "Code", "Continue", "Choose a version first.", "Write a reply first.", "Zoom screenshot", "Add a repo first.", "An organisation needs at least one workspace.", "Already accepted.", "Select {email}", "Screenshot {n}", the search placeholders, "Try an address", "Copy chrome://extensions", "Share to Workspace…", and the empty states of the Repos, Environments and Route Rules tabs.
 
+**Changed while folding in conformance.md and sitemap.md (2026-10-28)**
+
+30. "Request a Change" (compose kind) → "Change Request": one letter from "Request Changes" before; now the same words as the kind.
+31. Bare verbs name their object: "Allow" → "Allow {client}", "Discard" → "Discard Feedback", "Revoke" (device) → "Revoke Device", "Open" (sent panel) → "Open Feedback", "Answer" → "Answer Question". "Deny" stays: it answers the consent title.
+32. One verb for adding to a thread: the phone field reads "Comment…" like the desktop Comment button; "Write a reply first." → "Write a comment first."; key `phone.feedback.replyPlaceholder` → `phone.feedback.commentPlaceholder`.
+33. "Hatched Area" → "Remove Area", the Mac tool's name; key `annotations.tools.hatchedArea` → `annotations.tools.removeArea`.
+34. Mac strings in Mac sentence case (WRD-1): "Enter this code in your browser: {code}", "Signed in as {email}"; "Snapmark online" → "Snapmark Online" as in the heading.
+35. "Your session ended. Sign in to continue." → "You were signed out. Your draft is kept. Sign in to continue." ("session" is the Mac word for a screenshot folder).
+36. The offline banner no longer reads as a queue: "… Replying and reviewing are off until you're back. Your drafts are kept."
+37. Errors say what they mean: join adds "You're not in yet."; review adds "It isn't recorded yet."
+38. One phrase for the reply scope: "Reply in threads" (switch), "Reply in Threads" (column), and the MCP message.
+39. Copy Link's key is `Y` (⌘⇧C is Chrome's Inspect). Every toast ends with a full stop ("Copied link to #{n}.").
+40. Guests: "Guests can comment, draw and vote. Approving and requesting changes need a member." (A31).
+41. "Flags" (operator sidebar) → "Feature Flags", as the title (sitemap F15).
+42. Added: the waitlist invitation variant (`auth.invitation.waitlist.*`, `auth.invitation.revoked`, sitemap F1), "Go to Snapmark" on an expired invitation (F12), "Manage Modules" instead of "Add Module" on the Modules list (`modules.manage`, F3), the closed-request toast with Undo, the Share sheet's manifest and stays lines, and the phone zoom buttons "Zoom In", "Zoom Out", "Fit".
+
 ## Terms outside the glossary
 
-Not in docs/ux/glossary-proposal.md, design section 3, brief.md's new terms or the ia.md alias table. Each one needs the owner's yes, or a glossary word to replace it.
+Not in docs/ux/glossary-proposal.md, design section 3, brief.md's new terms or the ia.md alias table. **2026-10-28:** Description, Image, Account, Address, Picture, Dismiss, Unclaim, Withdraw, Revoke, Resend, Daily digest, Audit log and the technical Details labels are now in brief.md's "New glossary terms". MCP, Developer mode, Load unpacked, Mention and Answer stay out: staff-only, Chrome's own words, or covered by "Inbox item".
 
 - **Description** (compose field): new, from change 4.
 - **Image** (Post Version: label, drop zone, errors): the alias table rejects "image" as a word for a screenshot, but a mockup file is not a screenshot. Kept, but flagged.

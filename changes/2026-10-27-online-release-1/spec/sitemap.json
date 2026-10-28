@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-27",
+  "generated": "2026-10-27, findings folded in 2026-10-28",
   "mode": "proposed (greenfield)",
   "source": {
     "stack": "none yet (snapmark-web is a README; planned Next.js 16 App Router with next-intl)",
@@ -43,7 +43,10 @@
     "internal",
     "help",
     "settings",
-    "new"
+    "new",
+    ".well-known",
+    "en",
+    "de"
   ],
   "navigation": [
     {
@@ -322,7 +325,7 @@
       "account": {
         "route": "/account/profile",
         "position": "foot",
-        "menu": ["Profile", "Sign-In Methods", "Devices and Tokens", "Notifications", "Keyboard Shortcuts", "Sign Out"]
+        "menu": ["Profile", "Sign-In Methods", "Devices", "Notifications", "Keyboard Shortcuts", "Sign Out"]
       },
       "signOut": {
         "position": "foot",
@@ -347,7 +350,7 @@
         },
         {
           "label": {
-            "en": "Devices and Tokens"
+            "en": "Devices"
           },
           "route": "/account/devices"
         },
@@ -403,7 +406,7 @@
         },
         {
           "label": {
-            "en": "Flags"
+            "en": "Feature Flags"
           },
           "route": "/operator/flags",
           "group": null,
@@ -951,10 +954,10 @@
       ],
       "query": [],
       "labels": {
-        "en": "Join {organisation}"
+        "en": "Join {organisation} / Set Up Your Team"
       },
       "type": "auth",
-      "purpose": "Join an organisation in one action",
+      "purpose": "Join an organisation in one action; or, from a waitlist invitation, set up your own team",
       "roles": ["visitor", "owner", "admin", "member", "guest"],
       "tabs": [],
       "sections": [],
@@ -962,14 +965,17 @@
       "states": [
         "default-signed-out",
         "default-signed-in-same-email",
+        "waitlist-signed-out",
+        "waitlist-signed-in",
+        "waitlist-already-has-organisation",
         "wrong-account",
         "already-a-member",
         "expired",
-        "revoked-or-invalid",
+        "revoked",
+        "invalid (404)",
         "no-free-seat",
         "loading",
-        "error",
-        "waitlist-invitation (not specified, see F1)"
+        "error"
       ],
       "reachedFrom": [
         {
@@ -996,10 +1002,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "A waitlist invitation (no organisation yet) needs its own variant titled 'Set Up Your Team' that goes on to /welcome after sign-in (see F1).",
+      "decide": null,
       "source": null,
-      "assumptions": ["Expired state has no stated way out (see F12)"],
-      "reason": "J10: join with the right role"
+      "assumptions": [],
+      "reason": "J10: join with the right role",
+      "fixed": "F1, F12: waitlist variant with its own states; Expired and Revoked carry \"Go to Snapmark\""
     },
     {
       "id": "auth.authorize",
@@ -1221,7 +1228,7 @@
       "query": [
         {
           "name": "kind",
-          "kind": "tab",
+          "kind": "filter",
           "values": ["decision", "review", "question", "mention", "answer"]
         }
       ],
@@ -1231,62 +1238,7 @@
       "type": "list",
       "purpose": "Show everything that needs you across workspaces and let you empty it",
       "roles": ["owner", "admin", "member", "guest"],
-      "tabs": [
-        {
-          "id": "all",
-          "label": {
-            "en": "All"
-          },
-          "route": "/[org]/inbox",
-          "count": true,
-          "primary": "none"
-        },
-        {
-          "id": "decision",
-          "label": {
-            "en": "Decisions"
-          },
-          "route": "/[org]/inbox?kind=decision",
-          "count": true,
-          "primary": "none"
-        },
-        {
-          "id": "review",
-          "label": {
-            "en": "Reviews"
-          },
-          "route": "/[org]/inbox?kind=review",
-          "count": true,
-          "primary": "none"
-        },
-        {
-          "id": "question",
-          "label": {
-            "en": "Questions"
-          },
-          "route": "/[org]/inbox?kind=question",
-          "count": true,
-          "primary": "none"
-        },
-        {
-          "id": "mention",
-          "label": {
-            "en": "Mentions"
-          },
-          "route": "/[org]/inbox?kind=mention",
-          "count": true,
-          "primary": "none"
-        },
-        {
-          "id": "answer",
-          "label": {
-            "en": "Answers"
-          },
-          "route": "/[org]/inbox?kind=answer",
-          "count": true,
-          "primary": "none"
-        }
-      ],
+      "tabs": [],
       "sections": [
         {
           "en": "New pill"
@@ -1364,7 +1316,8 @@
       "decide": null,
       "source": null,
       "assumptions": [],
-      "reason": "J2, J4, J6, design 9.4: what needs me, empty it (no primary: an empty Inbox is the goal)"
+      "reason": "J2, J4, J6, design 9.4: what needs me, empty it (no primary: an empty Inbox is the goal)",
+      "fixed": "Kinds are chip filters (URL kind), not tabs (conformance)"
     },
     {
       "id": "app.my-work",
@@ -1473,9 +1426,10 @@
           "values": null
         },
         {
-          "name": "page",
+          "name": "path",
           "kind": "filter",
-          "values": null
+          "values": null,
+          "label": "Page"
         },
         {
           "name": "kind",
@@ -1607,9 +1561,10 @@
           "values": null
         },
         {
-          "name": "page",
+          "name": "path",
           "kind": "filter",
-          "values": null
+          "values": null,
+          "label": "Page"
         },
         {
           "name": "kind",
@@ -1729,9 +1684,10 @@
           "values": null
         },
         {
-          "name": "page",
+          "name": "path",
           "kind": "filter",
-          "values": null
+          "values": null,
+          "label": "Page"
         },
         {
           "name": "kind",
@@ -1846,9 +1802,10 @@
           "values": null
         },
         {
-          "name": "page",
+          "name": "path",
           "kind": "filter",
-          "values": null
+          "values": null,
+          "label": "Page"
         },
         {
           "name": "kind",
@@ -1998,10 +1955,12 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "Also managed at /settings/modules with the same Add Module button (see F3).",
+      "decide": null,
       "source": null,
       "assumptions": [],
-      "reason": "A13, A27: the first sub-navigation level"
+      "reason": "A13, A27: the first sub-navigation level",
+      "fixed": "F3: browse only; Manage Modules links to /settings/modules, the one place that adds, renames and deletes",
+      "primary": null
     },
     {
       "id": "app.module",
@@ -2024,7 +1983,7 @@
       "query": [
         {
           "name": "status",
-          "kind": "tab",
+          "kind": "filter",
           "values": ["open", "needs-decision", "in-review", "done"]
         },
         {
@@ -2033,9 +1992,10 @@
           "values": null
         },
         {
-          "name": "page",
+          "name": "path",
           "kind": "filter",
-          "values": null
+          "values": null,
+          "label": "Page"
         },
         {
           "name": "kind",
@@ -2064,44 +2024,7 @@
       "type": "list",
       "purpose": "See one module's feedback by status",
       "roles": ["owner", "admin", "member", "guest"],
-      "tabs": [
-        {
-          "id": "open",
-          "label": {
-            "en": "Open"
-          },
-          "route": "/[org]/[ws]/modules/[module]",
-          "count": true,
-          "primary": null
-        },
-        {
-          "id": "needs-decision",
-          "label": {
-            "en": "Needs Decision"
-          },
-          "route": "/[org]/[ws]/modules/[module]?status=needs-decision",
-          "count": true,
-          "primary": null
-        },
-        {
-          "id": "in-review",
-          "label": {
-            "en": "In Review"
-          },
-          "route": "/[org]/[ws]/modules/[module]?status=in-review",
-          "count": true,
-          "primary": null
-        },
-        {
-          "id": "done",
-          "label": {
-            "en": "Done"
-          },
-          "route": "/[org]/[ws]/modules/[module]?status=done",
-          "count": false,
-          "primary": null
-        }
-      ],
+      "tabs": [],
       "sections": [],
       "views": [],
       "states": ["default", "empty", "loading", "error", "guest", "not-found"],
@@ -2149,10 +2072,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "Header primary action per tab is not decided (see F14). Recommended: none.",
+      "decide": null,
       "source": null,
       "assumptions": [],
-      "reason": "A13, A27"
+      "reason": "A13, A27",
+      "fixed": "F14: no header primary; the statuses are chip filters (URL status)"
     },
     {
       "id": "app.feedback",
@@ -2191,7 +2115,8 @@
         {
           "name": "from",
           "kind": "open",
-          "values": null
+          "values": null,
+          "note": "the list's path and query string, percent-encoded; changes only Back, the breadcrumb and Previous/Next; Copy Link drops it; with none, the list that matches the status (F6)"
         }
       ],
       "labels": {
@@ -2341,13 +2266,14 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "`from` must carry the list's own query string, or Previous/Next and Back cannot restore a list (see F6). Header primary = none by decision: one place to act, the panel footer.",
+      "decide": null,
       "source": null,
       "assumptions": [
         "Dialogs Request a Decision and Post Version have no address and add no history entry",
         "With no `from` (a mail link) the breadcrumb list is the one that matches the feedback's status"
       ],
-      "reason": "J1, J2, J4, J5, J9: the product's centre; one canonical address per feedback"
+      "reason": "J1, J2, J4, J5, J9: the product's centre; one canonical address per feedback",
+      "fixed": "F6: from carries the list path and query"
     },
     {
       "id": "app.sessions",
@@ -2609,6 +2535,12 @@
           "from": "/[org]/[ws]/settings",
           "detail": "to general",
           "source": "spec/ia.md Screen Inventory, Move Table"
+        },
+        {
+          "kind": "link",
+          "from": "/[org]/settings/workspaces",
+          "detail": "workspace name",
+          "source": "spec/screens.md Organisation settings"
         }
       ],
       "breadcrumb": [],
@@ -2622,10 +2554,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "No visible way in (see F2).",
+      "decide": null,
       "source": null,
       "assumptions": ["Members read-only except Modules (add); admins and owner edit"],
-      "reason": "J10"
+      "reason": "J10",
+      "fixed": "F2: reached from the workspace name in /[org]/settings/workspaces"
     },
     {
       "id": "app.ws-settings-repos",
@@ -2742,6 +2675,12 @@
           "from": null,
           "detail": "Settings",
           "source": "spec/ia.md Screen Inventory, Move Table"
+        },
+        {
+          "kind": "link",
+          "from": "/[org]/settings/workspaces",
+          "detail": "workspace name",
+          "source": "spec/screens.md Organisation settings"
         }
       ],
       "breadcrumb": [],
@@ -2875,6 +2814,12 @@
           "from": null,
           "detail": "Settings",
           "source": "spec/ia.md Screen Inventory, Move Table"
+        },
+        {
+          "kind": "link",
+          "from": "/[org]/settings/workspaces",
+          "detail": "workspace name",
+          "source": "spec/screens.md Organisation settings"
         }
       ],
       "breadcrumb": [],
@@ -3008,6 +2953,12 @@
           "from": null,
           "detail": "Settings",
           "source": "spec/ia.md Screen Inventory, Move Table"
+        },
+        {
+          "kind": "link",
+          "from": "/[org]/settings/workspaces",
+          "detail": "workspace name",
+          "source": "spec/screens.md Organisation settings"
         }
       ],
       "breadcrumb": [],
@@ -3147,6 +3098,18 @@
           "from": "sidebar 'No modules yet' line",
           "detail": "Workspace Settings > Modules",
           "source": "spec/ia.md Screen Inventory, Move Table"
+        },
+        {
+          "kind": "link",
+          "from": "/[org]/[ws]/modules",
+          "detail": "Manage Modules",
+          "source": "spec/screens.md Modules"
+        },
+        {
+          "kind": "link",
+          "from": "/[org]/settings/workspaces",
+          "detail": "workspace name",
+          "source": "spec/screens.md Organisation settings"
         }
       ],
       "breadcrumb": [],
@@ -3160,10 +3123,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "Duplicates /modules (see F3).",
+      "decide": null,
       "source": null,
       "assumptions": ["Members read-only except Modules (add); admins and owner edit"],
-      "reason": "A13"
+      "reason": "A13",
+      "fixed": "F3: the one place that adds, renames and deletes modules"
     },
     {
       "id": "app.org-settings-general",
@@ -3484,10 +3448,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "Rows do not link to each workspace's settings (see F2).",
+      "decide": null,
       "source": null,
       "assumptions": [],
-      "reason": "J10"
+      "reason": "J10",
+      "fixed": "F2: each workspace name links to its settings"
     },
     {
       "id": "app.org-settings-billing",
@@ -3599,7 +3564,7 @@
         {
           "id": "devices",
           "label": {
-            "en": "Devices and Tokens"
+            "en": "Devices"
           },
           "route": "/account/devices",
           "count": false,
@@ -3694,7 +3659,7 @@
         {
           "id": "devices",
           "label": {
-            "en": "Devices and Tokens"
+            "en": "Devices"
           },
           "route": "/account/devices",
           "count": false,
@@ -3756,7 +3721,7 @@
       "params": [],
       "query": [],
       "labels": {
-        "en": "Devices and Tokens"
+        "en": "Devices"
       },
       "type": "account",
       "purpose": "See every device with its scopes and last use; revoke",
@@ -3783,7 +3748,7 @@
         {
           "id": "devices",
           "label": {
-            "en": "Devices and Tokens"
+            "en": "Devices"
           },
           "route": "/account/devices",
           "count": false,
@@ -3806,13 +3771,13 @@
         {
           "kind": "navigation",
           "from": "avatar menu",
-          "detail": "Devices and Tokens",
+          "detail": "Devices",
           "source": "spec/ia.md Screen Inventory, Move Table"
         },
         {
           "kind": "link",
           "from": "sibling tab",
-          "detail": "Devices and Tokens",
+          "detail": "Devices",
           "source": "spec/ia.md Screen Inventory, Move Table"
         },
         {
@@ -3839,10 +3804,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "Label 'Devices and Tokens' contradicts the glossary, which rejects 'Token' (see F9).",
+      "decide": null,
       "source": null,
       "assumptions": [],
-      "reason": "J11, A28"
+      "reason": "J11, A28",
+      "fixed": "F9: label Devices"
     },
     {
       "id": "account.notifications",
@@ -3878,7 +3844,7 @@
         {
           "id": "devices",
           "label": {
-            "en": "Devices and Tokens"
+            "en": "Devices"
           },
           "route": "/account/devices",
           "count": false,
@@ -3941,7 +3907,7 @@
       "query": [
         {
           "name": "status",
-          "kind": "tab",
+          "kind": "filter",
           "values": ["waiting", "invited", "joined", "all"]
         },
         {
@@ -3966,50 +3932,7 @@
       "type": "list",
       "purpose": "Invite people from the waitlist in batches",
       "roles": ["operator"],
-      "tabs": [
-        {
-          "id": "waiting",
-          "label": {
-            "en": "Waiting"
-          },
-          "route": "/operator/waitlist",
-          "count": false,
-          "primary": {
-            "en": "Invite {n} (only with a selection)"
-          }
-        },
-        {
-          "id": "invited",
-          "label": {
-            "en": "Invited"
-          },
-          "route": "/operator/waitlist?status=invited",
-          "count": false,
-          "primary": {
-            "en": "Invite {n} (only with a selection)"
-          }
-        },
-        {
-          "id": "joined",
-          "label": {
-            "en": "Joined"
-          },
-          "route": "/operator/waitlist?status=joined",
-          "count": false,
-          "primary": "none"
-        },
-        {
-          "id": "all",
-          "label": {
-            "en": "All"
-          },
-          "route": "/operator/waitlist?status=all",
-          "count": false,
-          "primary": {
-            "en": "Invite {n} (only with a selection)"
-          }
-        }
-      ],
+      "tabs": [],
       "sections": [],
       "views": [],
       "states": ["default", "selection", "empty", "invite-confirm", "loading", "error", "not-an-operator (404)"],
@@ -4047,7 +3970,8 @@
       "decide": null,
       "source": null,
       "assumptions": ["Primary on the Invited and All tabs inferred from 'only with a selection'; Joined rows cannot be selected"],
-      "reason": "J8, A17: invitations go out in batches"
+      "reason": "J8, A17: invitations go out in batches",
+      "fixed": "Status is a chip filter (URL status), not tabs (conformance)"
     },
     {
       "id": "operator.invitations",
@@ -4141,7 +4065,7 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "One way in (see F13).",
+      "decide": "One way in, accepted for a staff area (F13: left for owner, owner-decisions.md #28)",
       "source": null,
       "assumptions": [],
       "reason": "J8"
@@ -4302,7 +4226,7 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "One way in (see F13).",
+      "decide": "One way in, accepted for a staff area (F13: left for owner, owner-decisions.md #28)",
       "source": null,
       "assumptions": [],
       "reason": "J8"
@@ -4385,7 +4309,7 @@
         {
           "kind": "navigation",
           "from": "operator sidebar",
-          "detail": "Flags",
+          "detail": "Feature Flags",
           "source": "spec/ia.md Screen Inventory, Move Table"
         }
       ],
@@ -4400,10 +4324,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "One way in (see F13).",
+      "decide": "One way in, accepted for a staff area (F13: left for owner, owner-decisions.md #28)",
       "source": null,
       "assumptions": ["Title 'Feature Flags' is the object name; the sidebar item reads 'Flags'"],
-      "reason": "A17"
+      "reason": "A17",
+      "fixed": "F15: sidebar label Feature Flags"
     },
     {
       "id": "operator.usage",
@@ -4465,7 +4390,7 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "One way in (see F13).",
+      "decide": "One way in, accepted for a staff area (F13: left for owner, owner-decisions.md #28)",
       "source": null,
       "assumptions": [],
       "reason": "J8"
@@ -4505,10 +4430,11 @@
       "status": "proposed",
       "redirectTo": null,
       "proposed": null,
-      "decide": "Which shell renders it per area is not specified (see F11).",
+      "decide": null,
       "source": null,
       "assumptions": ["Words: 'This page doesn't exist, or you don't have access.' with Go to Inbox or Go to Snapmark"],
-      "reason": "Safety: a link never reveals what exists; checklist 'helpful not-found'"
+      "reason": "Safety: a link never reveals what exists; checklist 'helpful not-found'",
+      "fixed": "F11: rendered in the app or operator shell when the person may see that area, else the plain page"
     }
   ],
   "redirects": [
@@ -4566,7 +4492,7 @@
       "status": "proposed",
       "carries": ["rest", "query"],
       "source": null,
-      "note": "308; a renamed organisation slug keeps redirecting"
+      "note": "308; a renamed organisation slug keeps redirecting; the old slug stays reserved to its first holder for good (F5)"
     },
     {
       "from": "/[org]/[old-ws]/[...rest]",
@@ -4574,7 +4500,7 @@
       "status": "proposed",
       "carries": ["rest", "query"],
       "source": null,
-      "note": "308; a renamed workspace slug keeps redirecting"
+      "note": "308; a renamed workspace slug keeps redirecting; the old slug stays reserved to its first holder for good (F5)"
     },
     {
       "from": "/[org]/[ws]/modules/[old-module]",
@@ -4582,7 +4508,7 @@
       "status": "proposed",
       "carries": ["query"],
       "source": null,
-      "note": "308; a renamed module slug keeps redirecting"
+      "note": "308; a renamed module slug keeps redirecting; the old slug stays reserved to its first holder for good (F5)"
     },
     {
       "from": "/[org]/[ws]/feedback",
@@ -4599,14 +4525,6 @@
       "carries": [],
       "source": null,
       "note": "308; proposed here, closes the missing parent of /waitlist/joined (F7)"
-    },
-    {
-      "from": "/[org]/[ws]/settings/modules",
-      "to": "/[org]/[ws]/modules",
-      "status": "proposed",
-      "carries": ["org", "ws"],
-      "source": null,
-      "note": "decide: only if F3 is accepted"
     }
   ],
   "links": [
@@ -4632,7 +4550,7 @@
       "to": "/invite/[token]",
       "source": null,
       "status": "proposed",
-      "note": "7 days; needs a waitlist variant (F1)"
+      "note": "7 days; lands on the waitlist variant, \"Set Up Your Team\" (F1: fixed in spec)"
     },
     {
       "kind": "email",
@@ -4812,5 +4730,7 @@
       "goesTo": ["/[org]/[ws]/sessions/[id]"],
       "states": ["not-signed-in", "sheet-default", "synced", "syncing", "offline", "edited-elsewhere", "not-shared", "stop-sharing"]
     }
-  ]
+  ],
+  "reservedWorkspaceSlugs": ["inbox", "my-work", "settings", "billing", "integrations", "new"],
+  "retiredSlugs": "An old organisation, workspace or module slug stays reserved to its first holder for good and redirects with path and query (F5)"
 }
