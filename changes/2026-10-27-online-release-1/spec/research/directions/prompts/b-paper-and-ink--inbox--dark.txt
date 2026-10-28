@@ -1,0 +1,58 @@
+You are a senior product designer recolouring an APPROVED prototype screen of Snapmark online (a calm web app for screenshot feedback). Produce ONE GENERATED IMAGE with your built-in image generation tool (image_gen). No HTML, no code, no SVG, no README.
+
+The owner's complaint this fixes: "the current design looks very grey in grey, and there is no dark mode". The source of these colours is changes/2026-10-27-online-release-1/spec/research/calm-saas-colour.md (direction B. Paper and Ink); you may read it, but the hex values below are binding and complete. Never invent or guess a colour: every UI colour in the image is one of the hex values listed below.
+
+TASK: EDIT the one attached image. Pass it to image_gen as the image to edit. Change ONLY colours, surface fills, hairline colours and shadow depth. Keep EVERYTHING else identical: every position, size, the grid, the browser frame, every icon, every word and number, the number of rows and items, font and weight. Do not add, remove, move or reword anything.
+
+Direction B. Paper and Ink: Warm stone paper, near-black ink buttons, no brand hue in the chrome: the only colours are annotations, status and people chips.
+Mode: DARK MODE. The attached image is this direction's approved LIGHT version: recolour it to the dark tokens below, same layout. Text is off-white text-1, never pure white. Nearer surfaces are lighter..
+
+TOKENS (dark, binding hex values):
+- canvas: #110f0d
+- surface-1: #1a1815
+- surface-2: #23211e
+- surface-3: #292724
+- sidebar: #0c0b08
+- sidebar-active: #25221f
+- border: #312f2b
+- border-strong: #716e6a
+- text-1: #efeeed
+- text-2: #b9b7b3
+- text-3: #a09e9a
+- accent: #ebe7e0
+- on-accent: #181512
+- accent-subtle: #302d29
+- accent-text: #ebe7e0
+- warning-subtle: #382409
+- warning-text: #f7c56d
+- status-open-bg: #2c2a26
+- status-open-text: #cccac6
+- status-implemented-bg: #2e2142
+- status-implemented-text: #ceb6fc
+- agent-bg: #042f32
+- agent-text: #83d4d8
+
+WHERE EACH TOKEN GOES
+- Browser frame, tab strip and address bar: dark: frame #0c0b08, address field #23211e, text #b9b7b3.
+- Left sidebar fill: sidebar #0c0b08; hairline at its right edge border #312f2b.
+- Current page "Inbox" in the sidebar: fill sidebar-active #25221f, bold text-1 label, its 2 px left bar in text-1 #efeeed. Counts in text-3 #a09e9a.
+- Search field: fill surface-2 #23211e.
+- Main content area (title, chips, list): surface-1 #1a1815. Page ground outside the content if any: canvas #110f0d.
+- Kind chip "All 6" (on): fill accent-subtle #302d29, text accent-text #ebe7e0. Other chips: plain, text text-2 #b9b7b3.
+- "2 new" pill and "Show 12 More" secondary button: fill surface-2 #23211e, text text-1.
+- Unread dots on rows 1 and 2: accent #ebe7e0.
+- Row 2 hover fill: surface-2 #23211e. Row separators: border #312f2b.
+- Row text: reason line text-1 #efeeed; "#n title" line text-2 #b9b7b3; workspace and time text-3 #a09e9a. Kind icons text-2.
+- Due chip "Due 30 Oct": fill warning-subtle #382409, text warning-text #f7c56d.
+- The 48 px screenshot thumbnails stay as they are (light, with their coral marks), 1 px border #312f2b.
+- There is no primary button on this page; do not add one.
+
+
+HARD RULES
+- Annotation coral #E5484D stays exactly as it is (outline, numbered diamond marker, thumbnail marks). Coral is never used for UI chrome.
+- Accent budget: the only filled primary is ink-style accent #ebe7e0 with #181512 text; there is NO brand blue anywhere in the chrome
+- No blue outlines, no blue focus rings, no blue links, no blue icons; no blue at all.
+- Every coloured chip keeps its word; colour is never the only signal.
+- Text sharp and readable; nothing cut off; output landscape 1536 x 1024 like the input.
+
+OUTPUT: generate with image_gen, then copy the generated PNG from $CODEX_HOME/generated_images/... (default ~/.codex/generated_images/<session>/) to exactly changes/2026-10-27-online-release-1/spec/research/directions/b-paper-and-ink/inbox--dark.png (create folders if needed). Write nothing else. Finish by printing the target path.

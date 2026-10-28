@@ -45,7 +45,7 @@
       "id": "F6",
       "tag": "@F6",
       "milestone": 1,
-      "asks": ["A9", "A10"],
+      "asks": ["A9", "A10", "A37"],
       "screen": "none",
       "states": ["default"]
     },
@@ -61,7 +61,7 @@
       "id": "F8",
       "tag": "@F8",
       "milestone": 1,
-      "asks": ["A11"],
+      "asks": ["A11", "A37"],
       "screen": "every screen",
       "states": ["default"]
     },
@@ -69,7 +69,7 @@
       "id": "F9",
       "tag": "@F9",
       "milestone": 1,
-      "asks": ["A11"],
+      "asks": ["A11", "A37"],
       "screen": "every screen, after Tab",
       "states": ["default"]
     },
@@ -1362,6 +1362,14 @@
       "states": ["default"]
     },
     {
+      "id": "F171",
+      "tag": "@F171",
+      "milestone": 1,
+      "asks": ["A24", "A29"],
+      "screen": "every screen",
+      "states": ["default"]
+    },
+    {
       "id": "N1",
       "tag": "@N1",
       "milestone": "all",
@@ -1413,7 +1421,7 @@
       "id": "N7",
       "tag": "@N7",
       "milestone": "all",
-      "asks": ["A11"],
+      "asks": ["A11", "A37"],
       "screen": "none",
       "states": ["default"]
     },

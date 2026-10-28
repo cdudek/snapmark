@@ -1,0 +1,10 @@
+You are fixing ONE generated prototype image of Snapmark online. Use your built-in image generation tool (image_gen) to EDIT the attached image, then verify the result with Python (PIL).
+
+The first attached image is changes/2026-10-27-online-release-1/spec/research/directions/a-clear-sky/feedback-view--dark.png (dark mode). It is approved except for this fault:
+the "Approve v2" button fill (bottom of the right panel, about x 1128-1272, y 935-980) drifted to about #0970E4. It must be EXACTLY the dark-mode token accent #0F72DB, with its label "Approve v2" unchanged.
+
+EDIT: pass the first attached image to image_gen as the image to edit. Change ONLY what the fault names. Keep every other pixel, position, size, word, icon and colour identical.
+
+VERIFY: open the edited PNG with PIL and take the median colour of that element's fill (ignore label pixels). It must be within CIE76 Delta E 6 of #0F72DB. If the generator drifts again or changes anything else, start from the attached original and correct ONLY that element's pixels with PIL: inside its rectangle(s), recolour each pixel by keeping its blend weight between the drifted colour and the neighbouring colour (label or background) and substituting #0F72DB for the drifted colour, so anti-aliasing survives. Touch no pixel outside.
+
+OUTPUT: overwrite exactly changes/2026-10-27-online-release-1/spec/research/directions/a-clear-sky/feedback-view--dark.png (1536 x 1024 PNG). Write nothing else. Finish by printing the target path, the measured hex and whether you needed the PIL correction.

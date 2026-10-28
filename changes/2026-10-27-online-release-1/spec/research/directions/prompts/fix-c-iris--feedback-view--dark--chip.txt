@@ -1,0 +1,10 @@
+You are fixing ONE generated prototype image of Snapmark online. Use your built-in image generation tool (image_gen) to EDIT the attached image, then verify the result with Python (PIL).
+
+The first attached image is changes/2026-10-27-online-release-1/spec/research/directions/c-iris/feedback-view--dark.png (dark mode). It is approved except for this fault:
+the status chip "Implemented" (under the title, about x 288-430, y 145-175) has its word and chevron drawn in about #E6EEF5 (off-white). The word "Implemented", its chevron and its small dot must be the dark-mode token status-implemented-text #8DCCF9, on the unchanged chip fill.
+
+EDIT: pass the first attached image to image_gen as the image to edit. Change ONLY what the fault names. Keep every other pixel, position, size, word, icon and colour identical.
+
+VERIFY: open the edited PNG with PIL and take the median colour of that element's fill (for the chip: of the word's solid stroke pixels; otherwise ignore label pixels). It must be within CIE76 Delta E 6 of #8DCCF9. If the generator drifts again or changes anything else, start from the attached original and correct ONLY that element's pixels with PIL: inside its rectangle(s), recolour each pixel by keeping its blend weight between the drifted colour and the neighbouring colour (label or background) and substituting #8DCCF9 for the drifted colour, so anti-aliasing survives. Touch no pixel outside.
+
+OUTPUT: overwrite exactly changes/2026-10-27-online-release-1/spec/research/directions/c-iris/feedback-view--dark.png (1536 x 1024 PNG). Write nothing else. Finish by printing the target path, the measured hex and whether you needed the PIL correction.

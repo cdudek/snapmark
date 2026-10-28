@@ -15,7 +15,8 @@ status: draft, for the Stage 2 gate
 - **Glossary words.** "Screenshot" is the noun; "Capture" is only the verb and the button. Numbered circles are "references", anything drawn is a "mark". British spelling on the web ("organisation", "colour"); the Mac app keeps macOS's "Color". The generic error fallback is "Snapmark had a problem." (owner-decisions.md #20).
 - **Menus.** Every Dropdown item has an icon before its label (ADR 2026-09-26 "Icons before menu items"); destructive items come last, after a separator.
 - **Components.** HeroUI components behind `snapmark-kit/ui` wrappers (A9, A24). Status: **new variant** = a HeroUI component behind a thin Snapmark wrapper, styled by tokens only (none exists yet; built in milestone 1); **missing** = a Snapmark component composed from HeroUI parts, to be built; **have** = exists today in the Mac app.
-- **Colour.** System neutrals for surfaces and text; the brand blue, named only by its token `accent` (never a hex: white on the old literal fails 4.5:1), only on the one filled primary per region; no blue borders, links, icons or labels. Links are underlined neutral text. Snapmark's `info` is neutral: the chosen tab, the current page and "is" chips use a neutral mark, never blue. Keyboard focus shows the `focus` ring only on keyboard focus (WEB-9, a proposed web exception to ACC-2; see interaction.md). Remove red stays the picker outline and remove marks only.
+- **Colour.** Every colour, surface and neutral here is a Clear Sky token from `colour.md` (A37), in light and dark. Tinted neutrals for surfaces and text; `accent` (`#0F72DB`) fills only the one primary per region; logo blue `#2492FF` stays on the logo; no blue borders, links, icons or labels. Links are underlined `text-1`. The chosen tab, the current page and "is" chips use a neutral mark, never `info`. Status, Guest and agent chips take their `colour.md` colours, always with their word. Keyboard focus shows the `focus` ring only on keyboard focus (WEB-9, a proposed web exception to ACC-2; see interaction.md). Remove red stays the picker outline and remove marks only.
+- **Button order.** In every row of buttons the primary is the last one, at the right; More (…) goes first; two equal verdicts are no exception (design-system-starter `docs/components/button.md` §1, owner, 2026-10-28; F171).
 - **Sizes.** Control heights 32 / 40 / 48, radius 8 (12 for dialogs), control text 16, from tokens (design-system owner decisions). Hit areas 32 pointer, 44 touch.
 - **Layout zoom.** "100 %" is a 1440 px window. "150 %" equals a 960 CSS px viewport. The design system caps desktop zoom at 130 %; 150 % is checked anyway so nothing clips.
 - **Keys** follow WEB-8 and WEB-19: ⌘ on a Mac, Ctrl elsewhere. "Tab ↩" means the control is reached by Tab and pressed with ↩ or Space, with no own shortcut.
@@ -59,7 +60,7 @@ status: draft, for the Stage 2 gate
 | ShortcutsDialog                                                                                                             | Modal + Table + Kbd                                                        | missing                                                                                          | `?`                                                                                                                                                                           |
 | EmptyState                                                                                                                  | Card-less stack: icon, heading, text, Button                               | missing                                                                                          | every list                                                                                                                                                                    |
 | FilterBar                                                                                                                   | Input + Chip + Popover + Select                                            | missing                                                                                          | lists                                                                                                                                                                         |
-| SelectionBar ("{n} selected", one bulk action, Clear)                                                                       | Button, Dropdown                                                           | missing                                                                                          | workspace lists (Change Status, A33), operator waitlist (Invite)                                                                                                              |
+| SelectionBar ("{n} selected", Clear, the bulk action last)                                                                  | Button, Dropdown                                                           | missing                                                                                          | workspace lists (Change Status, A33), operator waitlist (Invite)                                                                                                              |
 | ConnectAgentDialog (MCP address, SegmentedControl, code block with Copy)                                                    | Modal, Input, Tabs (segmented), Button                                     | missing                                                                                          | Account › Devices, My Work, ⌘K                                                                                                                                                |
 | FeedbackRow (a link, `<a href>` to the canonical URL, with buttons inside; checkbox where bulk applies)                     | Avatar, Badge, Image, Checkbox                                             | missing                                                                                          | lists, My Work, modules                                                                                                                                                       |
 | InboxRow (a link, `<a href>` to the canonical URL, with buttons inside)                                                     | Avatar, Badge, Image, Button                                               | missing                                                                                          | Inbox                                                                                                                                                                         |
@@ -657,13 +658,13 @@ None.
 
 ### Components
 
-| Region                      | Component       | Status      | Notes                                                              |
-| --------------------------- | --------------- | ----------- | ------------------------------------------------------------------ |
-| Sidebar, rail, phone drawer | AppShell        | missing     | current page: bold label plus a 2 px neutral bar, not colour alone |
-| Command menu                | CommandMenu     | missing     | uxpatterns `command-palette`; reads the one key table              |
-| Shortcuts                   | ShortcutsDialog | missing     | KEY-6                                                              |
-| Offline                     | Alert (Banner)  | new variant | `role="alert"`, announced once                                     |
-| 404                         | EmptyState      | missing     |                                                                    |
+| Region                      | Component       | Status      | Notes                                                                                                   |
+| --------------------------- | --------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| Sidebar, rail, phone drawer | AppShell        | missing     | current page: `sidebar-active` fill, bold label and a 2 px `text-2` bar (`colour.md`), not colour alone |
+| Command menu                | CommandMenu     | missing     | uxpatterns `command-palette`; reads the one key table                                                   |
+| Shortcuts                   | ShortcutsDialog | missing     | KEY-6                                                                                                   |
+| Offline                     | Alert (Banner)  | new variant | `role="alert"`, announced once                                                                          |
+| 404                         | EmptyState      | missing     |                                                                                                         |
 
 ## Inbox
 
@@ -819,7 +820,7 @@ Scan and filter a workspace's feedback by what happens next (J1, J2, J4; owner's
 | Order | Section                                                | Purpose                                                                                                     |
 | ----- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | 1     | Filter bar                                             | Search, Module, Page, Kind, Author, Environment; Status on Open; Due on Needs Decision; Since on Done; Sort |
-| 2     | Selection bar (members, desktop, once a row is ticked) | "{n} selected" · Change Status · Clear (A33)                                                                |
+| 2     | Selection bar (members, desktop, once a row is ticked) | "{n} selected" · Clear · Change Status (A33)                                                                |
 | 3     | "{n} new" pill                                         | live                                                                                                        |
 | 4     | Rows                                                   |                                                                                                             |
 | 5     | Show {count} More                                      | uxpatterns `load-more`                                                                                      |
@@ -1009,16 +1010,16 @@ Every Approve (button, A, ⌘K, phone) shows the toast "Approved v{n}." with Und
 
 ### Sections
 
-| Order | Section                                                                                                                                                                                                                          | Purpose                                                                  |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| 1     | Header                                                                                                                                                                                                                           | Where am I, what state (Cognitive Load)                                  |
-| 2     | Version tabs                                                                                                                                                                                                                     | A14                                                                      |
-| 3     | Canvas toolbar: Compare, Draw on Screenshot, zoom (−, fit, +)                                                                                                                                                                    |                                                                          |
-| 4     | Screenshot canvas: the version's screenshot, the anchor outline, references, marks; in Compare two panes                                                                                                                         | The centre                                                               |
-| 5     | Right panel, Tabs: Thread · Details                                                                                                                                                                                              |                                                                          |
-| 5a    | Thread tab: acceptance line with the rule as a line of text under it, open decision card, entries oldest first                                                                                                                   |                                                                          |
-| 5b    | Details tab: anchor and version stamp                                                                                                                                                                                            | J5, A15                                                                  |
-| 6     | Panel footer: context line, Composer, then one row: the state's primary, one secondary (Request Changes where it applies), More. Vote is not in the footer (the card's Vote and key V stay). At 150 %: the primary and More only | One place to act (Law of Common Region); Occam's Razor: one Vote control |
+| Order | Section                                                                                                                                                                                                                                                    | Purpose                                                                  |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1     | Header                                                                                                                                                                                                                                                     | Where am I, what state (Cognitive Load)                                  |
+| 2     | Version tabs                                                                                                                                                                                                                                               | A14                                                                      |
+| 3     | Canvas toolbar: Compare, Draw on Screenshot, zoom (−, fit, +)                                                                                                                                                                                              |                                                                          |
+| 4     | Screenshot canvas: the version's screenshot, the anchor outline, references, marks; in Compare two panes                                                                                                                                                   | The centre                                                               |
+| 5     | Right panel, Tabs: Thread · Details                                                                                                                                                                                                                        |                                                                          |
+| 5a    | Thread tab: acceptance line with the rule as a line of text under it, open decision card, entries oldest first                                                                                                                                             |                                                                          |
+| 5b    | Details tab: anchor and version stamp                                                                                                                                                                                                                      | J5, A15                                                                  |
+| 6     | Panel footer: context line, Composer, then one row: More, one secondary (Request Changes where it applies), the state's primary last, at the right (F171). Vote is not in the footer (the card's Vote and key V stay). At 150 %: More and the primary only | One place to act (Law of Common Region); Occam's Razor: one Vote control |
 
 ### Layout
 
@@ -1129,7 +1130,7 @@ None.
 | Thread       | ThreadEntry, AcceptanceLine            | missing     | copilot entries: person's Avatar with an agent badge (WEB-24)                                                    |
 | Decision     | DecisionCard                           | missing     | see Decision request                                                                                             |
 | Details      | AnchorDetails                          | missing     |                                                                                                                  |
-| Footer       | ComposerContext, Composer, Button      | missing     | one accent button (WEB-20); one row: primary, one secondary, More; at 150 % primary and More only                |
+| Footer       | ComposerContext, Composer, Button      | missing     | one accent button (WEB-20); one row: More, one secondary, primary (F171); at 150 % More and primary only         |
 
 ## Decision request: dialog and card
 
@@ -1139,21 +1140,21 @@ Ask named people to vote between versions, show the tally, close it (A12, J2).
 
 ### Header
 
-| Title                        | Tabs | Actions                            |
-| ---------------------------- | ---- | ---------------------------------- |
-| Dialog: "Request a Decision" | none | Request Decision (primary), Cancel |
+| Title                        | Tabs | Actions                                          |
+| ---------------------------- | ---- | ------------------------------------------------ |
+| Dialog: "Request a Decision" | none | Cancel, Request Decision (primary, at the right) |
 
 ### Sections
 
-| Order  | Section                                                                                                                                 | Purpose                                          |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| 1      | Versions to compare (thumbnails with checkboxes)                                                                                        | at least two                                     |
-| 2      | People to ask                                                                                                                           | members and invited guests                       |
-| 3      | Due date (optional)                                                                                                                     |                                                  |
-| 4      | Comment (optional)                                                                                                                      | what to weigh                                    |
-| Card 1 | "{opener} asked {names} to decide · Due {date}"                                                                                         |                                                  |
-| Card 2 | Version options with thumbnail, tally bar, voters' Avatars                                                                              |                                                  |
-| Card 3 | Vote / Change Vote, card More; a line "To decide, approve the chosen version." (deciding is the footer's Approve on that version's tab) | J2: the tally and the way to decide in one place |
+| Order  | Section                                                                                                                                                   | Purpose                                          |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 1      | Versions to compare (thumbnails with checkboxes)                                                                                                          | at least two                                     |
+| 2      | People to ask                                                                                                                                             | members and invited guests                       |
+| 3      | Due date (optional)                                                                                                                                       |                                                  |
+| 4      | Comment (optional)                                                                                                                                        | what to weigh                                    |
+| Card 1 | "{opener} asked {names} to decide · Due {date}"                                                                                                           |                                                  |
+| Card 2 | Version options with thumbnail, tally bar, voters' Avatars                                                                                                |                                                  |
+| Card 3 | card More, then Vote / Change Vote at the right; a line "To decide, approve the chosen version." (deciding is the footer's Approve on that version's tab) | J2: the tally and the way to decide in one place |
 
 ### Layout
 
@@ -1206,10 +1207,10 @@ Ask named people to vote between versions, show the tally, close it (A12, J2).
 
 ### Components
 
-| Region | Component                                                | Status      | Notes                                                                                                                                                                                                                                                |
-| ------ | -------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dialog | Modal, CheckboxGroup, Autocomplete, DatePicker, Textarea | new variant | uxpatterns `modal`: a short focused form                                                                                                                                                                                                             |
-| Card   | DecisionCard (RadioGroup, Progress, AvatarGroup)         | missing     | UI-risky; tally bars neutral grey, the voted option marked by a tick and weight, not colour alone. On a phone the card shows the tally without its own Vote button: the action bar's Vote opens the sheet (one Vote control per view, Occam's Razor) |
+| Region | Component                                                | Status      | Notes                                                                                                                                                                                                                                                                                        |
+| ------ | -------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dialog | Modal, CheckboxGroup, Autocomplete, DatePicker, Textarea | new variant | uxpatterns `modal`: a short focused form                                                                                                                                                                                                                                                     |
+| Card   | DecisionCard (RadioGroup, Progress, AvatarGroup)         | missing     | UI-risky; tally bars a `text-3` fill on a `surface-2` track (`colour.md`), the voted option marked by a tick and weight, not colour alone. On a phone the card shows the tally without its own Vote button: the action bar's Vote opens the sheet (one Vote control per view, Occam's Razor) |
 
 ## Post Version (dialog)
 
@@ -1219,9 +1220,9 @@ Add a mockup or alternative as a version (A12, J2).
 
 ### Header
 
-| Title          | Tabs | Actions                        |
-| -------------- | ---- | ------------------------------ |
-| "Post Version" | none | Post Version (primary), Cancel |
+| Title          | Tabs | Actions                                      |
+| -------------- | ---- | -------------------------------------------- |
+| "Post Version" | none | Cancel, Post Version (primary, at the right) |
 
 ### Sections
 
@@ -1704,15 +1705,15 @@ Answer and approve with the thumb (A18, J6). Opened with no `version` in the URL
 
 ### Sections
 
-| Order | Section                                                                                          | Purpose                                                |
-| ----- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| 1     | Screenshot, full width, tap to zoom                                                              | the centre stays on top (owner, design 9.2)            |
-| 2     | Title, status, flags, acceptance line                                                            |                                                        |
-| 3     | Version Chips                                                                                    |                                                        |
-| 4     | Decision card (when open): the tally, no Vote button of its own (the bar's Vote opens the sheet) |                                                        |
-| 5     | Thread; each open question entry has Answer Question (44 px)                                     | J6: answer, not only comment                           |
-| 6     | Context line and reply field                                                                     | above the bar; the line names the version and the mode |
-| 7     | Action bar, fixed at the bottom above the safe area: Approve v{n} · Request Changes · Vote       |                                                        |
+| Order | Section                                                                                                                                        | Purpose                                                |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1     | Screenshot, full width, tap to zoom                                                                                                            | the centre stays on top (owner, design 9.2)            |
+| 2     | Title, status, flags, acceptance line                                                                                                          |                                                        |
+| 3     | Version Chips                                                                                                                                  |                                                        |
+| 4     | Decision card (when open): the tally, no Vote button of its own (the bar's Vote opens the sheet)                                               |                                                        |
+| 5     | Thread; each open question entry has Answer Question (44 px)                                                                                   | J6: answer, not only comment                           |
+| 6     | Context line and reply field                                                                                                                   | above the bar; the line names the version and the mode |
+| 7     | Action bar, fixed at the bottom above the safe area: Vote · Request Changes · Approve v{n}; the state's primary sits last, at the right (F171) |                                                        |
 
 ### Layout
 
@@ -2136,9 +2137,9 @@ Link a session to a workspace and see its sync at a glance (A26, J7). When the s
 
 ### Header
 
-| Title                                     | Tabs | Actions                                                          |
-| ----------------------------------------- | ---- | ---------------------------------------------------------------- |
-| Sheet: "Share “{session}” to a Workspace" | none | Share (the one primary), Cancel (has focus when the sheet opens) |
+| Title                                     | Tabs | Actions                                                                        |
+| ----------------------------------------- | ---- | ------------------------------------------------------------------------------ |
+| Sheet: "Share “{session}” to a Workspace" | none | Cancel (has focus when the sheet opens), Share (the one primary, at the right) |
 
 ### Sections
 
@@ -2212,11 +2213,11 @@ Invite people from the waitlist in batches (J8, A17).
 
 ### Sections
 
-| Order | Section                                           | Purpose |
-| ----- | ------------------------------------------------- | ------- |
-| 1     | Search, Role filter, Sort                         |         |
-| 2     | Selection bar ("{n} selected", Invite {n}, Clear) |         |
-| 3     | Table                                             |         |
+| Order | Section                                                        | Purpose |
+| ----- | -------------------------------------------------------------- | ------- |
+| 1     | Search, Role filter, Sort                                      |         |
+| 2     | Selection bar ("{n} selected", Clear, Invite {n} at the right) |         |
+| 3     | Table                                                          |         |
 
 ### Layout
 

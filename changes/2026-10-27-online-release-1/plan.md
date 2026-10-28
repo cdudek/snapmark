@@ -68,7 +68,7 @@ One gate covers `spec/`, `facts.md` and this plan. Four things need your eye mos
 
 - [ ] 1.1 Create `snapmark-kit`, `snapmark-web` and `snapmark-chrome` in `pokbytes` (private). CI runs format, lint, typecheck, unit and E2E jobs, with `check` as the required summary. Rulesets; semantic-release, Changesets in the kit; `CLAUDE.md` importing `snapmark-context`; `sdlc-run adopt`; `bd init`. F1, F2, F3.
 - [ ] 1.2 `snapmark-kit`: `contracts` (zod, API v1 and MCP payloads), `annotations` (the versioned marks schema and the Mac app's shape renderer) and `redaction` (from `redact.ts`). All are published to GitHub Packages. F4.
-- [ ] 1.3 `snapmark-kit/tokens` from `design-system-starter` plus the Snapmark overlay, and `snapmark-kit/ui` with every HeroUI wrapper of `spec/conformance.md`. Tokens lint. F6, F7, F8, F9, N1, N6, N7, N8.
+- [ ] 1.3 `snapmark-kit/tokens` from `design-system-starter` plus the Snapmark overlay, and `snapmark-kit/ui` with every HeroUI wrapper of `spec/conformance.md`. Tokens lint. F6, F7, F8, F9, F171, N1, N6, N7, N8.
 - [ ] 1.4 `snapmark-web` skeleton: Next.js 16 with `(public)`, `(app)` and `(operator)` route groups under `[locale]`, next-intl, `messages/en.json` from `spec/microcopy.md`, i18n lint, dependency-cruiser boundaries. F10, F11, N2, N3, N4.
 - [ ] 1.5 Lasting UX docs move into `snapmark-web/docs/ux/` (owner, 2026-10-27: "this is what I would expect"). They are `glossary.md`, `interaction-guidelines.md`, `sitemap.md`, `sitemap.json`, `setup.md` (through `omr-ux:init`), and the glossary check. F12, F13, F14, F15, F16.
 - [ ] 1.6 Local run and data: Docker Compose Postgres, Drizzle 0.45 schema for design 8.2 plus the 22 gaps in `tech-review.md` (Data model), migrations, seed. Sign-in sessions and Mac sessions are separate tables. Postgres and `next dev` bind to localhost. F17, F18, F19, F162, F164, F165.
@@ -220,10 +220,10 @@ In `snapmark-desktop` only. The three new repos are created whole.
 
 ## Done
 
-What must hold, as data in [done.json](done.json) (185 facts with tags and milestones, 43 pages, widths).
+What must hold, as data in [done.json](done.json) (186 facts with tags and milestones, 43 pages, widths).
 
 - `python3 scripts/verify_gate.py milestone 2026-10-27-online-release-1` ends `VERIFY PASS` once per milestone, in the repo that owns it.
-- F1 to F170 and N1 to N15 pass by their named check in `facts.md`.
+- F1 to F171 and N1 to N15 pass by their named check in `facts.md`.
 - `validation.md` has no `not met` row, and `findings.md` no open blocking item, for every milestone.
 - Every milestone PR is merged or open with auto-merge armed; `project/online-release-1` has its PR to `main`.
 - Nothing outside `## Where things go` and `## Files that change` is edited.

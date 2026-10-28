@@ -1,0 +1,58 @@
+You are a senior product designer recolouring an APPROVED prototype screen of Snapmark online (a calm web app for screenshot feedback). Produce ONE GENERATED IMAGE with your built-in image generation tool (image_gen). No HTML, no code, no SVG, no README.
+
+The owner's complaint this fixes: "the current design looks very grey in grey, and there is no dark mode". The source of these colours is changes/2026-10-27-online-release-1/spec/research/calm-saas-colour.md (direction C. Iris); you may read it, but the hex values below are binding and complete. Never invent or guess a colour: every UI colour in the image is one of the hex values listed below.
+
+TASK: EDIT the one attached image. Pass it to image_gen as the image to edit. Change ONLY colours, surface fills, hairline colours and shadow depth. Keep EVERYTHING else identical: every position, size, the grid, the browser frame, every icon, every word and number, the number of rows and items, font and weight. Do not add, remove, move or reword anything.
+
+Direction C. Iris: Violet-tinted neutrals and a lavender / deep-indigo sidebar, as in Arc; the iris accent #584BDB owns the primary button and the selected nav row.
+Mode: LIGHT MODE. The attached image is the approved grey prototype: replace its grey-on-grey with the tokens below..
+
+TOKENS (light, binding hex values):
+- canvas: #f5f5fb
+- surface-1: #ffffff
+- surface-2: #eeeef7
+- surface-3: #ffffff
+- sidebar: #eaebff
+- sidebar-active: #e3e3ff
+- border: #e2e2eb
+- border-strong: #848592
+- text-1: #191925
+- text-2: #545462
+- text-3: #636372
+- accent: #584bdb
+- on-accent: #ffffff
+- accent-subtle: #eaebff
+- accent-text: #4f42c9
+- warning-subtle: #fff2d8
+- warning-text: #864e18
+- status-open-bg: #ededf8
+- status-open-text: #4b4b5a
+- status-implemented-bg: #e6f4ff
+- status-implemented-text: #005f98
+- agent-bg: #dcf8fa
+- agent-text: #00686c
+
+WHERE EACH TOKEN GOES
+- Browser frame and tab strip: light, tinted to match: frame #eaebff, address field #eeeef7.
+- Window ground and the canvas area behind the captured checkout screenshot: canvas #f5f5fb.
+- Header (breadcrumbs, title), version tabs row, canvas toolbar row, right panel (Thread/Details, entries, footer): surface-1 #ffffff.
+- Left sidebar fill: sidebar #eaebff. Current item "In Review": fill sidebar-active #e3e3ff, bold text-1 label, its 2 px left bar in accent #584bdb. Counts in text-3.
+- Search field, comment composer field, "Request Changes" secondary button, "Fit" zoom group, Compare toggle (off), Previous/Next/More icon buttons, "1 mark" preview chip: fill surface-2 #eeeef7, no heavy borders.
+- Hairlines and dividers (sidebar edge, header bottom, panel left edge, footer top): border #e2e2eb.
+- Text: titles and names text-1 #191925; body and secondary text text-2 #545462; meta (breadcrumbs, "on v0 · 27 Oct", times, system lines, acceptance help line) text-3 #636372.
+- Chosen version tab "v2 Implementation · PR #212 · Ben via Claude" and chosen "Thread" tab: 2 px underline in text-1 #191925, never blue.
+- Status chip "Implemented" (with chevron): fill #e6f4ff, text #005f98, with a small dot in the text colour before the word.
+- Kind badge "Change Request" and thread badges "Question", "Answer": fill status-open-bg #ededf8, text status-open-text #4b4b5a.
+- Agent avatars "BO" (Ben via Claude): fill agent-bg #dcf8fa, initials and the small agent badge agent-text #00686c. "AS" avatars: surface-2 #eeeef7 fill, text-2 initials.
+- "Approve v2" is the ONLY filled accent in the window: fill EXACTLY accent #584bdb, label on-accent #ffffff, semibold.
+- The captured checkout screenshot inside the canvas is evidence: keep it untouched, with a 1 px border #e2e2eb and a soft e1 shadow (0 2 8 #0F172A26). Its own black "Pay €81.31" button stays the shop's black.
+
+
+HARD RULES
+- Annotation coral #E5484D stays exactly as it is (outline, numbered diamond marker, thumbnail marks). Coral is never used for UI chrome.
+- Accent budget: iris accent #584bdb is the one filled primary; the selected nav row uses sidebar-active #e3e3ff with an accent bar. Do not drift the accent toward blue or pink
+- No blue outlines, no blue focus rings, no blue links, no blue icons; the Implemented status is the only blue-ish chip.
+- Every coloured chip keeps its word; colour is never the only signal.
+- Text sharp and readable; nothing cut off; output landscape 1536 x 1024 like the input.
+
+OUTPUT: generate with image_gen, then copy the generated PNG from $CODEX_HOME/generated_images/... (default ~/.codex/generated_images/<session>/) to exactly changes/2026-10-27-online-release-1/spec/research/directions/c-iris/feedback-view--light.png (create folders if needed). Write nothing else. Finish by printing the target path.

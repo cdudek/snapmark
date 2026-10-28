@@ -1,0 +1,125 @@
+{
+  "method": "Directions mode of omr-dev:designs-explore. Each image opened with the Read image tool after its last edit; accent and surfaces measured with a PIL script (CIE76, pass <= 6). Documents read: docs/ux/setup.md, docs/ux/interaction-guidelines.md, changes/2026-10-27-online-release-1/spec/research/calm-saas-colour.md, spec/prototype/known-image-faults.md. No DESIGN.md or PRODUCT.md at repo root.",
+  "screenshots": [
+    {
+      "file": "shots/a-clear-sky/feedback-view--light.png",
+      "screen_state": "feedback-view / default / light / direction A. Clear Sky",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/a-clear-sky/feedback-view--light.png (final bytes, after every fix), this session",
+      "sha256": "53ec700d7f149d1e8ca243a0baaf5a9130f28909ba3368208d8a5189ed407d0f",
+      "observations": "A. Clear Sky light: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: Approve v2 fill #0f72db vs accent #0f72db dE 0.0; canvas #ebf1f7 vs canvas #f3f6fa dE 2.4; sidebar #ecf2f8 vs sidebar #eff3f8 dE 1.0. Fixed after first draw: Approve v2 fill redone (#0066FD -> #0F72DB). Status, kind and agent chips carry their words, colour is never the only signal.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/a-clear-sky/feedback-view--dark.png",
+      "screen_state": "feedback-view / default / dark / direction A. Clear Sky",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/a-clear-sky/feedback-view--dark.png (final bytes, after every fix), this session",
+      "sha256": "244dc00303098a0bcdcdfa6d9827cca285d51d6612491252b0c6d0c69cc4e36e",
+      "observations": "A. Clear Sky dark: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: Approve v2 fill #0f73db vs accent #0f72db dE 0.8; canvas #13181d vs canvas #0b1015 dE 3.6; sidebar #080d13 vs sidebar #070b11 dE 0.7. Fixed after first draw: Approve v2 fill redone (#0970E4 -> #0F72DB). Status, kind and agent chips carry their words, colour is never the only signal.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/a-clear-sky/inbox--light.png",
+      "screen_state": "inbox / populated / light / direction A. Clear Sky",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/a-clear-sky/inbox--light.png (final bytes, after every fix), this session",
+      "sha256": "b0c0aac42c4bf0f178f4d466357b34b775e1df967d951ad43747eda0e8a39f78",
+      "observations": "A. Clear Sky light: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: unread dot #0974db vs accent #0f72db dE 1.8; All 6 chip fill #e5f1fe vs accent-subtle #e4f0ff dE 1.1; sidebar-active #e1e8f1 vs sidebar-active #e1e7ee dE 1.1; sidebar #edf3f8 vs sidebar #eff3f8 dE 0.7. Thumbnail micro-text is illegible, as in the prototype (generator limit, 48 px thumbnails).",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/a-clear-sky/inbox--dark.png",
+      "screen_state": "inbox / populated / dark / direction A. Clear Sky",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/a-clear-sky/inbox--dark.png (final bytes, after every fix), this session",
+      "sha256": "faa99b6a1bcd98e06bfefc1bf7d508159be3b31d2f2438b83f5604c347ea9564",
+      "observations": "A. Clear Sky dark: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: unread dot #0e71db vs accent #0f72db dE 0.8; All 6 chip fill #0f2743 vs accent-subtle #152c48 dE 2.4; sidebar-active #1c2229 vs sidebar-active #1d232c dE 1.5; sidebar #080b11 vs sidebar #070b11 dE 0.3. Fixed after first draw: unread dots redone (#0872E9 -> #0F72DB). Thumbnail micro-text is illegible, as in the prototype (generator limit, 48 px thumbnails).",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/b-paper-and-ink/feedback-view--light.png",
+      "screen_state": "feedback-view / default / light / direction B. Paper and Ink",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/b-paper-and-ink/feedback-view--light.png (final bytes, after every fix), this session",
+      "sha256": "ecbe9f78285a63f2233801967522ba65b0c6652c63f391b5fee633dc1a6d6e82",
+      "observations": "B. Paper and Ink light: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: Approve v2 fill #2b231a vs accent #25211d dE 4.4; canvas #f8f4ef vs canvas #f8f5f1 dE 0.7; sidebar #f4f0e8 vs sidebar #f5f2ed dE 1.7. Status, kind and agent chips carry their words, colour is never the only signal.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/b-paper-and-ink/feedback-view--dark.png",
+      "screen_state": "feedback-view / default / dark / direction B. Paper and Ink",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/b-paper-and-ink/feedback-view--dark.png (final bytes, after every fix), this session",
+      "sha256": "a4c8c6612a58f8014a875b8a4106ea89111e5e97ab9e089b03ca0908d5ab2df1",
+      "observations": "B. Paper and Ink dark: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: Approve v2 fill #ede5db vs accent #ebe7e0 dE 2.2; canvas #1c1a16 vs canvas #110f0d dE 5.3; sidebar #0e0c0a vs sidebar #0c0b08 dE 0.6. Status, kind and agent chips carry their words, colour is never the only signal.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/b-paper-and-ink/inbox--light.png",
+      "screen_state": "inbox / populated / light / direction B. Paper and Ink",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/b-paper-and-ink/inbox--light.png (final bytes, after every fix), this session",
+      "sha256": "fe2501bd66c9c0180a4b6cb19af4865c789138367b09653bf03859e3fb80dae2",
+      "observations": "B. Paper and Ink light: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: unread dot #25211d vs accent #25211d dE 0.0; All 6 chip fill #ebe6df vs accent-subtle #ede9e2 dE 1.0; sidebar-active #e9e4dd vs sidebar-active #eae6de dE 0.9; sidebar #f5f1ec vs sidebar #f5f2ed dE 0.5. Fixed after first draw: app icon restored to colour, unread dots redone (#301F15 -> #25211D). Thumbnail micro-text is illegible, as in the prototype (generator limit, 48 px thumbnails).",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/b-paper-and-ink/inbox--dark.png",
+      "screen_state": "inbox / populated / dark / direction B. Paper and Ink",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/b-paper-and-ink/inbox--dark.png (final bytes, after every fix), this session",
+      "sha256": "2485b6ed33b5a9766579f2b6269471a90514068b97051e0b8c7ad444afc92af9",
+      "observations": "B. Paper and Ink dark: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: unread dot #f4f2f0 vs accent #ebe7e0 dE 4.7; All 6 chip fill #332f2a vs accent-subtle #302d29 dE 1.3; sidebar-active #201e1a vs sidebar-active #25221f dE 2.3; sidebar #0e0c08 vs sidebar #0c0b08 dE 0.7. Fixed after first draw: app icon restored to colour. Thumbnail micro-text is illegible, as in the prototype (generator limit, 48 px thumbnails).",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/c-iris/feedback-view--light.png",
+      "screen_state": "feedback-view / default / light / direction C. Iris",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/c-iris/feedback-view--light.png (final bytes, after every fix), this session",
+      "sha256": "7490b9f6b00f4480c0194255197ec6902793ea90093c140c947e8f874de60fb2",
+      "observations": "C. Iris light: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: Approve v2 fill #584bdb vs accent #584bdb dE 0.0; canvas #f4f4fb vs canvas #f5f5fb dE 0.6; sidebar #eaecfe vs sidebar #eaebff dE 1.1. Fixed after first draw: Approve v2 fill redone (#543FEC -> #584BDB); Implemented chip text redone (ink -> #005F98). Status, kind and agent chips carry their words, colour is never the only signal.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/c-iris/feedback-view--dark.png",
+      "screen_state": "feedback-view / default / dark / direction C. Iris",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/c-iris/feedback-view--dark.png (final bytes, after every fix), this session",
+      "sha256": "37a58dfd3c1f61584860d634ed65c7b914445ff2cbf3ab6bd4662d4bd4b82ac9",
+      "observations": "C. Iris dark: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: Approve v2 fill #6658e0 vs accent #6558e0 dE 0.2; canvas #171721 vs canvas #0e0e18 dE 4.1; sidebar #14132b vs sidebar #131128 dE 1.3. Fixed after first draw: Approve v2 fill redone (#5C53FB -> #6558E0); Implemented chip text redone (off-white -> #8DCCF9). Status, kind and agent chips carry their words, colour is never the only signal.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/c-iris/inbox--light.png",
+      "screen_state": "inbox / populated / light / direction C. Iris",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/c-iris/inbox--light.png (final bytes, after every fix), this session",
+      "sha256": "1ba9b2c17b7f8e1ee3c35ff7771c5800705ef05a641ef861289fed902bce7511",
+      "observations": "C. Iris light: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: unread dot #5144cb vs accent #584bdb dE 5.4; All 6 chip fill #e3e5fd vs accent-subtle #eaebff dE 3.0; sidebar-active #dee0fd vs sidebar-active #e3e3ff dE 1.5; sidebar #e9ebfe vs sidebar #eaebff dE 0.6. Thumbnail micro-text is illegible, as in the prototype (generator limit, 48 px thumbnails).",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/c-iris/inbox--dark.png",
+      "screen_state": "inbox / populated / dark / direction C. Iris",
+      "width": 1440,
+      "opened_with": "Read image tool on research/directions/c-iris/inbox--dark.png (final bytes, after every fix), this session",
+      "sha256": "b2615c7c454338f1cb15f95d7f48087f1e7833c53556f489cb0cf519644c4296",
+      "observations": "C. Iris dark: layout, words, icons and counts match the approved prototype anchor; only surfaces, hairlines and fills changed. Coral #E5484D outline and marker unchanged; captured checkout screenshot kept light. Measured: unread dot #6557e0 vs accent #6558e0 dE 0.7; All 6 chip fill #272552 vs accent-subtle #2b2751 dE 2.4; sidebar-active #211f43 vs sidebar-active #201e3e dE 2.8; sidebar #131328 vs sidebar #131128 dE 1.6. Fixed after first draw: unread dots redone (#6B5CF0 -> #6558E0). Thumbnail micro-text is illegible, as in the prototype (generator limit, 48 px thumbnails).",
+      "verdict": "compliant",
+      "issues": []
+    }
+  ]
+}

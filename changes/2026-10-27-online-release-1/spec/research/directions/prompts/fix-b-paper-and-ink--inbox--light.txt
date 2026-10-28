@@ -1,0 +1,10 @@
+You are fixing ONE generated prototype image of Snapmark online. Use your built-in image generation tool (image_gen) to EDIT the attached image, then verify the result with Python (PIL).
+
+The attached image is changes/2026-10-27-online-release-1/spec/research/directions/b-paper-and-ink/inbox--light.png. It is approved except for this fault:
+two things: (1) the Snapmark app icon left of "Kestrel Shop" (top of the sidebar) was turned grey. Restore it to the original coloured Snapmark icon as in the reference changes/2026-10-27-online-release-1/spec/prototype/refs/ref-snapmark-icon.png (the app icon is the logo, not chrome; it keeps its colours). (2) the two unread dots left of rows 1 and 2 (about x 320-334, y 286-298 and y 375-387) are brownish #301F15; they must be the ink accent #25211D.
+
+EDIT: the second attached image is the Snapmark icon reference. Pass the first attached image to image_gen as the image to edit. Change ONLY what the fault names. Keep every other pixel, position, size, word, icon and colour identical.
+
+VERIFY: open the edited PNG with PIL and take the median colour of the element named above, ignoring its label pixels. It must be within CIE76 Delta E 6 of #25211D. If the generator drifts again (it tends to make fills brighter and more saturated), correct ONLY that element's fill pixels with PIL: inside the element's rectangle, recolour each pixel by keeping its blend weight between the drifted fill and the label colour and substituting #25211D for the drifted fill, so the label anti-aliasing survives. Touch no pixel outside that rectangle. Do not draw new shapes or text.
+
+OUTPUT: overwrite exactly changes/2026-10-27-online-release-1/spec/research/directions/b-paper-and-ink/inbox--light.png (1536 x 1024 PNG). Write nothing else. Finish by printing the target path, the measured hex and whether you needed the PIL correction.

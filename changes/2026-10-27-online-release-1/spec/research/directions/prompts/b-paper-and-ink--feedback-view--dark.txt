@@ -1,0 +1,58 @@
+You are a senior product designer recolouring an APPROVED prototype screen of Snapmark online (a calm web app for screenshot feedback). Produce ONE GENERATED IMAGE with your built-in image generation tool (image_gen). No HTML, no code, no SVG, no README.
+
+The owner's complaint this fixes: "the current design looks very grey in grey, and there is no dark mode". The source of these colours is changes/2026-10-27-online-release-1/spec/research/calm-saas-colour.md (direction B. Paper and Ink); you may read it, but the hex values below are binding and complete. Never invent or guess a colour: every UI colour in the image is one of the hex values listed below.
+
+TASK: EDIT the one attached image. Pass it to image_gen as the image to edit. Change ONLY colours, surface fills, hairline colours and shadow depth. Keep EVERYTHING else identical: every position, size, the grid, the browser frame, every icon, every word and number, the number of rows and items, font and weight. Do not add, remove, move or reword anything.
+
+Direction B. Paper and Ink: Warm stone paper, near-black ink buttons, no brand hue in the chrome: the only colours are annotations, status and people chips.
+Mode: DARK MODE. The attached image is this direction's approved LIGHT version: recolour it to the dark tokens below, same layout. Text is off-white text-1, never pure white. Nearer surfaces are lighter..
+
+TOKENS (dark, binding hex values):
+- canvas: #110f0d
+- surface-1: #1a1815
+- surface-2: #23211e
+- surface-3: #292724
+- sidebar: #0c0b08
+- sidebar-active: #25221f
+- border: #312f2b
+- border-strong: #716e6a
+- text-1: #efeeed
+- text-2: #b9b7b3
+- text-3: #a09e9a
+- accent: #ebe7e0
+- on-accent: #181512
+- accent-subtle: #302d29
+- accent-text: #ebe7e0
+- warning-subtle: #382409
+- warning-text: #f7c56d
+- status-open-bg: #2c2a26
+- status-open-text: #cccac6
+- status-implemented-bg: #2e2142
+- status-implemented-text: #ceb6fc
+- agent-bg: #042f32
+- agent-text: #83d4d8
+
+WHERE EACH TOKEN GOES
+- Browser frame and tab strip: dark: frame #0c0b08, address field #23211e, text #b9b7b3.
+- Window ground and the canvas area behind the captured checkout screenshot: canvas #110f0d.
+- Header (breadcrumbs, title), version tabs row, canvas toolbar row, right panel (Thread/Details, entries, footer): surface-1 #1a1815.
+- Left sidebar fill: sidebar #0c0b08. Current item "In Review": fill sidebar-active #25221f, bold text-1 label, its 2 px left bar in text-1 #efeeed. Counts in text-3.
+- Search field, comment composer field, "Request Changes" secondary button, "Fit" zoom group, Compare toggle (off), Previous/Next/More icon buttons, "1 mark" preview chip: fill surface-2 #23211e, no heavy borders.
+- Hairlines and dividers (sidebar edge, header bottom, panel left edge, footer top): border #312f2b.
+- Text: titles and names text-1 #efeeed; body and secondary text text-2 #b9b7b3; meta (breadcrumbs, "on v0 · 27 Oct", times, system lines, acceptance help line) text-3 #a09e9a.
+- Chosen version tab "v2 Implementation · PR #212 · Ben via Claude" and chosen "Thread" tab: 2 px underline in text-1 #efeeed, never blue.
+- Status chip "Implemented" (with chevron): fill #2e2142, text #ceb6fc, with a small dot in the text colour before the word.
+- Kind badge "Change Request" and thread badges "Question", "Answer": fill status-open-bg #2c2a26, text status-open-text #cccac6.
+- Agent avatars "BO" (Ben via Claude): fill agent-bg #042f32, initials and the small agent badge agent-text #83d4d8. "AS" avatars: surface-2 #23211e fill, text-2 initials.
+- "Approve v2" is the ONLY filled accent in the window: fill EXACTLY accent #ebe7e0, label on-accent #181512, semibold.
+- The captured checkout screenshot inside the canvas is evidence: keep it LIGHT and untouched (never dimmed or tinted), with a 1 px border #312f2b and no shadow. Its own black "Pay €81.31" button stays the shop's black.
+
+
+HARD RULES
+- Annotation coral #E5484D stays exactly as it is (outline, numbered diamond marker, thumbnail marks). Coral is never used for UI chrome.
+- Accent budget: the only filled primary is ink-style accent #ebe7e0 with #181512 text; there is NO brand blue anywhere in the chrome
+- No blue outlines, no blue focus rings, no blue links, no blue icons; no blue at all.
+- Every coloured chip keeps its word; colour is never the only signal.
+- Text sharp and readable; nothing cut off; output landscape 1536 x 1024 like the input.
+
+OUTPUT: generate with image_gen, then copy the generated PNG from $CODEX_HOME/generated_images/... (default ~/.codex/generated_images/<session>/) to exactly changes/2026-10-27-online-release-1/spec/research/directions/b-paper-and-ink/feedback-view--dark.png (create folders if needed). Write nothing else. Finish by printing the target path.

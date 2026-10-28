@@ -36,10 +36,11 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 
 #### Tokens, HeroUI wrappers and calm style
 
-- [ ] **F6** (A9, A10) The `tokens` package shall turn `design-system-starter` plus the Snapmark overlay into CSS variables, a Tailwind theme and a HeroUI theme. Screen/state: none. Tag: `@F6`.
+- [ ] **F6** (A9, A10, A37) The `tokens` package shall turn `design-system-starter` plus the Clear Sky overlay into CSS variables, a Tailwind theme and a HeroUI theme. The overlay holds every light and dark value of `spec/colour.md`. Screen/state: none. Tag: `@F6`.
 - [ ] **F7** (A9, A24) Web and extension screens shall use HeroUI only through `snapmark-kit/ui` wrappers. Screen/state: every screen. Tag: `@F7`.
-- [ ] **F8** (A11) Brand blue `#2492FF` shall fill at most one primary button per region and colour nothing else. Screen/state: every screen. Tag: `@F8`.
-- [ ] **F9** (A11) The focus ring shall show only on keyboard focus, in the neutral focus colour. Screen/state: every screen, after Tab. Tag: `@F9`.
+- [ ] **F8** (A11, A37) The `accent` blue `#0F72DB` shall fill at most one primary button per region and colour nothing else. Logo blue `#2492FF` colours only the logo. Screen/state: every screen. Tag: `@F8`.
+- [ ] **F9** (A11, A37) The focus ring shall show only on keyboard focus, in the neutral Clear Sky `focus` slate, never blue. Screen/state: every screen, after Tab. Tag: `@F9`.
+- [ ] **F171** (A24, A29) In every button group of the `snapmark-kit/ui` wrappers, the primary shall be the last button, at the right. More (…) shall go first. Two equal verdicts are no exception (design-system rule, 2026-10-28). Screen/state: every screen with a button row. Tag: `@F171`.
 
 #### Text, glossary and lasting UX docs
 
@@ -83,10 +84,11 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - F3 — tag `@F3`: `snapmark-web/test/repo/sdlc.test.ts › repo carries CLAUDE.md, sdlc.json, docs/sdlc.md, .beads` (one per repo).
 - F4 — tag `@F4`: `snapmark-kit/test/packages.test.ts › every package publishes to GitHub Packages`
 - F5 — tag `@F5`: `snapmark-chrome/e2e/load.spec.ts › unpacked build loads in Chrome`
-- F6 — tag `@F6`: `snapmark-kit/packages/tokens/test/build.test.ts › emits CSS variables, Tailwind and HeroUI themes`
+- F6 — tag `@F6`: `snapmark-kit/packages/tokens/test/build.test.ts › emits CSS variables, Tailwind and HeroUI themes with every Clear Sky light and dark value`
 - F7 — tag `@F7`: `snapmark-web/test/lint/heroui-imports.test.ts › no direct @heroui import outside snapmark-kit/ui`
-- F8 — tag `@F8`: `snapmark-web/e2e/style.spec.ts › one filled primary per region, no other blue`
-- F9 — tag `@F9`: `snapmark-web/e2e/style.spec.ts › focus ring on keyboard focus only`
+- F8 — tag `@F8`: `snapmark-web/e2e/style.spec.ts › one #0F72DB primary per region, no other blue`
+- F9 — tag `@F9`: `snapmark-web/e2e/style.spec.ts › focus ring on keyboard focus only, in the focus colour`
+- F171 — tag `@F171`: `snapmark-web/e2e/style.spec.ts › primary is the last button in every row, More first` (also `snapmark-kit/packages/ui/test/button-group.test.tsx`).
 - F10 — tag `@F10`: `snapmark-web/e2e/i18n.spec.ts › every route lives under /en`
 - F11 — tag `@F11`: `snapmark-web/test/i18n/microcopy.test.ts › every microcopy key exists in en.json`
 - F12 — tag `@F12`: `snapmark-web/test/docs/glossary.test.ts › glossary holds every term and the Agent alias`
@@ -513,7 +515,7 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - [ ] **N4** (A2) If an app imports another app instead of `snapmark-kit`, then dependency-cruiser shall fail CI. Tag: `@N4`.
 - [ ] **N5** (A29) Every web and extension screen shall meet WCAG 2.2 AA, with full keyboard use. Tag: `@N5`.
 - [ ] **N6** (A11) Text shall meet 4.5:1 and the focus ring 3:1 contrast, in light and dark. Tag: `@N6`.
-- [ ] **N7** (A11) The web app shall follow the system's light or dark setting by default, from tokens. Tag: `@N7`.
+- [ ] **N7** (A11, A37) The web app shall follow the system's light or dark setting, using the Clear Sky light or dark tokens of `spec/colour.md`. Tag: `@N7`.
 - [ ] **N8** (A11) While the system asks for reduced motion, the web app and extension shall play no movement animation. Tag: `@N8`.
 - [ ] **N9** (A11) An action shall show no progress under 400 ms and shall show progress from 1 second. Tag: `@N9`.
 - [ ] **N10** (A11) On the seed data, API reads shall answer in under 300 ms at p95 on the owner's Mac. Tag: `@N10`.
@@ -532,7 +534,7 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - N4 — tag `@N4`: `snapmark-web/test/lint/boundaries.test.ts › apps import only snapmark-kit`
 - N5 — manual: Claude walks every screen by keyboard only, and the owner spot-checks with VoiceOver.
 - N6 — tag `@N6`: `snapmark-web/e2e/style.spec.ts › contrast light and dark`
-- N7 — tag `@N7`: `snapmark-web/e2e/style.spec.ts › follows the system theme`
+- N7 — tag `@N7`: `snapmark-web/e2e/style.spec.ts › follows the system theme with the Clear Sky dark tokens`
 - N8 — tag `@N8`: `snapmark-web/e2e/style.spec.ts › reduced motion plays no movement`
 - N9 — tag `@N9`: `snapmark-web/e2e/feedback-view.spec.ts › progress timing`
 - N10 — tag `@N10`: `snapmark-web/test/perf/api.test.ts › reads under 300 ms p95`

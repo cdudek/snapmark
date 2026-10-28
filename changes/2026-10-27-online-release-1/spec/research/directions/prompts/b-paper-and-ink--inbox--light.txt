@@ -1,0 +1,58 @@
+You are a senior product designer recolouring an APPROVED prototype screen of Snapmark online (a calm web app for screenshot feedback). Produce ONE GENERATED IMAGE with your built-in image generation tool (image_gen). No HTML, no code, no SVG, no README.
+
+The owner's complaint this fixes: "the current design looks very grey in grey, and there is no dark mode". The source of these colours is changes/2026-10-27-online-release-1/spec/research/calm-saas-colour.md (direction B. Paper and Ink); you may read it, but the hex values below are binding and complete. Never invent or guess a colour: every UI colour in the image is one of the hex values listed below.
+
+TASK: EDIT the one attached image. Pass it to image_gen as the image to edit. Change ONLY colours, surface fills, hairline colours and shadow depth. Keep EVERYTHING else identical: every position, size, the grid, the browser frame, every icon, every word and number, the number of rows and items, font and weight. Do not add, remove, move or reword anything.
+
+Direction B. Paper and Ink: Warm stone paper, near-black ink buttons, no brand hue in the chrome: the only colours are annotations, status and people chips.
+Mode: LIGHT MODE. The attached image is the approved grey prototype: replace its grey-on-grey with the tokens below..
+
+TOKENS (light, binding hex values):
+- canvas: #f8f5f1
+- surface-1: #fefefc
+- surface-2: #f2efe9
+- surface-3: #ffffff
+- sidebar: #f5f2ed
+- sidebar-active: #eae6de
+- border: #e6e2dc
+- border-strong: #8b857c
+- text-1: #1f1a11
+- text-2: #5b544a
+- text-3: #6a6459
+- accent: #25211d
+- on-accent: #fbfaf7
+- accent-subtle: #ede9e2
+- accent-text: #25211d
+- warning-subtle: #fff2d8
+- warning-text: #864e18
+- status-open-bg: #f2eee7
+- status-open-text: #524c42
+- status-implemented-bg: #f2edff
+- status-implemented-text: #6e3ead
+- agent-bg: #dcf8fa
+- agent-text: #00686c
+
+WHERE EACH TOKEN GOES
+- Browser frame, tab strip and address bar: light, tinted to match: frame #f5f2ed, address field #f2efe9.
+- Left sidebar fill: sidebar #f5f2ed; hairline at its right edge border #e6e2dc.
+- Current page "Inbox" in the sidebar: fill sidebar-active #eae6de, bold text-1 label, its 2 px left bar in text-1 #1f1a11. Counts in text-3 #6a6459.
+- Search field: fill surface-2 #f2efe9.
+- Main content area (title, chips, list): surface-1 #fefefc. Page ground outside the content if any: canvas #f8f5f1.
+- Kind chip "All 6" (on): fill accent-subtle #ede9e2, text accent-text #25211d. Other chips: plain, text text-2 #5b544a.
+- "2 new" pill and "Show 12 More" secondary button: fill surface-2 #f2efe9, text text-1.
+- Unread dots on rows 1 and 2: accent #25211d.
+- Row 2 hover fill: surface-2 #f2efe9. Row separators: border #e6e2dc.
+- Row text: reason line text-1 #1f1a11; "#n title" line text-2 #5b544a; workspace and time text-3 #6a6459. Kind icons text-2.
+- Due chip "Due 30 Oct": fill warning-subtle #fff2d8, text warning-text #864e18.
+- The 48 px screenshot thumbnails stay as they are (light, with their coral marks), 1 px border #e6e2dc.
+- There is no primary button on this page; do not add one.
+
+
+HARD RULES
+- Annotation coral #E5484D stays exactly as it is (outline, numbered diamond marker, thumbnail marks). Coral is never used for UI chrome.
+- Accent budget: the only filled primary is ink-style accent #25211d with #fbfaf7 text; there is NO brand blue anywhere in the chrome
+- No blue outlines, no blue focus rings, no blue links, no blue icons; no blue at all.
+- Every coloured chip keeps its word; colour is never the only signal.
+- Text sharp and readable; nothing cut off; output landscape 1536 x 1024 like the input.
+
+OUTPUT: generate with image_gen, then copy the generated PNG from $CODEX_HOME/generated_images/... (default ~/.codex/generated_images/<session>/) to exactly changes/2026-10-27-online-release-1/spec/research/directions/b-paper-and-ink/inbox--light.png (create folders if needed). Write nothing else. Finish by printing the target path.

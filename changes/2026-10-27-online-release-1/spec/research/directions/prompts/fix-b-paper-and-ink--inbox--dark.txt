@@ -1,0 +1,10 @@
+You are fixing ONE generated prototype image of Snapmark online. Use your built-in image generation tool (image_gen) to EDIT the attached image, then verify the result with Python (PIL).
+
+The first attached image is changes/2026-10-27-online-release-1/spec/research/directions/b-paper-and-ink/inbox--dark.png (dark mode). It is approved except for this fault:
+the Snapmark app icon left of "Kestrel Shop" (top of the sidebar, about x 22-58, y 110-146) was turned grey. Restore it to the original coloured Snapmark icon, as in the second attached image (changes/2026-10-27-online-release-1/spec/prototype/refs/ref-snapmark-icon.png); the app icon is the logo, not chrome, and keeps its colours in every direction and mode.
+
+EDIT: pass the first attached image to image_gen as the image to edit. Change ONLY what the fault names. Keep every other pixel, position, size, word, icon and colour identical.
+
+VERIFY: open the edited PNG with PIL and compare the icon region with the original: only the icon may differ.
+
+OUTPUT: overwrite exactly changes/2026-10-27-online-release-1/spec/research/directions/b-paper-and-ink/inbox--dark.png (1536 x 1024 PNG). Write nothing else. Finish by printing the target path, the measured hex and whether you needed the PIL correction.
