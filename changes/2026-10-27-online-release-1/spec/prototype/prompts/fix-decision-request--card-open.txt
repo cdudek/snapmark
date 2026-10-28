@@ -1,0 +1,1 @@
+FIX (round 2). EDIT the attached image (feedback #57 with the decision card). Change ONLY the sidebar: the current page is "Needs Decision" (bold label, soft fill, 2 px ink bar at the left edge); "In Review" becomes a normal item like "Open". Everything else stays pixel-identical.

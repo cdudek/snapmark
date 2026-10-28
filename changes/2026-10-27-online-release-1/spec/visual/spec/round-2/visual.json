@@ -1,0 +1,252 @@
+{
+  "screenshots": [
+    {
+      "file": "shots/inbox--populated.png",
+      "screen_state": "Inbox / populated / 100 % / light (anchor)",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on inbox--populated.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "1cdb5f0c1086137c6ba5d2849ea317272b7b7009a56072fcde3f6e1ab0d04208",
+      "observations": "Sidebar 248 px with Kestrel Shop switcher, Search ⌘K, Inbox 6 current (bold, soft fill, ink bar), My Work, Storefront block with counts, Modules, Sessions, Account Pages, Settings, Ana Silva. Title Inbox, six kind chips with counts, \"2 new\" pill, six 64 px rows with reason, #n title, workspace, time, due badge on row 1, hover Dismiss on row 2, Show 12 More. No blue anywhere, no primary (spec: none). Words match screens.md Inbox.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/app-shell--command-menu.png",
+      "screen_state": "App shell / command menu open (⌘K) over Inbox / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on app-shell--command-menu.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "19c9825c70e50f3372bcd1c83242d2e2f9919052a164e8ce2794de6e7bb6e7b8",
+      "observations": "Scrim over the Inbox anchor, centred 640 px command menu with query \"coupon\", groups Feedback, Go To, Actions on This Page (Connect an Agent), Settings (Workspace Settings); highlighted row is a neutral soft fill; Esc Kbd and key hint footer. Sidebar and rows unchanged underneath. Words match screens.md command groups.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/feedback-view--default.png",
+      "screen_state": "Feedback view / default with thread / v2 awaiting review / 100 % / light (anchor)",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on feedback-view--default.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "0b9c18f826c6d3642996d365ccdd101da02fe9a2bb80fa4149027bf32361c98a",
+      "observations": "Sidebar (In Review current), breadcrumbs Storefront › In Review › #42, title, Implemented status chip with chevron, Change Request badge, Previous/Next/More; version tabs v0 Original, v1 Mockup · Dana, v2 Implementation · PR #212 · Ben via Claude chosen with ink underline, +; toolbar Compare, Draw on Screenshot, − Fit +; checkout screenshot with coral outline and reference 1 on Total; Thread/Details tabs, \"Not reviewed yet\" with the acceptance rule line, entries (Question, Answer badges, system lines, Ben via Claude agent badge); footer context \"On v2 Implementation\", composer \"Comment on v2…\", Approve v2 the only filled button, Request Changes, More. Previous/Next and zoom are outlined icon buttons (outlined is an inventory variant).",
+      "verdict": "issues",
+      "issues": [
+        {
+          "summary": "The filled primary renders about #0469F1, brighter than the accent token #0F72DB (image-generator colour drift; the build takes the token).",
+          "verdict": "violates changes/2026-10-27-online-release-1/spec/screens.md#How to read this file",
+          "id": "VIS-001",
+          "quote": "- **Colour.** System neutrals for surfaces and text; the brand blue, named only by its token `accent` (never a hex: white on the old literal fails 4.5:1), only on the one filled primary per region; no blue borders, links, icons or labels. Links are underlined neutral text. Snapmark's `info` is neutral: the chosen tab, the current page and \"is\" chips use a neutral mark, never blue. Keyboard focus shows the `focus` ring only on keyboard focus (WEB-9, a proposed web exception to ACC-2; see interaction.md). Remove red stays the picker outline and remove marks only."
+        }
+      ]
+    },
+    {
+      "file": "shots/feedback-view--compare.png",
+      "screen_state": "Feedback view / Compare side by side v0 | v2 / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on feedback-view--compare.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "c84247afaf2e53e2e1f9e67c31f2c587911f0bd8eb8f902d1b16130b45ec06da",
+      "observations": "Compare toggle on (neutral), two equal panes with Left: v0 Original and Right: v2 Implementation selects, v0 lacks the coupon line and shows Total €76.41, v2 shows −€8.49 and €81.31, reference 1 on both, aligned at one zoom. Panel and footer unchanged; Approve v2 names the right pane. Screenshot text is small at fit but legible.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/feedback-view--details.png",
+      "screen_state": "Feedback view / Details tab / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on feedback-view--details.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "85f0c183ac6f8992af104637127144faba1d1a23981fa11b765b9219af81572b",
+      "observations": "Details tab chosen (ink underline). Description list in three rank groups: Region, Module, Component, File; Repo, Branch, Worktree (Not found, faint), Environment, Commit, Deployment, PR; Captured, Page, Selector, Viewport, Text; monospace for file, commit, deployment, selector; copy icon per row. Canvas and footer unchanged. Labels match screens.md Details labels.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/feedback-view--guest.png",
+      "screen_state": "Feedback view / guest viewing (Chris Meyer) / Approve disabled with reason / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on feedback-view--guest.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "e812f92bc9d5ccaa48e377d61e3610a57101cd2772bdbc7029a086d4a2e48bf2",
+      "observations": "Sidebar without My Work and Settings, avatar Chris Meyer with Guest badge, Inbox 2; status chip read-only (no chevron); no + on version tabs; composer holds the guest draft; footer row Comment (filled), Approve v2 and Request Changes greyed (disabled), More; reason line under the row reads the spec text exactly. Footer buttons are drawn smaller than the 40 px controls elsewhere to fit four controls in 400 px.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "summary": "A blank gap stays in the sidebar where My Work was removed; the items below do not move up.",
+          "verdict": "no convention",
+          "proposal": "No rule needed: an image artefact. The build collapses hidden items (screens.md App shell: My Work hidden for guests).",
+          "id": "VIS-002"
+        },
+        {
+          "summary": "The guest footer needs four controls (Comment, Approve v2, Request Changes, More) in one 400 px row, so the image shrinks them below the 40 px control height; the spec's row is 'the state's primary, one secondary, More'.",
+          "verdict": "no convention",
+          "proposal": "Decide the guest footer: Comment, Approve v{n} (disabled with the reason line) and More, with Request Changes disabled inside More, so the row keeps 40 px controls.",
+          "id": "VIS-003"
+        }
+      ]
+    },
+    {
+      "file": "shots/feedback-view--default-dark.png",
+      "screen_state": "Feedback view / default with thread / 100 % / dark",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on feedback-view--default-dark.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "29e8e17fbd25ffcb04b69c99b3b84deea919b3d2297fae6d506f3c362e07c2fb",
+      "observations": "Same layout as the anchor in dark roles: ground, raise sidebar, panel surround, light ink text, dim meta; the captured checkout screenshot stays light with its coral outline and reference; Approve v2 the only filled button; hairlines visible; no other blue.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/decision-request--dialog.png",
+      "screen_state": "Decision request / Request a Decision dialog, filled / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on the round-2 edit of decision-request--dialog.png; pixels inspected",
+      "sha256": "ffa2b6c4d7d4f97d561ec3141f43654a170b1d7f45a56aae26f112c350ff96fc",
+      "observations": "Scrim over #57 Coupon field placement (Needs Decision current in the sidebar after the fix, thread shows only Dana, footer On v1 Mockup / Approve v1 greyed). 560 px dialog: title, close, Versions to compare with thumbnails and checkboxes (v0 unchecked, v1 and v2 checked, neutral ink fill), People to ask chips Ana Silva, Ben Okafor, Chris Meyer with Guest badge, Due (optional) 30 Oct 2026, Comment (optional) text, Cancel and Request Decision (only filled button). A stray text caret sits inside the \"Due (optional)\" label.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "summary": "A stray text caret is drawn inside the label \"Due (optional)\".",
+          "verdict": "no convention",
+          "proposal": "No rule needed: an image artefact; the label is plain text in the build.",
+          "id": "VIS-R2-004"
+        }
+      ]
+    },
+    {
+      "file": "shots/decision-request--card-open.png",
+      "screen_state": "Decision card / open, not voted, with tally / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on the round-2 edit of decision-request--card-open.png; pixels inspected",
+      "sha256": "2e33142a111407c348fe59d1899e7dde2174c4890da9261957ce8584767f0b92",
+      "observations": "#57, v1 Mockup chosen, canvas shows the coupon field above Total. Thread: \"Not decided yet\", decision card with heading \"Dana asked Ana, Ben and Chris to decide · Due 30 Oct\", avatar group, two radio options with thumbnails, neutral grey tally bars, \"2 votes\"/\"1 vote\", voter avatars, Vote the only filled button, line \"To decide, approve the chosen version.\"; system line and Dana entry; footer On v1 Mockup, \"Approve v1 and Close Decision\" secondary, More. Sidebar marks Needs Decision.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/phone-inbox--populated.png",
+      "screen_state": "Phone inbox / populated / 390 pt portrait / light",
+      "width": 390,
+      "opened_with": "Read image tool call in this session on phone-inbox--populated.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "b0e69159c1d19ddbc038f706d5af095b1cbaf21618b08b332605d667d95a08f3",
+      "observations": "Top bar with Menu and Inbox, chips scrolling (Mentions cut at the edge), six 72 pt rows with thumbnail, reason, #n title, time, due badge on row 1, unread dots on rows 1-2. Reason lines not truncated. No filled button (spec: no primary).",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/phone-feedback-view--action-bar.png",
+      "screen_state": "Phone feedback view / fixed action bar / 390 pt portrait / light (anchor)",
+      "width": 390,
+      "opened_with": "Read image tool call in this session on phone-feedback-view--action-bar.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "86ed3f98d83642a11a60f7842e2155ec727d2536c278fe55d9cb89e6153ac75f",
+      "observations": "Top bar Back, #42, More; screenshot full width with coral outline and reference 1; title, Implemented and Change Request badges, Not reviewed yet with the rule line; version chips with v2 Implementation chosen; two thread entries; context line On v2 Implementation; reply field Comment… with Send; fixed bar Approve v2 (filled) and Request Changes, 48 pt high, above the home indicator. Vote is absent because no decision is open (screens.md Phone feedback view, Vote: shown only while a decision is open).",
+      "verdict": "issues",
+      "issues": [
+        {
+          "summary": "The filled primary renders about #0469F1, brighter than the accent token #0F72DB (image-generator colour drift; the build takes the token).",
+          "verdict": "violates changes/2026-10-27-online-release-1/spec/screens.md#How to read this file",
+          "id": "VIS-006",
+          "quote": "- **Colour.** System neutrals for surfaces and text; the brand blue, named only by its token `accent` (never a hex: white on the old literal fails 4.5:1), only on the one filled primary per region; no blue borders, links, icons or labels. Links are underlined neutral text. Snapmark's `info` is neutral: the chosen tab, the current page and \"is\" chips use a neutral mark, never blue. Keyboard focus shows the `focus` ring only on keyboard focus (WEB-9, a proposed web exception to ACC-2; see interaction.md). Remove red stays the picker outline and remove marks only."
+        }
+      ]
+    },
+    {
+      "file": "shots/extension--popup-signed-in.png",
+      "screen_state": "Extension popup / signed in, localhost with Mac bridge / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on extension--popup-signed-in.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "ccb144d2b1aff78afc3734892e2894ee37e243488436dc1b20d2edbf1a184bbb",
+      "observations": "Live localhost checkout page without overlay; popup 360 px under the pressed extension icon: Snapmark header, Workspace select Kestrel Shop › Storefront, environment line localhost:3000 · Local, bridge line From your Mac: shop-web · fix/coupon-total · shop-web-coupon, Capture full width (only filled button) with ⌘⇧K caption, Recently Sent with two rows and times, account row Ana Silva.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/extension--picker-chip.png",
+      "screen_state": "Extension picker overlay / hover with code chip / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on extension--picker-chip.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "61578f2cbc5fe463a731e5c2257e4e3c8c35f7cc17a035833b072ca51f09ac8e",
+      "observations": "Hint bar at top centre with the exact hint and Cancel; Order summary card outlined 2 px coral with a light coral wash; pointer over Total; chip to the left of the element, not covering it, reading Checkout › Checkout summary › OrderSummary · src/checkout/OrderSummary.tsx:88 (file monospace, wraps to three lines). No blue.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/extension--drawing-toolbar.png",
+      "screen_state": "Extension drawing / Box tool active with tooltip / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on the round-2 edit of extension--drawing-toolbar.png; pixels inspected",
+      "sha256": "a785fb5c63234600300e9fb43159c4932b7df7ae83d7c27c0c32e230c58b99eb",
+      "observations": "Toolbar with key captions C, 1-7, coral swatch, Undo, Redo; Box chosen with neutral fill; tooltip \"Box (2) · press again for Ellipse\"; coral box being drawn with handles and the pointer at its corner; compose panel empty with placeholders, no References heading, Module and Where moved up under Description after the fix; footer Discard Feedback and Send Feedback.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/extension--compose-code-found.png",
+      "screen_state": "Extension compose / code location found / 100 % / light (anchor)",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on extension--compose-code-found.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "9c17502276774e685718b62d8247ec0d6aa3574e2884f5aa3ecc889f7445ccb3",
+      "observations": "Screenshot of the localhost checkout with coral outline, box and reference 1; floating toolbar; compose panel 360 px: title New Feedback in Storefront, Change Request | Comment, Title and Description filled, References with Note for 1, Module Checkout summary, Where with Region, Module, Component, File (monospace), Repo, Branch, Environment, Version and copy icons; footer Discard Feedback and Send Feedback (only filled button).",
+      "verdict": "issues",
+      "issues": [
+        {
+          "summary": "The filled primary renders about #0469F1, brighter than the accent token #0F72DB (image-generator colour drift; the build takes the token).",
+          "verdict": "violates changes/2026-10-27-online-release-1/spec/screens.md#How to read this file",
+          "id": "VIS-008",
+          "quote": "- **Colour.** System neutrals for surfaces and text; the brand blue, named only by its token `accent` (never a hex: white on the old literal fails 4.5:1), only on the one filled primary per region; no blue borders, links, icons or labels. Links are underlined neutral text. Snapmark's `info` is neutral: the chosen tab, the current page and \"is\" chips use a neutral mark, never blue. Keyboard focus shows the `focus` ring only on keyboard focus (WEB-9, a proposed web exception to ACC-2; see interaction.md). Remove red stays the picker outline and remove marks only."
+        }
+      ]
+    },
+    {
+      "file": "shots/extension--compose-mac-not-running.png",
+      "screen_state": "Extension compose / Mac app not running (repo unknown) / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on extension--compose-mac-not-running.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "dfec8c40b73abc65250d35d766c6115bba3b17db96b22ead10c059c9649de999",
+      "observations": "Identical to the anchor except the Where block: Repo \"Unknown. Open the Mac app to add it.\" without copy, Branch and Version \"Not found\" without copy; Region, Module, Component, File and Environment unchanged.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/device-consent--default.png",
+      "screen_state": "Device consent / agent client, write scopes off / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on device-consent--default.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "97fba565b2c7bb949eef7fcd5df6188bd2cfe83f1c77429e8b83f36a0fba8d5d",
+      "observations": "Centred 480 px card: terminal and Snapmark icons, title Allow Claude Code to use your Snapmark account?, read line, It may also: with three switches all off (grey), agent hint under Report implementations, divider, safety line, Deny and Allow Claude Code side by side with equal size and weight, both secondary; no filled button. Signed-in line under the card.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/operator-waitlist--selection.png",
+      "screen_state": "Operator waitlist / three rows selected, bulk invite / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on operator-waitlist--selection.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "7023dc436ccd34f5b748aadfa762d4bf44efcca69d8965e8c582849bf43f23c4",
+      "observations": "Operator sidebar with Operator label, Waitlist current, other items, Back to App underlined; title Waitlist; chips All, Waiting (on), Invited, Joined; Search emails, Role, Sort Requested, oldest first; selection bar 3 selected, Invite 3 (only filled), Clear Selection; table with eight Waiting rows, rows 1-3 checked with neutral ink checkboxes and soft fill, header checkbox indeterminate; columns Email, Role, Requested, Source, Status, More.",
+      "verdict": "compliant",
+      "issues": []
+    },
+    {
+      "file": "shots/landing--hero.png",
+      "screen_state": "Landing / hero with waitlist form / 100 % / light (anchor)",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on landing--hero.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "f010ee56b3d30b12dac1098c78eb249ca9ed7e97e8a271b7b144be71b67d23ea",
+      "observations": "Header with logo and ghost Sign In; headline Ship what your team meant.; subhead; Work email field with you@company.com and Join the Waitlist (only filled); What do you do? (optional) select; We invite teams in small groups.; calm hero picture of #42 with one coral reference and a two-entry thread; the next heading starts at the fold. No gradients, no feature list in the hero.",
+      "verdict": "issues",
+      "issues": [
+        {
+          "summary": "The filled primary renders about #0469F1, brighter than the accent token #0F72DB (image-generator colour drift; the build takes the token).",
+          "verdict": "violates changes/2026-10-27-online-release-1/spec/screens.md#How to read this file",
+          "id": "VIS-009",
+          "quote": "- **Colour.** System neutrals for surfaces and text; the brand blue, named only by its token `accent` (never a hex: white on the old literal fails 4.5:1), only on the one filled primary per region; no blue borders, links, icons or labels. Links are underlined neutral text. Snapmark's `info` is neutral: the chosen tab, the current page and \"is\" chips use a neutral mark, never blue. Keyboard focus shows the `focus` ring only on keyboard focus (WEB-9, a proposed web exception to ACC-2; see interaction.md). Remove red stays the picker outline and remove marks only."
+        }
+      ]
+    },
+    {
+      "file": "shots/landing--outcomes-closing.png",
+      "screen_state": "Landing / outcomes, How It Works, closing form, footer / 100 % / light",
+      "width": 1440,
+      "opened_with": "Read image tool call in this session on landing--outcomes-closing.png in round 1; bytes unchanged in round 2 (same sha256); pixels inspected",
+      "sha256": "2c2769bd5ce7de65ebbb10d61d301ea625d5dc0aaa9ba7f5bff42d0d673d3555",
+      "observations": "Thin sticky header; four outcomes as plain text blocks in 2 × 2 with the exact microcopy; How It Works with three numbered steps in smaller type; closing heading and text with the waitlist form again (Join the Waitlist only filled button); footer © 2026 Snapmark and underlined neutral Privacy, Terms, Imprint.",
+      "verdict": "compliant",
+      "issues": []
+    }
+  ]
+}

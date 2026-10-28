@@ -69,7 +69,7 @@ One gate covers `spec/`, `facts.md` and this plan. Four things need your eye mos
 - [ ] 1.3 `snapmark-kit/tokens` from `design-system-starter` plus the Snapmark overlay, and `snapmark-kit/ui` with every HeroUI wrapper of `spec/conformance.md`. Tokens lint. F6, F7, F8, F9, N1, N6, N7, N8.
 - [ ] 1.4 `snapmark-web` skeleton: Next.js 16 with `(public)`, `(app)` and `(operator)` route groups under `[locale]`, next-intl, `messages/en.json` from `spec/microcopy.md`, i18n lint, dependency-cruiser boundaries. F10, F11, N2, N3, N4.
 - [ ] 1.5 Lasting UX docs move into `snapmark-web/docs/ux/` (owner, 2026-10-27: "this is what I would expect"). They are `glossary.md`, `interaction-guidelines.md`, `sitemap.md`, `sitemap.json`, `setup.md` (through `omr-ux:init`), and the glossary check. F12, F13, F14, F15, F16.
-- [ ] 1.6 Local run and data: Docker Compose Postgres, Drizzle schema for design 8.2 plus the tech review's additions, migrations, seed. F17, F18, F19.
+- [ ] 1.6 Local run and data: Docker Compose Postgres, Drizzle 0.45 schema for design 8.2 plus the 22 gaps in `tech-review.md` (Data model), migrations, seed. Sign-in sessions and Mac sessions are separate tables. Postgres and `next dev` bind to localhost. F17, F18, F19.
 - [ ] 1.7 `src/domain`: status machine, acceptance rule, entitlements and anchor resolution, pure and unit-tested. Milestones 2, 4 and 6 build on it. Part of F54 to F59 (their screens land in milestone 2).
 - [ ] 1.8 Storage: Terraform for the captures and dev buckets in `snapmark-ai`, `europe-west3`, with state in a Cloud Storage backend. The storage provider hands out signed URLs. REST `POST /api/v1/captures` and `POST /api/v1/feedback`, so milestone 3 has a server. F20, F21.
 - [ ] 1.9 Mail and sign-in: mail provider (`console`, `resend` stub), Better Auth magic link, Sign In and its states, Sign-In Methods with the release-2 slot. F22 to F27.
@@ -103,7 +103,7 @@ One gate covers `spec/`, `facts.md` and this plan. Four things need your eye mos
 ### Milestone 5 — Mac localhost bridge
 
 - [ ] 5.1 Native messaging host: manifest install, port to process to folder, repo, branch, worktree and commit. F122, F123, F124.
-- [ ] 5.2 Settings › Online tab: bridge checkbox and status, Sign In… with the device code. F125 to F130, N14.
+- [ ] 5.2 Settings › Online tab: bridge checkbox and status, Sign In… through the browser with PKCE and a loopback redirect (A35). F125 to F130, N14.
 
 ### Milestone 6 — Landing page and operator area
 
@@ -134,6 +134,10 @@ This planning PR edits three sections of the design in place:
 - Section 3: "Agent" is the label and "Copilot" an alias (A32).
 - Section 4.4: a member may change the status by hand (A33).
 - Section 5: guests comment, draw and vote, and never approve (A31).
+
+Decisions that refine the design are ADRs, `docs/designs/2026-10-28-adr-*.md`, status `proposed` until this gate. They cover the device token model (A34), Mac sign-in (A35), the bridge socket and the pinned extension id. They also cover untrusted-text wrapping, feedback numbers and the sync model. The rest are unchanging captures, contracts v1, server-sent events, Drizzle 0.45 and signed uploads. On approval they become `accepted`.
+
+Package versions follow `tech-review.md` (Dependencies). New packages are pinned exactly, Drizzle stays on 0.45, and `@better-auth/mcp` replaces the design's `oauthProvider()` line.
 
 ## Where things go
 
@@ -189,17 +193,23 @@ In `snapmark-desktop` only. The three new repos are created whole.
 
 ## Risks
 
-| Risk                                                       | What we do                                                                                                   | Where it lands                |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| Milestones 2, 4 and 6 edit the same web repo at once       | Shared code (domain, schema, shell) lands in milestone 1; each milestone rebases on `main` after every merge | 1.6, 1.7, 2.3                 |
-| Creating repos and a real bucket cannot be undone silently | Both are approved at this gate; Terraform plans first and applies once                                       | 1.1, 1.8                      |
-| Kit releases and app bumps drift                           | Apps pin kit versions; contracts change only by a new API version                                            | 1.2                           |
-| React 19 dev data changes between versions                 | Fallback anchor always works; adapters are tested on pinned framework versions                               | 3.2, F84                      |
-| A guest's text steers an agent (A28)                       | Quoted envelope, no approve tool, read-only tokens, audit per call                                           | 4.3                           |
-| The Mac app's local workflow breaks                        | Online code lives in `src/online/`; N14 runs in the Mac smoke                                                | 5.1, 7.2                      |
-| Sync loses typed text                                      | Last write wins keeps the loser in the thread; replay is tested offline                                      | F150, F153                    |
-| Open validation findings, severity 2 (6) and 1 (9)         | Built as `spec/validation.md` lists them, reviewed at each milestone                                         | `spec/validation.md` Findings |
-| The prototype images miss a spec detail                    | `spec/prototype/known-image-faults.md` lists them; the spec wins                                             | milestone reviews             |
+| Risk                                                        | What we do                                                                                                   | Where it lands                |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| Milestones 2, 4 and 6 edit the same web repo at once        | Shared code (domain, schema, shell) lands in milestone 1; each milestone rebases on `main` after every merge | 1.6, 1.7, 2.3                 |
+| Creating repos and a real bucket cannot be undone silently  | Both are approved at this gate; Terraform plans first and applies once                                       | 1.1, 1.8                      |
+| Kit releases and app bumps drift                            | Apps pin kit versions; contracts change only by a new API version                                            | 1.2                           |
+| React 19 dev data changes between versions                  | Fallback anchor always works; adapters are tested on pinned framework versions                               | 3.2, F84                      |
+| A guest's text steers an agent (A28)                        | Every untrusted string is a JSON field, no approve tool, read-only tokens, audit per call                    | 4.3, F112                     |
+| Someone reads or plants work across organisations (S2, S3)  | One authorisation test over every route, action, stream and tool; ambiguous repo matches are refused         | 2.x, 4.2, F105                |
+| A revoked device keeps working until its token expires (S4) | Every device call checks the device row                                                                      | 4.1                           |
+| Guest text runs as script in the web app (S7)               | Text is rendered as text, never HTML                                                                         | 2.5                           |
+| The extension leaks its token to the page (S9)              | Token only in the background script, `activeTab`, compose in an extension iframe                             | 3.1, 3.3                      |
+| Anyone signs up during the closed beta (S10)                | Sign-in creates no account without an invitation or membership                                               | 1.9                           |
+| Better Auth cannot issue revocable tokens (not verified)    | Milestone 1 checks it first; the fallback is our own device-token table behind the same interface            | 1.9, ADR token model          |
+| The Mac app's local workflow breaks                         | Online code lives in `src/online/`; N14 runs in the Mac smoke                                                | 5.1, 7.2                      |
+| Sync loses typed text                                       | Last write wins keeps the loser in the thread; replay is tested offline                                      | F150, F153                    |
+| Open validation findings, severity 2 (6) and 1 (9)          | Built as `spec/validation.md` lists them, reviewed at each milestone                                         | `spec/validation.md` Findings |
+| The prototype images miss a spec detail                     | `spec/prototype/known-image-faults.md` lists them; the spec wins                                             | milestone reviews             |
 
 ## Out of scope
 

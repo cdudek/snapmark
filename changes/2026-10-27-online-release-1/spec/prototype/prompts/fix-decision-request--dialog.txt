@@ -1,0 +1,5 @@
+FIX (round 2). EDIT the attached image (the Request a Decision dialog over feedback #57). The dialog itself is right: keep it pixel-identical. Change ONLY the dimmed page behind the scrim:
+- Sidebar: the current page is "Needs Decision" (bold, soft fill, 2 px ink bar); "In Review" is a normal item.
+- Right panel thread: show ONLY Dana's entry (DW "Dana Weiss" · "on v1" · "27 Oct" · "Two ways to place the coupon field. Which keeps the total in view on small screens?" · "1 mark"). Remove the Ben via Claude and Ana Silva entries and the two system lines about claiming and Implemented.
+- Panel footer: context line "On v1 Mockup", composer placeholder "Comment on v1…", footer row "Approve v1" (soft grey, not blue) and the More icon button; remove "Request Changes".
+Keep the scrim, the header, the tabs and the canvas as they are.
