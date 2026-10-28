@@ -212,7 +212,7 @@
           },
           "position": "body",
           "status": "proposed",
-          "note": "expands in place: up to 7 modules by activity, then All Modules"
+          "note": "expands in place: up to 7 modules by name in a fixed order, then All Modules"
         },
         {
           "label": {
@@ -2032,7 +2032,7 @@
         {
           "kind": "navigation",
           "from": "sidebar Modules",
-          "detail": "up to 7 modules by activity",
+          "detail": "up to 7 modules by name",
           "source": "spec/ia.md Screen Inventory, Move Table"
         },
         {
