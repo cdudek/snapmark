@@ -38,17 +38,13 @@ Started by mistake in an `omr-reviews-workspace-infra` session. Everything below
 - `<NN>-<slug>/prompt.txt`: one prompt per direction, six screens each:
   `web-feedback--review-open`, `web-feedback--accept-ready`, `side-panel--this-page`, `side-panel--thread-compare`, `page--annotate-live`, `page--show-v0-wipe`.
 - `refs/`: the owner's mock, plus the Mac app's calm screens (editor, session window, capture bar) as style references.
-- **Run 1 failed**: the skill's `-c model="gpt-5.5"` is not allowed on a ChatGPT-linked Codex account. **Run 2** was started without the model flag (account default `gpt-6-astra`). It may have finished, or died with the old session. Check `ls */shots` and `*/codex.log`. If the shots are empty, re-run from this folder:
-
-```bash
-R=$PWD; for d in 01-safe 02-bold 03-contrarian; do ( codex exec --sandbox workspace-write --skip-git-repo-check --cd "$R/$d" --output-last-message "$R/$d/codex-summary.txt" -i "$R/refs/owner-mock-feedback-view.png" -i "$R/refs/mac-editor.png" -i "$R/refs/mac-session.png" -i "$R/refs/mac-capture-bar.png" - < "$R/$d/prompt.txt" > "$R/$d/codex.log" 2>&1 ) & done; wait
-```
+- **Run 1 failed**: the skill's `-c model="gpt-5.5"` is not allowed on a ChatGPT-linked Codex account. **Run 2 succeeded** (account default `gpt-6-astra`, no model flag): all 18 images exist in `<NN>-<slug>/shots/`, each direction has its `notes.md`, and `gallery.html` is built. **No image has been checked yet.**
 
 ## Next steps
 
 1. Check every image: tokens, words, nothing cut off, and **the primary is rightmost in every row**. Re-generate any image that fails, naming the fault.
-2. Build the gallery: `python3 ~/.claude/plugins/cache/omr-ai-kit/omr-dev/f60c23f4e2e8/skills/designs-explore/scripts/gallery.py . --open`
-3. Commit this folder to `docs/chrome-extension-panel` (PR #116), run `npm run format && npm run lint` first, and hand over the three directions. Do not pick a winner.
+2. Rebuild the gallery after any re-generation: `python3 ~/.claude/plugins/cache/omr-ai-kit/omr-dev/f60c23f4e2e8/skills/designs-explore/scripts/gallery.py . --open`
+3. Commit re-generated images to `docs/chrome-extension-panel` (PR #116), run `npm run format && npm run lint` first, and hand over the three directions. Do not pick a winner.
 4. After the owner picks a direction, take PR #116 out of draft.
 
 ## Open, not started
