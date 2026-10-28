@@ -76,7 +76,7 @@ These words are the product's vocabulary: UI text, API names, table names and do
 | **Question**         | A thread entry that blocks work until answered.                                                                                              |
 | **Review**           | Approve, Request changes or Comment, on a version.                                                                                           |
 | **Decision request** | Asks named people to vote between versions, optionally by a date.                                                                            |
-| **Copilot**          | The coding agent acting for a person through MCP, shown as "Ben via Claude". Not a member.                                                   |
+| **Agent**            | The coding agent acting for a person through MCP, shown as "Ben via Claude". Not a member. Alias: copilot (owner, 2026-10-28: "Agent").      |
 | **Operator**         | Snapmark staff using the operator area. Not an organisation role; "admin" always means an organisation's admin.                              |
 | **Session**          | A Mac app session: a local folder of captures and `session.md`. Can be shared to a workspace.                                                |
 
@@ -112,7 +112,7 @@ These words are the product's vocabulary: UI text, API names, table names and do
 
 ### 4.4 Status
 
-`open` → `in progress` (copilot claimed it) → `implemented` → `accepted`, or back to `open` when changes are requested. "Needs answer" and "Needs decision" are shown as flags, not states: a feedback with an open question or decision request cannot be claimed.
+`open` → `in progress` (copilot claimed it) → `implemented` → `accepted`, or back to `open` when changes are requested. "Needs answer" and "Needs decision" are shown as flags, not states: a feedback with an open question or decision request cannot be claimed. A member may also change the status by hand, on one feedback or several, when a fix was made without an agent (owner, 2026-10-28); acceptance still follows the rule in 4.2.
 
 ### 4.5 Journey across environments (later, but the data exists from day one)
 
@@ -121,7 +121,7 @@ Feedback given on production v1.4 → fixed in PR #212 → accepted on its previ
 ## 5. Accounts, organisations and plans
 
 - **Owner:** a user can be in many organisations (freelancers and agencies are real users). Switching organisations needs no new login; the extension, MCP and links take the organisation from context.
-- **Roles:** owner, admin, member (paid seat), guest (free, only workspaces they are invited to). Up to 5 guests per paid seat (owner). Guests view, comment, draw and vote; members also capture into shared workspaces, request decisions, approve, invite and use MCP.
+- **Roles:** owner, admin, member (paid seat), guest (free, only workspaces they are invited to). Up to 5 guests per paid seat (owner). Guests view, comment, draw and vote, and never approve or request changes (owner, 2026-10-27: "Comment, draw, vote"); members also capture into shared workspaces, request decisions, approve, invite and use MCP.
 - **Plans (owner):** Free is solo with no invites at all, not even guests; it includes capture, own feedback, MCP and the GitHub link, and every use needs an account (the extension does not work signed out). Paid is $4 per seat per month billed yearly ($48), $6 monthly, per organisation, with everything included. At least one paying person is behind every shared space. Free accounts open after the closed release.
 - **Seats (owner):** admins buy a number of seats first. Inviting someone means picking their role: a guest needs no seat; a member or admin needs a free seat, and the invite cannot be sent without one. People joining through a claimed company domain join as guests (Claude's call, so no one is billed unasked); an admin can make them members if a seat is free.
 - **Entitlements (owner):** code checks what a plan allows (`can_invite`, `can_export_audit`, `max_history_days`), never plan names, so a Business plan later is a mapping, not a code change.
