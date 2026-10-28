@@ -1,0 +1,11 @@
+![Review open](shots/web-feedback--review-open.png)
+
+![Accept ready](shots/web-feedback--accept-ready.png)
+
+![This page](shots/side-panel--this-page.png)
+
+![Thread comparison](shots/side-panel--thread-compare.png)
+
+![Live annotation](shots/page--annotate-live.png)
+
+![Version wipe](shots/page--show-v0-wipe.png)
