@@ -1,0 +1,7 @@
+SCREEN: screens.md "Extension drawing and compose" (Drawing toolbar; Words: Tool tooltip); interaction.md State Tables "Extension drawing and compose" (Default). STATE: drawing on the page, Box tool active with its tooltip, compose panel still empty, light mode.
+
+EDIT the attached anchor image. Change ONLY this:
+- Drawing toolbar: the chosen tool is now Box "2" (soft grey fill, not blue); Select "C" no longer chosen. Under the Box button a small tooltip (lift #FFFFFF, e1 shadow, radius 8): "Box (2) · press again for Ellipse".
+- On the screenshot: the coral box around Coupon and Total is being drawn (resize handles at its corners, the pointer at the lower-right corner). Remove the reference "1" diamond.
+- Compose panel back to empty: segmented "Change Request" chosen; "Title" field shows placeholder "Total should be bold" in faint; "Description" shows placeholder "What should it look like instead?"; REMOVE the "References" heading and its row entirely (no reference exists yet); "Module" shows placeholder "Choose or type a module". The "Where" block stays exactly as it is.
+- Footer unchanged: "Discard Feedback" (secondary) and "Send Feedback" (filled accent).

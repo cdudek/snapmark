@@ -1,0 +1,26 @@
+SCREEN: screens.md "App shell (sidebar, command menu, shortcuts, 404)" and "Inbox"; interaction.md State Tables "App shell" and "Inbox". STATE: Inbox, populated, desktop 100 %, light mode. This image is the ANCHOR for the app shell: get the sidebar exactly right.
+
+Browser window, address bar "app.snapmark.dev/inbox".
+LEFT SIDEBAR 248 px on raise #F2F3F5, top to bottom, with these exact labels:
+- Organisation switcher: small Snapmark icon (from the attached icon), "Kestrel Shop", a chevron.
+- Search row: ghost button with a magnifier, "Search" and a Kbd "⌘K" at the right.
+- "Inbox" with count 6 right-aligned (CURRENT PAGE: bold label, soft fill, 2 px ink bar at the left edge; no blue). "My Work".
+- Workspace block header "Storefront" (expanded, chevron down) with items: "Open" 14, "Needs Decision" 2, "In Review" 3, "Done", "Modules" (collapsed, chevron right), "Sessions".
+- Workspace block header "Account Pages" (collapsed, chevron right).
+- Bottom: "Settings" (gear icon), then the avatar row "AS  Ana Silva", and a small "Collapse Sidebar" icon button.
+Counts right-aligned in faint grey. Icons thin line, dim grey.
+
+MAIN (lift #FFFFFF), content max 880 px, left-aligned with 32 px margin:
+- Title "Inbox" (title 20/28 semibold, or display size) top-left. No primary button anywhere on this page.
+- Under it the kind chips (single choice): "All 6" (on: soft fill), "Decisions 1", "Reviews 2", "Questions 1", "Mentions 1", "Answers 1".
+- A small centred ghost pill "2 new" above the rows.
+- Six InboxRows, 64 px high, separated by 1 px edge hairlines. Each row: a small unread dot (ink, only rows 1-2), a kind icon, a 48 px thumbnail of a checkout/web shop screenshot, then two lines: line 1 = reason in 16 px ink, line 2 = "#n title" in dim; at the right: workspace "Storefront" in faint, due chip when present, time in faint.
+  1. "Dana asked you to decide" / "#57 Coupon field placement" / due badge "Due 30 Oct" (warn-wash soft badge) / "10 min"
+  2. "Ben via Claude implemented this" / "#42 Total jumps when the coupon applies" / "25 min"
+  3. "Ben via Claude asked a question" / "#61 Shipping estimate wording" / "1 h"
+  4. "Chris mentioned you" / "#38 Gift card balance hides on mobile" / "3 h"
+  5. "Ben answered your question" / "#44 Express checkout button order" / "Yesterday"
+  6. "Ben via Claude implemented this" / "#35 Address autocomplete misses house numbers" / workspace "Account Pages" / "Yesterday"
+- Row 2 is hovered: soft-hover fill and a small Dismiss icon button (tooltip not needed) at the right end.
+- Below the rows a secondary button "Show 12 More".
+Lots of calm whitespace on the right of the 880 px list.

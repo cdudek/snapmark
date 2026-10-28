@@ -1,0 +1,14 @@
+SCREEN: screens.md "Landing" (Sections 3-6); microcopy.md "Public › Landing". STATE: the landing page scrolled down to the outcomes, How It Works, the closing waitlist form and the footer, desktop 100 %, light mode. Copy at "hopes and dreams" level (A30).
+
+Use the attached landing hero image ONLY as the style reference (same type, widths, colours, header). Draw a NEW landscape 1536 x 1024 image of the same browser window scrolled down (no header visible at the top, or a thin sticky header with logo and "Sign In"):
+- FOUR OUTCOMES in a 2 × 2 grid of plain text blocks (no cards, no icons in boxes): each a heading (title 20/28 semibold) and a paragraph (body, dim, max 640):
+  "No more screenshot ping-pong." — "Feedback stays on the thing it’s about. Your engineer and their agent get everything they need to act on it."
+  "Decisions that stick." — "Weigh the options side by side, vote, and settle it. Months later, anyone can see what was decided, by whom and why."
+  "Your agent builds the right thing." — "When work starts, your engineer’s agent already knows what was asked, where it lives in the code and what the team agreed. It never decides for you."
+  "Keep work moving from anywhere." — "Answer a question or approve a change from your phone between meetings. Nothing waits on you."
+- "How It Works" heading (smaller), three columns in smaller type, each with a step number in faint:
+  "Point at it. Click anything in your product in Chrome, or on your Mac, and say what you expect."
+  "Decide together. Comment, compare versions and approve in one place."
+  "Hand it to your agent. Your engineer’s coding agent picks up what was agreed and reports back when it’s done."
+- CLOSING: heading "Be one of the first teams." and text "Bring your team and the product you’re building. We’ll do the rest together." then the same waitlist form: "Work email" field with placeholder "you@company.com" and the filled accent #0F72DB button "Join the Waitlist" (ONLY blue element), the select "What do you do? (optional)", and "We invite teams in small groups."
+- FOOTER: neutral underlined links "Privacy", "Terms", "Imprint" and "© 2026 Snapmark" in faint.

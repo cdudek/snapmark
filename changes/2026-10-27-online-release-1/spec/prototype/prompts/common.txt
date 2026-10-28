@@ -1,0 +1,46 @@
+You are a senior product designer drawing the prototype of a VALIDATED design spec for Snapmark online (web app, Chrome extension, public landing page). Produce GENERATED IMAGES with your built-in image generation tool (image_gen), nothing else: no HTML, no code, no SVG, no README.
+
+You run at the repo root. Before drawing, read these files (they are the spec; the exact words come from them, and microcopy.md wins over screens.md when they differ):
+- changes/2026-10-27-online-release-1/spec/screens.md (section named below, plus "How to read this file" and "Shared component inventory")
+- changes/2026-10-27-online-release-1/spec/microcopy.md (the matching section)
+- changes/2026-10-27-online-release-1/spec/interaction.md ("State Tables", the screen named below)
+- changes/2026-10-27-online-release-1/spec/conformance.md ("Design system" and "Component inventory")
+- /Users/calvindudek/projects/design-system-starter/examples/snapmark.md and snapmark-app/src/tokens.css (the pinned tokens)
+
+Attached reference images are Snapmark's own approved calm Mac screens (capture bar, editor with notes column) and the app icon. The web must feel like the same product: calm, system-like, quiet greys, generous whitespace, HeroUI v3 look (soft filled controls without borders, rounded 8 px, subtle shadows only on floating layers).
+
+DESIGN SYSTEM (binding; never invent a colour, font or size outside this list)
+Colour roles, light mode (dark mode values in brackets, used only when asked):
+- lift #FFFFFF [#34383E]: main content surface of the web app, cards, popovers
+- overlay #FAFAFB [#2A2E34]: dialogs, menus, toasts, popover fill
+- raise #F2F3F5 [#22252B]: sidebar, panel backgrounds, skeletons
+- panel #EBEDEF [#1A1D23]: side panels, canvas surround behind a screenshot
+- ground #DDE0E3 [#13161C]: the window ground behind everything (use sparingly on web)
+- soft #00000012 [#FFFFFF1F]: fill of secondary buttons, text fields, chosen tab, selected row, chips "on"
+- soft-hover #0000000A [#FFFFFF0F]: row hover
+- edge #B9BEC6 [#40444A]: hairlines and dividers (1 px), table row separators
+- ink #13161C [#FAFAFB]: primary text
+- dim #54585F [#B9BEC6]: secondary text
+- faint #5E6269 [#AAAEB6]: meta text, captions, timestamps
+- off #9A9FA6 [#54585F]: disabled text and icons
+- accent #0F72DB [#0F72DB] with on-accent #FFFFFF text: the brand blue role. Used ONLY as the fill of the ONE primary button per screen region. (The brand hue is #2492FF; the spec names the token "accent" = #0F72DB because white text on #2492FF fails 4.5:1. Use #0F72DB for the filled button.)
+- keep #00846B text / keep-wash #D3F4EA: success, accepted tick
+- warn-text #765200 / warn-wash #F6EBCA: due soon, waiting
+- error-text #AB0032 / error-wash #FFDCDE: errors only
+- Annotation marks: references are numbered coral red #E5484D diamonds/markers with white digits; remove marks (cross, remove area) coral red #E5484D; the extension picker outline is 2 px #E5484D with a light coral wash. Highlighter yellow. Coral red is never used for UI chrome.
+HARD COLOUR RULES: no blue anywhere except the one filled primary button: no blue links (links are underlined neutral ink text), no blue icons, no blue outlines or focus rings, no blue tab underline, no blue selected rows, no blue badges. The current page in a sidebar is a bold label plus a 2 px neutral (ink) bar and soft fill. The chosen tab uses a neutral mark. Status badges are neutral soft chips (text + soft fill), never colour alone. Destructive buttons are outlined, never a red fill.
+Type: Inter (system-ui fallback). Display 32/40 semibold; title 20/28 semibold; figure 24/32 semibold; body and control text 16 px (spec "Sizes": control text 16); captions, meta and table headers 12/16 medium; Kbd chips 12 px in a soft rounded box. Sentence case for messages and labels; Title Case for buttons, menu items, tabs, sidebar items, chips, table headers, dialog and page titles.
+Sizes: control heights 32 / 40 / 48; radius 8 (12 for dialogs and the popup); row height 48 (Inbox rows 64, phone rows 72); spacing on a 4 px grid (4, 8, 12, 16, 24, 32, 48); sidebar 248 px; right panel 400 px; hit areas 32 pointer, 44 touch. Shadows: e1 0 2 8 #0F172A26 (menus), e2 0 6 20 #0F172A33 (popovers), e3 0 16 40 #0F172A40 (dialogs). Dialog scrim: ink at about 30 % opacity.
+Components: HeroUI v3 behind thin wrappers. Buttons: primary (accent fill, white, semibold), secondary (soft grey fill, ink text, no border), ghost (no fill), outlined (1 px edge). Text fields: soft fill, no border, label above in 12/16 medium dim. Chips (filters): rounded full, 32 high, soft fill when on, plain when off. Badges (status, Guest, kind): small inert rounded labels, soft fill. Avatars: round with initials on soft neutral fills (no bright colours). Icons: thin 1.5 px line icons in dim grey; every dropdown menu item has an icon before its label.
+
+CONTENT (real, never lorem ipsum)
+Organisation "Kestrel Shop" (a web shop). Workspaces "Storefront" (current) and "Account Pages". Module "Checkout summary". People: Ana Silva (product manager, the default viewer, avatar "AS"), Ben Okafor (engineer; his coding agent shows as "Ben via Claude", avatar "BO" with a tiny agent badge), Chris Meyer (guest from the client, shown with a "Guest" badge, avatar "CM"), Dana Weiss (designer, avatar "DW").
+Main feedback: #42 "Total jumps when the coupon applies", kind Change Request, module Checkout summary, status Implemented (waiting for review). Versions: "v0 Original", "v1 Mockup · Dana", "v2 Implementation · PR #212" (author "Ben via Claude").
+The screenshot inside the product is a calm web shop checkout page "Order summary": items "Linen Overshirt, Sand, M  €59.00" and "Canvas Tote  €25.90", Subtotal €84.90, Coupon SPRING10 −€8.49, Shipping €4.90, Total €81.31, button "Pay €81.31". (On v0 the Total row looked jumpy: show it as the same page.) Reference 1 (coral diamond) sits on the Total row; a thin coral outline marks the anchored Order summary module.
+
+OUTPUT RULES
+- One screen and one state per image. Text sharp and readable at full size; nothing cut off; no overlapping text; real alignment on the grid.
+- Desktop images: landscape 1536 x 1024, a browser window (minimal neutral Chrome frame with the address bar is fine) showing the page at 100 % (a 1440 px window scaled down).
+- Phone images: portrait 1024 x 1536, a 390 x 844 pt phone screen filling the image (status bar at top, home indicator at bottom, no device bezel).
+- Generate with image_gen, then copy the chosen output from $CODEX_HOME/generated_images/... (default ~/.codex/generated_images/<session>/) to the exact target path given below (create folders). Write nothing else. Finish by printing the target path.
+- When asked to EDIT an attached anchor image: pass it to image_gen as the image to edit, change ONLY what is listed, and keep everything else pixel-identical in layout (positions, sizes, grid, chrome, colours, words).

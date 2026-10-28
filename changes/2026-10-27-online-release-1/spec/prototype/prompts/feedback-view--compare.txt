@@ -1,0 +1,8 @@
+SCREEN: screens.md "Feedback view"; interaction.md State Tables "Feedback view" (Compare). STATE: Compare side by side, left v0 Original, right v2 Implementation, light mode.
+
+EDIT the attached anchor image. Change ONLY this:
+- The "Compare" toggle in the canvas toolbar is pressed (soft fill, ink label; never blue).
+- The canvas splits into TWO equal panes side by side with a 1 px edge divider. Above each pane a small Select: left pane "Left: v0 Original ▾", right pane "Right: v2 Implementation ▾".
+- Left pane: the v0 screenshot of the same checkout page where the total row shows the old jumpy value: "Coupon SPRING10" line is missing and Total reads "€76.41" with a coral reference "1" on it. Right pane: the v2 screenshot (as in the anchor) with "Coupon SPRING10 −€8.49" and "Total €81.31" and coral reference "1". Both at the same zoom, aligned at the same height (linked zoom).
+- The version tab "v2 Implementation · PR #212 · Ben via Claude" stays chosen.
+Keep the sidebar, header, right panel thread and the footer ("On v2 Implementation", composer, "Approve v2" filled, "Request Changes", More) exactly as they are.

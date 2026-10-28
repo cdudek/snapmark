@@ -1,0 +1,7 @@
+SCREEN: screens.md "Feedback view" (Approve table, Guest row; Controls: Approve, Request Changes); interaction.md State Tables "Feedback view" (Guest). STATE: viewer Chris Meyer (Guest), Approve and Request Changes shown but disabled with the reason, light mode.
+
+EDIT the attached anchor image. Change ONLY this:
+- Sidebar for a guest: remove "My Work" and "Settings"; avatar row reads "CM  Chris Meyer" with a small inert "Guest" badge. Inbox count "2".
+- Header: the status chip "Implemented" has no chevron (read-only badge). The "+" next to the version tabs is gone.
+- Panel footer: composer now holds Chris's draft "Looks right on my phone too. Can the discount line also show on the receipt email?"; the footer row becomes: "Comment" (the ONLY filled accent #0F72DB button), "Approve v2" (DISABLED: soft fill with off-grey text #9A9FA6), "Request Changes" (DISABLED, same look), More icon button. Directly under the row, in faint 12/16, the reason line: "Guests can comment, draw and vote. Approving and requesting changes need a member."
+Keep the canvas, version tabs, thread and everything else exactly as they are.

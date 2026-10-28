@@ -1,0 +1,14 @@
+SCREEN: screens.md "Extension drawing and compose"; interaction.md State Tables "Extension drawing and compose" (Code found). STATE: compose panel filled, code location found via the Mac bridge, desktop 100 %, light mode. ANCHOR for the extension's drawing/compose overlay.
+
+A Chrome window, address bar "localhost:3000/checkout", the Snapmark extension icon in the toolbar. The extension overlay covers the viewport:
+- LEFT (fluid): the captured screenshot of the shop's checkout page (left: "Shipping address" form fields; right: "Order summary" card with Linen Overshirt €59.00, Canvas Tote €25.90, Subtotal €84.90, Coupon SPRING10 −€8.49, Shipping €4.90, Total €81.31, black "Pay €81.31"). The picked element (Order summary) has a thin coral #E5484D outline. Marks drawn: a coral diamond reference "1" on the Total row and a coral box around the Coupon and Total lines.
+- DRAWING TOOLBAR 40 px high, centred over the top of the screenshot, a floating overlay #FAFAFB pill with e2 shadow: icon buttons with key captions under them: Select "C", Reference "1", Box "2", Arrow "3", Pen "4", Cross "5", Highlighter "6", Cut & Move "7", a divider, a round coral #E5484D colour swatch (Mark Colour), divider, Undo and Redo icons. Chosen tool (Select) has a soft grey fill, not blue.
+- RIGHT: COMPOSE PANEL 360 px (overlay #FAFAFB, left hairline, full height):
+  - Title "New Feedback in Storefront" (semibold).
+  - Segmented control: "Change Request" (chosen, white on soft track) | "Comment".
+  - Label "Title", field value "Total jumps when the coupon applies".
+  - Label "Description", textarea value "The total changes a second after SPRING10 applies. Keep it steady and show the discount as its own line."
+  - Heading "References"; one row: coral diamond "1" + textarea "Total should not re-render when the discount lands."
+  - Label "Module", autocomplete value "Checkout summary".
+  - Heading "Where"; a quiet description list (label in faint 12/16, value in ink 14-16, a small copy icon at the right of each row): Region "Checkout › Order summary" · Module "Checkout summary" · Component "OrderSummary" · File "src/checkout/OrderSummary.tsx:88" (monospace) · Repo "shop-web" · Branch "fix/coupon-total" · Environment "localhost:3000 · Local" · Version "4f2c9e1".
+  - Footer pinned at the bottom right: "Discard Feedback" (secondary) and "Send Feedback" (the ONLY filled accent #0F72DB button).

@@ -1,0 +1,13 @@
+SCREEN: screens.md "Phone inbox" (and "Inbox" for words and rows); interaction.md State Tables "Inbox". STATE: phone, 390 pt portrait, populated, viewer Ana, light mode.
+
+Use the attached phone anchor image ONLY as the style reference (same status bar, gutters, type, greys, top bar height). Draw a NEW image (portrait 1024 x 1536):
+- Top bar 56 pt: a "Menu" icon button (three lines) left, title "Inbox" centred. No other action.
+- Kind chips scrolling horizontally under the bar: "All 6" (on: soft fill), "Decisions 1", "Reviews 2", "Questions 1", "Mentions 1" (the next chip cut by the right edge to show it scrolls).
+- Rows, 72 pt each, full width, hairline separators, text 16: unread dot (rows 1-2), a 48 pt thumbnail of the checkout page, line 1 reason (ink), line 2 "#n title" (dim), at the right the time (faint); the due badge under the time on row 1. The reason line never truncates; titles may wrap to two lines.
+  1. "Dana asked you to decide" / "#57 Coupon field placement" / "10 min" / badge "Due 30 Oct"
+  2. "Ben via Claude implemented this" / "#42 Total jumps when the coupon applies" / "25 min"
+  3. "Ben via Claude asked a question" / "#61 Shipping estimate wording" / "1 h"
+  4. "Chris mentioned you" / "#38 Gift card balance hides on mobile" / "3 h"
+  5. "Ben answered your question" / "#44 Express checkout button order" / "Yesterday"
+  6. "Ben via Claude implemented this" / "#35 Address autocomplete misses house numbers" / "Yesterday"
+- No filled blue button anywhere on this screen (an empty Inbox is the goal; there is no primary).

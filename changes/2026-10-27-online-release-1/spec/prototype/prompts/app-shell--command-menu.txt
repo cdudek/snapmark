@@ -1,0 +1,11 @@
+SCREEN: screens.md "App shell (sidebar, command menu, shortcuts, 404)"; interaction.md State Tables "App shell" (Command menu open). STATE: ⌘K command menu open over the Inbox, light mode.
+
+EDIT the attached anchor image (the Inbox). Change ONLY this:
+- Dim the whole page behind with a soft scrim (ink at about 30 %).
+- Add the COMMAND MENU: a centred modal 640 px wide near the top third, overlay #FAFAFB, radius 12, e3 shadow. Top: a large search input (no border, magnifier icon) with the typed query "coupon" and a caret; a small Kbd "Esc" at the right. Hairline under it. Then grouped results (group headings 12/16 medium faint), each result row 40 px with a thin line icon before the label:
+  "Feedback": "#42 Total jumps when the coupon applies" (HIGHLIGHTED row: soft fill, NOT blue; with a faint "Storefront" and "↩" at the right) · "#57 Coupon field placement" · "#41 Coupon error is too quiet"
+  "Go To": "Checkout summary" (faint "Module · Storefront") · "Needs Decision" (faint "Storefront")
+  "Actions on This Page": "Connect an Agent"
+  "Settings": "Workspace Settings"
+- Footer strip of the modal in faint 12/16: "↑↓ to move · ↩ to open · Esc to close".
+Keep the sidebar, the Inbox title, chips and rows exactly as they are underneath (dimmed).

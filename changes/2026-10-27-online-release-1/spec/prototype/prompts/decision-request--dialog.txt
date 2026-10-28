@@ -1,0 +1,11 @@
+SCREEN: screens.md "Decision request: dialog and card"; interaction.md State Tables "Request a Decision (dialog)" (Default). STATE: Request a Decision dialog open, filled in, light mode.
+
+EDIT the attached anchor image. Change ONLY this:
+- Behind the dialog the feedback is now #57: breadcrumbs "Storefront › Needs Decision › #57", title "Coupon field placement", status badge "Open", kind badge "Comment"; version tabs "v0 Original", "v1 Mockup · Dana" (chosen), "v2 Alternative · Dana", "+". The canvas shows the v1 mockup of the checkout page with the coupon field placed directly above the Total. The thread shows Dana's entry "Two ways to place the coupon field. Which keeps the total in view on small screens?". Dim all of it with a scrim (ink about 30 %).
+- Centred MODAL 560 px, overlay #FAFAFB, radius 12, e3 shadow, 24 px padding:
+  - Title "Request a Decision" (title semibold) and a close × icon.
+  - Label "Versions to compare": two thumbnails per row (120 px wide), each with a checkbox (checked = neutral ink fill, not blue) and caption under it: [ ] "v0 Original · Ana"  [x] "v1 Mockup · Dana"  [x] "v2 Alternative · Dana" (third thumbnail wraps to a second row).
+  - Label "People to ask": a soft-filled multi-select field with removable chips "Ana Silva", "Ben Okafor", "Chris Meyer" (with a small "Guest" badge inside the chip).
+  - Label "Due (optional)": date field "30 Oct 2026" with a calendar icon.
+  - Label "Comment (optional)": textarea "Which keeps the total in view on small screens?"
+  - Footer right-aligned: "Cancel" (secondary) and "Request Decision" (the ONLY filled accent #0F72DB button; the footer Approve of the page behind must not look filled/blue).

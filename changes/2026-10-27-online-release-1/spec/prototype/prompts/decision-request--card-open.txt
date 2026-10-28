@@ -1,0 +1,11 @@
+SCREEN: screens.md "Decision request: dialog and card" (Card); interaction.md State Tables "Decision card (in the thread)" (Open, not voted). STATE: decision card open with tally, viewer Ana has not voted, light mode.
+
+EDIT the attached anchor image. Change ONLY this:
+- The feedback is now #57: breadcrumbs "Storefront › Needs Decision › #57", title "Coupon field placement", status badge "Open", kind badge "Comment"; version tabs "v0 Original", "v1 Mockup · Dana" (chosen), "v2 Alternative · Dana", "+". The canvas shows the v1 mockup of the checkout page with the coupon field placed directly above the Total.
+- Right panel Thread: replace the acceptance line with "Not decided yet" and put the DECISION CARD at the top of the thread (lift #FFFFFF, 1 px edge, radius 12, 16 px padding, full panel width):
+  - Heading line: "Dana asked Ana, Ben and Chris to decide · Due 30 Oct" with a More icon at the right; under it a small avatar group DW → AS, BO, CM.
+  - Two options as a radio group, each row: radio (empty), 56 px thumbnail, label "v1 Mockup" / "v2 Alternative", a NEUTRAL GREY tally bar (no colour), the tally text "2 votes" / "1 vote", and voter avatars (BO, CM for v1; DW for v2).
+  - Button "Vote" (filled accent #0F72DB: the ONLY blue element in the window).
+  - A faint line: "To decide, approve the chosen version."
+- Under the card, the thread continues with a system line "Dana requested a decision between v1 and v2." and Dana's entry "Two ways to place the coupon field. Which keeps the total in view on small screens?".
+- Panel footer: context line "On v1 Mockup", composer placeholder "Comment on v1…", footer row "Approve v1 and Close Decision" (SECONDARY soft fill, NOT blue, because Vote is the next move) and More.

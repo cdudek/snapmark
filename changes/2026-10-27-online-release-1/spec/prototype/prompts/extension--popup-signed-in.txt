@@ -1,0 +1,10 @@
+SCREEN: screens.md "Extension popup"; microcopy.md "Chrome extension › Popup"; interaction.md State Tables "Extension popup". STATE: signed in, on localhost with the Mac bridge connected, light mode.
+
+Use the attached anchor image ONLY as the style reference for the host page and the extension's look. Draw a NEW landscape 1536 x 1024 image: a Chrome window, address bar "localhost:3000/checkout", the live shop checkout page (Shipping address form left, Order summary right with Total €81.31 and the black "Pay €81.31"). NO overlay on the page. The Snapmark extension icon in Chrome's toolbar is pressed and its POPUP hangs below it at the top right: 360 px wide, overlay #FAFAFB, radius 12, e2 shadow, 16 px padding, top to bottom:
+- Header: Snapmark icon + "Snapmark" (semibold), nothing else.
+- Label "Workspace" (12/16 faint) above a soft-filled select showing "Kestrel Shop › Storefront" with a chevron.
+- Environment line (dim, small globe icon): "localhost:3000 · Local".
+- Bridge line (dim, small laptop icon): "From your Mac: shop-web · fix/coupon-total · shop-web-coupon".
+- "Capture" — full width, 40 px high, the ONLY filled accent #0F72DB button; a small faint caption "⌘⇧K" beside or under it.
+- Hairline, heading "Recently Sent" (12/16 medium faint), two rows: "#42 Total jumps when the coupon applies" · "2 h"; "#41 Coupon error is too quiet" · "Yesterday".
+- Footer: avatar "AS" + "Ana Silva" with a chevron (the account menu).

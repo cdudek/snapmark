@@ -1,0 +1,21 @@
+SCREEN: screens.md "Feedback view"; interaction.md State Tables "Feedback view" (Default). STATE: default with thread, viewer Ana (member), v2 Implementation awaiting review, desktop 100 %, light mode. This image is the ANCHOR for the feedback view: every other feedback-view state will be an edit of it, so make every region crisp and clearly separated.
+
+Browser window, address bar "app.snapmark.dev/storefront/42".
+Three columns: sidebar 248 px (same sidebar as the Inbox: "Kestrel Shop" switcher, Search ⌘K, Inbox 6, My Work, Storefront block with Open 14, Needs Decision 2, In Review 3 (CURRENT: bold, soft fill, 2 px ink bar), Done, Modules, Sessions; Account Pages; Settings; AS Ana Silva) · canvas fluid · right panel 400 px.
+
+HEADER across canvas + panel (lift): breadcrumbs "Storefront › In Review › #42" in faint; then the title "Total jumps when the coupon applies" (title semibold), then inert badges: status chip "Implemented" with a small chevron (it opens Change Status), kind badge "Change Request". At the far right: Previous and Next icon buttons (chevrons up/down) and a More icon button (three dots).
+VERSION TABS under the header: "v0 Original", "v1 Mockup · Dana", "v2 Implementation · PR #212 · Ben via Claude" (CHOSEN: neutral soft fill or 2 px ink underline, never blue), then a small "+" icon button.
+CANVAS TOOLBAR (one quiet row): "Compare" (toggle, off), "Draw on Screenshot", then zoom controls "−", "Fit", "+" on the right.
+SCREENSHOT CANVAS on panel #EBEDEF: the v2 screenshot of the checkout page, white page, centred and fitted, with soft shadow: "Order summary" card with "Linen Overshirt, Sand, M  €59.00", "Canvas Tote  €25.90", hairline, "Subtotal €84.90", "Coupon SPRING10  −€8.49", "Shipping €4.90", bold "Total €81.31", a dark "Pay €81.31" button (the shop's own button, black). Left of it a shipping-address form column of the shop. A thin coral #E5484D outline around the Order summary card and a coral diamond reference "1" on the Total row.
+
+RIGHT PANEL 400 px (lift, left hairline):
+- Tabs "Thread" (chosen, neutral) and "Details".
+- Acceptance line: "Not reviewed yet" (ink, medium) and under it in faint: "Accepted when it has at least one Approve and no open objection."
+- Thread entries, oldest first, each: avatar, name, inert kind badge if any, version pointer "on v0", time, body:
+  1. AS "Ana Silva" · "on v0" · "27 Oct" — "The total jumps from €84.90 to €76.41 and back a second after the coupon applies. Keep the total steady and show the discount as its own line." with a small marks preview chip "1 mark".
+  2. BO "Ben via Claude" (tiny agent badge on the avatar) · badge "Question" · "on v0" · "27 Oct" — "Should the discount line show the code, like “SPRING10 −€8.49”, or only “Discount”?"
+  3. AS "Ana Silva" · badge "Answer" · "27 Oct" — "Show the code. Customers check it."
+  4. System line in faint, no avatar: "Ben via Claude claimed this."
+  5. System line: "Ben via Claude changed the status to Implemented."
+  6. BO "Ben via Claude" · "on v2" · "10:42" — "Posted v2. The discount is now its own line and the total renders once. PR #212."
+- PANEL FOOTER fixed at the bottom (top hairline): context line in faint 12/16 "On v2 Implementation"; a soft-filled composer field with placeholder "Comment on v2…"; then ONE row: "Approve v2" (the ONLY filled accent #0F72DB button in the whole window), "Request Changes" (secondary soft), and a "More" icon button.

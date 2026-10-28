@@ -1,0 +1,9 @@
+SCREEN: screens.md "Landing"; microcopy.md "Public › Landing"; interaction.md State Tables "Landing". STATE: first screen of the public landing page (hero with the waitlist form), desktop 100 %, light mode. Copy at "hopes and dreams" level (A30): outcomes, never a feature list.
+
+Browser window, address bar "snapmark.dev". Page background lift #FFFFFF, content max 1120 px centred.
+- HEADER: Snapmark logo (the attached icon, small, + wordmark "Snapmark") left; a ghost button "Sign In" right. Nothing else in the header.
+- HERO, 2 columns:
+  LEFT (reading max 640): headline "Ship what your team meant." (display 32/40 semibold, may be larger on the landing, ink); subhead in dim body 18/26: "Your team decides once. Your agent builds the right thing the first time."; then the WAITLIST FORM inline: label "Work email" above a soft-filled field (320 px) with placeholder "you@company.com", and beside it the filled accent #0F72DB primary button "Join the Waitlist" (the ONLY blue element on the page); under it a select labelled "What do you do? (optional)" showing a placeholder chevron; under that in faint: "We invite teams in small groups."
+  RIGHT: a calm hero image: a framed Snapmark feedback view (soft shadow, radius 12) showing a checkout page "Order summary" with ONE coral #E5484D diamond reference "1" on the Total row, and a short thread beside it: "Ana Silva: Keep the total steady when the coupon applies." / "Ben via Claude: Done in PR #212. Ready for review." / an "Approve v2" button inside the picture (grey, it is a picture, not a page action).
+- Below the fold edge, just the top of the next section begins: heading "No more screenshot ping-pong." partly visible.
+Calm, lots of whitespace, no gradients, no stock photos, no icons in boxes, no cards for outcomes.

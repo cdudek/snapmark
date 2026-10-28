@@ -1,0 +1,8 @@
+SCREEN: screens.md "Extension drawing and compose" (Words: Repo unknown on localhost) and "Extension popup" (Bridge not running); interaction.md State Tables "Extension drawing and compose". STATE: compose on localhost while the Mac app is not running, so repo and branch are unknown, light mode.
+
+EDIT the attached anchor image. Change ONLY the "Where" block of the compose panel:
+- Repo — "Unknown. Open the Mac app to add it." (dim text, no copy icon)
+- Branch — "Not found" (faint, no copy icon)
+- Version — "Not found" (faint, no copy icon)
+- Region, Module, Component, File and Environment rows stay as they are (they come from the page itself).
+Everything else stays pixel-identical.

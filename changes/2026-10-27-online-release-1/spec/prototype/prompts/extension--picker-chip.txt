@@ -1,0 +1,7 @@
+SCREEN: screens.md "Extension picker overlay"; interaction.md State Tables "Extension picker overlay" (Hover). STATE: picking an element on the live page, hover outline with the code chip, light mode.
+
+Use the attached anchor image ONLY as the style reference for the host page and the extension's look. Draw a NEW landscape 1536 x 1024 image: a Chrome window, address bar "localhost:3000/checkout", the live shop checkout page (Shipping address form left, Order summary card right). The picker overlay is active:
+- HINT BAR at the top centre of the page (max 560 px, overlay #FAFAFB, radius 8, e2 shadow): "Click an element, or drag an area. ↑ selects the parent. Esc cancels." and a ghost button "Cancel".
+- The hovered element is the "Order summary" card: a 2 px coral #E5484D outline with a light coral wash over it. The pointer (arrow cursor) rests over the Total row.
+- The CHIP beside the element (to its left, never covering it; max 480 px; overlay #FAFAFB, radius 8, e1 shadow, 12/16 text): "Checkout › Checkout summary › OrderSummary · src/checkout/OrderSummary.tsx:88" (file in monospace).
+No other UI. No blue.

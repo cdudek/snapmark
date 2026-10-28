@@ -1,0 +1,7 @@
+SCREEN: screens.md "Feedback view". STATE: default with thread, DARK MODE (follows the system).
+
+EDIT the attached anchor image. Change ONLY the colours to dark mode, keeping every position, size and word identical:
+- Use these dark roles: window ground #13161C, side panels/canvas surround panel #1A1D23, sidebar raise #22252B, main surfaces overlay #2A2E34, cards/popovers lift #34383E; hairlines edge #40444A; primary text ink #FAFAFB; secondary dim #B9BEC6; meta faint #AAAEB6; soft fills #FFFFFF1F.
+- The one filled primary "Approve v2" stays accent #0F72DB with white text. No other blue.
+- The screenshot of the shop's checkout page inside the canvas stays LIGHT (it is a captured image), with its coral #E5484D outline and reference "1" unchanged.
+- Browser chrome dark.

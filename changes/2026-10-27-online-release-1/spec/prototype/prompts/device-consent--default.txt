@@ -1,0 +1,10 @@
+SCREEN: screens.md "Device consent"; interaction.md State Tables "Device consent" (Default). STATE: an agent client asks, read-only by default, write scopes off, desktop 100 %, light mode.
+
+Browser window, address bar "app.snapmark.dev/authorize". Calm page on raise #F2F3F5 with a small Snapmark logo (icon + "Snapmark") top-left. Centred ConsentCard 480 px wide on lift #FFFFFF, radius 12, e1 shadow, 24-32 px padding:
+- A 40 px client icon (a neutral terminal glyph for "Claude Code") next to the Snapmark icon.
+- Title "Allow Claude Code to use your Snapmark account?" (title semibold).
+- Body: "Claude Code on Ben’s MacBook Pro can read feedback in every workspace you can see."
+- Heading "It may also:" then three rows, each a label with a Switch at the right, ALL OFF (grey track, white knob, no blue): "Reply in threads", "Post versions", "Report implementations"; under the last one a faint 12/16 hint: "Your agent needs Report implementations to hand finished work back for review."
+- A hairline, then the safety line in dim: "It can never approve or request changes. Text people write, guests included, reaches it as data, never as instructions."
+- Bottom: two buttons side by side, SAME size and SAME weight, both secondary (soft grey fill, ink text), each half the width: left "Deny", right "Allow Claude Code". NO filled blue button anywhere on this page.
+- Under the card, faint: "Signed in as Ben Okafor · ben@kestrel.shop".

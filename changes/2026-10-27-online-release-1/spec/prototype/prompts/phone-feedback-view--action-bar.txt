@@ -1,0 +1,11 @@
+SCREEN: screens.md "Phone feedback view"; interaction.md State Tables "Phone feedback view" (Default). STATE: phone, 390 pt portrait, viewer Ana, v2 Implementation awaiting review, no decision open, light mode. ANCHOR for the phone screens.
+
+Portrait 1024 x 1536, a phone screen (iOS-style status bar "9:41" at top, home indicator at the bottom, no bezel). 16 pt side gutters, text 16.
+Top to bottom:
+- Top bar 56 pt: a Back icon button (chevron left), title "#42" centred, a More icon button (three dots) right.
+- Screenshot full width (tap to zoom): the checkout page "Order summary" (Linen Overshirt €59.00, Canvas Tote €25.90, Subtotal €84.90, Coupon SPRING10 −€8.49, Shipping €4.90, Total €81.31, black "Pay €81.31"), with a thin coral #E5484D outline and coral diamond reference "1" on Total.
+- Title "Total jumps when the coupon applies" (semibold), then inert badges "Implemented" and "Change Request", then the acceptance line "Not reviewed yet" with the rule under it in faint: "Accepted when it has at least one Approve and no open objection."
+- Version chips scrolling horizontally (segmented): "v0 Original", "v1 Mockup", "v2 Implementation" (chosen: neutral soft fill).
+- Thread (shorter): AS "Ana Silva" · on v0 · "The total jumps from €84.90 to €76.41 and back a second after the coupon applies. Keep the total steady…"; BO "Ben via Claude" (agent badge) · on v2 · "Posted v2. The discount is now its own line and the total renders once. PR #212."
+- Above the bar: context line in faint "On v2 Implementation" and a reply field with placeholder "Comment…" and a "Send" button inside the field (secondary, not blue).
+- ACTION BAR fixed at the bottom above the home indicator, 64 pt, on overlay #FAFAFB with a top hairline: two buttons sharing the width, each 48 pt high: "Approve v2" (the ONLY filled accent #0F72DB button) and "Request Changes" (secondary soft fill). No Vote button (no decision is open).

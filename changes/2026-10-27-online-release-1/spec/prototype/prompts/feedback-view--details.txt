@@ -1,0 +1,23 @@
+SCREEN: screens.md "Feedback view" (Lists: Details; Words: Details labels); interaction.md State Tables "Feedback view". STATE: right panel Details tab, light mode.
+
+EDIT the attached anchor image. Change ONLY the right panel content between its tabs and its footer:
+- Tab "Details" is now chosen (neutral mark), "Thread" not.
+- Replace the acceptance line and thread with a quiet description list (rows 36-40 px, label left in faint 12/16, value right of it in ink, monospace for file, selector and commit; a small copy icon button at the far right of each value row):
+  Region — Checkout › Order summary
+  Module — Checkout summary
+  Component — OrderSummary
+  File — src/checkout/OrderSummary.tsx:88
+  Repo — kestrel/shop-web
+  Branch — main
+  Worktree — Not found (in faint)
+  Environment — Staging
+  Commit — 4f2c9e1
+  Deployment — staging-2026-10-27.3
+  PR — #212
+  Captured — 27 Oct 2026, 14:32
+  Page — staging.kestrel.shop/checkout
+  Selector — [data-testid="order-total"]
+  Viewport — 1440 × 900
+  Text — Total €81.31
+- Thin hairlines may group rows (rank 1: Region–File, rank 2: Repo–PR, rank 3: Captured–Text).
+Keep the sidebar, header, version tabs, canvas and the panel footer exactly as they are.
