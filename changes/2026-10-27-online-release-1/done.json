@@ -773,7 +773,7 @@
       "id": "F97",
       "tag": "@F97",
       "milestone": 4,
-      "asks": ["A28"],
+      "asks": ["A28", "A34"],
       "screen": "Device consent",
       "states": ["default"]
     },
@@ -781,7 +781,7 @@
       "id": "F98",
       "tag": "@F98",
       "milestone": 4,
-      "asks": ["A28"],
+      "asks": ["A28", "A34"],
       "screen": "Device consent",
       "states": ["default"]
     },
@@ -789,7 +789,7 @@
       "id": "F99",
       "tag": "@F99",
       "milestone": 4,
-      "asks": ["A28"],
+      "asks": ["A28", "A34"],
       "screen": "none",
       "states": ["default"]
     },
@@ -813,7 +813,7 @@
       "id": "F102",
       "tag": "@F102",
       "milestone": 4,
-      "asks": ["A2"],
+      "asks": ["A2", "A34"],
       "screen": "Account, Devices",
       "states": ["default"]
     },
@@ -821,7 +821,7 @@
       "id": "F103",
       "tag": "@F103",
       "milestone": 4,
-      "asks": ["A2", "A28"],
+      "asks": ["A2", "A28", "A34"],
       "screen": "none",
       "states": ["default"]
     },
@@ -837,7 +837,7 @@
       "id": "F105",
       "tag": "@F105",
       "milestone": 4,
-      "asks": ["A2"],
+      "asks": ["A2", "A28"],
       "screen": "none",
       "states": ["default"]
     },
@@ -998,7 +998,7 @@
       "tag": "@F125",
       "milestone": 5,
       "asks": ["A26"],
-      "screen": "Settings \u203a Online tab",
+      "screen": "Settings › Online tab",
       "states": ["default"]
     },
     {
@@ -1006,7 +1006,7 @@
       "tag": "@F126",
       "milestone": 5,
       "asks": ["A5"],
-      "screen": "Settings \u203a Online tab",
+      "screen": "Settings › Online tab",
       "states": ["default"]
     },
     {
@@ -1014,7 +1014,7 @@
       "tag": "@F127",
       "milestone": 5,
       "asks": ["A5"],
-      "screen": "Settings \u203a Online tab",
+      "screen": "Settings › Online tab",
       "states": ["default"]
     },
     {
@@ -1022,23 +1022,23 @@
       "tag": "@F128",
       "milestone": 5,
       "asks": ["A5"],
-      "screen": "Settings \u203a Online tab",
+      "screen": "Settings › Online tab",
       "states": ["default"]
     },
     {
       "id": "F129",
       "tag": "@F129",
       "milestone": 5,
-      "asks": ["A26", "A28"],
-      "screen": "Settings \u203a Online tab, device code",
+      "asks": ["A26", "A28", "A35"],
+      "screen": "Settings › Online tab, waiting for browser",
       "states": ["default"]
     },
     {
       "id": "F130",
       "tag": "@F130",
       "milestone": 5,
-      "asks": ["A26"],
-      "screen": "Settings \u203a Online tab, expired",
+      "asks": ["A26", "A35"],
+      "screen": "Settings › Online tab, error",
       "states": ["default"]
     },
     {
@@ -1290,6 +1290,78 @@
       "states": ["default"]
     },
     {
+      "id": "F162",
+      "tag": "@F162",
+      "milestone": 1,
+      "asks": ["A18", "A19"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F163",
+      "tag": "@F163",
+      "milestone": 1,
+      "asks": ["A7", "A17"],
+      "screen": "Check your email, Emails",
+      "states": ["default"]
+    },
+    {
+      "id": "F164",
+      "tag": "@F164",
+      "milestone": 1,
+      "asks": ["A1"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F165",
+      "tag": "@F165",
+      "milestone": 1,
+      "asks": ["A19", "A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F166",
+      "tag": "@F166",
+      "milestone": 2,
+      "asks": ["A2", "A31"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F167",
+      "tag": "@F167",
+      "milestone": 2,
+      "asks": ["A4", "A31"],
+      "screen": "Feedback view, thread",
+      "states": ["default"]
+    },
+    {
+      "id": "F168",
+      "tag": "@F168",
+      "milestone": 3,
+      "asks": ["A6", "A28"],
+      "screen": "Extension drawing and compose",
+      "states": ["default"]
+    },
+    {
+      "id": "F169",
+      "tag": "@F169",
+      "milestone": 4,
+      "asks": ["A28", "A31"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F170",
+      "tag": "@F170",
+      "milestone": 4,
+      "asks": ["A18", "A28"],
+      "screen": "Account, Devices",
+      "states": ["default"]
+    },
+    {
       "id": "N1",
       "tag": "@N1",
       "milestone": "all",
@@ -1437,7 +1509,6 @@
     "/account/profile",
     "/account/sign-in-methods",
     "/authorize",
-    "/device",
     "/imprint",
     "/invite/[token]",
     "/operator/flags",

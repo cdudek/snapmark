@@ -68,6 +68,13 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - [ ] **F26** (A7) If a link is reused or older than 15 minutes, then the system shall refuse it and offer a new one. Screen/state: Verify, expired. Tag: `@F26`.
 - [ ] **F27** (A7) Account › Sign-In Methods shall list Email and keep a slot for GitHub and Google with no button. Screen/state: Account, Sign-In Methods. Tag: `@F27`.
 
+#### Security and data model (tech review)
+
+- [ ] **F162** (A18, A19) `next dev` and the Postgres container shall listen on `127.0.0.1` only, unless `SNAPMARK_LAN=1` opens the LAN for the phone test. Screen/state: none. Tag: `@F162`.
+- [ ] **F163** (A7, A17) If an email has no invitation, waitlist invitation or membership, then sign-in shall create no account and print the waitlist mail. Screen/state: Check your email, Emails. Tag: `@F163`.
+- [ ] **F164** (A1) The system shall take each feedback number from its workspace's counter, inside the insert transaction, so two sends never share a number. Screen/state: none. Tag: `@F164`.
+- [ ] **F165** (A19, A26) The database shall keep sign-in sessions in Better Auth's `session` table and shared Mac sessions in `shared_sessions`. Screen/state: none. Tag: `@F165`.
+
 <details>
 <summary>Verification</summary>
 
@@ -98,6 +105,10 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - F25 — tag `@F25`: `snapmark-web/e2e/sign-in.spec.ts › link signs in and opens the last organisation`
 - F26 — tag `@F26`: `snapmark-web/e2e/sign-in.spec.ts › used or expired link is refused`
 - F27 — tag `@F27`: `snapmark-web/e2e/account.spec.ts › sign-in methods list email, slot for later`
+- F162 — tag `@F162`: `snapmark-web/test/infra/bind.test.ts › dev server and Postgres bind to 127.0.0.1 unless SNAPMARK_LAN=1`
+- F163 — tag `@F163`: `snapmark-web/e2e/sign-in.spec.ts › uninvited email gets no account and the waitlist mail`
+- F164 — tag `@F164`: `snapmark-web/test/db/numbering.test.ts › parallel inserts get distinct numbers from the counter`
+- F165 — tag `@F165`: `snapmark-web/test/db/migrate.test.ts › session and shared_sessions are separate tables`
 
 </details>
 
@@ -170,6 +181,11 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - [ ] **F72** (A18) On a phone, Inbox, item, Approve v{n} shall take three taps and name the version. Screen/state: Phone inbox, Phone feedback view. Tag: `@F72`.
 - [ ] **F73** (A18) On a phone, settings, drawing, Post Version and the operator area shall show the desktop-only message. Screen/state: Desktop-only message. Tag: `@F73`.
 
+#### Access and safe text (tech review)
+
+- [ ] **F166** (A2, A31) Routes, server actions and streams shall answer 403 or 404 to an outsider, a guest or another organisation's member without access. Screen/state: none. Tag: `@F166`.
+- [ ] **F167** (A4, A31) The web app shall render people's text, names and marks as escaped text or the Markdown subset, never as raw HTML. Screen/state: Feedback view, thread. Tag: `@F167`.
+
 <details>
 <summary>Verification</summary>
 
@@ -219,6 +235,8 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - F71 — tag `@F71`: `snapmark-web/e2e/phone.spec.ts › action bar stays on screen`
 - F72 — tag `@F72`: `snapmark-web/e2e/phone.spec.ts › approve in three taps`
 - F73 — tag `@F73`: `snapmark-web/e2e/phone.spec.ts › desktop-only message`
+- F166 — tag `@F166`: `snapmark-web/test/server/access-matrix.test.ts › every route, action and stream refuses outsider, guest and other organisation`
+- F167 — tag `@F167`: `snapmark-web/e2e/xss.spec.ts › script and HTML in guest text render as text`
 
 </details>
 
@@ -258,6 +276,10 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - [ ] **F94** (A5) If the Mac app found no repo for the host, then the popup shall say so and name Docker as a cause. Screen/state: Extension popup, bridge no repo. Tag: `@F94`.
 - [ ] **F95** (A5, A15) When the bridge answers, the capture's version stamp shall carry its repo, branch, worktree and commit. Screen/state: Feedback view, Details. Tag: `@F95`.
 
+#### Extension safety (tech review)
+
+- [ ] **F168** (A6, A28) The extension shall keep its token in the background script, use `activeTab`, and render compose in a `chrome-extension://` iframe. Screen/state: Extension drawing and compose. Tag: `@F168`.
+
 <details>
 <summary>Verification</summary>
 
@@ -283,6 +305,7 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - F93 — tag `@F93`: `snapmark-chrome/e2e/bridge.spec.ts › off line`
 - F94 — tag `@F94`: `snapmark-chrome/e2e/bridge.spec.ts › no repo line`
 - F95 — tag `@F95`: `snapmark-chrome/e2e/bridge.spec.ts › stamp carries repo and branch`
+- F168 — tag `@F168`: `snapmark-chrome/test/manifest.test.ts › token in background only, activeTab, compose in extension iframe`
 
 </details>
 
@@ -291,33 +314,35 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 #### Devices and scopes
 
 - [ ] **F96** (A2) The MCP endpoint at `/mcp` shall follow the MCP authorisation spec, with browser sign-in through OAuth and PKCE. Screen/state: Device consent. Tag: `@F96`.
-- [ ] **F97** (A28) The consent page shall show the read line and the write scopes unticked, with Allow and Deny of equal weight. Screen/state: Device consent. Tag: `@F97`.
-- [ ] **F98** (A28) A new device token shall be read-only unless the person ticked a write scope. Screen/state: Device consent. Tag: `@F98`.
-- [ ] **F99** (A28) If a read-only token calls `reply`, `post_version` or `report_implementation`, then the server shall refuse and name the missing scope. Screen/state: none. Tag: `@F99`.
+- [ ] **F97** (A28, A34) The consent page shall show the read line, the write scopes unticked and naming claim and ask, and equal Allow and Deny. Screen/state: Device consent. Tag: `@F97`.
+- [ ] **F98** (A28, A34) A new device token shall be read-only unless the person ticked a write scope. `claim` and `unclaim` need Report implementations; `ask` needs Reply in threads. Screen/state: Device consent. Tag: `@F98`.
+- [ ] **F99** (A28, A34) If a read-only token calls `claim`, `unclaim`, `ask`, `reply`, `post_version` or `report_implementation`, then the server shall refuse and name the missing scope. Screen/state: none. Tag: `@F99`.
 - [ ] **F100** (A28) Account › Devices shall list each device with its client, scopes and last use. Screen/state: Account, Devices. Tag: `@F100`.
 - [ ] **F101** (A18, A28) When a person revokes a device, its next call shall be refused, on a phone too. Screen/state: Account, Devices. Tag: `@F101`.
-- [ ] **F102** (A2) Connect an Agent shall show the MCP address and the command to add it. Screen/state: Account, Devices. Tag: `@F102`.
+- [ ] **F102** (A2, A34) Connect an Agent shall show the MCP address, the command to add it, and the scopes needed to claim and ask. Screen/state: Account, Devices. Tag: `@F102`.
 
 #### Tools
 
-- [ ] **F103** (A2, A28) The server shall offer exactly `list_workspaces`, `list_feedback`, `get_feedback`, `claim`, `ask`, `post_version`, `report_implementation` and `reply`. Screen/state: none. Tag: `@F103`.
+- [ ] **F103** (A2, A28, A34) The server shall offer exactly nine tools: `list_workspaces`, `list_feedback`, `get_feedback`, `claim`, `unclaim`, `ask`, `post_version`, `report_implementation` and `reply`. Screen/state: none. Tag: `@F103`.
 - [ ] **F104** (A3, A28) No tool shall approve, request changes or change acceptance. Screen/state: none. Tag: `@F104`.
-- [ ] **F105** (A2) Tools shall take the workspace from a link, the repo or an argument, across every organisation the user can see. Screen/state: none. Tag: `@F105`.
+- [ ] **F105** (A2, A28) Tools shall take the workspace from a link, the repo or an argument, across every organisation the user can see. If a repo matches workspaces in several organisations and no link or argument names one, then the tool shall refuse and name the candidates. Screen/state: none. Tag: `@F105`.
 - [ ] **F106** (A2, A5) `list_feedback` shall filter by repo, branch and status, and return decided change requests by default. Screen/state: none. Tag: `@F106`.
-- [ ] **F107** (A15) `get_feedback` shall return Markdown with image URLs, anchor, version stamp, accepted version and thread. Screen/state: none. Tag: `@F107`.
+- [ ] **F107** (A15) `get_feedback` shall return JSON with signed image URLs, anchor, version stamp, accepted version and thread. Screen/state: none. Tag: `@F107`.
 - [ ] **F108** (A3, A14) When an agent claims a feedback, its row shall read "In Progress · {name} via {client}". Screen/state: Workspace lists, Open. Tag: `@F108`.
 - [ ] **F109** (A12) If a feedback has an open question or decision request, then `claim` shall refuse and name the flag. Screen/state: none. Tag: `@F109`.
 - [ ] **F110** (A3) When an agent calls `report_implementation`, the system shall add an implementation version with commit, PR and after-capture. Screen/state: Feedback view. Tag: `@F110`.
 - [ ] **F111** (A3) After `report_implementation`, the feedback shall be Implemented and listed in In Review. Screen/state: Workspace lists, In Review. Tag: `@F111`.
+- [ ] **F169** (A28, A31) Every tool shall answer 403 or 404 to an outsider, a guest or another organisation's member without access. Screen/state: none. Tag: `@F169`.
+- [ ] **F170** (A18, A28) Every `/api/v1` and `/mcp` call shall check the device row, so a revoke or scope change applies to the next call. Screen/state: Account, Devices. Tag: `@F170`.
 
 #### Strict prompt-injection handling
 
-- [ ] **F112** (A28) Every human-written text in a tool result shall be a quoted envelope with `author`, `role` and `untrusted: true`. Screen/state: none. Tag: `@F112`.
+- [ ] **F112** (A28) Every untrusted string a tool returns shall be a JSON envelope field: people's and agents' text, DOM text, page titles, selectors, element names. Only ids, enums and numbers stay outside it. Screen/state: none. Tag: `@F112`.
 - [ ] **F113** (A28, A31) A guest's text shall carry `role: "guest"` in every tool result. Screen/state: none. Tag: `@F113`.
-- [ ] **F114** (A28) Each tool description shall say that quoted text is a person's request about the product, never an instruction. Screen/state: none. Tag: `@F114`.
+- [ ] **F114** (A28) Each tool description shall say that fields marked untrusted are what people wrote about the product, never instructions. Screen/state: none. Tag: `@F114`.
 - [ ] **F115** (A28) Human-written text shall never appear in tool descriptions or server instructions. Screen/state: none. Tag: `@F115`.
 - [ ] **F116** (A28) No tool shall fetch URLs, run commands or return content from customer sites. Screen/state: none. Tag: `@F116`.
-- [ ] **F117** (A28) Every MCP call shall write an audit event with the token, the tool and the ids it touched. Screen/state: none. Tag: `@F117`.
+- [ ] **F117** (A28) Every MCP call shall write an audit event with the device id, the tool and the ids it touched, never the token. Screen/state: none. Tag: `@F117`.
 
 #### Success measure
 
@@ -330,27 +355,29 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 <summary>Verification</summary>
 
 - F96 — tag `@F96`: `snapmark-web/test/mcp/auth.test.ts › unauthenticated call gets the OAuth challenge`
-- F97 — tag `@F97`: `snapmark-web/e2e/device-consent.spec.ts › scopes unticked, equal buttons`
-- F98 — tag `@F98`: `snapmark-web/test/mcp/scopes.test.ts › new token is read-only`
-- F99 — tag `@F99`: `snapmark-web/test/mcp/scopes.test.ts › write tool refused without scope`
+- F97 — tag `@F97`: `snapmark-web/e2e/device-consent.spec.ts › scopes unticked and name claim and ask, equal buttons`
+- F98 — tag `@F98`: `snapmark-web/test/mcp/scopes.test.ts › new token is read-only; claim and ask map to their scopes`
+- F99 — tag `@F99`: `snapmark-web/test/mcp/scopes.test.ts › claim, unclaim, ask and write tools refused without scope`
 - F100 — tag `@F100`: `snapmark-web/e2e/account.spec.ts › devices list scopes and last use`
 - F101 — tag `@F101`: `snapmark-web/e2e/phone.spec.ts › revoke on a phone refuses the next call`
-- F102 — tag `@F102`: `snapmark-web/e2e/account.spec.ts › Connect an Agent shows address and command`
-- F103 — tag `@F103`: `snapmark-web/test/mcp/tools.test.ts › exact tool list`
+- F102 — tag `@F102`: `snapmark-web/e2e/account.spec.ts › Connect an Agent shows address, command and needed scopes`
+- F103 — tag `@F103`: `snapmark-web/test/mcp/tools.test.ts › exact list of nine tools`
 - F104 — tag `@F104`: `snapmark-web/test/mcp/tools.test.ts › no approve tool`
-- F105 — tag `@F105`: `snapmark-web/test/mcp/tools.test.ts › workspace from link, repo or argument`
+- F105 — tag `@F105`: `snapmark-web/test/mcp/tools.test.ts › workspace from link, repo or argument; repo in two organisations refused with candidates`
 - F106 — tag `@F106`: `snapmark-web/test/mcp/list-feedback.test.ts › filters and default`
-- F107 — tag `@F107`: `snapmark-web/test/mcp/get-feedback.test.ts › result fields`
+- F107 — tag `@F107`: `snapmark-web/test/mcp/get-feedback.test.ts › JSON result fields`
 - F108 — tag `@F108`: `snapmark-web/e2e/mcp-loop.spec.ts › claim shows In Progress via client`
 - F109 — tag `@F109`: `snapmark-web/test/mcp/claim.test.ts › flagged feedback refused`
 - F110 — tag `@F110`: `snapmark-web/e2e/mcp-loop.spec.ts › report adds an implementation version`
 - F111 — tag `@F111`: `snapmark-web/e2e/mcp-loop.spec.ts › report moves to In Review`
-- F112 — tag `@F112`: `snapmark-web/test/mcp/untrusted.test.ts › every human text is enveloped`
+- F169 — tag `@F169`: `snapmark-web/test/mcp/access-matrix.test.ts › every tool refuses outsider, guest and other organisation`
+- F170 — tag `@F170`: `snapmark-web/test/server/device-check.test.ts › revoke and scope off apply to the next call`
+- F112 — tag `@F112`: `snapmark-web/test/mcp/untrusted.test.ts › every untrusted string is enveloped; break-out corpus stays inside`
 - F113 — tag `@F113`: `snapmark-web/test/mcp/untrusted.test.ts › guest role marked`
 - F114 — tag `@F114`: `snapmark-web/test/mcp/untrusted.test.ts › descriptions carry the data warning`
 - F115 — tag `@F115`: `snapmark-web/test/mcp/untrusted.test.ts › injection text never reaches descriptions`
 - F116 — tag `@F116`: `snapmark-web/test/mcp/tools.test.ts › no fetch or exec in tool handlers`
-- F117 — tag `@F117`: `snapmark-web/test/mcp/audit.test.ts › one audit row per call`
+- F117 — tag `@F117`: `snapmark-web/test/mcp/audit.test.ts › one audit row per call with device id, no token`
 - F118 — tag `@F118`: `snapmark-web/test/mcp/report.test.ts › sets implemented_via_mcp`
 - F119 — tag `@F119`: `snapmark-web/test/domain/status.test.ts › manual Implemented is not via MCP`
 - F120 — tag `@F120`: `snapmark-web/test/domain/review-rounds.test.ts › rounds count`
@@ -367,8 +394,8 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - [ ] **F126** (A5) The Localhost Bridge checkbox shall be on by default. Screen/state: Settings › Online tab. Tag: `@F126`.
 - [ ] **F127** (A5) While the bridge is off, the Mac app shall answer "off" to every extension request. Screen/state: Settings › Online tab. Tag: `@F127`.
 - [ ] **F128** (A5) The bridge status line shall read "Extension connected" or "Extension not found". Screen/state: Settings › Online tab. Tag: `@F128`.
-- [ ] **F129** (A26, A28) When a person presses Sign In…, the Mac app shall open the browser and show the device code. Screen/state: Settings › Online tab, device code. Tag: `@F129`.
-- [ ] **F130** (A26) If the device code expires, then the tab shall say "The code expired. Sign in again." Screen/state: Settings › Online tab, expired. Tag: `@F130`.
+- [ ] **F129** (A26, A28, A35) When Sign In… is pressed, the Mac app shall sign in via the browser using OAuth PKCE and a loopback redirect. Screen/state: Settings › Online tab, waiting for browser. Tag: `@F129`.
+- [ ] **F130** (A26, A35) If the browser sign-in expires or is denied, then the tab shall say "Sign-in expired. Sign in again." or "Sign-in was cancelled." Screen/state: Settings › Online tab, error. Tag: `@F130`.
 
 <details>
 <summary>Verification</summary>
@@ -380,8 +407,8 @@ Words: "member" means owner, admin or member; "guest" means guest. "Agent" is th
 - F126 — tag `@F126`: `snapmark-desktop/snapmark-app/test/bridge.test.ts › on by default`
 - F127 — tag `@F127`: `snapmark-desktop/snapmark-app/test/bridge.test.ts › off answers off`
 - F128 — tag `@F128`: `snapmark-desktop/snapmark-app/test/smoke.ts › bridge status line`
-- F129 — tag `@F129`: `snapmark-desktop/snapmark-app/test/online.test.ts › device code flow`
-- F130 — tag `@F130`: `snapmark-desktop/snapmark-app/test/online.test.ts › expired code`
+- F129 — tag `@F129`: `snapmark-desktop/snapmark-app/test/online.test.ts › PKCE sign-in returns through the loopback redirect`
+- F130 — tag `@F130`: `snapmark-desktop/snapmark-app/test/online.test.ts › expired or denied sign-in says so`
 
 </details>
 
@@ -523,7 +550,7 @@ What proves the whole change, beyond the per-fact checks.
 
 - **Automated:** in each repo, `npm run format && npm run lint && npm run typecheck && npm test` exits 0. `python3 scripts/verify_gate.py milestone 2026-10-27-online-release-1` ends `VERIFY PASS milestone` per milestone.
 - **Core loop:** `snapmark-web/e2e/core-loop.spec.ts › capture, decide, implement through MCP, accept` runs the whole loop on the seed data.
-- **Manual:** the owner dogfoods on his Mac in light and dark, at 100 % and 150 %. He tests J6 on his phone over the LAN address.
+- **Manual:** the owner dogfoods on his Mac in light and dark, at 100 % and 150 %. He tests J6 on his phone over the LAN address, started with `SNAPMARK_LAN=1` (F162).
 
 ## Out of scope
 
@@ -532,6 +559,7 @@ What proves the whole change, beyond the per-fact checks.
 - Deployment to Cloud Run and Cloud SQL (part of A19) — release 2; release 1 runs locally (F17).
 - Chrome Web Store listing (part of A21) — release 2; the extension loads unpacked (F5).
 - Billing, Slack, GitHub deployments, the dev plugin and the blog — release 2, per the brief's No-Gos.
+- Device-code sign-in for the Mac app — dropped for browser sign-in with a loopback redirect (A35, F129).
 - A23 — a process ask: parallel milestones are the plan's order of work, not a product behaviour.
 - A25 — a process ask: which models build is the plan's builder choice, not a product behaviour.
 

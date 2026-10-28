@@ -20,10 +20,12 @@ A person with no context builds from this file alone. [intent](intent.md) and [f
 
 One gate covers `spec/`, `facts.md` and this plan. Four things need your eye most:
 
-1. **[spec/owner-decisions.md](spec/owner-decisions.md):** 37 choices. The spec follows each recommended answer. Annotate only the ones you want changed.
+1. **[spec/owner-decisions.md](spec/owner-decisions.md):** 40 choices; 9 are decided by your answers. The spec follows each recommended answer. Annotate only the ones you want changed.
 2. **Numbers the facts set where nobody had:** live updates within 2 s (F69, F88) and Mac sync within 5 s (F151). API reads answer under 300 ms at p95 (N10), MCP tools under 500 ms (N11).
 3. **Operator access** is a platform role on the user (F135). The design asked for Google sign-in, which arrives in release 2.
 4. **The lock in the new repos** (below): copies of the approved facts, locked once per repo.
+5. **The button blue:** primary buttons use the accent token `#0F72DB`, as the Mac app's calm style does. The design's `#2492FF` stays the brand colour, because white text on it fails 4.5:1.
+6. **The prototype:** [gallery.html](spec/prototype/gallery.html) shows 20 images of the 9 risky screens. Its 7 known faults are in [known-image-faults.md](spec/prototype/known-image-faults.md).
 
 ## How this is delivered (one go, four repos)
 
@@ -69,34 +71,34 @@ One gate covers `spec/`, `facts.md` and this plan. Four things need your eye mos
 - [ ] 1.3 `snapmark-kit/tokens` from `design-system-starter` plus the Snapmark overlay, and `snapmark-kit/ui` with every HeroUI wrapper of `spec/conformance.md`. Tokens lint. F6, F7, F8, F9, N1, N6, N7, N8.
 - [ ] 1.4 `snapmark-web` skeleton: Next.js 16 with `(public)`, `(app)` and `(operator)` route groups under `[locale]`, next-intl, `messages/en.json` from `spec/microcopy.md`, i18n lint, dependency-cruiser boundaries. F10, F11, N2, N3, N4.
 - [ ] 1.5 Lasting UX docs move into `snapmark-web/docs/ux/` (owner, 2026-10-27: "this is what I would expect"). They are `glossary.md`, `interaction-guidelines.md`, `sitemap.md`, `sitemap.json`, `setup.md` (through `omr-ux:init`), and the glossary check. F12, F13, F14, F15, F16.
-- [ ] 1.6 Local run and data: Docker Compose Postgres, Drizzle 0.45 schema for design 8.2 plus the 22 gaps in `tech-review.md` (Data model), migrations, seed. Sign-in sessions and Mac sessions are separate tables. Postgres and `next dev` bind to localhost. F17, F18, F19.
+- [ ] 1.6 Local run and data: Docker Compose Postgres, Drizzle 0.45 schema for design 8.2 plus the 22 gaps in `tech-review.md` (Data model), migrations, seed. Sign-in sessions and Mac sessions are separate tables. Postgres and `next dev` bind to localhost. F17, F18, F19, F162, F164, F165.
 - [ ] 1.7 `src/domain`: status machine, acceptance rule, entitlements and anchor resolution, pure and unit-tested. Milestones 2, 4 and 6 build on it. Part of F54 to F59 (their screens land in milestone 2).
 - [ ] 1.8 Storage: Terraform for the captures and dev buckets in `snapmark-ai`, `europe-west3`, with state in a Cloud Storage backend. The storage provider hands out signed URLs. REST `POST /api/v1/captures` and `POST /api/v1/feedback`, so milestone 3 has a server. F20, F21.
-- [ ] 1.9 Mail and sign-in: mail provider (`console`, `resend` stub), Better Auth magic link, Sign In and its states, Sign-In Methods with the release-2 slot. F22 to F27.
+- [ ] 1.9 Mail and sign-in: mail provider (`console`, `resend` stub), Better Auth magic link, Sign In and its states, Sign-In Methods with the release-2 slot. F22 to F27, F163.
 - [ ] 1.10 `snapmark-chrome` skeleton: WXT MV3, loads unpacked, the popup on `snapmark-kit/ui`. F5.
 
 ### Milestone 2 — Web app: teams, feedback, decisions, inbox, phone
 
 - [ ] 2.1 Welcome, organisations, members, invitations, seats, guests. F28 to F33.
 - [ ] 2.2 Workspace settings: environments, route rules, modules, repos. F34 to F37.
-- [ ] 2.3 App shell: sidebar, ⌘K, URL state. F38, F39, F40.
+- [ ] 2.3 App shell: sidebar, ⌘K, URL state. F38, F39, F40, F166.
 - [ ] 2.4 Lists and numbering. F41, F42.
-- [ ] 2.5 Feedback view: screenshot, versions, Compare, Details, drawing, thread, questions, guest and agent entries. F43 to F51.
+- [ ] 2.5 Feedback view: screenshot, versions, Compare, Details, drawing, thread, questions, guest and agent entries. F43 to F51, F167.
 - [ ] 2.6 Decisions, reviews and status, including the manual status change (A33). F52 to F64.
 - [ ] 2.7 Inbox, My Work, mail notifications, live updates (server-sent events on Postgres `LISTEN/NOTIFY`), offline banner. F65 to F70, N13.
 - [ ] 2.8 Phone layouts. F71, F72, F73, N12.
 
 ### Milestone 3 — Extension: capture, draw, locate the code
 
-- [ ] 3.1 Popup and browser sign-in (OAuth with PKCE), environment line, guest and revoked states. F74 to F78.
+- [ ] 3.1 Popup and browser sign-in (OAuth with PKCE), environment line, guest and revoked states. F74 to F78, F168.
 - [ ] 3.2 Picker, anchor and code location: landmark region, `data-snapmark-module`, React and Next fibers with `_debugStack` and source maps, Vue and Nuxt `__file`, fallback. F79 to F84.
 - [ ] 3.3 Drawing, compose, upload (WebP and a 400 px thumbnail), sent state, draft kept over a reload. F85 to F90.
 - [ ] 3.4 Localhost bridge client over native messaging, with its four states. F91 to F95.
 
 ### Milestone 4 — MCP server, strict about untrusted text
 
-- [ ] 4.1 MCP authorisation: OAuth server, consent page, device tokens, scopes, Devices, Connect an Agent. F96 to F102.
-- [ ] 4.2 The nine tools. F103 to F111, N11.
+- [ ] 4.1 MCP authorisation: OAuth server, consent page, device tokens, scopes, Devices, Connect an Agent. F96 to F102, F170.
+- [ ] 4.2 The nine tools. F103 to F111, F169, N11.
 - [ ] 4.3 Strict prompt-injection handling and the audit trail. F112 to F117.
 - [ ] 4.4 Success measure: `implemented_via_mcp`, review rounds, the measure query. F118 to F121, N10.
 
@@ -218,10 +220,10 @@ In `snapmark-desktop` only. The three new repos are created whole.
 
 ## Done
 
-What must hold, as data in [done.json](done.json) (176 facts with tags and milestones, 44 pages, widths).
+What must hold, as data in [done.json](done.json) (185 facts with tags and milestones, 43 pages, widths).
 
 - `python3 scripts/verify_gate.py milestone 2026-10-27-online-release-1` ends `VERIFY PASS` once per milestone, in the repo that owns it.
-- F1 to F161 and N1 to N15 pass by their named check in `facts.md`.
+- F1 to F170 and N1 to N15 pass by their named check in `facts.md`.
 - `validation.md` has no `not met` row, and `findings.md` no open blocking item, for every milestone.
 - Every milestone PR is merged or open with auto-merge armed; `project/online-release-1` has its PR to `main`.
 - Nothing outside `## Where things go` and `## Files that change` is edited.

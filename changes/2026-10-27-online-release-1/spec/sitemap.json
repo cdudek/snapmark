@@ -1044,7 +1044,7 @@
         "en": "Allow {client} to use your Snapmark account?"
       },
       "type": "auth",
-      "purpose": "Let a person allow the extension or an MCP client, read-only by default",
+      "purpose": "Let a person allow the extension, the Mac app or an MCP client, read-only by default",
       "roles": ["visitor", "owner", "admin", "member", "guest"],
       "tabs": [],
       "sections": [],
@@ -1055,6 +1055,12 @@
           "kind": "external",
           "from": null,
           "detail": "extension Sign In",
+          "source": "spec/ia.md Screen Inventory, Move Table"
+        },
+        {
+          "kind": "external",
+          "from": null,
+          "detail": "Mac app Settings > Online > Sign In (loopback redirect, A35)",
           "source": "spec/ia.md Screen Inventory, Move Table"
         },
         {
@@ -1082,52 +1088,6 @@
         "Sends to /sign-in?next= first when signed out"
       ],
       "reason": "J11, J9, A28: scopes chosen at consent, Read only by default"
-    },
-    {
-      "id": "auth.device",
-      "area": "auth",
-      "route": "/device",
-      "params": [],
-      "query": [
-        {
-          "name": "user_code",
-          "kind": "prefill",
-          "values": null
-        }
-      ],
-      "labels": {
-        "en": "Allow {client} to use your Snapmark account?"
-      },
-      "type": "auth",
-      "purpose": "Enter or confirm the code shown in the Mac app, then the same consent",
-      "roles": ["visitor", "owner", "admin", "member", "guest"],
-      "tabs": [],
-      "sections": [],
-      "views": [],
-      "states": ["default", "code-mismatch", "loading", "allowed", "denied", "expired-request"],
-      "reachedFrom": [
-        {
-          "kind": "external",
-          "from": null,
-          "detail": "Mac app Settings > Online > Sign In",
-          "source": "spec/ia.md Screen Inventory, Move Table"
-        }
-      ],
-      "breadcrumb": [],
-      "back": null,
-      "access": {
-        "roles": ["visitor"],
-        "host": null,
-        "public": true
-      },
-      "inboundLinks": [],
-      "status": "proposed",
-      "redirectTo": null,
-      "proposed": null,
-      "decide": null,
-      "source": null,
-      "assumptions": [],
-      "reason": "J7, J11: device flow for the Mac app"
     },
     {
       "id": "auth.welcome",
@@ -4611,10 +4571,10 @@
     {
       "kind": "external",
       "name": "Mac app Sign In",
-      "to": "/device?user_code=",
+      "to": "/authorize",
       "source": null,
       "status": "proposed",
-      "note": ""
+      "note": "OAuth with PKCE, loopback redirect (A35)"
     },
     {
       "kind": "external",
@@ -4715,7 +4675,7 @@
       "type": "settings",
       "purpose": "Sign in to Snapmark online; bridge on or off",
       "reachedFrom": ["Mac menu > Settings"],
-      "goesTo": ["/device"],
+      "goesTo": ["/authorize"],
       "states": ["signed-out", "waiting-for-browser", "signed-in", "bridge-on", "error"]
     },
     {

@@ -260,3 +260,7 @@ Counts: severity 3: 16 fixed, 0 open. Severity 2: 23 fixed, 1 fixed in part, 6 o
 | Prototype gate and visual pass (`visual-check.py`) | No prototype yet; it follows this loop                                                                               |
 | Facts mapping (every fact cites an ask)            | `facts.md` follows in Stage 3                                                                                        |
 | `sitemap.json` regeneration                        | Only the sidebar-order notes were edited by hand; `omr-ux:sitemap-create` regenerates it from ia.md before the build |
+
+## After Validation
+
+The Stage 4 tech review changed the spec after this pass, on the owner's answers A34 and A35 (2026-10-28). Mac sign-in uses the browser with a loopback redirect, so the device code and `/device` are gone. Claim and ask need a write scope, and `unclaim` is a new tool. Rows above that mention the device code are history. The prototype images were drawn after this pass; their faults are in `prototype/known-image-faults.md`.
