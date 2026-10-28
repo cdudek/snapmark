@@ -32,7 +32,7 @@ Strategy, pricing and the decision log live in `pokbytes/snapmark-context` (`str
 
 **Release 1 (owner, revised later on 2026-10-27): runs locally.** Everything runs on the developer's machine except Cloud Storage for captures, which is real from the start and set up with Terraform. Deployment is planned in release 2. Because release 1 is local, the closed beta for the owner's teams (waitlist and invitations only, no free self-serve accounts) starts with release 2.
 
-- **In release 1:** the public landing page with waitlist, the operator area (section 8.0), email magic-link sign-in, organisations, workspaces, invitations, extension capture (loaded unpacked; no Chrome Web Store account needed), feedback, versions, reviews, decisions, MCP, the Mac app's localhost bridge and **two-way session sync** (owner), i18n, tokens, the Cloud Storage bucket via Terraform.
+- **In release 1:** the public landing page with waitlist, the operator area (section 8.0), email magic-link sign-in, organisations, workspaces, invitations, extension capture, pins, annotation and the side panel with threads and reviews (section 9.5; loaded unpacked; no Chrome Web Store account needed), feedback, versions, reviews, decisions, MCP, the Mac app's localhost bridge and **two-way session sync** (owner), i18n, tokens, the Cloud Storage bucket via Terraform.
 - **Email in release 1 (owner):** a console mail provider that prints every email (magic links included) to the terminal. Resend comes when the owner provides templates and a key; both are providers behind the same mail interface.
 - **Release 2 (owner):** deployment (Cloud Run, Cloud SQL and the rest via Terraform), Google and GitHub sign-in, the GitHub integration (deployments, PRs), Slack, Resend, redaction in the extension, the Chrome Web Store listing (unlisted), the closed beta.
 - **Out until later:** Paddle billing (seats are granted by hand in the beta), company-domain claims, retention jobs, audit and decision export, the data processing agreement, the dev plugin.
@@ -314,20 +314,21 @@ The phone is for reacting, not creating: Inbox → open an item → screenshot o
 - **Email, sent at once,** for an @mention, a decision request or review request addressed to you, and an answer to your question. Daily email digest: opt-in.
 - **Slack in release 2 (owner):** each person chooses email or Slack DM for the immediate ones; a channel per workspace gets new feedback, decisions and accepted changes. Messages carry a screenshot preview and buttons: Approve, Request changes, Vote, Reply, Open. Snapmark links unfurl with the screenshot. Discussion stays in Snapmark (no two-way thread sync), so the paper trail lives in one place. Built behind the same provider pattern as mail.
 
-### 9.5 Chrome extension (proposal, Claude, 2026-10-28; owner confirms)
+### 9.5 Chrome extension (owner, 2026-10-28; the details are Claude's calls)
 
 The extension is where feedback is given and read on the running product, not only a capture button. Three surfaces, all from `snapmark-kit/ui` and the same tokens as the web app.
 
 - **Toolbar icon:** a badge with the open feedback on this page. A click opens the side panel; there is no separate pop-up. A Chrome shortcut (default ⌥⇧S) starts picking.
 - **Side panel** (Chrome's `sidePanel`, stays open while you move between pages): a header with organisation, workspace and the detected environment and version ("staging · PR #212"). Two tabs:
-  - **This page:** the feedback anchored to this address, by route rule. Each row: thumbnail, title, status, last reply. A row opens its thread in the panel: version tabs, the thread, a comment field and the same **Review vN** button as the web app. Feedback whose element is no longer on the page stays listed under "Not found on this page", never hidden. **New Feedback** is the primary, last in the footer.
+  - **This page:** the feedback anchored to this address, by route rule. Each row: thumbnail, title, status, last reply. A row opens its thread in the panel: version tabs, the thread, a comment field and the same **Review vN** button and accept rule as the web app (owner). Feedback whose element is no longer on the page stays listed under "Not found on this page", never hidden. **New Feedback** is the primary, last in the footer.
   - **Inbox:** the web app's Inbox for this organisation, so answering never needs a tab switch.
 - **On the page** (a content script in a shadow root, so neither side's styles leak):
   - **Pins:** a numbered pin on every anchored element, the same marker as the Mac app. Hover outlines the element; a click opens its thread in the side panel; selecting a row in the panel scrolls to its pin. Pins can be hidden per tab.
   - **Pick:** hover outlines elements, a click picks one, a drag picks an area, Esc leaves.
-  - **Annotate:** after the pick, the area is captured (the capture never changes) and the drawing tools open over it, on the page, with the Mac app's tools and Fabric renderer. Title, comment, and Comment or Request change are written in the side panel; **Post Feedback** is the primary, last.
+  - **Annotate on the live page (owner):** after the pick, the drawing tools (the Mac app's tools and Fabric renderer) open over the running page. Each shape is stored relative to its anchored element's box, so it sticks to the element through scrolling, resizing and reflow instead of to the screen. Posting also takes a capture of the area with the shapes, so the moment that was seen is kept (the capture never changes). If the element is gone later, its shapes show on that capture. Title, comment, and Comment or Request change are written in the side panel; **Post Feedback** is the primary, last.
+- **Compare before reviewing (owner):** every version keeps what it showed: a capture for a still, a short recording (played as a GIF-like loop, with its filmstrip) for anything that moves. In the panel, **Compare** switches between the old version and the new one, or shows them side by side. On the page, **Show vN** lays the old capture over the live element, with a slider to wipe between old and new, so a reviewer sees what changed before pressing Review.
 - **Signed out:** the panel shows Sign In only. **Page outside every workspace:** the panel says so and lets an admin add the address as an environment.
-- **Open (owner):** (1) is the side panel in release 1, or capture only first? Claude: release 1, because pins and threads on the page are what stops duplicate feedback. (2) Annotate on a frozen capture (above) or on the live page? Claude: frozen, so the drawing matches what was seen. (3) Can a review be submitted from the side panel? Claude: yes, the same rule and button as the web app.
+- **Decided (owner, 2026-10-28):** the side panel is in release 1; annotation happens on the live page, stuck to the element; a review can be submitted from the panel, after comparing versions.
 
 ## 10. AI safety (owner: strict)
 
