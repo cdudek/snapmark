@@ -1,0 +1,63 @@
+You are a senior product designer. Produce ONE design direction as GENERATED IMAGES, made with your image generation tool, and nothing else.
+
+First read the design documents this prompt names and look at every attached reference image. Docs (read them, paths relative to the repo root two levels up from here): docs/designs/2026-10-27-snapmark-online.md (sections 4.2, 9.1, 9.5), docs/ux/interaction-guidelines.md, docs/ux/setup.md, and ~/projects/design-system-starter/examples/snapmark.md and docs/components/button.md. The attached images are: the owner's mock of the web feedback view (its content is right; its primary button on the LEFT is WRONG and must be on the right), and the Mac app's own calm screens (editor, session window, capture bar), whose look the web app and extension must share.
+
+Write exactly these files in the current directory:
+- the six shots/*.png listed below — one generated image per screen and state, landscape, 1536 x 1024 or larger.
+- notes.md — first line `# <Direction name>`, then one paragraph on the idea, then a short list of what you deliberately did NOT do.
+Do not write HTML, code, a build or a README.
+
+HARD CONSTRAINTS
+- Only the design system's colours, type, spacing, radii and components below. Colours carry their meanings; a colour the system does not have is a failure.
+- It must look like the attached product screens: calm, system-like, same density and controls.
+- The exact words given below. Real content, never lorem ipsum. Text sharp, legible, nothing cut off.
+- In EVERY button row the primary (the only blue-filled button) is the LAST button at the RIGHT. More (…) goes first. Check every image for this before saving.
+
+THE DIRECTION
+**Bold.** One strong idea, pushed all the way. Pick the single thing this screen is for and make it dominate — scale, position, contrast, whitespace. Cut or demote everything that competes with it. A reviewer should be able to name the idea in one sentence.
+For this brief: the idea is 'the change itself is the hero'. The before/after of the element dominates every screen (large wipe slider, large old-vs-new); the thread is compact and secondary; pins on the live page are the main navigation.
+
+This is your direction. Commit to it. Do not hedge toward the middle, and do not try to also cover what the other directions are doing — you are one of three, and the reviewer needs them to be genuinely different.
+
+DESIGN SYSTEM (binding; the owner's design-system-starter, Snapmark overlay):
+- Surfaces: system-like and calm. Window ground #e0e0e0-ish greys only behind content; panels #ededed / #f3f3f3; lifted cards and fields #ffffff. Hairline edges #bebebe, used sparingly. No outlines around controls.
+- Text: ink #161616, dim #585858, faint #626262, off/disabled #9e9e9e. Font Inter (or SF Pro): controls 13px/16 regular, captions 12px/16 medium, titles 20px/28 semibold. Only the primary button label is semibold.
+- Accent (Snapmark brand blue) #0f72db with white text: fills ONLY the one primary button per region (and an on checkbox/switch). No blue icons, links, tabs, outlines or selected states.
+- Selected tab / chosen segment / toggle on: a soft grey pill (black at 7% alpha), ink text. Hover: black at 4%.
+- Secondary button: soft grey fill, no border. Ghost: no fill. Icon buttons are ghosts. All controls 32px high, radius 8. Cards radius 12.
+- Meaning colours (words and small marks only, never button fills): keep/approve green #00846b on wash #d3f4ea; pass/request-changes magenta #b13290 on wash #ffddf7; warn amber #8e6900 on #f6ebca; error red #c81e48.
+- Annotation marks on the page: numbered reference markers in a diamond (like the Mac app), red for remove marks, user colour otherwise.
+- Keys appear in tooltips; only the primary may show its key, e.g. "Submit Review ⌘↩".
+- HARD RULE: in every row of buttons the primary is the LAST button, at the RIGHT. More (…) goes FIRST in the row. "Request Changes" and "Approve" are no exception: the chosen verdict's submit button is the primary at the right.
+
+These tokens are binding. Explore layout, density, hierarchy, rhythm and composition. Never invent a colour, a font or a spacing value that is not in this list.
+
+SCREENS — one image each, these exact filenames, landscape 1536x1024 or larger:
+1. shots/web-feedback--review-open.png — the web app (app.snapmark.dev, left sidebar like the attached owner mock: Kestrel Shop, Search ⌘K, Inbox 6, My Work, Storefront: Open 14, Needs Decision 2, In Review 3 selected, Done, Modules, Sessions) showing feedback #42 with versions v0/v1/v2 and the v2 checkout capture. The "Review v2" control is open: a summary comment field, a choice of Comment / Approve / Request Changes (Approve chosen), and a button row "Cancel" then "Submit Review ⌘↩" (primary, rightmost).
+2. shots/web-feedback--accept-ready.png — same view after Ana approved: the thread shows "Ana Silva approved v2", and an Accept box reads "1 approval · 0 open objections" with a row: "More (…)" then "Accept v2" (primary, rightmost).
+3. shots/side-panel--this-page.png — a Chrome window: the live Kestrel Shop checkout page (staging.kestrel.shop/checkout) on the left with numbered pins on the Order summary Total line and two other elements; Chrome's side panel on the right (about 400px) titled Snapmark: header "Kestrel Shop · staging · PR #212", tabs "This page" (chosen) and "Inbox", a list of 3 feedback rows (thumbnail, title, status, last reply) including #42, a group "Not found on this page (1)", and a footer row ending in "New Feedback" (primary, rightmost). Toolbar icon shows badge 3.
+4. shots/side-panel--thread-compare.png — same Chrome window; the side panel shows #42's thread with version tabs v0 / v1 / v2, Compare on: v0 (a looping recording with a small filmstrip of 4 key frames showing the total jumping €84.90 → €76.41 → €84.90) side by side with v2 (steady total €81.31, discount line "Coupon SPRING10 −€8.49"). Below: thread, comment field, and a row "More (…)", "Request Changes", "Review v2" or the direction's own equivalent — whatever the row, the primary is rightmost.
+5. shots/page--annotate-live.png — the live checkout page in pick-and-annotate mode: the Order summary element outlined, a numbered marker 1 on the Total line and a box drawn around the coupon line, both visibly attached to the element (not the screen); a compact drawing toolbar near the element; the side panel shows the new feedback form (title, comment, Comment or Request Change) with a row "Cancel" then "Post Feedback" (primary, rightmost).
+6. shots/page--show-v0-wipe.png — the live checkout page with "Show v0" on: the old v0 capture of the Order summary lies exactly over the live element, with a vertical wipe slider handle in the middle: left of the handle v0 (total €76.41 mid-jump), right of it live v2 (€81.31, coupon line). A small label "v0 · 27 Oct" and "Live · v2" on either side. The side panel stays open with the thread.
+
+THE BRIEF
+# Snapmark online: review panel and Chrome extension
+
+**What:** the web app's feedback view with a GitHub-style review, and the Chrome extension: side panel, pins on the page, live-page annotation and version compare.
+**For whom:** product people, designers and engineers reviewing UI changes their coding agents made. They review weekly, sometimes daily.
+**The job:** see exactly what changed on the running page, talk about it in one thread, and give one verdict (Approve or Request changes) that decides whether a version is accepted.
+**Source of truth:** `docs/designs/2026-10-27-snapmark-online.md` sections 4.2, 9.1 and 9.5.
+
+**Axis the three directions differ on: where the review happens.**
+- 01 Safe: the web app is home; the extension mirrors it in a side panel (GitHub's model).
+- 02 Bold: the live page is home; pins and the before/after wipe dominate, the panel is thin.
+- 03 Contrarian: review is a timeline of versions, not a thread with a button; the verdict is a step at the end of comparing.
+
+**Fixed in all three (owner rules):**
+- The primary button is ALWAYS the last button in its row, at the right. More (…) goes first. Two equal verdicts are no exception.
+- One filled accent button per region; nothing else uses the accent.
+- Accept rule: a version is accepted with at least one Approve and no open Request changes.
+- Annotations sit on the live page, stuck to their element; every version keeps a capture (or a looping recording with filmstrip) so old and new can be compared.
+
+**Content (real, from the owner's mock):** workspace "Kestrel Shop", feedback #42 "Total jumps when the coupon applies", status Implemented, versions v0 Original, v1 Mockup · Dana, v2 Implementation · PR #212 · Ben via Claude. Checkout page: Linen Overshirt, Sand, M €59.00; Canvas Tote €25.90; Subtotal €84.90; Coupon SPRING10 −€8.49; Shipping €4.90; Total €81.31; button "Pay €81.31". Thread: Ana Silva (on v0, 27 Oct): "The total jumps from €84.90 to €76.41 and back a second after the coupon applies. Keep the total steady and show the discount as its own line." Ben via Claude (Question): "Should the discount line show the code, like "SPRING10 −€8.49", or only "Discount"?" Ana Silva (Answer): "Show the code. Customers check it." Ben via Claude on v2, 10:42: "Posted v2. The discount is now its own line and the total renders once. PR #212."
+
