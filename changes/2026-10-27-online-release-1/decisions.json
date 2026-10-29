@@ -1,0 +1,24 @@
+{
+  "intent": "skip -- the intent lives in pokbytes/heydiff-web",
+  "design": null,
+  "size": "L",
+  "kind": "feature",
+  "delivery": "one-go",
+  "milestone": {
+    "kind": "new",
+    "slug": "online-release-1"
+  },
+  "project": {
+    "kind": "new",
+    "slug": "online-release-1"
+  },
+  "skips": {
+    "brief": "skip -- the UX spec lives in pokbytes/heydiff-web changes/2026-10-27-online-release-1/spec/",
+    "ia": "skip -- the UX spec lives in pokbytes/heydiff-web changes/2026-10-27-online-release-1/spec/",
+    "interaction": "skip -- the UX spec lives in pokbytes/heydiff-web changes/2026-10-27-online-release-1/spec/",
+    "screens": "skip -- the UX spec lives in pokbytes/heydiff-web changes/2026-10-27-online-release-1/spec/",
+    "prototype": "skip -- the UX spec lives in pokbytes/heydiff-web changes/2026-10-27-online-release-1/spec/",
+    "conformance": "skip -- the UX spec lives in pokbytes/heydiff-web changes/2026-10-27-online-release-1/spec/",
+    "validation": "skip -- the UX spec lives in pokbytes/heydiff-web changes/2026-10-27-online-release-1/spec/"
+  }
+}
