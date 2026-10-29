@@ -1916,7 +1916,8 @@ app
     );
     await inWin(set, `document.querySelector('[aria-selected="true"]').focus();`);
     const tabMoved: string[] = [];
-    for (const k of ['Right', 'End', 'Home']) {
+    // From Shortcuts: → reaches Online (last, F125), → again wraps to General, End and Home go to the last and first
+    for (const k of ['Right', 'Right', 'End', 'Home']) {
       keyTo(set, k);
       await sleep(100);
       tabMoved.push(
@@ -1927,7 +1928,7 @@ app
       );
     }
     viewer['F228 Settings controls are labelled and reachable'] =
-      named && JSON.stringify(tabMoved) === JSON.stringify(['General|General', 'Shortcuts|Shortcuts', 'General|General']);
+      named && JSON.stringify(tabMoved) === JSON.stringify(['Online|Online', 'General|General', 'Online|Online', 'General|General']);
     set.destroy();
 
     // The Keyboard Shortcuts window (F229–F235): its own page, two columns as in the round-1 mock, Esc closes it
