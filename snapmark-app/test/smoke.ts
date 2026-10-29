@@ -113,6 +113,12 @@ app
       );
       return Promise.race([p, giveUp]).finally(() => clearTimeout(timer));
     };
+    // Polls cond every 75 ms for up to ms, then asks once more: a check waits for its state instead of a fixed sleep, and a
+    // state that never comes still fails the check, only later
+    const until = async (cond: () => unknown, ms = 3000) => {
+      for (const end = Date.now() + ms; Date.now() < end; await new Promise((r) => setTimeout(r, 75))) if (await cond()) return true;
+      return !!(await cond());
+    };
     const finished = (w: BrowserWindow) =>
       bounded(`loading ${w.getTitle()}`, new Promise<void>((r) => w.webContents.once('did-finish-load', () => r())));
     setActive(sessions.create(root, 'smoke'));
@@ -1273,7 +1279,13 @@ app
     const barUp = () => BrowserWindow.getAllWindows().filter((w) => w.getTitle() === 'Capture Options');
     const runner = (o: CaptureOpts) =>
       void runs.push({ o, barGone: !BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().endsWith('bar.html')) });
-    const keyTo = (w: BrowserWindow, keyCode: string, modifiers: Electron.KeyboardInputEvent['modifiers'] = []) => {
+    // Keys reach a window only while it is key. The owner may click elsewhere meanwhile, so a window that lost the keys gets
+    // them back first: on macOS only the bar, a non-activating panel, can without taking the front. Linux has no window manager
+    const keyTo = async (w: BrowserWindow, keyCode: string, modifiers: Electron.KeyboardInputEvent['modifiers'] = []) => {
+      if (process.platform === 'darwin' && !w.isDestroyed() && w.getTitle() === 'Capture Options') {
+        if (!w.isFocused()) w.focus();
+        await until(async () => w.isFocused() && (await inWin(w, `return document.hasFocus()`)));
+      }
       w.webContents.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
       w.webContents.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
     };
@@ -1328,6 +1340,7 @@ app
       Math.abs(bb.x + bb.width / 2 - (wa.x + wa.width / 2)) <= 1 && Math.abs(wa.y + wa.height - 24 - (bb.y + bb.height)) <= 1;
     // @F12 a key, non-activating panel: it has the focus, on the chosen mode, as it opens. The panel is macOS's; CI's
     // Linux run has no window manager to give focus
+    await until(() => barWin.isFocused()); // the panel takes the keys as it shows; a click elsewhere in that moment is waited out
     const opened = await barLook(barWin);
     viewer['@F12 the bar is the key window when it opens'] =
       (process.platform === 'linux' || barWin.isFocused()) &&
@@ -1436,10 +1449,10 @@ app
       w.webContents.sendInputEvent({ type: 'mouseMove', x: Math.round(c[0]), y: Math.round(c[1]) });
       await sleep(300);
       const early = await tipNow(w);
-      await sleep(1000);
+      await until(async () => (await tipNow(w)).shown); // the bar's delay is 1 s; a loaded Mac takes longer
       const late = await tipNow(w);
       w.webContents.sendInputEvent({ type: 'mouseLeave', x: 0, y: 0 });
-      await sleep(80);
+      await until(async () => !(await tipNow(w)).shown);
       return { early, late, after: await tipNow(w) };
     };
     const hoverFull = await hoverTip(barWin, '[data-mode="full"]');
@@ -1450,8 +1463,13 @@ app
       hoverCapture.late.text === 'Capture|↩';
     why.calmF11hover = { hoverFull, hoverCapture };
     // @F10 after Tab: the focused control shows a 2 pt ring in the system focus colour, 2 pt outside it; Shift-Tab back
-    keyTo(barWin, 'Tab');
-    await sleep(80);
+    await keyTo(barWin, 'Tab');
+    await until(() =>
+      inWin(
+        barWin,
+        `return document.activeElement.id === 'dest' && document.activeElement.matches(':focus-visible') && !document.getElementById('tip').hidden`,
+      ),
+    );
     const tabRing = JSON.parse(
       await inWin(
         barWin,
@@ -1468,8 +1486,8 @@ app
       ),
     ) as string[];
     const tabTip = await tipNow(barWin);
-    keyTo(barWin, 'Tab', ['shift']);
-    await sleep(80);
+    await keyTo(barWin, 'Tab', ['shift']);
+    await until(() => inWin(barWin, `return document.activeElement.id !== 'dest'`));
     viewer['@F10 @2026-10-27-calm-style after Tab the focus ring shows: 2 pt, the system focus colour, 2 pt outside'] =
       JSON.stringify(tabRing) === JSON.stringify({ on: 'dest', visible: true, style: 'solid', width: '2px', offset: '2px', system: true });
     why.calmF10 = tabRing;
@@ -1517,9 +1535,15 @@ app
     let modesLook = true;
     const digitRings: string[] = [];
     const labels: string[] = [];
-    for (const k of ['1', '2', '3', '4', '5']) {
-      keyTo(barWin, k);
-      await sleep(80);
+    for (const [k, mode] of [
+      ['1', 'area'],
+      ['2', 'window'],
+      ['3', 'full'],
+      ['4', 'last'],
+      ['5', 'scroll'],
+    ]) {
+      await keyTo(barWin, k);
+      await until(async () => (await barLook(barWin)).mode === mode);
       const l = await barLook(barWin);
       perMode.push([l.mode, l.focus].join());
       labels.push(l.label);
@@ -1559,15 +1583,15 @@ app
     // @F13 a session picked in the pop-up becomes current, and the pop-up says so; then the first one again
     const otherRow = sessionRows.find((i) => i.type === 'checkbox' && i.label !== 'One-Shot' && !i.checked)!;
     pick(sessionRows, otherRow.label!);
-    await sleep(200);
+    await until(async () => (await barLook(barWin)).dest === `To ${faceName(otherRow)}`);
     const afterPick = await barLook(barWin);
     const menuSays = (menuItems()[1] as { label?: string }).label ?? '';
     pick(sessionRows, currentRow!.label!);
-    await sleep(200);
+    await until(async () => (await barLook(barWin)).dest === `To ${faceName(currentRow)}`);
     // @F13 One-Shot picked in the pop-up: the destination reads One-Shot, Capture says One-Shot, and the pop-up still
     // opens, One-Shot checked; a session picked there goes back to it
     pick(await popWith(() => inWin(barWin, `document.getElementById('dest').click();`)), 'One-Shot');
-    await sleep(200);
+    await until(async () => (await barLook(barWin)).dest === 'One-Shot');
     const oneShotLook = await barLook(barWin);
     // @A5 in One-Shot, the shortest face: Options stays beside the destination, and Capture alone sits at the right
     const oneShotRow = JSON.parse(
@@ -1584,7 +1608,7 @@ app
     why.calmA5 = oneShotRow;
     const inOneShot = await popWith(() => keyTo(barWin, 'P', ['shift', 'meta']));
     pick(inOneShot, currentRow!.label!);
-    await sleep(200);
+    await until(async () => (await barLook(barWin)).dest === `To ${faceName(currentRow)}`);
     const backLook = await barLook(barWin);
     viewer['@F13 @2026-10-27-calm-style picking in the destination pop-up: a session, or One-Shot'] =
       afterPick.dest === `To ${faceName(otherRow)}` &&
@@ -1599,8 +1623,9 @@ app
     // @F13 ⇧⌘O switches between One-Shot and the last session, both ways
     const dests: string[] = [];
     for (let i = 0; i < 2; i++) {
-      keyTo(barWin, 'O', ['shift', 'meta']);
-      await sleep(200);
+      const before = (await barLook(barWin)).dest;
+      await keyTo(barWin, 'O', ['shift', 'meta']);
+      await until(async () => (await barLook(barWin)).dest !== before);
       const l = await barLook(barWin);
       dests.push(`${l.dest}|${l.label}`);
     }
@@ -1623,7 +1648,9 @@ app
     for (const type of ['mouseDown', 'mouseUp'] as const)
       barWin.webContents.sendInputEvent({ type, x: Math.round(areaAt[0]), y: Math.round(areaAt[1]), button: 'left', clickCount: 1 });
     barWin.webContents.sendInputEvent({ type: 'mouseLeave', x: 0, y: 0 });
-    await sleep(80);
+    await until(() =>
+      inWin(barWin, `return document.activeElement.dataset.mode === 'area' && !document.activeElement.matches(':focus-visible')`),
+    );
     const clickRing = await inWin(barWin, `const a = document.activeElement; return [a.dataset.mode, a.matches(':focus-visible')].join()`);
     viewer['@F10 @2026-10-27-calm-style a click chooses a mode without the focus ring'] = clickRing === 'area,false';
     why.calmClick = clickRing;
@@ -1637,16 +1664,19 @@ app
     const moves: string[] = [];
     const ringed = `return document.activeElement.matches(':focus-visible')`;
     let keyRings = true; // @F10 arrows and Tab show the ring
+    const lookNow = async () => JSON.stringify(await barLook(barWin));
     for (const k of ['Right', 'Left', 'Left', 'Right', 'Down', 'Up']) {
-      keyTo(barWin, k);
-      await sleep(80);
+      const before = await lookNow();
+      await keyTo(barWin, k);
+      await until(async () => (await lookNow()) !== before);
       moves.push((await barLook(barWin)).mode);
       keyRings &&= await inWin(barWin, ringed);
     }
     const tabs: string[] = [];
     for (const m of [[], [], [], ['shift'], ['shift'], ['shift'], ['shift']] as Electron.KeyboardInputEvent['modifiers'][]) {
-      keyTo(barWin, 'Tab', m);
-      await sleep(80);
+      const before = await lookNow();
+      await keyTo(barWin, 'Tab', m);
+      await until(async () => (await lookNow()) !== before);
       tabs.push((await barLook(barWin)).focus);
       keyRings &&= await inWin(barWin, ringed);
     }
@@ -1656,13 +1686,13 @@ app
     viewer['@F10 @2026-10-27-calm-style arrows and Tab keep the focus ring'] = keyRings;
     // @F16 ↩ captures with the chosen mode and options; the bar is gone first (F205). Last Area, One-Shot, 5 Seconds
     // and the pointer, chosen as the owner clicks them
-    keyTo(barWin, '4');
+    await keyTo(barWin, '4');
     pick(await popWith(() => inWin(barWin, `document.getElementById('dest').click();`)), 'One-Shot');
     const chosen = await optionsOf(barWin);
     pick(chosen, '5 Seconds');
     pick(chosen, 'Show Mouse Pointer');
-    await sleep(200);
-    keyTo(barWin, 'Return');
+    await until(async () => (await barLook(barWin)).mode === 'last'); // the key 4 has reached the bar
+    await keyTo(barWin, 'Return');
     for (let i = 0; i < 30 && !runs.length; i++) await sleep(100);
     viewer['F205 the bar is gone when the capture starts'] = runs.length === 1 && runs[0].barGone;
     // Reopened: on the mode and options last used; ⌘↩ captures too
@@ -1685,28 +1715,24 @@ app
     barReopened.webContents.setZoomFactor(1.3);
     barReopened.setBounds({ ...barReopened.getBounds(), width: fit.width });
     await inWin(barReopened, `document.body.classList.toggle('narrow', ${fit.narrow});`);
-    await sleep(500);
-    const narrow = JSON.parse(
-      await inWin(
-        barReopened,
-        `const whole = [...document.querySelectorAll('button')].every((b) => { const r = b.getBoundingClientRect();
+    const narrowLook = `const whole = [...document.querySelectorAll('button')].every((b) => { const r = b.getBoundingClientRect();
           return r.width > 0 && r.left >= 0 && r.right <= innerWidth + 0.5 && r.top >= 0 && r.bottom <= innerHeight + 0.5 && getComputedStyle(b).visibility === 'visible'; });
         const root = document.documentElement;
-        return JSON.stringify({ whole, fits: root.scrollWidth <= innerWidth + 1 && root.scrollHeight <= innerHeight + 1, width: innerWidth });`,
-      ),
-    );
+        return JSON.stringify({ whole, fits: root.scrollWidth <= innerWidth + 1 && root.scrollHeight <= innerHeight + 1, width: innerWidth });`;
+    await until(async () => (JSON.parse(await inWin(barReopened, narrowLook)) as { whole: boolean; fits: boolean }).whole);
+    const narrow = JSON.parse(await inWin(barReopened, narrowLook));
     viewer['@F14 @2026-10-27-calm-style on a 900 pt work area at 130 % every bar control sits inside the window'] =
       fit.narrow && narrow.whole && narrow.fits && barReopened.getBounds().width === fit.width;
     why.calmF14 = { fit, ...narrow };
     barReopened.webContents.setZoomFactor(1);
-    keyTo(barReopened, 'Return', ['meta']);
+    await keyTo(barReopened, 'Return', ['meta']);
     for (let i = 0; i < 30 && runs.length < 2; i++) await sleep(100);
     viewer['@F16 ↩ and ⌘↩ capture with the chosen mode'] =
       runs.length === 2 && runs.every((r) => r.barGone && r.o.mode === 'last') && barReopened.isDestroyed();
     // Esc closes the bar without capturing
     const barEsc = openCaptureBar(runner)!;
     await barReady(barEsc);
-    keyTo(barEsc, 'Escape');
+    await keyTo(barEsc, 'Escape');
     for (let i = 0; i < 30 && !barEsc.isDestroyed(); i++) await sleep(100);
     viewer['F204 arrows pick, Return captures, Esc closes'] =
       arrowsOk && tabsOk && runs.length === 2 && barEsc.isDestroyed() && !barUp().length;
@@ -1817,8 +1843,14 @@ app
     const set = openSettings();
     await settingsReady(set);
     const openedOn = await inWin(set, `return document.querySelector('[aria-selected="true"]').textContent.trim()`);
-    viewer['F220 three tabs; the title names the tab'] =
-      tabNames === 'General,Capture,Shortcuts' && titled === 'Capture' && openedOn === 'Capture' && set.getTitle() === 'Capture';
+    viewer['F220 four tabs; the title names the tab'] =
+      tabNames === 'General,Capture,Shortcuts,Online' && titled === 'Capture' && openedOn === 'Capture' && set.getTitle() === 'Capture';
+    viewer['@F125 @2026-10-27-online-release-1 Online tab is last'] = tabNames.endsWith(',Online');
+    await inWin(set, `document.getElementById('tab-online').click();`);
+    viewer['@F128 @2026-10-27-online-release-1 bridge status line'] =
+      (await inWin(set, `return document.getElementById('bridge-status').textContent`)) === 'Extension not found';
+    viewer['@N14 @2026-10-27-online-release-1 local workflow without an account'] =
+      (await inWin(set, `return !document.getElementById('sign-in').hidden && document.getElementById('bridge').checked`)) === true;
     // General: the four settings, in a development build with login and updates greyed
     await inWin(set, `document.getElementById('tab-general').click();`);
     const general = JSON.parse(
@@ -1852,7 +1884,7 @@ app
     await barReady(oneShotBar);
     const oneShotLabel = await inWin(oneShotBar, `return document.getElementById('capture-label').textContent`);
     const fromSettings = await optionsOf(oneShotBar);
-    keyTo(oneShotBar, 'O', ['shift', 'meta']); // the last session again
+    await keyTo(oneShotBar, 'O', ['shift', 'meta']); // the last session again
     pick(fromSettings, 'None');
     pick(fromSettings, 'Show Mouse Pointer', false);
     await sleep(200);
@@ -1910,18 +1942,20 @@ app
     );
     await inWin(set, `document.querySelector('[aria-selected="true"]').focus();`);
     const tabMoved: string[] = [];
-    for (const k of ['Right', 'End', 'Home']) {
-      keyTo(set, k);
-      await sleep(100);
-      tabMoved.push(
-        await inWin(
-          set,
-          `return document.querySelector('[aria-selected="true"]').textContent.trim() + '|' + document.activeElement.textContent.trim()`,
-        ),
+    // From Shortcuts: → reaches Online (last, F125), → again wraps to General, End and Home go to the last and first
+    const tabNow = () =>
+      inWin(
+        set,
+        `return document.querySelector('[aria-selected="true"]').textContent.trim() + '|' + document.activeElement.textContent.trim()`,
       );
+    for (const k of ['Right', 'Right', 'End', 'Home']) {
+      const before = await tabNow();
+      await keyTo(set, k);
+      await until(async () => (await tabNow()) !== before);
+      tabMoved.push(await tabNow());
     }
     viewer['F228 Settings controls are labelled and reachable'] =
-      named && JSON.stringify(tabMoved) === JSON.stringify(['General|General', 'Shortcuts|Shortcuts', 'General|General']);
+      named && JSON.stringify(tabMoved) === JSON.stringify(['Online|Online', 'General|General', 'Online|Online', 'General|General']);
     set.destroy();
 
     // The Keyboard Shortcuts window (F229–F235): its own page, two columns as in the round-1 mock, Esc closes it
@@ -1975,7 +2009,7 @@ app
     );
     nativeTheme.themeSource = 'system';
     viewer['F235 Keyboard Shortcuts turns dark'] = darkLum < 0.2;
-    keyTo(keysWin, 'Escape');
+    await keyTo(keysWin, 'Escape');
     for (let i = 0; i < 30 && !keysWin.isDestroyed(); i++) await sleep(100);
     viewer['F234 Esc closes Keyboard Shortcuts'] = keysWin.isDestroyed();
 
@@ -2331,13 +2365,12 @@ app
     dest.focus();
     dest.webContents.sendInputEvent({ type: 'mouseDown', x: box0.x, y: box0.y, button: 'left', clickCount: 1 });
     dest.webContents.sendInputEvent({ type: 'mouseUp', x: box0.x, y: box0.y, button: 'left', clickCount: 1 });
-    await sleep(400);
+    await until(() => inWin(dest, `return !document.activeElement.closest('#dest') && canvas.getActiveObject() === destBox`));
+    if (!dest.isFocused()) dest.focus(); // the owner may have clicked elsewhere meanwhile
     for (const type of ['keyDown', 'keyUp'] as const) dest.webContents.sendInputEvent({ type, keyCode: 'Right' });
-    await sleep(200);
-    const nudged = await inWin(
-      dest,
-      `return !document.activeElement.closest('#dest') && canvas.getActiveObject() === destBox && destBox.left > ${box0.left};`,
-    );
+    const nudgedJs = `return !document.activeElement.closest('#dest') && canvas.getActiveObject() === destBox && destBox.left > ${box0.left};`;
+    await until(() => inWin(dest, nudgedJs));
+    const nudged = await inWin(dest, nudgedJs);
     const s2 = await destLook();
     viewer['@F48 a click on a segment leaves the arrows to the canvas'] = nudged && s2.segs === 'Session:false,One-Shot:true';
     viewer['@F37 One-Shot shows Beautify and Copy Image ⌘C, with every mark'] =
@@ -2346,14 +2379,15 @@ app
     const noPop = await popWith(() => keyTo(dest, 'P', ['shift', 'meta']));
     viewer['@F45 One-Shot greys the pop-up: Not in a session, no menu'] = s2.face === 'Not in a session' && s2.greyed && !noPop.length;
     // @F46 ⇧⌘O switches back to Session, and again; @F38 the notes come back as they were
-    keyTo(dest, 'O', ['shift', 'meta']);
-    await sleep(300);
+    const segsAre = (segs: string) => until(async () => (await destLook()).segs === segs);
+    await keyTo(dest, 'O', ['shift', 'meta']);
+    await segsAre('Session:true,One-Shot:false');
     const s3 = await destLook();
-    keyTo(dest, 'O', ['shift', 'meta']);
-    await sleep(300);
+    await keyTo(dest, 'O', ['shift', 'meta']);
+    await segsAre('Session:false,One-Shot:true');
     const s4 = await destLook();
-    keyTo(dest, 'O', ['shift', 'meta']);
-    await sleep(300);
+    await keyTo(dest, 'O', ['shift', 'meta']);
+    await segsAre(s3.segs);
     viewer['@F46 ⇧⌘O switches between Session and One-Shot'] =
       s3.segs === 'Session:true,One-Shot:false' && s4.segs === 'Session:false,One-Shot:true' && (await destLook()).segs === s3.segs;
     viewer['@F38 back in Session, the comment and notes are as they were'] =
@@ -2407,13 +2441,13 @@ app
     moveEditor(dest, longest);
     const [dw, dh] = dest.getSize();
     dest.setSize(820, 520);
-    await sleep(400);
     const oneLine = `const h = document.querySelector('header'), n = document.getElementById('session-name');
       const whole = ['dest', 'session'].every((id) => document.getElementById(id).getBoundingClientRect().right <= h.getBoundingClientRect().right);
       return h.scrollWidth <= h.clientWidth && whole && n.textContent.startsWith('Ledgerly') === !oneShot && (oneShot || n.scrollWidth > n.clientWidth);`;
+    await until(() => inWin(dest, oneLine));
     const narrowSession = await inWin(dest, oneLine);
-    keyTo(dest, 'O', ['shift', 'meta']);
-    await sleep(400);
+    await keyTo(dest, 'O', ['shift', 'meta']);
+    await until(() => inWin(dest, oneLine));
     const narrowOneShot = await inWin(dest, oneLine);
     why.N2 = { narrowSession, narrowOneShot, classes: await inWin(dest, `return document.querySelector('header').className`) };
     viewer['@N2 at 820 × 520 the toolbar fits on one line'] = narrowSession && narrowOneShot;

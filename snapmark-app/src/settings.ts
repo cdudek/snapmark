@@ -1,4 +1,4 @@
-// Renderer script for settings.html (classic script, like scroll.ts): the Settings window's three tabs. Every change
+// Renderer script for settings.html (classic script, like scroll.ts): the Settings window's four tabs. Every change
 // goes to the main process at once; the window reads its data again whenever it comes forward.
 // Wrapped in a function so its names stay out of the other pages' scope.
 (() => {
@@ -9,7 +9,10 @@
 
   // The toolbar: a tab list. The window is titled after the tab shown, and opens on the one shown last.
   const tabs = [...document.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+  let shown = '';
+  let onlineWaiting = false;
   const show = (tab: HTMLButtonElement, focus = false) => {
+    shown = tab.id;
     for (const t of tabs) {
       const on = t === tab;
       t.setAttribute('aria-selected', String(on));
@@ -43,6 +46,19 @@
   });
 
   const render = (d: SettingsInit) => {
+    const auth = d.online.auth;
+    onlineWaiting = auth.status === 'waiting';
+    box('bridge').checked = d.online.bridgeEnabled;
+    el('bridge-status').textContent = d.online.bridgeStatus;
+    el('online-status').textContent = auth.message;
+    button('sign-in').hidden = onlineWaiting || auth.status === 'signed_in';
+    button('sign-out').hidden = auth.status !== 'signed_in';
+    button('online-cancel').hidden = !onlineWaiting;
+    button('online-browser').hidden = !onlineWaiting;
+    const focused = document.activeElement;
+    if (focused === button('sign-in') && onlineWaiting) button('online-browser').focus();
+    else if (!onlineWaiting && (focused === button('online-cancel') || focused === button('online-browser')))
+      button(auth.status === 'signed_in' ? 'sign-out' : 'sign-in').focus();
     box('login').checked = d.login.checked;
     box('login').disabled = !d.login.enabled;
     el('login-wait').hidden = !d.login.needsApproval;
@@ -77,6 +93,17 @@
   load();
   // Login approval given in System Settings, or an option changed in the capture bar, shows when the window comes back.
   window.addEventListener('focus', load);
+  s.onSettings(render);
+  window.addEventListener('keydown', (event) => {
+    if (shown !== 'tab-online') return;
+    if (event.key === 'Escape' && onlineWaiting) {
+      event.preventDefault();
+      void s.settingsRun('onlineCancel').then(render);
+    } else if (event.key === 'Enter' && (event.target as HTMLElement)?.tagName !== 'BUTTON') {
+      event.preventDefault();
+      void s.settingsRun(onlineWaiting ? 'onlineBrowser' : button('sign-out').hidden ? 'onlineSignIn' : 'onlineSignOut').then(render);
+    }
+  });
 
   const set = (key: SettingsKey, value: boolean | number) => void s.settingsSet(key, value).then(render);
   box('login').onchange = () => set('login', box('login').checked);
@@ -85,12 +112,17 @@
   el<HTMLSelectElement>('timer').onchange = () => set('timer', Number(el<HTMLSelectElement>('timer').value));
   box('pointer').onchange = () => set('pointer', box('pointer').checked);
   box('single').onchange = () => set('singleKeys', box('single').checked);
+  box('bridge').onchange = () => set('localhostBridge', box('bridge').checked);
   for (const [id, what] of [
     ['change', 'chooseRoot'],
     ['clear', 'clearOld'],
     ['updates', 'checkUpdates'],
     ['login-items', 'loginItems'],
     ['all', 'shortcuts'],
+    ['sign-in', 'onlineSignIn'],
+    ['sign-out', 'onlineSignOut'],
+    ['online-cancel', 'onlineCancel'],
+    ['online-browser', 'onlineBrowser'],
   ] as const)
     button(id).onclick = () => void s.settingsRun(what).then(render);
 })();

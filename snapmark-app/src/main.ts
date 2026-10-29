@@ -14,6 +14,7 @@ import {
   screen,
   shell,
   Notification,
+  safeStorage,
 } from 'electron';
 import type { IpcMainEvent } from 'electron';
 import { execFile } from 'child_process';
@@ -32,6 +33,13 @@ import { Bitmap, MAX_HEIGHT, stitcher } from './stitch';
 import { fitScale, partLayout } from './parts';
 import { Box, OcrLine, recognize } from './ocr';
 import { secretBoxes } from './redact';
+import { Bridge, bridgeSocket, startBridge } from './online/bridge';
+import { installHost } from './online/install';
+import { OnlineSignIn } from './online/sign-in';
+import { OAuthClient } from './online/oauth-client';
+import { TokenVault } from './online/token-vault';
+import { listenLoopback } from './online/loopback';
+import { bridgeStatus } from './online/copy';
 // tools.ts is a classic script shared with the editor page, so it has no ES export to import.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GROUPS: TOOLS } = require('./tools') as { GROUPS: ToolGroup[] };
@@ -55,6 +63,23 @@ let captureOpts: CaptureOpts = FIRST; // the capture bar's mode, One-Shot, Timer
 let tray: Tray | null = null;
 let updateWaiting: string | null = null;
 let quitting = false; // set by "Quit anyway" so the quit guard lets go
+const onlineBridge = new Bridge(undefined, () => tellSettings());
+let bridgeServer: Awaited<ReturnType<typeof startBridge>> | undefined;
+const oauthClient = new OAuthClient();
+const onlineSignIn = new OnlineSignIn({
+  listen: listenLoopback,
+  authorize: (params) => oauthClient.authorize(params),
+  exchange: (params) => oauthClient.exchange(params),
+  refresh: (session) => oauthClient.refresh(session),
+  revoke: (session) => oauthClient.revoke(session),
+  openBrowser: (url) => shell.openExternal(url),
+  store: new TokenVault(path.join(app.getPath('userData'), 'online', 'session.enc'), safeStorage),
+  changed: () => tellSettings(),
+  foreground: () => {
+    openSettings();
+    focusApp();
+  },
+});
 const registered = new Set<string>(); // global shortcuts macOS let us have
 // keyed by webContents.id; dirty = marks or text not saved yet
 // state = marks to put back; replace = Edit Again's entry number; oneShot = no session ('' in session)
@@ -101,6 +126,7 @@ function loadState() {
     color = state.color ?? null;
     customColors = state.customColors ?? [];
     captureOpts = checkedCapture(state.capture);
+    onlineBridge.enabled = state.localhostBridge !== false;
     if (!process.env.SNAPMARK_ROOT && state.root) root = state.root;
   } catch {
     // no state yet
@@ -112,7 +138,20 @@ function saveState() {
   fs.mkdirSync(path.dirname(statePath()), { recursive: true });
   fs.writeFileSync(
     statePath(),
-    JSON.stringify({ active, root, used, area, editorSize, viewerSize, beautify, singleKeys, color, customColors, capture: captureOpts }),
+    JSON.stringify({
+      active,
+      root,
+      used,
+      area,
+      editorSize,
+      viewerSize,
+      beautify,
+      singleKeys,
+      color,
+      customColors,
+      capture: captureOpts,
+      localhostBridge: onlineBridge.enabled,
+    }),
   );
 }
 
@@ -1250,7 +1289,7 @@ export function showShortcuts(): BrowserWindow {
 
 ipcMain.handle('shortcuts:init', (): ShortcutsInit => ({ groups: KEY_GROUPS, singleKeys }));
 
-// The Settings window (Settings… ⌘,): General, Capture and Shortcuts, as a macOS Settings window. One window, brought
+// The Settings window (Settings… ⌘,): General, Capture, Shortcuts and Online. One window, brought
 // forward if open; the page reads its data again whenever it comes forward.
 let settingsWin: BrowserWindow | null = null;
 export function openSettings(): BrowserWindow {
@@ -1287,7 +1326,16 @@ const settingsInit = (): SettingsInit => ({
     .filter(([k]) => k.startsWith('⌃⇧'))
     .map(([cap, name]) => ({ cap, name, taken: !registered.has(`Control+Shift+${cap.slice(2)}`) })),
   capture: captureOpts,
+  online: {
+    bridgeEnabled: onlineBridge.enabled,
+    bridgeStatus: bridgeStatus(onlineBridge.enabled, onlineBridge.connected),
+    auth: onlineSignIn.view,
+  },
 });
+
+function tellSettings(): void {
+  if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send('settings:state', settingsInit());
+}
 
 // Every window shares one preload: only the Settings window may change settings (M2-3).
 const fromSettings = (e: { sender: Electron.WebContents }) =>
@@ -1300,6 +1348,11 @@ ipcMain.handle('settings:set', (e, key: SettingsKey, value: unknown): SettingsIn
   else if (typeof value !== 'boolean') return settingsInit();
   else if (key === 'singleKeys')
     setSingleKeys(value); // open editors hear it
+  else if (key === 'localhostBridge') {
+    onlineBridge.enabled = value;
+    saveState();
+    tellSettings();
+  }
   // Never in a development build: it would register the bare Electron binary (loginState).
   else if (key === 'login' && app.isPackaged) app.setLoginItemSettings({ openAtLogin: value });
   return settingsInit();
@@ -1312,6 +1365,10 @@ ipcMain.handle('settings:run', async (e, what: SettingsRun): Promise<SettingsIni
   else if (what === 'checkUpdates') await checkForUpdatesNow();
   else if (what === 'loginItems') await shell.openExternal('x-apple.systempreferences:com.apple.LoginItems-Settings.extension');
   else if (what === 'shortcuts') showShortcuts();
+  else if (what === 'onlineSignIn') await onlineSignIn.start();
+  else if (what === 'onlineSignOut') await onlineSignIn.signOut();
+  else if (what === 'onlineCancel') onlineSignIn.cancel();
+  else if (what === 'onlineBrowser') await onlineSignIn.openBrowser();
   return settingsInit();
 });
 
@@ -1354,6 +1411,19 @@ app.whenReady().then(() => {
   if (quiet) return void app.setActivationPolicy?.('accessory'); // test harness drives the app itself
   app.dock?.hide();
   loadState();
+  void onlineSignIn.restore();
+  // The bridge is local and independent of sign-in. Never register a test harness as Chrome's host.
+  if (process.platform === 'darwin')
+    void (async () => {
+      bridgeServer = await startBridge(bridgeSocket(), onlineBridge);
+      await installHost({
+        home: os.homedir(),
+        data: app.getPath('userData'),
+        executable: process.execPath,
+        shim: path.join(__dirname, 'online/native-host.js'),
+        socket: bridgeSocket(),
+      });
+    })().catch(() => console.warn('Localhost bridge could not start'));
   sessions.discarded(root); // deletes what is older than 7 days
   // "Template" in the file name makes macOS tint the icon for light and dark menu bars; @2x is picked up automatically.
   tray = new Tray(path.join(__dirname, '../../assets/trayTemplate.png'));
@@ -1396,4 +1466,8 @@ app.on('before-quit', (e) => {
       app.quit();
     });
 });
-app.on('will-quit', () => globalShortcut.unregisterAll());
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+  onlineSignIn.dispose();
+  void bridgeServer?.close();
+});

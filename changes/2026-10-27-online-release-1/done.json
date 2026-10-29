@@ -1,0 +1,2426 @@
+{
+  "_comment": "The approved criteria as data, generated from facts.md. Locked by verify_gate.py approve; checks read it. Each tag sits beside @2026-10-27-online-release-1 in its test title, in the repo that owns the milestone. Widths: web pages at 390 and 1280; the milestone runs the full responsiveTier matrix.",
+  "facts": [
+    {
+      "id": "F1",
+      "tag": "@F1",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A2", "A6", "A38", "A39"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F2",
+      "tag": "@F2",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A10", "A29"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F3",
+      "tag": "@F3",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A29"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F4",
+      "tag": "@F4",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A2", "A9"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F5",
+      "tag": "@F5",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A6", "A21"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F6",
+      "tag": "@F6",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A9", "A10", "A36", "A37"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F7",
+      "tag": "@F7",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A9", "A24"],
+      "screen": "every screen",
+      "states": ["default"]
+    },
+    {
+      "id": "F8",
+      "tag": "@F8",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A11", "A37"],
+      "screen": "every screen",
+      "states": ["default"]
+    },
+    {
+      "id": "F9",
+      "tag": "@F9",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A11", "A37"],
+      "screen": "every screen, after Tab",
+      "states": ["after Tab"]
+    },
+    {
+      "id": "F171",
+      "tag": "@F171",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A24", "A29"],
+      "screen": "every screen with a button row",
+      "states": ["default"]
+    },
+    {
+      "id": "F172",
+      "tag": "@F172",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A60"],
+      "screen": "every screen with a button",
+      "states": ["default"]
+    },
+    {
+      "id": "F173",
+      "tag": "@F173",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A60"],
+      "screen": "every screen with a button, hover and pressed",
+      "states": ["hover and pressed"]
+    },
+    {
+      "id": "F174",
+      "tag": "@F174",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A61"],
+      "screen": "every animated surface",
+      "states": ["default"]
+    },
+    {
+      "id": "F175",
+      "tag": "@F175",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A51", "A53"],
+      "screen": "Landing placeholder, auth cards, Extension toolbar",
+      "states": ["auth cards", "Extension toolbar"]
+    },
+    {
+      "id": "F10",
+      "tag": "@F10",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A10"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F11",
+      "tag": "@F11",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A10", "A30"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F12",
+      "tag": "@F12",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A10", "A32"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F13",
+      "tag": "@F13",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A10"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F14",
+      "tag": "@F14",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A29"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F15",
+      "tag": "@F15",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A29"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F16",
+      "tag": "@F16",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A29"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F176",
+      "tag": "@F176",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A63", "A72"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F177",
+      "tag": "@F177",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A63", "A76"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F178",
+      "tag": "@F178",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A63", "A76"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F179",
+      "tag": "@F179",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A63", "A76"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F180",
+      "tag": "@F180",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A63"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F181",
+      "tag": "@F181",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A72", "A76"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F182",
+      "tag": "@F182",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A72", "A76"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F183",
+      "tag": "@F183",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A72", "A81"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F184",
+      "tag": "@F184",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A73", "A74", "A75", "A81"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F185",
+      "tag": "@F185",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A74", "A75"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F188",
+      "tag": "@F188",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A65", "A78", "A79", "A80", "A81"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F189",
+      "tag": "@F189",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A78"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F190",
+      "tag": "@F190",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A65", "A81"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F17",
+      "tag": "@F17",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A19", "A82"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F18",
+      "tag": "@F18",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A19"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F186",
+      "tag": "@F186",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A82"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F19",
+      "tag": "@F19",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A19"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F20",
+      "tag": "@F20",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A19", "A39"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F21",
+      "tag": "@F21",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A19"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F162",
+      "tag": "@F162",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A18", "A72"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F164",
+      "tag": "@F164",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A1"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F165",
+      "tag": "@F165",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A26", "A52"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F22",
+      "tag": "@F22",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A8"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F23",
+      "tag": "@F23",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A20"],
+      "screen": "Emails",
+      "states": ["default"]
+    },
+    {
+      "id": "F187",
+      "tag": "@F187",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A8", "A20"],
+      "screen": "Emails",
+      "states": ["default"]
+    },
+    {
+      "id": "F24",
+      "tag": "@F24",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A7", "A20"],
+      "screen": "Sign in, Check your email",
+      "states": ["Check your email"]
+    },
+    {
+      "id": "F25",
+      "tag": "@F25",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A7"],
+      "screen": "Verify",
+      "states": ["default"]
+    },
+    {
+      "id": "F26",
+      "tag": "@F26",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A7"],
+      "screen": "Verify, expired",
+      "states": ["expired"]
+    },
+    {
+      "id": "F27",
+      "tag": "@F27",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A7"],
+      "screen": "Account, Sign-In Methods",
+      "states": ["Sign-In Methods"]
+    },
+    {
+      "id": "F163",
+      "tag": "@F163",
+      "milestone": 1,
+      "repo": "heydiff-kit, heydiff-web, heydiff-chrome, heydiff-terraform",
+      "asks": ["A7", "A17"],
+      "screen": "Check your email, Emails",
+      "states": ["Emails"]
+    },
+    {
+      "id": "F28",
+      "tag": "@F28",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A17", "A30"],
+      "screen": "Welcome",
+      "states": ["default"]
+    },
+    {
+      "id": "F29",
+      "tag": "@F29",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Welcome",
+      "states": ["default"]
+    },
+    {
+      "id": "F30",
+      "tag": "@F30",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A20"],
+      "screen": "Organisation settings, Members",
+      "states": ["Members"]
+    },
+    {
+      "id": "F31",
+      "tag": "@F31",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Organisation settings, Members",
+      "states": ["Members"]
+    },
+    {
+      "id": "F32",
+      "tag": "@F32",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A7"],
+      "screen": "Invitation",
+      "states": ["default"]
+    },
+    {
+      "id": "F33",
+      "tag": "@F33",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A31"],
+      "screen": "App shell",
+      "states": ["default"]
+    },
+    {
+      "id": "F192",
+      "tag": "@F192",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Comments, empty",
+      "states": ["empty"]
+    },
+    {
+      "id": "F34",
+      "tag": "@F34",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A16"],
+      "screen": "Workspace settings, Environments",
+      "states": ["Environments"]
+    },
+    {
+      "id": "F35",
+      "tag": "@F35",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A16"],
+      "screen": "Comment, Context panel",
+      "states": ["Context panel"]
+    },
+    {
+      "id": "F36",
+      "tag": "@F36",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A5", "A15"],
+      "screen": "Workspace settings, Route Rules",
+      "states": ["Route Rules"]
+    },
+    {
+      "id": "F37",
+      "tag": "@F37",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A13"],
+      "screen": "Workspace settings, Modules",
+      "states": ["Modules"]
+    },
+    {
+      "id": "F38",
+      "tag": "@F38",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A27"],
+      "screen": "App shell",
+      "states": ["default"]
+    },
+    {
+      "id": "F39",
+      "tag": "@F39",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A29"],
+      "screen": "Comments, Comment",
+      "states": ["Comment"]
+    },
+    {
+      "id": "F40",
+      "tag": "@F40",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A29"],
+      "screen": "App shell, command menu",
+      "states": ["command menu"]
+    },
+    {
+      "id": "F193",
+      "tag": "@F193",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A43", "A44"],
+      "screen": "Comments",
+      "states": ["default"]
+    },
+    {
+      "id": "F194",
+      "tag": "@F194",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A43", "A52"],
+      "screen": "Comments",
+      "states": ["default"]
+    },
+    {
+      "id": "F42",
+      "tag": "@F42",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A1"],
+      "screen": "Comment",
+      "states": ["default"]
+    },
+    {
+      "id": "F195",
+      "tag": "@F195",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A42"],
+      "screen": "Comments, Comment",
+      "states": ["Comment"]
+    },
+    {
+      "id": "F196",
+      "tag": "@F196",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A44", "A47", "A59"],
+      "screen": "Comment",
+      "states": ["default"]
+    },
+    {
+      "id": "F44",
+      "tag": "@F44",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A13", "A15", "A22", "A48"],
+      "screen": "Comment, Context panel",
+      "states": ["Context panel"]
+    },
+    {
+      "id": "F197",
+      "tag": "@F197",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A43"],
+      "screen": "Comment, Context panel",
+      "states": ["Context panel"]
+    },
+    {
+      "id": "F198",
+      "tag": "@F198",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A43"],
+      "screen": "Comment, Context panel",
+      "states": ["Context panel"]
+    },
+    {
+      "id": "F199",
+      "tag": "@F199",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A44"],
+      "screen": "Comment, thread",
+      "states": ["thread"]
+    },
+    {
+      "id": "F45",
+      "tag": "@F45",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A4", "A46"],
+      "screen": "Comment, Reply field",
+      "states": ["Reply field"]
+    },
+    {
+      "id": "F200",
+      "tag": "@F200",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A54"],
+      "screen": "Comment, Before / After",
+      "states": ["Before / After"]
+    },
+    {
+      "id": "F50",
+      "tag": "@F50",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A28", "A31"],
+      "screen": "Comment, thread",
+      "states": ["thread"]
+    },
+    {
+      "id": "F51",
+      "tag": "@F51",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A14", "A32"],
+      "screen": "Comment, thread",
+      "states": ["thread"]
+    },
+    {
+      "id": "F56",
+      "tag": "@F56",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A44"],
+      "screen": "Comment",
+      "states": ["default"]
+    },
+    {
+      "id": "F201",
+      "tag": "@F201",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A44"],
+      "screen": "Comment, header",
+      "states": ["header"]
+    },
+    {
+      "id": "F202",
+      "tag": "@F202",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A44"],
+      "screen": "Comment, header",
+      "states": ["header"]
+    },
+    {
+      "id": "F203",
+      "tag": "@F203",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A70"],
+      "screen": "Comment, Reply field",
+      "states": ["Reply field"]
+    },
+    {
+      "id": "F60",
+      "tag": "@F60",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A31"],
+      "screen": "Comment, guest",
+      "states": ["guest"]
+    },
+    {
+      "id": "F61",
+      "tag": "@F61",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A33"],
+      "screen": "Comment, More menu",
+      "states": ["More menu"]
+    },
+    {
+      "id": "F62",
+      "tag": "@F62",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A33"],
+      "screen": "Comment, More menu",
+      "states": ["More menu"]
+    },
+    {
+      "id": "F64",
+      "tag": "@F64",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A3"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F204",
+      "tag": "@F204",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12", "A44"],
+      "screen": "Start a Decision dialog",
+      "states": ["default"]
+    },
+    {
+      "id": "F205",
+      "tag": "@F205",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12", "A44"],
+      "screen": "Start a Decision dialog, Decision",
+      "states": ["Decision"]
+    },
+    {
+      "id": "F206",
+      "tag": "@F206",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12", "A14"],
+      "screen": "Decision",
+      "states": ["default"]
+    },
+    {
+      "id": "F207",
+      "tag": "@F207",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12", "A14"],
+      "screen": "Decision",
+      "states": ["default"]
+    },
+    {
+      "id": "F53",
+      "tag": "@F53",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12", "A14"],
+      "screen": "Decision",
+      "states": ["default"]
+    },
+    {
+      "id": "F208",
+      "tag": "@F208",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12", "A44"],
+      "screen": "Comment, Decided card",
+      "states": ["Decided card"]
+    },
+    {
+      "id": "F209",
+      "tag": "@F209",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12"],
+      "screen": "Comment, Deciding",
+      "states": ["Deciding"]
+    },
+    {
+      "id": "F210",
+      "tag": "@F210",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A12"],
+      "screen": "Decisions",
+      "states": ["default"]
+    },
+    {
+      "id": "F211",
+      "tag": "@F211",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A44"],
+      "screen": "Comment, revision entry",
+      "states": ["revision entry"]
+    },
+    {
+      "id": "F212",
+      "tag": "@F212",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A44"],
+      "screen": "Revisions",
+      "states": ["default"]
+    },
+    {
+      "id": "F213",
+      "tag": "@F213",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A52"],
+      "screen": "Sessions",
+      "states": ["default"]
+    },
+    {
+      "id": "F214",
+      "tag": "@F214",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A52"],
+      "screen": "Session",
+      "states": ["default"]
+    },
+    {
+      "id": "F215",
+      "tag": "@F215",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A52"],
+      "screen": "Share Session dialog",
+      "states": ["default"]
+    },
+    {
+      "id": "F216",
+      "tag": "@F216",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A52"],
+      "screen": "Share Session dialog",
+      "states": ["default"]
+    },
+    {
+      "id": "F65",
+      "tag": "@F65",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A12", "A52"],
+      "screen": "Inbox",
+      "states": ["default"]
+    },
+    {
+      "id": "F217",
+      "tag": "@F217",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A44", "A70"],
+      "screen": "Inbox",
+      "states": ["default"]
+    },
+    {
+      "id": "F67",
+      "tag": "@F67",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A20"],
+      "screen": "Emails",
+      "states": ["default"]
+    },
+    {
+      "id": "F68",
+      "tag": "@F68",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A14"],
+      "screen": "My Work",
+      "states": ["default"]
+    },
+    {
+      "id": "F69",
+      "tag": "@F69",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A3"],
+      "screen": "Comment",
+      "states": ["default"]
+    },
+    {
+      "id": "F70",
+      "tag": "@F70",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A11"],
+      "screen": "App shell, offline",
+      "states": ["offline"]
+    },
+    {
+      "id": "F71",
+      "tag": "@F71",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A18"],
+      "screen": "Phone Comment, Phone Decision",
+      "states": ["Phone Decision"]
+    },
+    {
+      "id": "F72",
+      "tag": "@F72",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A18"],
+      "screen": "Phone Inbox, Phone Comment",
+      "states": ["Phone Comment"]
+    },
+    {
+      "id": "F73",
+      "tag": "@F73",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A18"],
+      "screen": "Desktop-only message",
+      "states": ["default"]
+    },
+    {
+      "id": "F166",
+      "tag": "@F166",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A2", "A31"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F167",
+      "tag": "@F167",
+      "milestone": 2,
+      "repo": "heydiff-web",
+      "asks": ["A4", "A31"],
+      "screen": "Comment, thread",
+      "states": ["thread"]
+    },
+    {
+      "id": "F74",
+      "tag": "@F74",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A6"],
+      "screen": "Extension popup, signed out",
+      "states": ["signed out"]
+    },
+    {
+      "id": "F75",
+      "tag": "@F75",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A6", "A28"],
+      "screen": "App consent",
+      "states": ["default"]
+    },
+    {
+      "id": "F76",
+      "tag": "@F76",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A16"],
+      "screen": "Extension popup",
+      "states": ["default"]
+    },
+    {
+      "id": "F78",
+      "tag": "@F78",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A28"],
+      "screen": "Extension popup, signed out",
+      "states": ["signed out"]
+    },
+    {
+      "id": "F218",
+      "tag": "@F218",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A43"],
+      "screen": "Extension toolbar",
+      "states": ["default"]
+    },
+    {
+      "id": "F219",
+      "tag": "@F219",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A15", "A43", "A50"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F220",
+      "tag": "@F220",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A71"],
+      "screen": "Extension toolbar, Pick mode",
+      "states": ["Pick mode"]
+    },
+    {
+      "id": "F168",
+      "tag": "@F168",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A6", "A28"],
+      "screen": "Composer",
+      "states": ["default"]
+    },
+    {
+      "id": "F79",
+      "tag": "@F79",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A47", "A48"],
+      "screen": "Pick mode",
+      "states": ["default"]
+    },
+    {
+      "id": "F221",
+      "tag": "@F221",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A57"],
+      "screen": "Pick mode, several elements",
+      "states": ["several elements"]
+    },
+    {
+      "id": "F222",
+      "tag": "@F222",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A57"],
+      "screen": "Composer",
+      "states": ["default"]
+    },
+    {
+      "id": "F223",
+      "tag": "@F223",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A57"],
+      "screen": "Pick mode",
+      "states": ["default"]
+    },
+    {
+      "id": "F80",
+      "tag": "@F80",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A13", "A47"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F81",
+      "tag": "@F81",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A13"],
+      "screen": "Pick mode",
+      "states": ["default"]
+    },
+    {
+      "id": "F82",
+      "tag": "@F82",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A22"],
+      "screen": "Pick mode",
+      "states": ["default"]
+    },
+    {
+      "id": "F83",
+      "tag": "@F83",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A22"],
+      "screen": "Pick mode",
+      "states": ["default"]
+    },
+    {
+      "id": "F84",
+      "tag": "@F84",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A22", "A48"],
+      "screen": "Pick mode, Composer",
+      "states": ["Composer"]
+    },
+    {
+      "id": "F224",
+      "tag": "@F224",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A42"],
+      "screen": "Composer",
+      "states": ["default"]
+    },
+    {
+      "id": "F225",
+      "tag": "@F225",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A71"],
+      "screen": "Composer, draft pin",
+      "states": ["draft pin"]
+    },
+    {
+      "id": "F90",
+      "tag": "@F90",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A1"],
+      "screen": "Composer, Extension popup",
+      "states": ["Extension popup"]
+    },
+    {
+      "id": "F87",
+      "tag": "@F87",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A1"],
+      "screen": "Sent confirmation",
+      "states": ["default"]
+    },
+    {
+      "id": "F88",
+      "tag": "@F88",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A1"],
+      "screen": "Comments",
+      "states": ["default"]
+    },
+    {
+      "id": "F226",
+      "tag": "@F226",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A41"],
+      "screen": "Sent confirmation, Pin",
+      "states": ["Pin"]
+    },
+    {
+      "id": "F85",
+      "tag": "@F85",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A4", "A46"],
+      "screen": "Drawing",
+      "states": ["default"]
+    },
+    {
+      "id": "F227",
+      "tag": "@F227",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A54"],
+      "screen": "Arranging",
+      "states": ["default"]
+    },
+    {
+      "id": "F228",
+      "tag": "@F228",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A54"],
+      "screen": "Arranging, Composer",
+      "states": ["Composer"]
+    },
+    {
+      "id": "F229",
+      "tag": "@F229",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A54"],
+      "screen": "Arranging",
+      "states": ["default"]
+    },
+    {
+      "id": "F230",
+      "tag": "@F230",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A43", "A55"],
+      "screen": "Visibility menu",
+      "states": ["default"]
+    },
+    {
+      "id": "F231",
+      "tag": "@F231",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A55"],
+      "screen": "Extension toolbar",
+      "states": ["default"]
+    },
+    {
+      "id": "F232",
+      "tag": "@F232",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A43"],
+      "screen": "Visibility menu",
+      "states": ["default"]
+    },
+    {
+      "id": "F233",
+      "tag": "@F233",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A43"],
+      "screen": "Side panel, This Page",
+      "states": ["This Page"]
+    },
+    {
+      "id": "F234",
+      "tag": "@F234",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A44"],
+      "screen": "Pin",
+      "states": ["default"]
+    },
+    {
+      "id": "F235",
+      "tag": "@F235",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A1", "A44"],
+      "screen": "Pin popover",
+      "states": ["default"]
+    },
+    {
+      "id": "F236",
+      "tag": "@F236",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A50"],
+      "screen": "Device picker",
+      "states": ["default"]
+    },
+    {
+      "id": "F237",
+      "tag": "@F237",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A50"],
+      "screen": "Device picker",
+      "states": ["default"]
+    },
+    {
+      "id": "F238",
+      "tag": "@F238",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A50"],
+      "screen": "Device picker",
+      "states": ["default"]
+    },
+    {
+      "id": "F239",
+      "tag": "@F239",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A52"],
+      "screen": "Session bar",
+      "states": ["default"]
+    },
+    {
+      "id": "F240",
+      "tag": "@F240",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A52"],
+      "screen": "End Session dialog",
+      "states": ["default"]
+    },
+    {
+      "id": "F241",
+      "tag": "@F241",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A47", "A48"],
+      "screen": "Side panel, This Page",
+      "states": ["This Page"]
+    },
+    {
+      "id": "F242",
+      "tag": "@F242",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A18", "A43"],
+      "screen": "Side panel, Inbox",
+      "states": ["Inbox"]
+    },
+    {
+      "id": "F91",
+      "tag": "@F91",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A5"],
+      "screen": "Extension popup, bridge connected",
+      "states": ["bridge connected"]
+    },
+    {
+      "id": "F92",
+      "tag": "@F92",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A5"],
+      "screen": "Extension popup, bridge not running",
+      "states": ["bridge not running"]
+    },
+    {
+      "id": "F93",
+      "tag": "@F93",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A5"],
+      "screen": "Extension popup, bridge off",
+      "states": ["bridge off"]
+    },
+    {
+      "id": "F94",
+      "tag": "@F94",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A5"],
+      "screen": "Extension popup, bridge no repo",
+      "states": ["bridge no repo"]
+    },
+    {
+      "id": "F95",
+      "tag": "@F95",
+      "milestone": 3,
+      "repo": "heydiff-chrome",
+      "asks": ["A5", "A15"],
+      "screen": "Comment, Context panel",
+      "states": ["Context panel"]
+    },
+    {
+      "id": "F96",
+      "tag": "@F96",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A2"],
+      "screen": "App consent",
+      "states": ["default"]
+    },
+    {
+      "id": "F97",
+      "tag": "@F97",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28", "A34"],
+      "screen": "App consent",
+      "states": ["default"]
+    },
+    {
+      "id": "F98",
+      "tag": "@F98",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28", "A34"],
+      "screen": "App consent",
+      "states": ["default"]
+    },
+    {
+      "id": "F99",
+      "tag": "@F99",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28", "A34"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F100",
+      "tag": "@F100",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28"],
+      "screen": "Account, Connected Apps",
+      "states": ["Connected Apps"]
+    },
+    {
+      "id": "F101",
+      "tag": "@F101",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A18", "A28"],
+      "screen": "Account, Connected Apps",
+      "states": ["Connected Apps"]
+    },
+    {
+      "id": "F102",
+      "tag": "@F102",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A2", "A34"],
+      "screen": "Connect an Agent dialog",
+      "states": ["default"]
+    },
+    {
+      "id": "F170",
+      "tag": "@F170",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A18", "A28"],
+      "screen": "Account, Connected Apps",
+      "states": ["Connected Apps"]
+    },
+    {
+      "id": "F103",
+      "tag": "@F103",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A2", "A28", "A52"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F104",
+      "tag": "@F104",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A28"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F105",
+      "tag": "@F105",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A2", "A28"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F106",
+      "tag": "@F106",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A2", "A5"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F107",
+      "tag": "@F107",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A15", "A48", "A54"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F243",
+      "tag": "@F243",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A52"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F108",
+      "tag": "@F108",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A14"],
+      "screen": "Comment, Pin popover",
+      "states": ["Pin popover"]
+    },
+    {
+      "id": "F109",
+      "tag": "@F109",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A12"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F110",
+      "tag": "@F110",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A3", "A44"],
+      "screen": "Comment, revision entry",
+      "states": ["revision entry"]
+    },
+    {
+      "id": "F111",
+      "tag": "@F111",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A3"],
+      "screen": "Revisions",
+      "states": ["default"]
+    },
+    {
+      "id": "F244",
+      "tag": "@F244",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A3"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F245",
+      "tag": "@F245",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28", "A31"],
+      "screen": "Comment, thread",
+      "states": ["thread"]
+    },
+    {
+      "id": "F169",
+      "tag": "@F169",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28", "A31"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F112",
+      "tag": "@F112",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F113",
+      "tag": "@F113",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28", "A31"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F114",
+      "tag": "@F114",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F115",
+      "tag": "@F115",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F116",
+      "tag": "@F116",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F117",
+      "tag": "@F117",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A28"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F118",
+      "tag": "@F118",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A2", "A3"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F119",
+      "tag": "@F119",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A33"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F120",
+      "tag": "@F120",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A3"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F121",
+      "tag": "@F121",
+      "milestone": 4,
+      "repo": "heydiff-web",
+      "asks": ["A2", "A3"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F122",
+      "tag": "@F122",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A5"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F123",
+      "tag": "@F123",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A5"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F124",
+      "tag": "@F124",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A5"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F125",
+      "tag": "@F125",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A26"],
+      "screen": "Mac app: Settings › Online",
+      "states": ["default"]
+    },
+    {
+      "id": "F126",
+      "tag": "@F126",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A5"],
+      "screen": "Mac app: Settings › Online",
+      "states": ["default"]
+    },
+    {
+      "id": "F127",
+      "tag": "@F127",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A5"],
+      "screen": "Mac app: Settings › Online",
+      "states": ["default"]
+    },
+    {
+      "id": "F128",
+      "tag": "@F128",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A5"],
+      "screen": "Mac app: Settings › Online",
+      "states": ["default"]
+    },
+    {
+      "id": "F129",
+      "tag": "@F129",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A26", "A28", "A35"],
+      "screen": "Mac app: Settings › Online, waiting for browser",
+      "states": ["waiting for browser"]
+    },
+    {
+      "id": "F130",
+      "tag": "@F130",
+      "milestone": 5,
+      "repo": "heydiff-desktop",
+      "asks": ["A26", "A35"],
+      "screen": "Mac app: Settings › Online, error",
+      "states": ["error"]
+    },
+    {
+      "id": "F131",
+      "tag": "@F131",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17", "A58"],
+      "screen": "Landing placeholder",
+      "states": ["default"]
+    },
+    {
+      "id": "F132",
+      "tag": "@F132",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17", "A20"],
+      "screen": "Landing placeholder, joined",
+      "states": ["joined"]
+    },
+    {
+      "id": "F133",
+      "tag": "@F133",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Landing placeholder, joined",
+      "states": ["joined"]
+    },
+    {
+      "id": "F246",
+      "tag": "@F246",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Confirm your place",
+      "states": ["default"]
+    },
+    {
+      "id": "F247",
+      "tag": "@F247",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Leave the waitlist",
+      "states": ["default"]
+    },
+    {
+      "id": "F248",
+      "tag": "@F248",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F249",
+      "tag": "@F249",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Privacy, Terms, Imprint",
+      "states": ["Terms", "Imprint"]
+    },
+    {
+      "id": "F250",
+      "tag": "@F250",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Landing placeholder",
+      "states": ["default"]
+    },
+    {
+      "id": "F134",
+      "tag": "@F134",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A30"],
+      "screen": "Landing placeholder, Emails",
+      "states": ["Emails"]
+    },
+    {
+      "id": "F191",
+      "tag": "@F191",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A65", "A72", "A81"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F135",
+      "tag": "@F135",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Operator shell and Waitlist",
+      "states": ["default"]
+    },
+    {
+      "id": "F136",
+      "tag": "@F136",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17", "A20"],
+      "screen": "Operator shell and Waitlist",
+      "states": ["default"]
+    },
+    {
+      "id": "F137",
+      "tag": "@F137",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Operator: Invitations",
+      "states": ["default"]
+    },
+    {
+      "id": "F138",
+      "tag": "@F138",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Operator: Organisations and one organisation",
+      "states": ["default"]
+    },
+    {
+      "id": "F139",
+      "tag": "@F139",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Operator: Users and one user",
+      "states": ["default"]
+    },
+    {
+      "id": "F140",
+      "tag": "@F140",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Operator: Feature Flags",
+      "states": ["default"]
+    },
+    {
+      "id": "F141",
+      "tag": "@F141",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "Operator: Usage",
+      "states": ["default"]
+    },
+    {
+      "id": "F142",
+      "tag": "@F142",
+      "milestone": 6,
+      "repo": "heydiff-web",
+      "asks": ["A17"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F143",
+      "tag": "@F143",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Mac app: Share to Workspace sheet",
+      "states": ["default"]
+    },
+    {
+      "id": "F144",
+      "tag": "@F144",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26", "A52"],
+      "screen": "Mac app: Share to Workspace sheet",
+      "states": ["default"]
+    },
+    {
+      "id": "F145",
+      "tag": "@F145",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Session",
+      "states": ["default"]
+    },
+    {
+      "id": "F146",
+      "tag": "@F146",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A15", "A26"],
+      "screen": "Comment, Context panel",
+      "states": ["Context panel"]
+    },
+    {
+      "id": "F147",
+      "tag": "@F147",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Session",
+      "states": ["default"]
+    },
+    {
+      "id": "F148",
+      "tag": "@F148",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Mac app: sync status",
+      "states": ["default"]
+    },
+    {
+      "id": "F251",
+      "tag": "@F251",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Mac app: sync status",
+      "states": ["default"]
+    },
+    {
+      "id": "F149",
+      "tag": "@F149",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F150",
+      "tag": "@F150",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F151",
+      "tag": "@F151",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F152",
+      "tag": "@F152",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F153",
+      "tag": "@F153",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Comment, thread",
+      "states": ["thread"]
+    },
+    {
+      "id": "F154",
+      "tag": "@F154",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Mac app: sync status, Edited elsewhere",
+      "states": ["Edited elsewhere"]
+    },
+    {
+      "id": "F155",
+      "tag": "@F155",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F156",
+      "tag": "@F156",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F157",
+      "tag": "@F157",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F158",
+      "tag": "@F158",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Mac app: sync status",
+      "states": ["default"]
+    },
+    {
+      "id": "F159",
+      "tag": "@F159",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26", "A28"],
+      "screen": "Mac app: sync status, stopped",
+      "states": ["stopped"]
+    },
+    {
+      "id": "F160",
+      "tag": "@F160",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Mac app: sync status, stopped",
+      "states": ["stopped"]
+    },
+    {
+      "id": "F161",
+      "tag": "@F161",
+      "milestone": 7,
+      "repo": "heydiff-desktop, heydiff-web",
+      "asks": ["A26"],
+      "screen": "Mac app: sync status, stopped",
+      "states": ["stopped"]
+    },
+    {
+      "id": "F252",
+      "tag": "@F252",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67", "A69"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F253",
+      "tag": "@F253",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67", "A68"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F254",
+      "tag": "@F254",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67", "A69"],
+      "screen": "Mac app, first launch",
+      "states": ["first launch"]
+    },
+    {
+      "id": "F255",
+      "tag": "@F255",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F256",
+      "tag": "@F256",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67"],
+      "screen": "Mac app, first launch",
+      "states": ["first launch"]
+    },
+    {
+      "id": "F257",
+      "tag": "@F257",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F258",
+      "tag": "@F258",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F259",
+      "tag": "@F259",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67", "A69"],
+      "screen": "Snapmark, hand-over notice",
+      "states": ["hand-over notice"]
+    },
+    {
+      "id": "F260",
+      "tag": "@F260",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F261",
+      "tag": "@F261",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A64", "A67"],
+      "screen": "menu bar, Dock, windows, Login Items, notifications",
+      "states": ["Dock", "windows", "Login Items", "notifications"]
+    },
+    {
+      "id": "F262",
+      "tag": "@F262",
+      "milestone": 8,
+      "repo": "heydiff-desktop",
+      "asks": ["A67"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "F263",
+      "tag": "@F263",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A83"],
+      "screen": "every screen in milestones 2 and 3",
+      "states": ["default"]
+    },
+    {
+      "id": "N1",
+      "tag": "@N1",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A9", "A10"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N2",
+      "tag": "@N2",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A10"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N3",
+      "tag": "@N3",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A10", "A29"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N4",
+      "tag": "@N4",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A2"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N5",
+      "tag": "@N5",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A29"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N6",
+      "tag": "@N6",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A11"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N7",
+      "tag": "@N7",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A36", "A37", "A45"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N8",
+      "tag": "@N8",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A11", "A61"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N9",
+      "tag": "@N9",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A11"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N10",
+      "tag": "@N10",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A11"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N11",
+      "tag": "@N11",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A2"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N12",
+      "tag": "@N12",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A18"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N13",
+      "tag": "@N13",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A11"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N14",
+      "tag": "@N14",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A26", "A67"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N15",
+      "tag": "@N15",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A19"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N16",
+      "tag": "@N16",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A66"],
+      "screen": "none",
+      "states": ["default"]
+    },
+    {
+      "id": "N17",
+      "tag": "@N17",
+      "milestone": "all",
+      "repo": "every repo with screens",
+      "asks": ["A63"],
+      "screen": "none",
+      "states": ["default"]
+    }
+  ],
+  "pages": [
+    "*",
+    "/",
+    "/[org]/[ws]/comments",
+    "/[org]/[ws]/comments/[n]",
+    "/[org]/[ws]/decisions",
+    "/[org]/[ws]/decisions/[n]",
+    "/[org]/[ws]/revisions",
+    "/[org]/[ws]/sessions",
+    "/[org]/[ws]/sessions/[id]",
+    "/[org]/[ws]/settings/environments",
+    "/[org]/[ws]/settings/general",
+    "/[org]/[ws]/settings/modules",
+    "/[org]/[ws]/settings/repos",
+    "/[org]/[ws]/settings/route-rules",
+    "/[org]/inbox",
+    "/[org]/my-work",
+    "/[org]/settings/general",
+    "/[org]/settings/members",
+    "/[org]/settings/workspaces",
+    "/account/connected-apps",
+    "/account/notifications",
+    "/account/profile",
+    "/account/sign-in-methods",
+    "/authorize",
+    "/imprint",
+    "/invite/[token]",
+    "/operator/flags",
+    "/operator/invitations",
+    "/operator/organisations",
+    "/operator/organisations/[id]",
+    "/operator/usage",
+    "/operator/users",
+    "/operator/users/[id]",
+    "/operator/waitlist",
+    "/privacy",
+    "/sign-in",
+    "/sign-in/check",
+    "/sign-in/verify",
+    "/sign-out",
+    "/terms",
+    "/waitlist/confirm",
+    "/waitlist/leave",
+    "/welcome"
+  ],
+  "widths": {
+    "feature": [390, 1280],
+    "milestone": "responsiveTier"
+  },
+  "turns": {
+    "feature": 40,
+    "milestone": 30,
+    "run": 500
+  }
+}

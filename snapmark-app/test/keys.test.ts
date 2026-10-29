@@ -14,7 +14,10 @@ const { GROUPS, capFor, tipFor, toolKey, singleKeysLine } = require('../src/tool
 
 const root = path.join(__dirname, '../..');
 const read = (f: string) => fs.readFileSync(path.join(root, f), 'utf8');
-const srcFiles = fs.readdirSync(path.join(root, 'src')).map((f) => `src/${f}`);
+// Every source file, folders included (src/online/), so no file escapes the shortcut checks.
+const srcFiles = (fs.readdirSync(path.join(root, 'src'), { recursive: true }) as string[])
+  .map((f) => `src/${f}`)
+  .filter((f) => fs.statSync(path.join(root, f)).isFile());
 const main = read('src/main.ts');
 
 // Keys follow macOS (ADR 2026-10-25, as A4 gives them): ⌃⇧1–⌃⇧5 for ⇧⌘1–⇧⌘5, and ⌃⇧N. Replaces F1, F2, F5 and F217.
