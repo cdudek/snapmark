@@ -88,7 +88,7 @@ interface BarInit extends CaptureOpts {
   narrow: boolean; // the bar does not fit its work area: the modes show their icons only (F14)
 }
 
-// The Settings window (settings.html): what its three tabs show.
+// The Settings window (settings.html): what its four tabs show. Credentials never cross this IPC boundary.
 interface SettingsInit {
   login: { enabled: boolean; checked: boolean; needsApproval: boolean }; // menu.ts loginState
   root: string; // sessions folder, ~-shortened
@@ -98,9 +98,19 @@ interface SettingsInit {
   singleKeys: boolean;
   keys: { cap: string; name: string; taken: boolean }[]; // the four global keys; taken: another app has it
   capture: CaptureOpts; // the capture bar's options
+  online: { bridgeEnabled: boolean; bridgeStatus: string; auth: import('./online/sign-in').OnlineView };
 }
-type SettingsKey = 'login' | 'singleKeys' | 'oneShot' | 'timer' | 'pointer';
-type SettingsRun = 'chooseRoot' | 'clearOld' | 'checkUpdates' | 'loginItems' | 'shortcuts';
+type SettingsKey = 'login' | 'singleKeys' | 'oneShot' | 'timer' | 'pointer' | 'localhostBridge';
+type SettingsRun =
+  | 'chooseRoot'
+  | 'clearOld'
+  | 'checkUpdates'
+  | 'loginItems'
+  | 'shortcuts'
+  | 'onlineSignIn'
+  | 'onlineSignOut'
+  | 'onlineCancel'
+  | 'onlineBrowser';
 
 // The Keyboard Shortcuts window (shortcuts.html): keys.ts KEY_GROUPS; the tools come from tools.js on the page.
 interface ShortcutsInit {
@@ -114,6 +124,7 @@ interface Window {
     settingsInit(): Promise<SettingsInit>;
     settingsSet(key: SettingsKey, value: boolean | number): Promise<SettingsInit>;
     settingsRun(what: SettingsRun): Promise<SettingsInit>; // resolves once it is done (a dialog closed)
+    onSettings(cb: (data: SettingsInit) => void): void;
     barInit(): Promise<BarInit>;
     barCapture(mode: CaptureMode): void; // closes the bar, then runs the mode
     barOptions(mode: CaptureMode, at: Area): void; // the Options menu under `at` (window points), for the chosen mode

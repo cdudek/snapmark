@@ -1817,8 +1817,14 @@ app
     const set = openSettings();
     await settingsReady(set);
     const openedOn = await inWin(set, `return document.querySelector('[aria-selected="true"]').textContent.trim()`);
-    viewer['F220 three tabs; the title names the tab'] =
-      tabNames === 'General,Capture,Shortcuts' && titled === 'Capture' && openedOn === 'Capture' && set.getTitle() === 'Capture';
+    viewer['F220 four tabs; the title names the tab'] =
+      tabNames === 'General,Capture,Shortcuts,Online' && titled === 'Capture' && openedOn === 'Capture' && set.getTitle() === 'Capture';
+    viewer['@F125 @2026-10-27-online-release-1 Online tab is last'] = tabNames.endsWith(',Online');
+    await inWin(set, `document.getElementById('tab-online').click();`);
+    viewer['@F128 @2026-10-27-online-release-1 bridge status line'] =
+      (await inWin(set, `return document.getElementById('bridge-status').textContent`)) === 'Extension not found';
+    viewer['@N14 @2026-10-27-online-release-1 local workflow without an account'] =
+      (await inWin(set, `return !document.getElementById('sign-in').hidden && document.getElementById('bridge').checked`)) === true;
     // General: the four settings, in a development build with login and updates greyed
     await inWin(set, `document.getElementById('tab-general').click();`);
     const general = JSON.parse(

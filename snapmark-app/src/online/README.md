@@ -27,3 +27,35 @@ removed only after a refused connection; an active app's socket is preserved.
 Tests: build, then `node --test snapmark-app/dist/test/bridge.test.js` from the
 repo root. Socket integration tests report a skip if the execution sandbox denies
 listeners with `EPERM`; they run normally outside that sandbox.
+
+## Browser sign-in
+
+The Online tab uses a public OAuth client, PKCE S256 and a random state value.
+Only the ephemeral `127.0.0.1` callback is served over HTTP. It checks the exact
+Host, path, method and state; callbacks are consumed once. Cancel, timeout and
+quit close the listener. Sign-in expires after 15 minutes (interaction.md and
+S152 supersede the screen file's older 10-minute line).
+
+Until a shared Mac OAuth client configuration is published, the defaults are:
+
+- Service: `https://www.heydiff.com`; public client id: `heydiff-mac`.
+- Metadata: `/.well-known/oauth-authorization-server`; issuer and all endpoints
+  must be HTTPS on the service origin.
+- Scopes: `openid email offline_access`; resource: `https://www.heydiff.com/api/v1`.
+- Account email: the metadata's userinfo endpoint, falling back to
+  `/api/auth/oauth2/userinfo`.
+- Redirect: `http://127.0.0.1:<ephemeral-port>/callback`. The provider needs to
+  register this loopback redirect for the public client, allowing dynamic ports.
+
+These values are constructor arguments in `OAuthClient` for integration with the
+provider. No client secret is needed. Credentials are main-process-only, encrypted
+with Electron `safeStorage` in `userData/online/session.enc` (tech review S15),
+and removed on Sign Out. An expired saved session refreshes on launch; a refused
+refresh returns to signed out. If encryption is unavailable, the current session
+stays in memory and no plaintext fallback is written. The app keeps
+`com.cdudek.snapmark` and its local workflows; there is no custom URL scheme.
+
+Focused sign-in and Settings tests: after building, run
+`node --test snapmark-app/dist/test/online.test.js snapmark-app/dist/test/online-settings.test.js`.
+`test/smoke.ts` also contains the real-window Online checks for the milestone's
+E2E run, alongside the existing local workflow checks.
